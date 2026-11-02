@@ -9,6 +9,14 @@ Status: PRE-SUBMISSION REVIEW, not approval or legal certification. Review updat
 - Use original artwork or properly licensed assets; do not copy another addon's logo, screenshots, UI textures or text without permission.
 - Choose and document a license before publishing; check the rights for any third-party assets and guide content.
 
+## Blizzard-native skill icons
+
+- Prefer spell icons returned by the running client's supported spellbook or spell-info APIs; use a guarded call and never assume an ID exists in Forever.
+- When live spell data is unavailable, use Blizzard interface texture paths already installed with the game. If a texture is absent, keep the text label visible and show a neutral fallback icon.
+- Do not bundle extracted Blizzard texture files, rehost them as original art, or claim ownership of Blizzard's spell illustrations.
+- Do not treat a generic class emblem as proof that a specific spell ID, talent, rank, or icon is verified for Forever.
+- Verify actual icon resolution, class correctness, and missing-API behavior in the client before publishing.
+
 ## Gameplay safety
 - The addon is a read-only guide. Manual player decisions remain mandatory for spells, targeting, combat, quests, purchases and crafting.
 - No automatic combat decisions, input injection, botting, macro execution, protected gameplay calls, or external executable bundled in the ZIP.
