@@ -38,6 +38,7 @@ local function plate(parent,x,width,title)
   edge(p,5,-5,2,15,0.91,0.69,0.31)
   edge(p,width-21,-5,16,2,0.91,0.69,0.31)
   edge(p,width-7,-5,2,15,0.91,0.69,0.31)
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Hero(p,width,175) end
   label(p,16,-14,width-32,title,"GameFontNormal",GOLD)
   return p
 end
