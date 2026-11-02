@@ -171,12 +171,20 @@ def adventure_preview(section,slug):
     frac=int(m.group(1))/int(m.group(2)) if m and int(m.group(2)) else None
     bar(d,cx+23,top+147,466,frac,(230,174,75))
     line(d,cx+23,top+177,find(strings,"Manual checklist only","Manual planning"),52,GOLD)
-    role=next((v for v in strings if re.search(r"\s\|\s",v) and "Warrior" in v),"Class and role unavailable")
-    line(d,cx+552,top+76,role,55)
-    line(d,cx+552,top+112,"Read-only class guidance; verify game-specific abilities.",57,MUTED)
+    # Read the three native text widgets from the actual right-hand card,
+    # rather than fabricating a class/role placeholder in the illustration.
+    rightHeading=next(r for r in rows if r.get("text")=="CLASS & ROLE GUIDANCE")
+    rightId=rightHeading["parent"]
+    def rightText(y,default):
+        return next((r.get("text",default) for r in rows
+                     if r.get("parent")==rightId and r.get("kind")=="FontString"
+                     and r.get("y")==str(y)),default)
+    line(d,cx+552,top+75,rightText(-46,"Class and role unavailable"),55)
+    line(d,cx+552,top+107,rightText(-70,"Class guidance unavailable"),57,MUTED)
+    line(d,cx+552,top+136,rightText(-100,"Role guidance unavailable"),57,GOLD)
     for i,name in enumerate(("OPEN CLASS GUIDE","OPEN QUEST JOURNAL")):
         bx=cx+552+i*232
-        by=top+157
+        by=top+166
         d.rounded_rectangle((bx,by,bx+215,by+36),radius=4,fill=(70,54,33),outline=GOLD)
         d.text((bx+11,by+11),name,font=F14,fill=PALE)
     lower=top+227
