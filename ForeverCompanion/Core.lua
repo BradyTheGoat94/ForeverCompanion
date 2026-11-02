@@ -64,6 +64,7 @@ local function render()
   local lines = {}
   if currentTab == "Overview" then
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
+    if ForeverCompanionCraftingPlanner then lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary() end
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE",experienceText()}
     local rotations=ROTATIONS and ROTATIONS[classToken()]
@@ -177,6 +178,7 @@ local function render()
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
         end
         if ForeverCompanionCraftingPlanner then
+          lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
         end
         lines[#lines+1]=guide.summary
@@ -406,7 +408,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.7.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.8.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
