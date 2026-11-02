@@ -581,14 +581,20 @@ local function render()
       lines[#lines+1] = "FOREVER BOSS DATABASE: Pending verified encounter names and mechanics."
       lines[#lines+1] = "DUNGEON REFERENCE / GENERAL CLASSIC EXAMPLES"
       lines[#lines+1] = "These dungeon names and tips are historical examples; availability in Forever is unconfirmed."
+      local dungeonCount=0
       for _,entry in ipairs(DATA.dungeons or {}) do
         if type(entry)=="table" and type(entry[1])=="string" then
+          dungeonCount=dungeonCount+1
           lines[#lines+1] = "DUNGEON: "..entry[1].." / UNVERIFIED FOR FOREVER"
           lines[#lines+1] = "ENTRY / LEVEL / LOOT: Pending official or live-client confirmation."
           lines[#lines+1] = "BOSSES: Names, abilities and encounter phases pending verification."
           if type(entry[2])=="string" then lines[#lines+1] = "General preparation: "..entry[2] end
           lines[#lines+1] = "ROLE CHECK: Tank manages threat; healer plans dispels; DPS coordinates interrupts."
         end
+      end
+      if dungeonCount==0 then
+        lines[#lines+1] = "No historical dungeon examples are loaded."
+        lines[#lines+1] = "Use the role checklist above while waiting for verified Forever entries."
       end
       lines[#lines+1] = "No boss-specific mechanic, loot table or dungeon unlock is claimed as verified."
 
