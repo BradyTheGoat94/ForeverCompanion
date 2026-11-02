@@ -7,6 +7,7 @@ ForeverCompanionVerifiedAbilities = {
  build="1.60.1.70707",
  checked="2026-11-02",
  source="https://foreverdb.net/spells?cls=1",
+ sources={WARRIOR="https://foreverdb.net/spells?cls=1",MAGE="https://foreverdb.net/spells?cls=8"},
  status="Client-data reference only; in-game trainer/talent availability unverified",
  entries={
   MAGE={
