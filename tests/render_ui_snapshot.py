@@ -14,7 +14,8 @@ missing=[s for s in required if s not in strings]
 if missing:
     raise SystemExit("Dashboard snapshot missing actual widgets: "+", ".join(missing))
 def find(prefix,default="Unavailable"):
-    return next((s for s in strings if s.startswith(prefix)),default)
+    exact=next((s for s in strings if s==prefix),None)
+    return exact if exact is not None else next((s for s in strings if s.startswith(prefix)),default)
 def font(size,bold=False):
     suffix="-Bold" if bold else ""
     try:
@@ -72,9 +73,16 @@ cy=y+269
 panel(cx,cy,323,215,"CHARACTER OVERVIEW")
 panel(cx+335,cy,376,215,"QUICK ACTIONS")
 panel(cx+723,cy,345,215,"PROGRESS & GOALS")
-character=[find("PreviewCharacter"),find("Class:"),find("Role preference:"),find("Professions:")]
+character=[find("PreviewCharacter"),find("Class:"),find("Role preference:")]
 for i,value in enumerate(character):
-    d.text((cx+20,cy+61+i*35),value[:37],font=F16,fill=white if i==0 else muted)
+    d.text((cx+20,cy+61+i*35),value[:36],font=F16,fill=white if i==0 else muted)
+profession=find("Professions:")
+if ") " in profession:
+    first,second=profession.split(") ",1)
+    d.text((cx+20,cy+166),first+")",font=F16,fill=muted)
+    d.text((cx+20,cy+188),second[:34],font=F16,fill=muted)
+else:
+    d.text((cx+20,cy+166),profession[:36],font=F16,fill=muted)
 quick=[("Leveling","LVL"),("Quests","QST"),("Professions","PRO"),("Diagnostics","API")]
 for i,(label,abbrev) in enumerate(quick):
     bx=cx+351+(i%2)*177
