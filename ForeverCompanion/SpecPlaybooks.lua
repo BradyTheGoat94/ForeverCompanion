@@ -247,8 +247,23 @@ end
 
 -- Source-checked priority addenda. These are build-specific, not universal
 -- damage rankings; rules are re-evaluated whenever the next cast is chosen.
+-- Batch: 2026-11-02 Forever-specific Wowhead priority audits.
+-- Never substitute similarly named Midnight guides for Forever mechanics.
 ForeverCompanionSourcedPriorities={
  DRUID={
+  Feral={
+   source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 29, 2026; Energy and bleed uptime priority",
+   rules={
+    "1. Apply Rake when a target will survive at least six seconds; do not clip early.",
+    "2. Build five combo points and maintain Rip on durable priority targets.",
+    "3. Cast Shred from behind; use Claw if positioning prevents Shred.",
+    "4. On Clearcasting, use Shred or Claw to avoid wasting the free action.",
+    "5. Cast Shifting Power only when its Energy gain will not overflow your bar.",
+    "6. Pool Energy ahead of Rake or Rip refreshes; Ferocious Bite is a finisher when the target is about to die.",
+    "7. On packs, spread Rake; during Berserk, prioritize Shred while maintaining bleeds.",
+   },
+  },
   Balance={
    source="https://www.wowhead.com/forever/guide/classes/druid/balance/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; Eclipse-cycle and Mana priority",
@@ -281,6 +296,32 @@ ForeverCompanionSourcedPriorities={
   },
  },
  WARRIOR={
+  Fury={
+   source="https://www.wowhead.com/forever/guide/classes/warrior/fury/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 29, 2026; resource thresholds are guide-specific",
+   rules={
+    "1. Maintain Battle Shout and assigned Sunder Armor stacks.",
+    "2. Use Execute in its valid health window; then Bloodthirst and Whirlwind on cooldown.",
+    "3. Use Overpower when available and below 30 Rage.",
+    "4. At more than 65 Rage, queue Heroic Strike; above 85 Rage, use Hamstring as an optional proc trigger.",
+    "5. On cleave packs, prioritize Whirlwind; queue Cleave above 60 Rage instead of Heroic Strike.",
+    "6. Align Death Wish with execute or cleave windows when talented; Recklessness is a long cooldown.",
+    "7. Avoid draining Rage on filler immediately before Bloodthirst or Whirlwind.",
+   },
+  },
+  Protection={
+   source="https://www.wowhead.com/forever/guide/classes/warrior/protection/rotation-cooldowns-pve-tank",
+   reviewed="Wowhead Oct 29, 2026; tank survival overrides damage",
+   rules={
+    "1. Keep Shield Block ready for incoming physical hits; it is not on the global cooldown.",
+    "2. Use Revenge when available, then talented Shield Slam or Bloodthirst.",
+    "3. Maintain assigned Sunder Armor stacks and Thunder Clap on priority targets.",
+    "4. Maintain Battle Shout and Demoralizing Shout if nobody else covers them.",
+    "5. Spend excess Rage on Heroic Strike; in AoE use Thunder Clap and Cleave when safe.",
+    "6. Save Shield Wall and Last Stand for dangerous damage, not trivial pulls.",
+    "7. Never stance-dance for Execute if losing defenses would endanger the group.",
+   },
+  },
   Arms={
    source="https://www.icy-veins.com/wow-forever/arms-warrior-melee-dps-pve-guide",
    corroboration="https://www.wowhead.com/forever/guide/classes/warrior/arms/overview-pve-dps",
@@ -369,6 +410,19 @@ ForeverCompanionSourcedPriorities={
  },
 
  MAGE={
+  Fire={
+   source="https://www.wowhead.com/forever/guide/classes/mage/fire/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 31, 2026; Deep Fire and Frostfire are separate builds",
+   rules={
+    "1. Deep Fire: pre-cast Pyroblast if safe; build and maintain five Scorch stacks.",
+    "2. With the relevant Arcane talent, maintain one Arcane Blast stack for its bonus.",
+    "3. At three Heating Up stacks, cast Pyroblast; otherwise use Fire Blast when ready.",
+    "4. On Missile Barrage, cast Arcane Missiles; otherwise cast Fireball as the usual filler.",
+    "5. Advanced Deep Fire: if Fire Blast is under three seconds from ready, use Scorch as filler.",
+    "6. Frostfire builds replace Fireball with Frostfire Bolt and react to Fingers of Frost.",
+    "7. For grouped enemies, pre-cast Flamestrike, use talented Blast Wave, then Arcane Explosion when safe.",
+   },
+  },
   Arcane={
    source="https://www.wowhead.com/forever/guide/classes/mage/arcane/rotation-cooldowns-pve-dps",
    reviewed="Wowhead reviewed Nov 1, 2026; Arcane/Fire talent build",
@@ -394,6 +448,32 @@ ForeverCompanionSourcedPriorities={
   },
  },
  ROGUE={
+  Assassination={
+   source="https://www.wowhead.com/forever/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026; level and talents conditional",
+   rules={
+    "1. Before the fight, apply Instant Poison to main hand and Deadly Poison to off hand when available.",
+    "2. Maintain Slice and Dice; this takes priority over damage finishers.",
+    "3. Build combo points with Mutilate when talented and usable.",
+    "4. Spend surplus combo points on Eviscerate only if Slice and Dice will not fall off.",
+    "5. Use Blade Flurry for cleave or planned burst; Cold Blood and Thistle Tea can be aligned when available.",
+    "6. Use Kick to stop dangerous spells even if doing so delays damage.",
+    "7. The Oct 30 guide says Venom is not worth pressing in its evaluated build; revisit after tuning.",
+   },
+  },
+  Subtlety={
+   source="https://www.wowhead.com/forever/guide/classes/rogue/subtlety/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026; capstone subject to change",
+   rules={
+    "1. Open from Stealth with Garrote when safe and trained.",
+    "2. Maintain Slice and Dice before other finishers.",
+    "3. Maintain Rupture only if doing so will not sacrifice Slice and Dice uptime.",
+    "4. Build combo points with Hemorrhage when talented.",
+    "5. Reapply Garrote with Vanish when it expires and the encounter permits.",
+    "6. Use Premeditation to generate combo points when available; plan Preparation around Vanish.",
+    "7. The guide flags Thousand Cuts for replacement: treat this build as patch-sensitive.",
+   },
+  },
   Combat={
    source="https://mythicsim.com/wow-forever/difficulty",
    reviewed="MythicSim Nov 2, 2026 preset; experimental, not benchmark-validated",
