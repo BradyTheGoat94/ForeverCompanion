@@ -77,4 +77,16 @@ assertEqual(first[1],"Arms","default spec preview")
 ForeverCompanionSpecPlanner.Next("WARRIOR")
 local second=ForeverCompanionSpecPlanner.Get("WARRIOR")
 assertEqual(second[1],"Fury","next spec preview")
-io.write("PASS: offline spellbook, crafting, diagnostics, quests and specs\n")
+
+-- Profession scanner returns guarded, read-only skill information.
+GetProfessions=function() return 1,nil,nil,nil,nil end
+GetProfessionInfo=function(index) return "Alchemy",nil,125,225 end
+dofile("ForeverCompanion/ProfessionScanner.lua")
+local professions=ForeverCompanionProfessionScanner.Read()
+assertEqual(professions[1].name,"Alchemy","profession name")
+assertEqual(professions[1].skill,125,"profession skill")
+GetProfessions=function() error("unavailable") end
+local missing,reason=ForeverCompanionProfessionScanner.Read()
+assertEqual(missing,nil,"failed profession read")
+assert(type(reason)=="string","missing API reason")
+io.write("PASS: offline spellbook, crafting, diagnostics, quests, specs and professions\n")
