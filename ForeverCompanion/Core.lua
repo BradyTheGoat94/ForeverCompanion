@@ -242,6 +242,9 @@ local function render()
           row:Show()
         end
       end
+      if ForeverCompanionAvailableAbilitySummary then
+        lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
+      end
       if ForeverCompanionAbilityReferenceLines then
         for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level())) do
           lines[#lines+1]=referenceLine
