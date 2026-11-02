@@ -648,8 +648,8 @@ local function createUI()
   local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
   panelTexture:SetAllPoints(panel)
   colorTexture(panelTexture,0.041,0.051,0.073,0.98)
-  -- Frame the entire reading area to connect the secondary cards visually.
-  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(panel,866,534) end
+  -- Only the fixed-size section heading receives ornamental framing;
+  -- the reading area remains flexible in compact mode.
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
   scroll:SetPoint("TOPLEFT", 216, -163)
