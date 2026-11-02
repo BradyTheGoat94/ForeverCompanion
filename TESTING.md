@@ -190,3 +190,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 135. Verify CurseForge offers the correct game flavor and compatible version before upload.
 136. Confirm owner-approved licensing and rights for artwork/code before publishing.
 137. Confirm author-account project moderation and file approval before calling the addon CurseForge-approved.
+
+## v3.5 safe client diagnostics
+138. Run /fcdiag and verify it prints the actual client version/build/interface when GetBuildInfo is available.
+139. Confirm unsupported APIs are reported unavailable without errors or speculative compatibility claims.
+140. Confirm Overview displays the same passive API presence report.
+141. Confirm diagnostics do not trigger spells, targeting, movement, combat actions or network calls.
+142. Verify a fresh login and /reload with unsupported C_Traits or C_SpellBook namespaces.
