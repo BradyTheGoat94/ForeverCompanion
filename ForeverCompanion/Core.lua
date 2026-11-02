@@ -22,7 +22,7 @@ local materialPageLabel, materialPrevious, materialNext
 local professionIndex=1
 local questRows = {}
 local questPage=1
-local pageBack, pageForward, pageLabel, filterButton, resetClassButton
+local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
 local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
@@ -161,6 +161,12 @@ local function render()
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
+  if sortButton then
+    if currentTab=="Quests" then
+      sortButton:SetText("Sort: "..ForeverCompanionQuestPlanner.GetSort())
+      sortButton:Show()
+    else sortButton:Hide() end
+  end
   local lines = {}
   if currentTab == "Overview" then
     lines = {"YOUR ADVENTURE AT A GLANCE", "Recommended next steps", "1. Review your current quests in the Quest Planner.", "2. Open Leveling for class-specific ability priorities.", "3. Track crafting materials and profession goals.", "All suggestions are advisory. You remain in control."}
@@ -562,6 +568,15 @@ local function createUI()
   filterButton:SetText("Show: all")
   filterButton:SetScript("OnClick",function() questPage=1; ForeverCompanionQuestPlanner.CycleFilter() end)
   filterButton:Hide()
+  sortButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  sortButton:SetSize(140,23)
+  sortButton:SetPoint("TOPRIGHT",child,"TOPRIGHT",-195,-173)
+  sortButton:SetText("Sort: log")
+  sortButton:SetScript("OnClick",function()
+    questPage=1
+    ForeverCompanionQuestPlanner.CycleSort()
+  end)
+  sortButton:Hide()
   pageBack=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   pageBack:SetSize(90,24)
   pageBack:SetPoint("TOPLEFT",child,"TOPLEFT",8,-600)
