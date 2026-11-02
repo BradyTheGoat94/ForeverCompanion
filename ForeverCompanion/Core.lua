@@ -362,7 +362,16 @@ local function render()
         if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
         for i,button in ipairs(handbookButtons) do
           local entry=DATA.professionHandbook[i]
-          if entry then button:SetText(entry.name); button:SetScript("OnClick",function() professionIndex=i; materialPage=1; render() end); button:Show() end
+          if entry then
+            button.label:SetText(clipText(entry.name,13))
+            button.icon:SetTexture(entry.icon)
+            local selected=professionIndex==i
+            colorTexture(button.bg,selected and 0.26 or 0.09,selected and 0.20 or 0.12,selected and 0.12 or 0.16,1)
+            colorTexture(button.trim,selected and 0.98 or 0.40,selected and 0.73 or 0.32,selected and 0.31 or 0.19,1)
+            button.selected=selected
+            button:SetScript("OnClick",function() professionIndex=i; materialPage=1; render() end)
+            button:Show()
+          end
         end
       end
       lines[#lines+1] = "Selected professions: "..(DB.professions or "Not selected")
@@ -583,10 +592,30 @@ local function createUI()
   handbookIcon:SetSize(30,30)
   handbookIcon:SetPoint("TOPLEFT",child,"TOPLEFT",745,-165)
   handbookIcon:Hide()
+  -- Two-row profession handbook selector with fantasy-themed icons.
   for i=1,9 do
-    local b=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-    b:SetSize(114,22)
-    b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%5)*120,-180-math.floor((i-1)/5)*25)
+    local b=CreateFrame("Button",nil,child)
+    b:SetSize(144,24)
+    b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%5)*153,-180-math.floor((i-1)/5)*28)
+    b.bg=b:CreateTexture(nil,"BACKGROUND")
+    b.bg:SetAllPoints(b)
+    colorTexture(b.bg,0.09,0.12,0.16,1)
+    b.trim=b:CreateTexture(nil,"ARTWORK")
+    b.trim:SetPoint("TOPLEFT",b,"TOPLEFT",0,0)
+    b.trim:SetSize(144,2)
+    colorTexture(b.trim,0.40,0.32,0.19,1)
+    b.icon=b:CreateTexture(nil,"ARTWORK")
+    b.icon:SetPoint("LEFT",b,"LEFT",7,0)
+    b.icon:SetSize(18,18)
+    b.label=b:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    b.label:SetPoint("LEFT",b,"LEFT",30,0)
+    b.label:SetWidth(108)
+    b.label:SetJustifyH("LEFT")
+    b.label:SetTextColor(0.94,0.87,0.73)
+    b:SetScript("OnEnter",function(self) colorTexture(self.bg,0.20,0.18,0.13,1) end)
+    b:SetScript("OnLeave",function(self)
+      colorTexture(self.bg,self.selected and 0.26 or 0.09,self.selected and 0.20 or 0.12,self.selected and 0.12 or 0.16,1)
+    end)
     b:Hide()
     handbookButtons[i]=b
   end
