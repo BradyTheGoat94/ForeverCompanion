@@ -228,7 +228,7 @@ function D.Render()
       local p=detected[i]
       names[#names+1]=tostring(p.name)..(p.skill and " ("..p.skill..")" or "")
     end
-    values.professions:SetText("Professions: "..table.concat(names,", "))
+    values.professions:SetText("Professions: "..(names[1] or "Not detected")..(names[2] and ("\n"..names[2]) or ""))
   else
     values.professions:SetText("Professions: "..tostring(db.professions or "Not detected"))
   end
