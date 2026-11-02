@@ -340,7 +340,7 @@ local warriorHigh=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",4
 assert(warriorLow:find("Bloodthirst",1,true) and warriorLow:find("LOCKED BY LEVEL",1,true),"level-10 reference should gate late abilities")
 assert(warriorHigh:find("Talent investment required",1,true),"talent abilities must not be presented as automatically learned")
 assert(warriorHigh:find("Quest completion required",1,true),"quest abilities must retain quest requirement")
-assert(table.concat(ForeverCompanionAbilityReferenceLines("MAGE",40)," "):find("pending",1,true),"unaudited classes must not claim verification")
+assert(table.concat(ForeverCompanionAbilityReferenceLines("PRIEST",40)," "):find("pending",1,true),"unaudited classes must not claim verification")
 
 -- Ownership must never be inferred from level, and API restrictions must be safe.
 local previousIsSpellKnown=IsSpellKnown
