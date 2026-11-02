@@ -100,6 +100,40 @@ local function questRows()
     end
     return rows,true
   end
+  -- Some Classic-era clients expose only the legacy read-only quest-log API.
+  -- Never select, accept, complete or change a quest while inspecting it.
+  if type(GetNumQuestLogEntries)=="function" and type(GetQuestLogTitle)=="function" then
+    local ok,count=pcall(GetNumQuestLogEntries)
+    if not ok or type(count)~="number" or count<0 or count>1000 then return {},false end
+    local header="Quest log"
+    for i=1,count do
+      local good,title,questLevel,suggestedGroup,isHeader,isCollapsed,isComplete,frequency,questID=pcall(GetQuestLogTitle,i)
+      if not good then return {},false end
+      if isHeader then
+        header=clean(title or header,70)
+      elseif type(title)=="string" and title~="" then
+        local objectives={}
+        if type(GetNumQuestLeaderBoards)=="function" and type(GetQuestLogLeaderBoard)=="function" then
+          local countOK,objectiveCount=pcall(GetNumQuestLeaderBoards,i)
+          if countOK and type(objectiveCount)=="number" and objectiveCount>=0 and objectiveCount<=100 then
+            for j=1,objectiveCount do
+              local itemOK,description=pcall(GetQuestLogLeaderBoard,j,i)
+              if itemOK and type(description)=="string" and description~="" then
+                objectives[#objectives+1]=clean(description,140)
+              end
+            end
+          end
+        end
+        rows[#rows+1]={
+          id=type(questID)=="number" and questID or nil,
+          title=clean(title,100),zone=header,
+          complete=isComplete==true or isComplete==1,
+          objectives=objectives
+        }
+      end
+    end
+    return rows,true
+  end
   return rows,false
 end
 function Planner.Sync()
