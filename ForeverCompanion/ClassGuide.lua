@@ -253,7 +253,8 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   end
   values.name:SetText(short(classLabel,18).."  |  Lv "..short(level or "?",4))
   values.classSigil:SetText(({WARRIOR="I",PALADIN="II",HUNTER="III",ROGUE="IV",PRIEST="V",SHAMAN="VI",MAGE="VII",WARLOCK="VIII",DRUID="IX"})[classToken] or "*")
-  values.role:SetText("Preferred role: "..short(role or "Not selected",23))
+  local selectedRole=type(role)=="string" and role~="" and role or "Not selected"
+  values.role:SetText("Preferred role: "..short(selectedRole,23))
   local band,number=nil,tonumber(level)
   if number and (number~=number or number<1 or number==math.huge) then number=nil end
   local zones=type(ForeverCompanionData)=="table" and ForeverCompanionData.zones
