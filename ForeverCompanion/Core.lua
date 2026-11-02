@@ -68,7 +68,20 @@ local function render()
       if context then lines[#lines+1]=context.title.." - "..context.description end
       local icons=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
       if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]); rotationIcon:Show() end
-      for i,ability in ipairs(rotations[mode] or {}) do lines[#lines+1]=i..". "..ability end
+      local priorities=rotations[mode] or {}
+      if rotationDetail>#priorities then rotationDetail=1 end
+      for i,ability in ipairs(priorities) do
+        lines[#lines+1]=i..". "..ability
+        local row=rotationRows[i]
+        if row then
+          row:SetText((rotationDetail==i and "> " or "")..i..". "..ability)
+          row:SetScript("OnClick",function() rotationDetail=i; render() end)
+          row:Show()
+        end
+      end
+      if priorities[rotationDetail] then
+        lines[#lines+1]="FOCUSED PRIORITY: "..priorities[rotationDetail]
+      end
       lines[#lines+1]="General reference only; verify abilities and talents on Forever."
     end
     local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
