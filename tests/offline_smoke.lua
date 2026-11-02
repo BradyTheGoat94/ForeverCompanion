@@ -119,6 +119,15 @@ for class,guide in pairs(ForeverCompanionAdvanced.classes) do
   distinct[guide.sections[1]]=true
 end
 assertEqual(classCount,9,"original class guide coverage")
+local craftCount=0
+local craftFirst={}
+for name,guide in pairs(ForeverCompanionAdvanced.crafting) do
+  craftCount=craftCount+1
+  assert(#guide.stages>=6,"profession reference needs detailed planning steps: "..name)
+  assert(not craftFirst[guide.stages[1]],"duplicated profession advice")
+  craftFirst[guide.stages[1]]=true
+end
+assertEqual(craftCount,9,"profession handbook coverage")
 -- Spec selection remains a manual preview; it must never query or change talents.
 dofile("ForeverCompanion/SpecPlanner.lua")
 local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
