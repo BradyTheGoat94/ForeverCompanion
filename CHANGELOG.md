@@ -1,3 +1,9 @@
+## 3.1.0-beta
+- Connected multi-recipe ingredient demand to the existing manually owned material checklist.
+- Added per-ingredient shortage calculations in the Professions tab.
+- Added explicit /fcbridge preview and /fcbridge sync commands with quantity/capacity validation.
+- Preserved owned quantities and unrelated checklist entries during sync; no automatic bag scanning.
+
 ## 3.0.0-beta
 - Added 28 selectable specialization preview profiles across nine classes.
 - Added context-aware role planning for five rotation modes and offensive, defensive, and utility cooldown usage.
