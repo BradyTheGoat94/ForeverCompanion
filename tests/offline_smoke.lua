@@ -366,7 +366,7 @@ assert(ForeverCompanionAbilityState("WARRIOR",2458,40)=="QUEST UNLEARNED","quest
 assert(ForeverCompanionAbilityState("WARRIOR",12296,40)=="TALENT UNLEARNED","talent is not automatically awarded")
 assert(ForeverCompanionAbilityState("WARRIOR",676,40)=="NOT LEARNED","trainer ability must be known")
 assert(ForeverCompanionAbilityState("WARRIOR",999999,40)=="NOT AUDITED","unknown spell is not audited")
-assert(ForeverCompanionAbilityState("MAGE",1,40)=="UNAUDITED","pending class must not be verified")
+assert(ForeverCompanionAbilityState("PRIEST",1,40)=="UNAUDITED","pending class must not be verified")
 assert(ForeverCompanionAvailableAbilitySummary("WARRIOR",40):find("1 known",1,true),"summary must count known spells")
 IsSpellKnown=oldKnown
 
