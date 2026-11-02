@@ -70,3 +70,9 @@ Track multiple manual recipe goals per profession and see **aggregate material d
 - `/fcr remove Alchemy | 1` deletes a recipe goal.
 
 Sample names above are illustrative placeholders, not validated game recipes. Ingredient demand is separate from the manual owned-material checklist; no automatic reconciliation is claimed.
+
+## Specialization planning (3.0 beta)
+
+The Leveling guide now has a clickable **Spec** selector beside the rotation-mode selector. It remembers the selected specialization per class and displays role-based planning priorities for leveling, dungeons, bosses, AoE, and PvP, including when to reserve offensive, defensive, and utility cooldowns. There are 28 preview profiles across the nine original classes; the Guardian/Bear entry is explicitly version-dependent.
+
+Use `/fcspec WARRIOR` (replace WARRIOR with a class token) to cycle its preview. The spec profiles are **educational planning frameworks, not validated spell-by-spell rotations, talent builds, or measured DPS rankings**. WoW Forever's actual spell/talent data must be verified before claiming optimization.
