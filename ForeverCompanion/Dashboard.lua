@@ -333,7 +333,13 @@ function D.Render()
   end
   updateAction(values.step2,"2. Review "..tostring(class).." leveling and rotation priorities.")
   if stats and stats.missing>0 then
-    updateAction(values.step3,"3. Gather "..stats.missing.." units for tracked material goals.")
+    local top=craft.TopShortages and craft.TopShortages(1)
+    local item=type(top)=="table" and top[1] or nil
+    if item then
+      updateAction(values.step3,"3. Gather "..item.missing.." "..tostring(item.name).." for "..tostring(item.profession).." (manual).")
+    else
+      updateAction(values.step3,"3. Review "..stats.missing.." missing units in manual material goals.")
+    end
   else
     updateAction(values.step3,"3. Add or review your manual profession goals.")
   end
