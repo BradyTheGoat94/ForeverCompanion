@@ -2,7 +2,7 @@ local addonName = ...
 local addon = CreateFrame("Frame")
 local DATA = ForeverCompanionData
 local DB, window, titleText, content, currentTab
-local tabs = {"Overview", "Leveling", "Dungeons", "Professions", "PvP", "Settings"}
+local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -41,6 +41,8 @@ local function render()
         break
       end
     end
+  elseif currentTab == "Quests" then
+    lines = {ForeverCompanionQuestPlanner.Format()}
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
@@ -96,8 +98,8 @@ local function createUI()
   close:SetPoint("TOPRIGHT", -4, -4)
   for i, section in ipairs(tabs) do
     local b = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-    b:SetSize(108, 28)
-    b:SetPoint("TOPLEFT", 20+(i-1)*113, -60)
+    b:SetSize(94, 28)
+    b:SetPoint("TOPLEFT", 20+(i-1)*97, -60)
     b:SetText(section)
     b.section = section
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; render() end)
@@ -212,3 +214,5 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if msg=="position reset" then DB.position=nil; window:ClearAllPoints(); window:SetPoint("CENTER"); say("Window centered."); return end
   say("Unknown command; type /fc help")
 end
+
+ForeverCompanionRefresh = function() if DB and window then render() end end
