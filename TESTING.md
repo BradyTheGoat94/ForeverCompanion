@@ -93,3 +93,13 @@ This addon is **not verified on the target client**. Use this checklist on the f
 60. Verify missing profession APIs display a readable fallback.
 61. Verify a character with no learned professions produces no Lua error.
 62. Confirm the scanner never crafts items, spends materials, or changes character data.
+
+## v1.7 crafting planner regression checks
+63. Add a material for Alchemy with /fcm add Alchemy | Peacebloom | 20 | 7 and confirm remaining 13.
+64. Update owned quantity with /fcm owned Alchemy | 1 | 12 and confirm remaining 8.
+65. Remove material with /fcm remove Alchemy | 1 and confirm list updates.
+66. Reload UI and verify per-character material checklists persist.
+67. Confirm profession material lists are separate across professions.
+68. Verify invalid counts, missing entries, and oversized material lists are rejected.
+69. Confirm the detected profession progress text is absent or safely falls back if API data is missing.
+70. Verify no crafting, inventory modification, or purchases occur.
