@@ -459,3 +459,16 @@ for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","M
  local guide=ForeverCompanionPvPPreparation.Format(class)
  assert(guide:find("PVP FIELD NOTES",1,true) and guide:find("General practice only",1,true),"missing class PvP guidance")
 end
+
+-- Blizzard-published Forever Camping facts must remain source-attributed and
+-- distinguish a missing sample (Mining) from a confirmed absence.
+dofile("ForeverCompanion/CampingGuide.lua")
+local camp=ForeverCompanionCampingGuide
+assert(camp.source:find("2026-10-21",1,true),"camp guide must expose source date")
+for _,name in ipairs({"Alchemy","Blacksmithing","Enchanting","Engineering","Herbalism","Leatherworking","Skinning","Tailoring","Cooking","First Aid","Fishing"}) do
+ local entry=camp.features[name]
+ assert(entry and entry.skill and entry.item and entry.effect,"missing official camp preview: "..name)
+ assert(camp.Format(name):find(entry.item,1,true),"camp guide must display published feature: "..name)
+end
+assert(camp.features.Mining==nil and camp.Format("Mining"):find("no specific camp feature listed",1,true),"mining must not receive an invented camp item")
+assert(camp.Format("Alchemy"):find("Blessing of Wisdom",1,true),"published stacking restriction missing")
