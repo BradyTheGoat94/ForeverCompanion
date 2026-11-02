@@ -248,6 +248,51 @@ end
 -- Source-checked priority addenda. These are build-specific, not universal
 -- damage rankings; rules are re-evaluated whenever the next cast is chosen.
 ForeverCompanionSourcedPriorities={
+ WARRIOR={
+  Arms={
+   source="https://www.icy-veins.com/wow-forever/arms-warrior-melee-dps-pve-guide",
+   corroboration="https://www.wowhead.com/forever/guide/classes/warrior/arms/overview-pve-dps",
+   reviewed="Icy Veins Oct 27 level-30 beta; Wowhead Oct 7 beta overview",
+   rules={
+    "1. Keep Battle Shout active and use Bloodrage between pulls when safe.",
+    "2. Charge only from outside combat and when the target is at a valid distance.",
+    "3. Apply Rend early to targets that will live long enough for the bleed; Bloodthrill can enable Overpower when talented.",
+    "4. React to Overpower availability instead of trying to cast it on every attack.",
+    "5. Save Rage on enemies near death; finish with auto-attacks if a spender would waste Rage.",
+    "6. Against two durable targets, use Sweeping Strikes when talented and affordable; use Cleave without breaking crowd control.",
+   },
+  },
+ },
+ SHAMAN={
+  Enhancement={
+   source="https://www.wowhead.com/forever/guide/classes/shaman/enhancement/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/enhancement-shaman-melee-dps-pve-guide/",
+   reviewed="Wowhead Oct 29 rotation; Icy Veins Oct 26 level-30 beta",
+   rules={
+    "1. Maintain Magma Totem where it can reach targets; preserve useful group totems.",
+    "2. Keep Flame Shock on a target that will live long enough for the damage.",
+    "3. Use Stormstrike whenever available and trained.",
+    "4. With five Maelstrom Weapon stacks, cast Lightning Bolt before stacks overcap.",
+    "5. Otherwise cast Earth Shock; use Fire Nova as mana permits.",
+    "6. For AoE, prioritize Magma Totem positioning and Fire Nova, then spread Flame Shock without exhausting Mana.",
+   },
+  },
+ },
+ WARLOCK={
+  Affliction={
+   source="https://www.wowhead.com/forever/guide/classes/warlock/affliction/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/affliction-warlock-ranged-dps-pve-guide/",
+   reviewed="Wowhead Forever rotation; Icy Veins Oct 26 level-30 beta",
+   rules={
+    "1. Maintain relevant Curse and Bane of Agony on enemies that will survive their durations.",
+    "2. Maintain Corruption and other talented damage-over-time effects before filler casts.",
+    "3. Use Shadow Bolt as filler when no higher-value refresh or proc is ready.",
+    "4. Use Life Tap during safe movement or downtime; never sacrifice health when immediate danger is high.",
+    "5. Avoid refreshing DoTs when the target will die before most ticks occur.",
+    "6. On movement, favor instant DoT refreshes or Life Tap when safe; resume casts after moving.",
+   },
+  },
+ },
  PALADIN={
   Retribution={
    source="https://www.icy-veins.com/wow-forever/retribution-paladin-melee-dps-pve-guide",
