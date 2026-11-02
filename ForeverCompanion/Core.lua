@@ -8,6 +8,8 @@ local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"
 local tabButtons = {}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
+local handbookIcon, handbookButtons={}, {}
+local professionIndex=1
 local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, resetClassButton
@@ -37,6 +39,8 @@ local function render()
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
+  if handbookIcon then handbookIcon:Hide() end
+  for _,b in ipairs(handbookButtons) do b:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
@@ -45,6 +49,14 @@ local function render()
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE"}
+    local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
+    if guide then
+      lines[#lines+1]="LEVELING: "..guide.leveling
+      lines[#lines+1]="DUNGEON: "..guide.dungeon
+      lines[#lines+1]="PVP: "..guide.pvp
+      lines[#lines+1]="PROFESSIONS: "..guide.professions
+      if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
+    end
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
     if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
       lines[#lines+1]="YOUR ROLE: "..string.upper(DB.role)
@@ -99,6 +111,18 @@ local function render()
       lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
       for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
     elseif currentTab == "Professions" then
+      local guide=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
+      if guide then
+        lines[#lines+1]="PROFESSION HANDBOOK: "..guide.name
+        lines[#lines+1]="Pairs with: "..guide.pair
+        lines[#lines+1]=guide.summary
+        for i,step in ipairs(guide.steps) do lines[#lines+1]=i..". "..step end
+        if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
+        for i,button in ipairs(handbookButtons) do
+          local entry=DATA.professionHandbook[i]
+          if entry then button:SetText(entry.name); button:SetScript("OnClick",function() professionIndex=i; render() end); button:Show() end
+        end
+      end
       lines[#lines+1] = "Selected professions: "..(DB.professions or "Not selected")
       lines[#lines+1] = "Set with /fc professions <names>"
     elseif currentTab == "PvP" then
@@ -108,8 +132,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or -5)
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or 24))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -72 or -5))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 96 or 24)))) end
   if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -203,6 +227,17 @@ local function createUI()
   pageForward:SetScript("OnClick",function() questPage=math.min(math.max(1,math.ceil(#ForeverCompanionQuestPlanner.GetVisible() / #questRows)),questPage+1); render() end)
   pageLabel=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   pageLabel:SetPoint("LEFT",pageBack,"RIGHT",12,0)
+  handbookIcon=window:CreateTexture(nil,"OVERLAY")
+  handbookIcon:SetSize(30,30)
+  handbookIcon:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,82)
+  handbookIcon:Hide()
+  for i=1,9 do
+    local b=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+    b:SetSize(114,22)
+    b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%5)*120,-10-math.floor((i-1)/5)*25)
+    b:Hide()
+    handbookButtons[i]=b
+  end
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
@@ -282,7 +317,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.8.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v0.9.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
