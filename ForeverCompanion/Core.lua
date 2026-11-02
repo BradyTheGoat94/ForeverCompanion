@@ -46,6 +46,10 @@ local function render()
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE"}
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
+    if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
+      lines[#lines+1]="YOUR ROLE: "..string.upper(DB.role)
+      for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
+    end
     lines[#lines+1] = "LEVELING"
     for _, band in ipairs(DATA.zones) do
       if level() >= band[1] and level() <= band[2] then
@@ -87,6 +91,10 @@ local function render()
       if checkButtons[i] then checkButtons[i]:SetText(done and "Undo "..i or "Done "..i); checkButtons[i]:Show() end
     end
     if currentTab == "Dungeons" then
+      if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
+        lines[#lines+1]="YOUR ROLE PREPARATION"
+        for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
+      end
       lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
       for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
     elseif currentTab == "Professions" then
@@ -213,7 +221,7 @@ local function createUI()
   content:SetJustifyV("TOP")
   questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   questFocusText:SetPoint("BOTTOMLEFT",20,83)
-  questFocusText:SetWidth(520)
+  questFocusText:SetWidth(420)
   questFocusText:SetJustifyH("LEFT")
   nextQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   nextQuestButton:SetSize(118,25)
@@ -246,6 +254,11 @@ local function createUI()
     DB.role=nil
     render()
   end)
+  resetClassButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  resetClassButton:SetSize(92,23)
+  resetClassButton:SetPoint("BOTTOMRIGHT",-125,16)
+  resetClassButton:SetText("Auto Class")
+  resetClassButton:SetScript("OnClick",function() DB.previewClass=nil; DB.role=nil; render() end)
   roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   roleButton:SetSize(145, 26)
   roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
