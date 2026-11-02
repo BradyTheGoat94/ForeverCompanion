@@ -169,6 +169,18 @@ for _,w in ipairs(frames) do
  if w.text=="3 active  |  1 ready to turn in" then questCountCard=true end
 end
 assert(questCountCard,"live quest briefing count incorrect")
+-- Styled journal rows expose readable title, zone, and status without touching
+-- the game's selected quest. Clicking only changes the addon's focused entry.
+local readyRow
+for _,w in ipairs(frames) do
+ if w.title and w.zone and w.status and w.title.text:find("Speak with trainer",1,true) then readyRow=w end
+end
+assert(readyRow and readyRow.OnClick,"native quest journal row missing")
+assert(readyRow.zone.text=="Training Camp","quest row zone label incorrect")
+assert(readyRow.status.text=="READY","quest row completion badge incorrect")
+readyRow.OnClick(readyRow)
+assert(ForeverCompanionQuestPlanner.GetSelected().title=="Sample: Speak with trainer","journal row focus failed")
+assert(readyRow.selected,"selected quest row must be highlighted")
 exportSnapshot("ui_quest_snapshot.txt")
 local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
