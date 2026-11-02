@@ -71,7 +71,7 @@ function A.Allocation(profession)
  return result
 end
 function A.FormatAllocation(profession)
- local lines={"CRAFTING QUEUE (SHARED MATERIALS RESERVED IN RECIPE ORDER)"}
+ local lines={"CRAFTING QUEUE (SHARED MATERIALS RESERVED IN RECIPE ORDER)","Estimate uses manually entered material counts, not a live inventory or confirmed recipe database."}
  local entries=A.Allocation(profession)
  if #entries==0 then lines[#lines+1]="No recipe goals recorded." end
  for _,row in ipairs(entries) do
