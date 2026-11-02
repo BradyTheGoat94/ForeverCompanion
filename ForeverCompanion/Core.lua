@@ -309,6 +309,14 @@ local function render()
         end
         lines[#lines+1]="Unknown or absent entries do not prove a spell is unavailable; check talents, trainer and ranks."
       end
+      if classToken()=="MAGE" and type(ForeverCompanionMageMilestoneLines)=="function" then
+        lines[#lines+1]="MAGE LEVELING: WHAT TO PRESS NEXT"
+        local ok,milestones=pcall(ForeverCompanionMageMilestoneLines,level())
+        if ok and type(milestones)=="table" then
+          for _,milestone in ipairs(milestones) do lines[#lines+1]=milestone end
+        end
+        lines[#lines+1]="Unlock levels come from published Forever client data; spellbook ownership is checked separately."
+      end
       if ForeverCompanionAvailableAbilitySummary then
         lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
       end
