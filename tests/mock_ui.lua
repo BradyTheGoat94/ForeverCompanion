@@ -190,6 +190,13 @@ assert(frames[frames[skillHeading.parent].parent].visible,"profession briefing m
 local materialStatus=false
 for _,w in ipairs(frames) do if w.text=="0/1 material goals completed" then materialStatus=true end end
 assert(materialStatus,"manual material goal status incorrect")
+ForeverCompanionProfessionBriefing.Render("Blacksmithing")
+local shortageFound=false
+for _,w in ipairs(frames) do
+ if w.text=="Selected guide shortage: Sample Ore x6" then shortageFound=true end
+end
+assert(shortageFound,"selected profession should show its largest manual shortage")
+ForeverCompanionProfessionBriefing.Render("Alchemy")
 exportSnapshot("ui_profession_snapshot.txt")
 assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,10),"material goal should update")
 ForeverCompanionProfessionBriefing.Render("Blacksmithing")
