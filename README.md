@@ -6,6 +6,31 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Beta features
+
+- Seven-tab guide window: Overview, Leveling, Quests, Dungeons, Professions, PvP and Settings
+- Automatic detection of the nine original classes, plus class preview and role preference
+- General class guidance, leveling bands, dungeon preparation and manual checklists
+- Per-character saved checklist progress, preferences and movable window position
+- Manual quest planner with name, zone and completion state (up to 100 entries)
+- GitHub Actions Lua syntax checking, manifest validation and ZIP packaging
+
+## Commands
+
+- `/fc` — toggle window
+- `/fc help` — list guide commands
+- `/fc class Mage` or `/fc class auto` — class preview or automatic detection
+- `/fc role Damage` — set role preference
+- `/fc professions Mining + Blacksmithing` — save profession notes
+- `/fc check Dungeons 1` — toggle a checklist item
+- `/fc position reset` — center the window
+- `/fcq add Quest Name | Zone` — track a quest
+- `/fcq list` — list quests
+- `/fcq done 1` — toggle quest completion
+- `/fcq remove 1` — remove a quest
+
+**Prelaunch limitations:** This is not a full Questie replacement. There is no verified Forever-specific quest database, automatic quest detection, map overlay or pathfinding yet. The manifest Interface value is provisional. Live client testing is required before claiming compatibility.
+
 ## Development
 
 Active work happens on `develop`; `main` is reserved for reviewed releases. The addon must use supported game APIs and must not automate protected gameplay actions.
