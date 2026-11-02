@@ -147,6 +147,12 @@ function Planner.Next()
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
   return true
 end
+function Planner.Previous()
+  if #auto.entries==0 then return false end
+  auto.selected=((auto.selected-2) % #auto.entries)+1
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true
+end
 function Planner.Recommend()
   if #auto.entries==0 then return "No active quests detected yet." end
   local ready={}
@@ -158,6 +164,15 @@ function Planner.Recommend()
   local selected=Planner.GetSelected()
   if selected and not selected.complete then return "Focus quest: "..selected.title..". Review its objectives below." end
   return "Choose a quest to focus on. No route optimization data is available yet."
+end
+function Planner.FormatFocused()
+  local q,index=Planner.GetSelected()
+  if not q then return "No quest selected. Your active quest log will appear here." end
+  local lines={"FOCUSED QUEST "..index.."/"..#auto.entries, q.title, q.complete and "Ready for turn-in" or "In progress"}
+  if q.zone then lines[#lines+1]="Zone: "..q.zone end
+  if #q.objectives==0 then lines[#lines+1]="No objective details available from this client." end
+  for _,objective in ipairs(q.objectives) do lines[#lines+1]="  "..objective end
+  return table.concat(lines,"\n")
 end
 function Planner.FormatAuto()
   local result={"ACTIVE QUESTS", "Automatically detected from your quest log.", "NEXT STEP: "..Planner.Recommend()}
@@ -207,6 +222,9 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
   if name then ok,answer=Planner.Add(name,zone)
   elseif msg:match("^done%s+%d+$") then ok,answer=Planner.Toggle(msg:match("%d+"))
   elseif msg:match("^remove%s+%d+$") then ok,answer=Planner.Remove(msg:match("%d+"))
+  elseif msg=="previous" then
+    if not Planner.Previous() then say("No active quests detected.") end
+    return
   elseif msg=="next" then
     if not Planner.Next() then say("No active quests detected.") end
     return
