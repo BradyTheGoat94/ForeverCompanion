@@ -107,9 +107,13 @@ end
 local function xp()
   local current=safeCall(UnitXP,"player")
   local maximum=safeCall(UnitXPMax,"player")
-  if type(current)=="number" and type(maximum)=="number" and maximum>0 then
-    return math.max(0,math.min(1,current/maximum)),current,maximum
-  end
+  -- Some client builds restrict arithmetic on API values; never crash the UI.
+  local ok,fraction=pcall(function()
+    if type(current)=="number" and type(maximum)=="number" and maximum>0 then
+      return math.max(0,math.min(1,current/maximum))
+    end
+  end)
+  if ok and fraction then return fraction,current,maximum end
   return nil
 end
 local function focusState()
