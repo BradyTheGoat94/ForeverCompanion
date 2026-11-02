@@ -43,6 +43,23 @@ function H.Create(parent,x,y,size)
   strip(frame,center-6,-7,12,2,gold)
   strip(frame,5,-math.floor(size*0.35),6,2,gold)
   strip(frame,size-11,-math.floor(size*0.35),6,2,gold)
+  -- Nested stepped shield and inset jewel give the emblem depth without
+  -- relying on a custom texture, a protected API, or copyrighted game art.
+  local shieldTop=math.floor(size*0.60)
+  local shieldWide=math.floor(size*0.68)
+  local shieldLeft=math.floor((size-shieldWide)/2)
+  strip(frame,shieldLeft,-shieldTop,shieldWide,2,dim)
+  strip(frame,shieldLeft+4,-shieldTop-5,shieldWide-8,2,gold)
+  strip(frame,shieldLeft+8,-shieldTop-10,shieldWide-16,2,dim)
+  strip(frame,center-8,-shieldTop-15,16,2,gold)
+  strip(frame,center-4,-shieldTop-19,8,2,dim)
+  local jewel={0.37,0.70,0.80,0.9}
+  strip(frame,center-2,-math.floor(size*0.14),4,4,jewel)
+  strip(frame,center-1,-math.floor(size*0.14)-1,2,6,{0.79,0.89,0.89,0.95})
+  -- Small symmetrical gilded rivets and side bars remain legible at 42px.
+  strip(frame,5,-math.floor(size*0.50),5,2,gold)
+  strip(frame,size-10,-math.floor(size*0.50),5,2,gold)
+  strip(frame,center-3,-size+5,6,2,gold)
   local initials=frame:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
   initials:SetPoint("CENTER",frame,"CENTER",0,0)
   initials:SetText("FC")
