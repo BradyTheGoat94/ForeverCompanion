@@ -14,7 +14,9 @@ function D.Collect()
   local ok,version,buildNumber,_,interface=pcall(GetBuildInfo)
   if ok then build=tostring(version or "?").." build "..tostring(buildNumber or "?").." interface "..tostring(interface or "?") end
  end
+ rows[#rows+1]="Addon: Forever Companion 3.14.0-beta"
  rows[#rows+1]="Client: "..build
+ rows[#rows+1]="Manifest interface: 16001 (verify against live client)"
  add("Modern spellbook lines",available(C_SpellBook,"GetNumSpellBookSkillLines"))
  add("Modern spellbook entries",available(C_SpellBook,"GetSpellBookItemName"))
  add("Modern talents",available(C_Traits,"GetConfigInfo"))
