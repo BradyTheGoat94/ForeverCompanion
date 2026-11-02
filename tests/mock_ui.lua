@@ -124,6 +124,11 @@ assert(ForeverCompanionCraftingPlanner.Add("Blacksmithing","Sample Ore",10,4),"m
 local stats=ForeverCompanionCraftingPlanner.Stats()
 assert(stats.materials==1 and stats.missing==6 and stats.complete==0,"material dashboard stats wrong")
 ForeverCompanionDashboard.Render()
+local readyRecommendation=false
+for _,w in ipairs(frames) do
+ if w.text=="1. Ready to turn in: Sample: Speak with trainer" then readyRecommendation=true end
+end
+assert(readyRecommendation,"dashboard should prioritize confirmed ready-to-turn-in quests")
 local focusButton
 for _,w in ipairs(frames) do
  if w.caption and w.caption.text and w.caption.text:find("Review active quests",1,true) then focusButton=w end
