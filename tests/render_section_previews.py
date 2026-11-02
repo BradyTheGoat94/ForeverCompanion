@@ -80,9 +80,18 @@ def quest_preview():
     match=re.search(r"(\d+) active\s+(\d+) ready",count)
     frac=int(match.group(2))/int(match.group(1)) if match and int(match.group(1)) else None
     bar(d,cx+23,top+148,466,frac,(224,163,64))
-    line(d,cx+552,top+78,find(strings,"Sample:","No focused quest"),53)
-    line(d,cx+552,top+118,find(strings,"Ready to turn in",find(strings,"In progress","No quest status")),52,MUTED)
-    line(d,cx+552,top+157,find(strings,"Illustrative objective","Objective unavailable"),50,GOLD)
+    focus_heading=next(r for r in rows if r.get("text")=="FOCUSED OBJECTIVE")
+    focus_id=focus_heading["parent"]
+    def focus_text(anchor_y,default):
+        return next((r.get("text",default) for r in rows
+                     if r.get("parent")==focus_id and r.get("kind")=="FontString"
+                     and r.get("y")==str(anchor_y)),default)
+    focused_title=focus_text(-47,"No focused quest")
+    if focused_title=="No focused quest" and any("[PIN]" in v for v in strings):
+        raise SystemExit("Pinned quest focus card unexpectedly missing its title")
+    line(d,cx+552,top+78,focused_title,53)
+    line(d,cx+552,top+118,focus_text(-74,"No quest status"),52,MUTED)
+    line(d,cx+552,top+157,focus_text(-101,"Objective unavailable"),50,GOLD)
     lower=top+225
     panel(d,cx,lower,1064,263,"ACTIVE QUEST JOURNAL")
     pin_label=next((v for v in strings if v in ("Pin Focus","Unpin Focus","No Focus")),None)
