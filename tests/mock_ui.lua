@@ -211,6 +211,14 @@ assert(overviewButton and overviewButton.OnClick,"sidebar overview navigation mi
 overviewButton.OnClick(overviewButton)
 assert(ForeverCompanionDB.tab=="Overview","overview navigation failed")
 assert(not frames[questBriefingRoot].visible,"quest briefing must hide on overview")
+local recommendedStep
+for _,w in ipairs(frames) do
+ if w.caption and w.caption.text:find("Review Warrior leveling",1,true) then recommendedStep=w end
+end
+assert(recommendedStep and recommendedStep.OnClick,"recommended step should be clickable")
+recommendedStep.OnClick(recommendedStep)
+assert(ForeverCompanionDB.tab=="Leveling","recommended step did not open Leveling")
+overviewButton.OnClick(overviewButton)
 local professionButton
 for _,w in ipairs(frames) do if w.section=="Professions" then professionButton=w end end
 assert(professionButton and professionButton.OnClick,"profession sidebar navigation missing")
