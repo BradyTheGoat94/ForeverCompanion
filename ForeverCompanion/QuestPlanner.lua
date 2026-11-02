@@ -65,7 +65,7 @@ function Planner.Format()
 end
 
 -- Read-only quest-log synchronization. Never accepts/turns in quests or changes tracking.
-local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=1}
+local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=1, filter="all"}
 local function questRows()
   local rows={}
   if C_QuestLog and type(C_QuestLog.GetNumQuestLogEntries)=="function" and type(C_QuestLog.GetInfo)=="function" then
@@ -114,7 +114,12 @@ function Planner.Sync()
   local rows,supported=questRows()
   auto.supported=supported
   auto.scanned=true
-  if not supported then return false end
+  if not supported then
+    auto.entries={}
+    auto.lastCount=0
+    if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+    return false
+  end
   local old=auto.entries[auto.selected]
   auto.entries=rows
   auto.lastCount=#rows
@@ -128,6 +133,31 @@ function Planner.Sync()
   return true
 end
 function Planner.AutoCount() return auto.lastCount end
+function Planner.GetFilter() return auto.filter end
+function Planner.CycleFilter()
+  if auto.filter=="all" then auto.filter="ready"
+  elseif auto.filter=="ready" then auto.filter="zone"
+  else auto.filter="all" end
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+end
+function Planner.GetVisible()
+  local visible={}
+  local zone
+  if type(GetRealZoneText)=="function" then zone=GetRealZoneText()
+  elseif type(GetZoneText)=="function" then zone=GetZoneText() end
+  for i,q in ipairs(auto.entries) do
+    if auto.filter=="all" or (auto.filter=="ready" and q.complete)
+      or (auto.filter=="zone" and (not zone or zone=="" or q.zone==zone)) then
+      visible[#visible+1]={index=i,quest=q}
+    end
+  end
+  return visible
+end
+function Planner.ReadyCount()
+  local count=0
+  for _,q in ipairs(auto.entries) do if q.complete then count=count+1 end end
+  return count
+end
 function Planner.GetLive() return auto.entries end
 function Planner.GetSelected()
   if #auto.entries==0 then return nil end
@@ -231,6 +261,10 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
   elseif msg:match("^focus%s+%d+$") then
     if not Planner.Select(msg:match("%d+")) then say("Invalid active quest number.") end
     return
+  elseif msg=="filter" then
+    Planner.CycleFilter()
+    say("Quest filter: "..Planner.GetFilter())
+    return
   elseif msg=="sync" then
     if Planner.Sync() then say("Quest log synchronized: "..Planner.AutoCount().." active quests.") else say("Quest log API not available.") end
     return
@@ -240,7 +274,7 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
     say(done.."/"..total.." complete")
     for i,e in ipairs(entries) do say(i..". "..(e.done and "[x] " or "[ ] ")..e.name.." ("..e.zone..")") end
     return
-  else say("Use /fcq sync, /fcq list, /fcq add Quest name | Zone, /fcq done N, /fcq remove N"); return end
+  else say("Use /fcq sync, /fcq filter, /fcq next, /fcq previous, /fcq focus N, /fcq add Quest | Zone"); return end
   say(answer)
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
