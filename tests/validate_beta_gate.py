@@ -19,4 +19,26 @@ for name in ("BETA_RELEASE_GATE.md","BETA_INSTALL_TEST.md","BETA_VERIFICATION_RE
 gate=Path("BETA_RELEASE_GATE.md").read_text(encoding="utf-8")
 assert "actual" in gate.lower() and "client" in gate.lower(),"Missing live-client release gate"
 assert "main" in gate,"Missing protected main branch policy"
+# Conservative release audit: block direct calls that could perform protected
+# gameplay actions or solicit money inside the addon. This is not a substitute
+# for manual source review or testing against the real Forever client.
+import re
+lua_files=list(root.rglob("*.lua"))
+assert lua_files,"No Lua addon source found"
+for source in lua_files:
+    code=source.read_text(encoding="utf-8-sig")
+    for forbidden in ("CastSpellByName","CastSpellByID","UseAction",
+                      "UseInventoryItem","UseContainerItem","RunMacroText",
+                      "TargetUnit","AttackTarget","StartAttack",
+                      "AcceptQuest","CompleteQuest","BuyMerchantItem"):
+        assert not re.search(r"\\b"+forbidden+r"\\s*\\(",code), (
+            f"Potential protected gameplay call {forbidden} in {source}"
+        )
+policy=Path("CURSEFORGE_COMPLIANCE.md")
+assert policy.is_file(),"Missing CurseForge compliance review"
+review=policy.read_text(encoding="utf-8").lower()
+for requirement in ("free","source","donation","advertis","screenshot",
+                    "forever","manual","license"):
+    assert requirement in review,f"Compliance review missing: {requirement}"
+print("PASS: static protected-action scan and CurseForge review present")
 print("PASS: beta metadata, required release docs and live-client gate present")
