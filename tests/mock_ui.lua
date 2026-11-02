@@ -169,6 +169,16 @@ for _,w in ipairs(frames) do
  if w.text=="3 active  |  1 ready to turn in" then questCountCard=true end
 end
 assert(questCountCard,"live quest briefing count incorrect")
+local sortControl
+for _,w in ipairs(frames) do if w.text=="Sort: zone" then sortControl=w end end
+assert(sortControl and sortControl.OnClick,"quest sort selector missing")
+sortControl.OnClick(sortControl) -- ready
+assert(ForeverCompanionQuestPlanner.GetSort()=="ready","quest sort should persist readiness")
+assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.complete,"ready quests must sort first")
+sortControl.OnClick(sortControl) -- log
+assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.title=="Sample: Gather supplies","log order must be preserved")
+sortControl.OnClick(sortControl) -- zone
+assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.zone=="Frontier","zone sort should group alphabetically")
 -- Styled journal rows expose readable title, zone, and status without touching
 -- the game's selected quest. Clicking only changes the addon's focused entry.
 local readyRow
