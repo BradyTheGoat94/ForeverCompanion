@@ -161,7 +161,11 @@ function Guide.Create(parent)
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     GameTooltip:SetText("BEGINNER ROTATION PRACTICE",0.96,0.75,0.36)
-    local quick=type(ForeverCompanionQuickStartLines)=="function" and ForeverCompanionQuickStartLines(values.currentClass)
+    local quick
+    if type(ForeverCompanionQuickStartLines)=="function" then
+      local ok,result=pcall(ForeverCompanionQuickStartLines,values.currentClass)
+      if ok and type(result)=="table" then quick=result end
+    end
     if type(quick)=="table" and #quick>0 then
       for _,line in ipairs(quick) do
         if type(line)=="string" then GameTooltip:AddLine(line,0.92,0.89,0.82,true) end
@@ -251,7 +255,11 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   -- Show the first concrete practice action without requiring a tooltip.
   -- Remaining actions stay available on hover; do not claim a validated DPS order.
   if values.practiceHint then
-    local quick=type(ForeverCompanionQuickStartLines)=="function" and ForeverCompanionQuickStartLines(classToken)
+    local quick
+    if type(ForeverCompanionQuickStartLines)=="function" then
+      local ok,result=pcall(ForeverCompanionQuickStartLines,classToken)
+      if ok and type(result)=="table" then quick=result end
+    end
     local first=type(quick)=="table" and quick[3]
     if type(first)=="string" and first:find("PRACTICE 1:",1,true)==1 then
       values.practiceHint:SetText(short(first,51))
