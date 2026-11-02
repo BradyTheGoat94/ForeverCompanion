@@ -242,6 +242,11 @@ local function render()
           row:Show()
         end
       end
+      if ForeverCompanionAbilityReferenceLines then
+        for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level())) do
+          lines[#lines+1]=referenceLine
+        end
+      end
       local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
       if specNotes then
         lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
