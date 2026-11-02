@@ -86,3 +86,17 @@ end
 function P.FormatNextSteps(skill,cap)
  return table.concat(P.NextSteps(skill,cap),"\n")
 end
+
+function P.ForProfessionNextSteps(name)
+ if not ForeverCompanionProfessionScanner or type(ForeverCompanionProfessionScanner.Read)~="function" then
+  return "PROFESSION NEXT STEPS\nOpen the profession window to inspect skill and cap."
+ end
+ local ok,found=pcall(ForeverCompanionProfessionScanner.Read)
+ if not ok or type(found)~="table" then return "PROFESSION NEXT STEPS\nProfession skill unavailable from the client." end
+ for _,entry in ipairs(found) do
+  if type(entry)=="table" and type(entry.name)=="string" and type(name)=="string" and entry.name:lower()==name:lower() then
+   return "PROFESSION NEXT STEPS\n"..P.FormatNextSteps(entry.skill,entry.maxSkill)
+  end
+ end
+ return "PROFESSION NEXT STEPS\nThis profession is not detected on the character."
+end
