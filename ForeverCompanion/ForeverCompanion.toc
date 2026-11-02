@@ -15,6 +15,7 @@ Spellbook.lua
 SkillDiscovery.lua
 LevelingCurriculum.lua
 DungeonPreparation.lua
+PvPPreparation.lua
 SpecPlanner.lua
 ProfessionScanner.lua
 ProfessionProgress.lua
