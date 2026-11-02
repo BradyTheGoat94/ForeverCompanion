@@ -353,8 +353,8 @@ assert(table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n"):fi
 IsSpellKnown=previousIsSpellKnown
 
 local audit=ForeverCompanionAbilityAudit()
-assert(audit.total==12,"reference audit should count the current curated spell entries")
-assert(audit.classes.WARRIOR==12 and audit.classes.MAGE==0,"coverage must distinguish audited and unaudited classes")
+assert(audit.total==14,"reference audit should count the current curated spell entries")
+assert(audit.classes.WARRIOR==12 and audit.classes.MAGE==2 and audit.classes.PRIEST==0,"coverage must distinguish curated and unaudited classes")
 assert(#audit.issues==0,"curated spell records must pass integrity validation")
 
 -- Spell availability is a distinct state machine, never inferred from level.
