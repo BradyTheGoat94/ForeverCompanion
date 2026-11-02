@@ -1,3 +1,8 @@
+## 3.8.0-beta
+- Expanded offline Lua regression suite to cover modern quest scanning, transient API failures, specialization preview cycling, and profession read failures.
+- Clarified that empty profession reads may reflect unloaded data rather than an unlearned profession.
+- All client API tests remain simulated; live Forever compatibility and account safety are not certified.
+
 ## 3.5.0-beta
 - Added passive /fcdiag client build and API availability report.
 - Added Overview compatibility summary for modern spellbook, talents, quests, professions and XP.
