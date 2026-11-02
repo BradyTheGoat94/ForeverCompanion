@@ -82,7 +82,17 @@ def quest_preview():
     line(d,cx+552,top+157,find(strings,"Illustrative objective","Objective unavailable"),50,GOLD)
     lower=top+225
     panel(d,cx,lower,1064,263,"ACTIVE QUEST JOURNAL")
-    line(d,cx+23,lower+65,"Choose a quest to update the focus card; use filter and paging to explore.",100,MUTED)
+    pin_label=next((v for v in strings if v in ("Pin Focus","Unpin Focus","No Focus")),None)
+    sort_label=next((v for v in strings if v.startswith("Sort:")),None)
+    filter_label=next((v for v in strings if v.startswith("Show:")),None)
+    if not (pin_label and sort_label and filter_label):
+        raise SystemExit("Quest preview requires actual pin, sort and filter controls")
+    for i,caption in enumerate((pin_label,sort_label,filter_label)):
+        bx=cx+23+i*191
+        by=lower+54
+        d.rounded_rectangle((bx,by,bx+178,by+35),radius=4,
+                            fill=(83,61,33) if i==0 else (41,49,61),outline=GOLD if i==0 else (115,91,52))
+        line(d,bx+11,by+9,caption,17,GOLD if i==0 else PALE)
     # Use the actual native row widget hierarchy, not a fabricated list of
     # hard-coded sample quests. Each visible row has title/zone/status children.
     children={}
@@ -99,8 +109,11 @@ def quest_preview():
     if not quest_rows:
         raise SystemExit("Native quest journal rows missing from UI snapshot")
     for i,(title,zone,status) in enumerate(quest_rows[:6]):
-        yy=lower+103+i*35
-        d.rounded_rectangle((cx+20,yy-4,cx+1042,yy+29),radius=3,fill=(34,43,55))
+        yy=lower+107+i*35
+        pinned="[PIN]" in title
+        d.rounded_rectangle((cx+20,yy-4,cx+1042,yy+29),radius=3,
+                            fill=(62,49,31) if pinned else (34,43,55),
+                            outline=GOLD if pinned else (70,76,84))
         line(d,cx+36,yy,title,59)
         line(d,cx+650,yy,zone,22,MUTED)
         line(d,cx+899,yy,status,12,GOLD if status=="READY" else MUTED)
