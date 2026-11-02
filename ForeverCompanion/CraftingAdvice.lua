@@ -80,3 +80,45 @@ function A.FormatAllocation(profession)
  lines[#lines+1]="Planning only: no items are consumed, crafted or moved. Change recipe order to reprioritize."
  return table.concat(lines,"\n")
 end
+
+-- Summarize what to gather next after reserving stock for prioritized crafts.
+function A.GatherList(profession)
+ local recipes=ForeverCompanionRecipePlans
+ if not recipes or not recipes.Get then return {} end
+ local needs={}
+ local planner=ForeverCompanionCraftingPlanner
+ local tracked=planner and planner.GetEntries and planner.GetEntries(profession) or {}
+ local owned={}
+ for _,item in ipairs(tracked) do owned[clean(item.name):lower()]=math.max(0,tonumber(item.owned) or 0) end
+ for _,recipe in ipairs(recipes.Get(profession)) do
+  local remaining=math.max(0,(tonumber(recipe.quantity) or 0)-(tonumber(recipe.done) or 0))
+  for _,ingredient in ipairs(recipe.ingredients or {}) do
+   local name=clean(ingredient.name)
+   local key=name:lower()
+   if name~="" then
+    if not needs[key] then needs[key]={name=name,required=0,owned=owned[key] or 0} end
+    needs[key].required=needs[key].required+remaining*math.max(0,tonumber(ingredient.count) or 0)
+   end
+  end
+ end
+ local rows={}
+ for _,item in pairs(needs) do
+  item.shortage=math.max(0,item.required-item.owned)
+  if item.shortage>0 then rows[#rows+1]=item end
+ end
+ table.sort(rows,function(a,b) if a.shortage==b.shortage then return a.name<b.name end return a.shortage>b.shortage end)
+ return rows
+end
+function A.FormatGatherList(profession,limit)
+ limit=math.max(1,math.min(20,math.floor(tonumber(limit) or 8)))
+ local rows=A.GatherList(profession)
+ local lines={"GATHER NEXT (ALL UNFINISHED RECIPE GOALS)"}
+ if #rows==0 then lines[#lines+1]="No recorded material shortages." end
+ for i=1,math.min(limit,#rows) do
+  local row=rows[i]
+  lines[#lines+1]=i..". "..row.name.." x"..row.shortage.." (need "..row.required..", tracked "..row.owned..")"
+ end
+ if #rows>limit then lines[#lines+1]="...and "..(#rows-limit).." more materials." end
+ lines[#lines+1]="Uses manual material counts; no automatic bag, vendor or auction scan."
+ return table.concat(lines,"\n")
+end
