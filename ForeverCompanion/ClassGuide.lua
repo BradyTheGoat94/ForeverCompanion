@@ -182,12 +182,20 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   end
   values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
   local curriculum=type(ForeverCompanionLevelingCurriculum)=="table" and ForeverCompanionLevelingCurriculum
-  local stage=curriculum and type(curriculum.Stage)=="function" and curriculum.Stage(number or 1)
+  local stage
+  if curriculum and type(curriculum.Stage)=="function" then
+    local ok,result=pcall(curriculum.Stage,number or 1)
+    if ok and (type(result)=="number" or type(result)=="string") then stage=result end
+  end
   local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
   values.currentTip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling) or "Review class-specific tips below."
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local planner=ForeverCompanionSpecPlanner
-  local spec=type(planner)=="table" and type(planner.Get)=="function" and planner.Get(classToken)
+  local spec
+  if type(planner)=="table" and type(planner.Get)=="function" then
+    local ok,result=pcall(planner.Get,classToken)
+    if ok and type(result)=="table" then spec=result end
+  end
   values.spec:SetText("Suggested build: "..short(type(spec)=="table" and spec[1] or "Not available",24))
   local contexts=type(ForeverCompanionRotationPresentation)=="table" and ForeverCompanionRotationPresentation.contexts
   local context=type(contexts)=="table" and contexts[mode]
