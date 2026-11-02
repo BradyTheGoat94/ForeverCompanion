@@ -40,7 +40,7 @@ function P.Overview()
     if skill and (skill<0 or skill~=skill) then skill=nil end
     if maximum and (maximum<=0 or maximum~=maximum) then maximum=nil end
     local missing=(skill and maximum) and math.max(0,maximum-skill) or nil
-    result[#result+1]={name=entry.name,skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
+    result[#result+1]={name=type(entry.name)=="string" and entry.name or "Unknown profession",skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
   end
   return result,reason
 end
