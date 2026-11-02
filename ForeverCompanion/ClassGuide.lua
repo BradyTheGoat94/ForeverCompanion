@@ -248,6 +248,17 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local contexts=type(ForeverCompanionRotationPresentation)=="table" and ForeverCompanionRotationPresentation.contexts
   local context=type(contexts)=="table" and contexts[mode]
   values.mode:SetText("Suggested priority: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
+  -- Show the first concrete practice action without requiring a tooltip.
+  -- Remaining actions stay available on hover; do not claim a validated DPS order.
+  if values.practiceHint then
+    local quick=type(ForeverCompanionQuickStartLines)=="function" and ForeverCompanionQuickStartLines(classToken)
+    local first=type(quick)=="table" and quick[3]
+    if type(first)=="string" and first:find("PRACTICE 1:",1,true)==1 then
+      values.practiceHint:SetText(short(first,51))
+    else
+      values.practiceHint:SetText("HOVER FOR 3 PRACTICE STEPS")
+    end
+  end
   local fraction=safeXP()
   if fraction then
     values.xpCaption:SetText("LEVEL PROGRESS")
