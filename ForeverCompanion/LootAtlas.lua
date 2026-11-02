@@ -182,6 +182,22 @@ function Loot.Filter(query, dungeon, savedOnly, db)
   end)
   return results
 end
+function Loot.FilterSummary(query,dungeon,savedOnly,db)
+  local matches=Loot.Filter(query,dungeon,savedOnly,db)
+  local wishes=Loot.Wishlist(db)
+  local saved=0
+  for _,record in ipairs(matches) do
+    if wishes[record.item] then saved=saved+1 end
+  end
+  local lines={
+    "ACTIVE FILTERS / "..#matches.." matching drops",
+    "Search: "..(type(query)=="string" and query~="" and query or "All items and bosses"),
+    "Dungeon: "..(type(dungeon)=="string" and dungeon~="" and dungeon or "All dungeons"),
+    "Wishlist only: "..(savedOnly and "On" or "Off"),
+    "Saved in results: "..saved,
+  }
+  return table.concat(lines,"\\n")
+end
 function Loot.DungeonNames()
   local counts=Loot.CountByDungeon()
   local names={}
