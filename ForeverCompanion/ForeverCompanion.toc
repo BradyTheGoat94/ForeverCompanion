@@ -9,6 +9,7 @@ Ornaments.lua
 AdvancedGuides.lua
 Rotations.lua
 BeginnerCoach.lua
+ForeverLessons.lua
 VerifiedAbilities.lua
 SkillStudy.lua
 CooldownGuides.lua
