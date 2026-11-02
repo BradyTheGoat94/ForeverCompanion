@@ -14,6 +14,7 @@ CooldownGuides.lua
 Spellbook.lua
 SkillDiscovery.lua
 LevelingCurriculum.lua
+DungeonPreparation.lua
 SpecPlanner.lua
 ProfessionScanner.lua
 ProfessionProgress.lua
