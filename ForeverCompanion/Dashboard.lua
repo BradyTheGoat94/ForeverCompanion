@@ -85,9 +85,27 @@ local function action(parent,x,y,w,label,icon,fn,height)
   caption:SetTextColor(0.96,0.88,0.69)
   b.caption=caption
   b:SetScript("OnClick",fn)
-  b:SetScript("OnEnter",function() paint(bg,0.24,0.20,0.12,1) end)
-  b:SetScript("OnLeave",function() paint(bg,0.12,0.15,0.20,1) end)
+  b:SetScript("OnEnter",function(self)
+    paint(bg,0.24,0.20,0.12,1)
+    if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" then
+      GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+      GameTooltip:SetText(self.detail,1,0.84,0.47)
+      GameTooltip:Show()
+    end
+  end)
+  b:SetScript("OnLeave",function()
+    paint(bg,0.12,0.15,0.20,1)
+    if GameTooltip and type(GameTooltip.Hide)=="function" then GameTooltip:Hide() end
+  end)
   return b
+end
+-- All custom actions use their owned caption FontString; Button:SetText alone
+-- does not reliably display text on an untemplated WoW Button.
+local function updateAction(button,value)
+  local full=tostring(value or ""):gsub("[\r\n]"," ")
+  button.detail=full
+  local max=52
+  button.caption:SetText(#full>max and (full:sub(1,max-3).."...") or full)
 end
 local function progress(parent,x,y,w,label,color)
   local caption=text(parent,parent,x,y,w,label,"GameFontHighlightSmall",PALE)
@@ -278,19 +296,19 @@ function D.Render()
     end
   end
   if firstReady and firstReady.title then
-    values.step1.caption:SetText("1. Ready to turn in: "..tostring(firstReady.title):sub(1,58))
+    updateAction(values.step1,"1. Ready to turn in: "..tostring(firstReady.title))
   elseif questSupported and selected and selected.title then
-    values.step1:SetText("1. Quest focus: "..tostring(selected.title):sub(1,65))
+    updateAction(values.step1,"1. Quest focus: "..tostring(selected.title))
   elseif questSupported then
-    values.step1:SetText("1. Review your quest log for a new objective.")
+    updateAction(values.step1,"1. Review your quest log for a new objective.")
   else
-    values.step1:SetText("1. Quest API unavailable; check the game log or manual notes.")
+    updateAction(values.step1,"1. Quest API unavailable; check the game log or manual notes.")
   end
-  values.step2.caption:SetText("2. Review "..tostring(class).." leveling and rotation priorities.")
+  updateAction(values.step2,"2. Review "..tostring(class).." leveling and rotation priorities.")
   if stats and stats.missing>0 then
-    values.step3.caption:SetText("3. Gather "..stats.missing.." units for tracked material goals.")
+    updateAction(values.step3,"3. Gather "..stats.missing.." units for tracked material goals.")
   else
-    values.step3:SetText("3. Add or review your manual profession goals.")
+    updateAction(values.step3,"3. Add or review your manual profession goals.")
   end
   local state=focusState()
   for i,b in ipairs(focusButtons) do
