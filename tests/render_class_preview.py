@@ -81,13 +81,17 @@ ry=cy+213
 card(cx,ry,1054,182,"ROTATION PRIORITY")
 mode=find("Rotation:","Rotation: leveling")
 d.text((cx+21,ry+60),mode+"   |   General reference, not a verified optimized sequence",font=body,fill=muted)
-priority=[v for v in strings if re.match(r"^[1-5]\. ",v) and len(v)<55]
-for i in range(5):
-    tx=cx+20+i*207
+tile_ids={r["id"] for r in rows if r.get("kind")=="Button" and r.get("width")=="146" and r.get("height")=="47"}
+priority=[r["text"] for r in rows if r.get("parent") in tile_ids and r.get("kind")=="FontString" and re.match(r"^[1-5]\. ",r.get("text","")) and r.get("visible")=="1"]
+priority.sort(key=lambda v:int(v.split(".",1)[0]))
+if not priority:
+    raise SystemExit("No real priority-tile labels found in mock UI")
+tile_width=int((1014-13*(len(priority)-1))/len(priority))
+for i,val in enumerate(priority):
+    tx=cx+20+i*(tile_width+13)
     yy=ry+101
-    d.rounded_rectangle((tx,yy,tx+193,yy+58),radius=5,fill=(68,52,31) if i==0 else (40,47,57),outline=gold if i==0 else dim)
-    val=next((v for v in priority if v.startswith(str(i+1)+". ")),"Priority "+str(i+1))
-    d.text((tx+13,yy+17),val[:19],font=small,fill=cream)
+    d.rounded_rectangle((tx,yy,tx+tile_width,yy+58),radius=5,fill=(68,52,31) if i==0 else (40,47,57),outline=gold if i==0 else dim)
+    d.text((tx+13,yy+17),val[:28],font=small,fill=cream)
 by=ry+198
 card(cx,by,1054,179,"GUIDE DETAILS & SAFETY")
 d.text((cx+22,by+66),"Explore specialization context, role notes, cooldowns and leveling guidance below.",font=body,fill=cream)
