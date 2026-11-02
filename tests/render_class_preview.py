@@ -17,6 +17,9 @@ if missing:
     raise SystemExit("Class guide snapshot missing real widgets: "+", ".join(missing))
 def find(prefix,default="Unavailable"):
     return next((s for s in strings if s.startswith(prefix)),default)
+def panel_value(heading,anchor_y,default="Unavailable"):
+    parent=next((r["parent"] for r in rows if r.get("text")==heading),None)
+    return next((r["text"] for r in rows if r.get("parent")==parent and r.get("y")==str(anchor_y) and r.get("kind")=="FontString"),default)
 def font(size,bold=False):
     try:
         return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans"+("-Bold" if bold else "")+".ttf",size)
@@ -60,9 +63,9 @@ def card(px,py,w,h,label):
 cy=y+140
 card(cx,cy,520,197,"CHARACTER & LEVELING")
 card(cx+534,cy,520,197,"BUILD & ROTATION REFERENCE")
-d.text((cx+22,cy+70),find("Warrior  |","Class preview"),font=heading,fill=cream)
-d.text((cx+22,cy+111),find("Preferred role:","Role not selected"),font=body,fill=muted)
-tip=next((v for v in strings if "leveling" in v.lower() and len(v)>35 and len(v)<180),"Class-specific leveling reference")
+d.text((cx+22,cy+70),panel_value("CHARACTER & LEVELING",-45,"Class preview unavailable"),font=heading,fill=cream)
+d.text((cx+22,cy+111),panel_value("CHARACTER & LEVELING",-73,"Role not selected"),font=body,fill=muted)
+tip=panel_value("CHARACTER & LEVELING",-103,"Class-specific leveling reference")
 d.text((cx+22,cy+153),tip[:51],font=small,fill=cream)
 d.text((cx+555,cy+71),find("Spec preview:","Spec preview unavailable"),font=body,fill=cream)
 d.text((cx+555,cy+108),find("Priority context:","Leveling"),font=body,fill=muted)
@@ -78,7 +81,7 @@ ry=cy+213
 card(cx,ry,1054,182,"ROTATION PRIORITY")
 mode=find("Rotation:","Rotation: leveling")
 d.text((cx+21,ry+60),mode+"   |   General reference, not a verified optimized sequence",font=body,fill=muted)
-priority=[v for v in strings if re.match(r"^[1-5]\\. ",v) and len(v)<55]
+priority=[v for v in strings if re.match(r"^[1-5]\. ",v) and len(v)<55]
 for i in range(5):
     tx=cx+20+i*207
     yy=ry+101
