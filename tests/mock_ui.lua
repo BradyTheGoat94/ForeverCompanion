@@ -57,6 +57,22 @@ UnitLevel=function() return 60 end
 UnitXP=function() return 1500 end
 UnitXPMax=function() return 3000 end
 UnitName=function() return "PreviewCharacter" end
+GetProfessions=function() return 1,2 end
+GetProfessionInfo=function(index)
+ if index==1 then return "Blacksmithing",nil,300,300 end
+ return "Mining",nil,275,300
+end
+C_QuestLog={
+ GetNumQuestLogEntries=function() return 3 end,
+ GetInfo=function(i)
+  local examples={{title="Sample: Gather supplies",questID=101,zoneName="Training Camp"},
+   {title="Sample: Speak with trainer",questID=102,zoneName="Training Camp",isComplete=true},
+   {title="Sample: Explore the outpost",questID=103,zoneName="Frontier"}}
+  return examples[i]
+ end,
+ IsComplete=function(id) return id==102 end,
+ GetQuestObjectives=function(id) return {{text="Illustrative objective for test "..tostring(id)}} end
+}
 GetBuildInfo=function() return "OfflineMock","0","0",16001 end
 print=function() end
 local toc=assert(io.open("ForeverCompanion/ForeverCompanion.toc","r"))
@@ -80,12 +96,41 @@ SlashCmdList.FOREVERCOMPANION("class mage")
 SlashCmdList.FOREVERCOMPANION("class auto")
 SlashCmdList.FOREVERCOMPANION("role damage")
 SlashCmdList.FOREVERCOMPANION("position reset")
+assert(ForeverCompanionQuestPlanner.Sync(),"fixture quest API should sync")
+assert(ForeverCompanionQuestPlanner.AutoCount()==3,"three test quests expected")
+assert(ForeverCompanionCraftingPlanner.Add("Blacksmithing","Sample Ore",10,4),"material fixture should be accepted")
+local stats=ForeverCompanionCraftingPlanner.Stats()
+assert(stats.materials==1 and stats.missing==6 and stats.complete==0,"material dashboard stats wrong")
+ForeverCompanionDashboard.Render()
+local focusButton
+for _,w in ipairs(frames) do
+ if w.caption and w.caption.text and w.caption.text:find("Review active quests",1,true) then focusButton=w end
+end
+assert(focusButton and focusButton.OnClick,"focus checklist button missing")
+focusButton.OnClick(focusButton)
+assert(ForeverCompanionDB.dashboardFocus[1]==true,"focus state did not persist")
+focusButton.OnClick(focusButton)
+assert(ForeverCompanionDB.dashboardFocus[1]==false,"focus toggle did not reverse")
+local questAction
+for _,w in ipairs(frames) do if w.caption and w.caption.text=="Quests" then questAction=w end end
+assert(questAction and questAction.OnClick,"quest shortcut missing")
+questAction.OnClick(questAction)
+assert(ForeverCompanionDB.tab=="Quests","quest shortcut failed")
+local overviewButton
+for _,w in ipairs(frames) do if w.section=="Overview" then overviewButton=w end end
+assert(overviewButton and overviewButton.OnClick,"sidebar overview navigation missing")
+overviewButton.OnClick(overviewButton)
+assert(ForeverCompanionDB.tab=="Overview","overview navigation failed")
+SlashCmdList.FOREVERCOMPANION("")
 SlashCmdList.FOREVERCOMPANION("")
 local foundTitle=false
 for _,f in ipairs(frames) do
- if f.text=="FOREVER COMPANION" then foundTitle=true end
+ if f.text=="Forever Companion" then foundTitle=true end
 end
 assert(foundTitle,"main window title not rendered")
+local foundBanner=false
+for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foundBanner=true end end
+assert(foundBanner,"premium dashboard welcome banner missing")
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
