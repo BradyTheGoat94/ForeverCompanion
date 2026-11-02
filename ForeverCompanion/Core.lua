@@ -16,7 +16,8 @@ local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"
 local tabButtons = {}
 ForeverCompanionClassStripButtons={}
 local checkButtons = {}
-local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
+local scrollFrame, scrollChild
+ForeverCompanionUIState = ForeverCompanionUIState or {}
 local handbookIcon, handbookButtons={}, {}
 local materialRows={}
 local materialPage=1
@@ -134,14 +135,14 @@ local function render()
   end
   titleText:SetText("Forever Companion")
   if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..tostring(level() or "?").."  |  "..(DB.role or "Choose role")) end
-  if questCountText and ForeverCompanionQuestPlanner then
+  if ForeverCompanionUIState.questCountText and ForeverCompanionQuestPlanner then
     local planner=ForeverCompanionQuestPlanner
     if planner.IsSupported() then
-      questCountText:SetText("Active quests: "..planner.AutoCount())
+      ForeverCompanionUIState.questCountText:SetText("Active quests: "..planner.AutoCount())
     elseif planner.IsSnapshotStale() then
-      questCountText:SetText("Cached quests: "..planner.AutoCount().." (outdated)")
+      ForeverCompanionUIState.questCountText:SetText("Cached quests: "..planner.AutoCount().." (outdated)")
     else
-      questCountText:SetText("Quest API unavailable")
+      ForeverCompanionUIState.questCountText:SetText("Quest API unavailable")
     end
   end
   local isOverview=currentTab=="Overview"
@@ -723,13 +724,13 @@ local function render()
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -85 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 346 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
   -- Keep the player's current scroll position during refresh.
-  if classButton then classButton:SetText("Class: "..classLabel()) end
-  if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
-  if nextQuestButton then if currentTab=="Quests" then nextQuestButton:Show() else nextQuestButton:Hide() end end
-  if previousQuestButton then if currentTab=="Quests" then previousQuestButton:Show() else previousQuestButton:Hide() end end
-  if questFocusText then
+  if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
+  if ForeverCompanionUIState.roleButton then ForeverCompanionUIState.roleButton:SetText("Role: "..(DB.role or "Choose")) end
+  if ForeverCompanionUIState.nextQuestButton then if currentTab=="Quests" then ForeverCompanionUIState.nextQuestButton:Show() else ForeverCompanionUIState.nextQuestButton:Hide() end end
+  if ForeverCompanionUIState.previousQuestButton then if currentTab=="Quests" then ForeverCompanionUIState.previousQuestButton:Show() else ForeverCompanionUIState.previousQuestButton:Hide() end end
+  if ForeverCompanionUIState.questFocusText then
     local q=ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.GetSelected()
-    questFocusText:SetText(currentTab=="Quests" and (q and ((ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "").."Focused: "..clipText(q.title,37)) or "No quest selected") or "")
+    ForeverCompanionUIState.questFocusText:SetText(currentTab=="Quests" and (q and ((ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "").."Focused: "..clipText(q.title,37)) or "No quest selected") or "")
   end
 end
 -- One navigation path for the sidebar, dashboard shortcuts and slash commands.
@@ -825,7 +826,7 @@ local function toggleCompactMode()
   DB.compact=not DB.compact
   window:SetHeight(DB.compact and 620 or 720)
   fitWindow()
-  compactButton:SetText(DB.compact and "Expand" or "Compact")
+  ForeverCompanionUIState.compactButton:SetText(DB.compact and "Expand" or "Compact")
   render()
 end
 local function createUI()
@@ -867,9 +868,9 @@ local function createUI()
   frameBottomInset:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-31,7)
   frameBottomInset:SetHeight(1)
   colorTexture(frameBottomInset,0.58,0.39,0.17,0.78)
-  background=window:CreateTexture(nil,"BACKGROUND")
-  background:SetAllPoints(window)
-  colorTexture(background,0.025,0.031,0.048,0.98)
+  ForeverCompanionUIState.background=window:CreateTexture(nil,"BACKGROUND")
+  ForeverCompanionUIState.background:SetAllPoints(window)
+  colorTexture(ForeverCompanionUIState.background,0.025,0.031,0.048,0.98)
   local headerVelvet=window:CreateTexture(nil,"BORDER")
   headerVelvet:SetPoint("TOPLEFT",window,"TOPLEFT",11,-11)
   headerVelvet:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-11)
@@ -880,19 +881,19 @@ local function createUI()
   headerGold:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-92)
   headerGold:SetHeight(2)
   colorTexture(headerGold,0.88,0.63,0.24,0.98)
-  accentBar=window:CreateTexture(nil,"BORDER")
-  accentBar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-8)
-  accentBar:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-8)
-  accentBar:SetHeight(3)
-  colorTexture(accentBar,0.94,0.65,0.22,1)
+  ForeverCompanionUIState.accentBar=window:CreateTexture(nil,"BORDER")
+  ForeverCompanionUIState.accentBar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-8)
+  ForeverCompanionUIState.accentBar:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-8)
+  ForeverCompanionUIState.accentBar:SetHeight(3)
+  colorTexture(ForeverCompanionUIState.accentBar,0.94,0.65,0.22,1)
   if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Ribbon(window,1080,-94) end
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   titleText:SetPoint("TOPLEFT", 86, -22)
   titleText:SetTextColor(1,0.79,0.36)
-  subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  subtitleText:SetPoint("TOPLEFT",86,-51)
-  subtitleText:SetText("Guides  -  Professions  -  Quests  -  Builds  -  More")
-  subtitleText:SetTextColor(0.72,0.78,0.84)
+  ForeverCompanionUIState.subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  ForeverCompanionUIState.subtitleText:SetPoint("TOPLEFT",86,-51)
+  ForeverCompanionUIState.subtitleText:SetText("Guides  -  Professions  -  Quests  -  Builds  -  More")
+  ForeverCompanionUIState.subtitleText:SetTextColor(0.72,0.78,0.84)
   if ForeverCompanionHeraldry then
     ForeverCompanionHeraldry.Create(window,19,-17,54)
   else
@@ -904,9 +905,9 @@ local function createUI()
   headerMeta=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   headerMeta:SetPoint("TOPRIGHT",window,"TOPRIGHT",-48,-22)
   headerMeta:SetTextColor(0.94,0.78,0.47)
-  questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  questCountText:SetPoint("TOPRIGHT",-48,-43)
-  questCountText:SetTextColor(0.70,0.85,0.74)
+  ForeverCompanionUIState.questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  ForeverCompanionUIState.questCountText:SetPoint("TOPRIGHT",-48,-43)
+  ForeverCompanionUIState.questCountText:SetTextColor(0.70,0.85,0.74)
   local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -4, -4)
   local sidebar=window:CreateTexture(nil,"BORDER")
@@ -1053,7 +1054,7 @@ local function createUI()
         DB.compact=not DB.compact
         window:SetHeight(DB.compact and 620 or 720)
         fitWindow()
-        if compactButton then compactButton:SetText(DB.compact and "Expand" or "Compact") end
+        if ForeverCompanionUIState.compactButton then ForeverCompanionUIState.compactButton:SetText(DB.compact and "Expand" or "Compact") end
         render()
       end
     })
@@ -1296,22 +1297,22 @@ local function createUI()
   if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
-  questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  questFocusText:SetPoint("BOTTOMLEFT",220,83)
-  questFocusText:SetWidth(385)
-  questFocusText:SetJustifyH("LEFT")
-  nextQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-  nextQuestButton:SetSize(118,25)
-  nextQuestButton:SetPoint("BOTTOMRIGHT",-25,81)
-  nextQuestButton:SetText("Next Quest")
-  nextQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Next(); render() end)
-  nextQuestButton:Hide()
-  previousQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-  previousQuestButton:SetSize(118,25)
-  previousQuestButton:SetPoint("RIGHT",nextQuestButton,"LEFT",-5,0)
-  previousQuestButton:SetText("Previous")
-  previousQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Previous(); render() end)
-  previousQuestButton:Hide()
+  ForeverCompanionUIState.questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  ForeverCompanionUIState.questFocusText:SetPoint("BOTTOMLEFT",220,83)
+  ForeverCompanionUIState.questFocusText:SetWidth(385)
+  ForeverCompanionUIState.questFocusText:SetJustifyH("LEFT")
+  ForeverCompanionUIState.nextQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  ForeverCompanionUIState.nextQuestButton:SetSize(118,25)
+  ForeverCompanionUIState.nextQuestButton:SetPoint("BOTTOMRIGHT",-25,81)
+  ForeverCompanionUIState.nextQuestButton:SetText("Next Quest")
+  ForeverCompanionUIState.nextQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Next(); render() end)
+  ForeverCompanionUIState.nextQuestButton:Hide()
+  ForeverCompanionUIState.previousQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  ForeverCompanionUIState.previousQuestButton:SetSize(118,25)
+  ForeverCompanionUIState.previousQuestButton:SetPoint("RIGHT",ForeverCompanionUIState.nextQuestButton,"LEFT",-5,0)
+  ForeverCompanionUIState.previousQuestButton:SetText("Previous")
+  ForeverCompanionUIState.previousQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Previous(); render() end)
+  ForeverCompanionUIState.previousQuestButton:Hide()
   for i=1,4 do
     local b=CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
     b:SetSize(90, 25)
@@ -1346,24 +1347,24 @@ local function createUI()
     button:Hide()
     ForeverCompanionClassStripButtons[i]=button
   end
-  classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-  classButton:SetSize(150, 26)
-  classButton:SetPoint("BOTTOMRIGHT", -180, 45)
-  classButton:SetScript("OnClick",cyclePreviewClass)
+  ForeverCompanionUIState.classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+  ForeverCompanionUIState.classButton:SetSize(150, 26)
+  ForeverCompanionUIState.classButton:SetPoint("BOTTOMRIGHT", -180, 45)
+  ForeverCompanionUIState.classButton:SetScript("OnClick",cyclePreviewClass)
   resetClassButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   resetClassButton:SetSize(92,23)
   resetClassButton:SetPoint("BOTTOMRIGHT",-125,16)
   resetClassButton:SetText("Auto Class")
   resetClassButton:SetScript("OnClick",resetPreviewClass)
-  roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-  roleButton:SetSize(145, 26)
-  roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
-  roleButton:SetScript("OnClick",cyclePreviewRole)
-  compactButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-  compactButton:SetSize(92,23)
-  compactButton:SetPoint("BOTTOMRIGHT",-25,16)
-  compactButton:SetText(DB.compact and "Expand" or "Compact")
-  compactButton:SetScript("OnClick",toggleCompactMode)
+  ForeverCompanionUIState.roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+  ForeverCompanionUIState.roleButton:SetSize(145, 26)
+  ForeverCompanionUIState.roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
+  ForeverCompanionUIState.roleButton:SetScript("OnClick",cyclePreviewRole)
+  ForeverCompanionUIState.compactButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  ForeverCompanionUIState.compactButton:SetSize(92,23)
+  ForeverCompanionUIState.compactButton:SetPoint("BOTTOMRIGHT",-25,16)
+  ForeverCompanionUIState.compactButton:SetText(DB.compact and "Expand" or "Compact")
+  ForeverCompanionUIState.compactButton:SetScript("OnClick",toggleCompactMode)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
   footer:SetText("v3.14.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
