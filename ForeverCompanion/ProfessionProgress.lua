@@ -25,3 +25,32 @@ function P.ForProfession(name)
   end
   return "This profession was not detected on your character. Select a handbook entry to preview its general guide."
 end
+
+-- Current skill progress is observed from client APIs, never estimated from recipes.
+function P.Overview()
+  if not ForeverCompanionProfessionScanner then return nil,"Profession API scanner unavailable." end
+  local entries,reason=ForeverCompanionProfessionScanner.Read()
+  if not entries then return nil,reason or "Profession API unavailable." end
+  local result={}
+  for _,entry in ipairs(entries) do
+    local skill=tonumber(entry.skill)
+    local maximum=tonumber(entry.maxSkill)
+    local missing=(skill and maximum and maximum>0) and math.max(0,maximum-skill) or nil
+    result[#result+1]={name=entry.name,skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
+  end
+  return result,reason
+end
+function P.FormatOverview()
+  local entries,reason=P.Overview()
+  if not entries then return "PROFESSION STATUS\n"..tostring(reason) end
+  local lines={"PROFESSION STATUS (CLIENT DATA)"}
+  if #entries==0 then lines[#lines+1]=reason or "No learned professions detected." end
+  for _,entry in ipairs(entries) do
+    local progress=entry.skill and (entry.skill..(entry.maximum and "/"..entry.maximum or "")) or "Skill unavailable"
+    local note=entry.remaining and (entry.remaining==0 and "At current cap" or (entry.remaining.." skill to current cap")) or "Cap unavailable"
+    lines[#lines+1]=entry.name.." | "..progress.." | "..note
+    lines[#lines+1]="  General stage: "..entry.stage
+  end
+  lines[#lines+1]="Recipe availability, prices and trainer upgrades are not verified."
+  return table.concat(lines,"\n")
+end
