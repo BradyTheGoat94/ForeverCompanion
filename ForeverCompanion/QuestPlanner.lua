@@ -135,7 +135,7 @@ function Planner.FormatAuto()
       for j=1,math.min(#q.objectives,5) do result[#result+1]="    "..q.objectives[j] end
     end
   end
-  return table.concat(result,"\\n")
+  return table.concat(result,"\n")
 end
 local events=CreateFrame("Frame")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
