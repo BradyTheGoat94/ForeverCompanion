@@ -18,6 +18,16 @@
 - [ ] Add release notes and screenshots captured from the **actual game client**, not only mocked previews.
 - [ ] Verify CurseForge project metadata, category, license, supported game version and ZIP contents before submission.
 
+## Automated release-gate evidence (November 2, 2026)
+
+- **Green development commit:** `e9461af627275176f8fa810df6cfb6fb93bdd140`.
+- **Passing workflow runs:** `41501681691` and `41501670186` (GitHub Actions completed successfully).
+- **Regression caught and fixed:** `de4179f3` failed its new coverage assertion because the optional Guardian / Bear planner choice lacked a playbook. Commit `e9461af6` added its five-step playbook and two conditional-priority notes; both subsequent workflows passed.
+- **Guide scope:** 27 standard specialization paths plus an additional conditional Guardian / Bear planner entry. Guardian / Bear availability is **not confirmed** in the current client.
+- **Not yet satisfied:** actual in-game installation and visual checks, current interface number confirmation, real spellbook/talent checks, screenshots from the client, and explicit release approval.
+- **Simulation:** a full built-in Forever Sim is deferred and not part of the beta scope.
+- **Release policy:** no public upload, merge to `main`, or claim of in-game validation based solely on CI.
+
 ## Beta scope and transparency
 
 - Curated Warrior spell reference is a **partial client-data snapshot**, not a verified complete trainer/talent tree.
