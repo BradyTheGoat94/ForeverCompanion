@@ -572,6 +572,7 @@ GetBuildInfo=function() return "1.60.1","12345","",99999 end
 assert(ForeverCompanionDiagnostics.Collect():find("Interface match: NO",1,true),"interface mismatch warning")
 GetBuildInfo=previousBuildInfo
 
+dofile("ForeverCompanion/Rotations.lua")
 -- Every beginner class guide must name concrete actions, not only generic advice.
 local beginnerActions={
  WARRIOR="Heroic Strike",PALADIN="Judgement",HUNTER="Serpent Sting",
