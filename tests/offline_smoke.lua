@@ -447,3 +447,9 @@ end
 for _,profession in ipairs({"Alchemy","Blacksmithing","Enchanting","Engineering","Leatherworking","Tailoring","Herbalism","Mining","Skinning"}) do
  assert(ForeverCompanionProfessionFieldGuide.Format(profession):find("Exact recipes",1,true),"missing profession field guidance")
 end
+
+dofile("ForeverCompanion/DungeonPreparation.lua")
+for _,role in ipairs({"Tank","Healer","Damage"}) do
+ local guidance=ForeverCompanionDungeonPreparation.Format(role)
+ assert(guidance:find("DUNGEON READY CHECK",1,true) and guidance:find("not verified",1,true),"missing role readiness guidance")
+end
