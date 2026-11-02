@@ -283,6 +283,14 @@ local function render()
     questFocusText:SetText(currentTab=="Quests" and (q and ("Focused: "..q.title) or "No quest selected") or "")
   end
 end
+local function fitWindow()
+  if not window or not window.SetScale or not UIParent or not UIParent.GetWidth or not UIParent.GetHeight then return end
+  local width,height=UIParent:GetWidth(),UIParent:GetHeight()
+  if type(width)~="number" or type(height)~="number" or width<=0 or height<=0 then return end
+  local wantedHeight=DB.compact and 620 or 720
+  local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
+  if scale>0 then window:SetScale(math.max(0.35,scale)) end
+end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
@@ -303,6 +311,7 @@ local function createUI()
     if x and y and ux and uy then DB.position = {x=x-ux, y=y-uy} end
   end)
   window:SetClampedToScreen(true)
+  fitWindow()
   if window.SetBackdrop then
     window:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=5,right=5,top=5,bottom=5}})
   end
@@ -564,6 +573,7 @@ local function createUI()
   compactButton:SetScript("OnClick",function()
     DB.compact=not DB.compact
     window:SetHeight(DB.compact and 620 or 720)
+    fitWindow()
     compactButton:SetText(DB.compact and "Expand" or "Compact")
     render()
   end)
