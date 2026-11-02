@@ -18,6 +18,14 @@ The Overview is now a native WoW UI with a gold-accented sidebar, welcome banner
 
 The GitHub Actions `offline-ui-snapshot` artifact includes a source-validated PNG illustration of the mocked interface. It is **not an in-game screenshot**, and the example character, quests, and materials are test fixtures. The real target-client Interface number and API behavior remain unverified.
 
+## What's new in 3.12.0-beta (develop, November 2, 2026)
+
+The Dungeons and PvP pages now have **real native black-and-gold preparation panels** instead of relying on plain paragraphs and generic checklist buttons. Each page displays the character's class, selected role, class/role planning notes, a next-step suggestion, and four clickable preparation tiles. Their progress bar counts only tasks you personally mark complete; it is **not** an automated measurement of combat or group readiness. The two pages maintain independent per-character checklist states.
+
+A new reusable **FC heraldic monogram** is drawn entirely with native UI primitives in the header and dashboard. It is original geometric artwork, not the final illustrated crest from the reference concepts. The CI pipeline also renders mock-derived Dungeon and PvP previews and checks that their task tiles are actual buttons.
+
+The new page shortcuts navigate to Leveling and Quests without altering game state. All class advice remains general reference material until checked against the actual Forever client. The addon is not yet verified for CurseForge submission.
+
 ## What's new in 3.11.0-beta (develop, November 2, 2026)
 
 - **Quest Journal:** Native gold-accented quest rows show title, zone and ready/active status. Sorting can be switched between log, zone and ready order through the UI or `/fcq sort`; filtering and pagination remain available. Clicking a row changes only the addon's focus.
