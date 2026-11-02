@@ -23,6 +23,7 @@ local professionIndex=1
 local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, resetClassButton
+local dashboardCards={}
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -52,6 +53,7 @@ local function render()
   titleText:SetText("FOREVER COMPANION")
   if subtitleText then subtitleText:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
+  for _,card in ipairs(dashboardCards) do if currentTab=="Overview" then card:Show() else card:Hide() end end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
   end
@@ -75,7 +77,7 @@ local function render()
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
   local lines = {}
   if currentTab == "Overview" then
-    lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
+    lines = {"YOUR ADVENTURE AT A GLANCE", "Recommended next steps", "1. Review your current quests in the Quest Planner.", "2. Open Leveling for class-specific ability priorities.", "3. Track crafting materials and profession goals.", "All suggestions are advisory. You remain in control."}
     if ForeverCompanionCraftingPlanner then lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary() end
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
   elseif currentTab == "Leveling" then
@@ -256,7 +258,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -260 or (currentTab=="Leveling" and -48 or -5)))
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -260 or (currentTab=="Leveling" and -48 or (currentTab=="Overview" and -215 or -5))))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 284 or (currentTab=="Leveling" and 70 or 24))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
@@ -328,6 +330,28 @@ local function createUI()
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
     tabButtons[#tabButtons+1] = b
   end
+  local function dashboardCard(x,y,w,h,heading,detail)
+    local plate=window:CreateTexture(nil,"BORDER")
+    plate:SetPoint("TOPLEFT",window,"TOPLEFT",x,y)
+    plate:SetSize(w,h)
+    colorTexture(plate,0.115,0.145,0.19,0.99)
+    dashboardCards[#dashboardCards+1]=plate
+    local title=window:CreateFontString(nil,"OVERLAY","GameFontNormal")
+    title:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-12)
+    title:SetText(heading)
+    title:SetTextColor(0.95,0.75,0.36)
+    dashboardCards[#dashboardCards+1]=title
+    local caption=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    caption:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-35)
+    caption:SetWidth(w-30)
+    caption:SetJustifyH("LEFT")
+    caption:SetText(detail)
+    dashboardCards[#dashboardCards+1]=caption
+  end
+  dashboardCard(208,-116,318,82,"CHARACTER OVERVIEW","Class and level shown above | Manual role preference")
+  dashboardCard(538,-116,336,82,"ADVENTURE PROGRESS","Quest count above | Open Quests for details")
+  dashboardCard(208,-211,318,78,"LEVELING & BUILDS","Class guidance | Spellbook checks | Spec previews")
+  dashboardCard(538,-211,336,78,"PROFESSIONS & CRAFTING","Materials | Recipe goals | Read-only tracking")
   local panel=CreateFrame("Frame",nil,window)
   panel:SetPoint("TOPLEFT",188,-98)
   panel:SetPoint("BOTTOMRIGHT",-16,88)
