@@ -8,6 +8,7 @@ GuideData.lua
 Ornaments.lua
 AdvancedGuides.lua
 Rotations.lua
+BeginnerCoach.lua
 VerifiedAbilities.lua
 SkillStudy.lua
 CooldownGuides.lua
