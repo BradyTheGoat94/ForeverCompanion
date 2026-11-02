@@ -121,11 +121,11 @@ local function render()
       if ForeverCompanionLootUI.selectedIndex>#matches then ForeverCompanionLootUI.selectedIndex=math.max(1,#matches) end
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       ForeverCompanionLootUI.wishButton:SetText(selected and ("Wishlist: "..selected.item) or "Wishlist: no match")
-      ForeverCompanionLootUI.wishButton:SetEnabled(selected~=nil)
+      if ForeverCompanionLootUI.wishButton.SetEnabled then ForeverCompanionLootUI.wishButton:SetEnabled(selected~=nil) end
       ForeverCompanionLootUI.prevButton:SetText("Previous ("..ForeverCompanionLootUI.selectedIndex.."/"..#matches..")")
       ForeverCompanionLootUI.nextButton:SetText("Next")
-      ForeverCompanionLootUI.prevButton:SetEnabled(ForeverCompanionLootUI.selectedIndex>1)
-      ForeverCompanionLootUI.nextButton:SetEnabled(ForeverCompanionLootUI.selectedIndex<#matches)
+      if ForeverCompanionLootUI.prevButton.SetEnabled then ForeverCompanionLootUI.prevButton:SetEnabled(ForeverCompanionLootUI.selectedIndex>1) end
+      if ForeverCompanionLootUI.nextButton.SetEnabled then ForeverCompanionLootUI.nextButton:SetEnabled(ForeverCompanionLootUI.selectedIndex<#matches) end
       ForeverCompanionLootUI.prevButton:Show(); ForeverCompanionLootUI.nextButton:Show()
     else
       ForeverCompanionLootUI.searchBox:Hide()
@@ -760,15 +760,15 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
   ForeverCompanionLootUI.searchBox:SetSize(270,24)
   ForeverCompanionLootUI.searchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
-  ForeverCompanionLootUI.searchBox:SetAutoFocus(false)
-  ForeverCompanionLootUI.searchBox:SetMaxLetters(80)
+  if ForeverCompanionLootUI.searchBox.SetAutoFocus then ForeverCompanionLootUI.searchBox:SetAutoFocus(false) end
+  if ForeverCompanionLootUI.searchBox.SetMaxLetters then ForeverCompanionLootUI.searchBox:SetMaxLetters(80) end
   ForeverCompanionLootUI.searchBox:SetScript("OnEnterPressed",function(self)
     ForeverCompanionLootUI.query=self:GetText() or ""
     ForeverCompanionLootUI.selectedIndex=1
-    self:ClearFocus()
+    if self.ClearFocus then self:ClearFocus() end
     render()
   end)
-  ForeverCompanionLootUI.searchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
+  ForeverCompanionLootUI.searchBox:SetScript("OnEscapePressed",function(self) if self.ClearFocus then self:ClearFocus() end) end
   ForeverCompanionLootUI.searchBox:Hide()
   ForeverCompanionLootUI.wishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   ForeverCompanionLootUI.wishButton:SetSize(245,24)
