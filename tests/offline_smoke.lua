@@ -599,3 +599,11 @@ for _,class in ipairs({"SHAMAN","ROGUE","WARRIOR","WARLOCK"}) do
   assert(type(steps)=="table" and #steps>=3,"incomplete specialization coaching: "..class)
  end
 end
+
+-- Beginner availability must remain conservative when the spellbook is incomplete.
+local missingScan={supported=false,inspected=0,complete=false,known={}}
+for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}) do
+ local hints=ForeverCompanionBeginnerAvailability(class,missingScan)
+ assert(type(hints)=="table" and #hints>=4,"missing beginner spellbook hints: "..class)
+ assert(hints[1]:find("unverified",1,true),"unsupported scan must not claim availability: "..class)
+end
