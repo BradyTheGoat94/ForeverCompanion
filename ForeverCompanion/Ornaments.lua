@@ -34,3 +34,42 @@ function O.Inlay(frame,w,h)
   strip(frame,w-28,-23,2,6,0.66,0.83,0.85,0.65)
   return true
 end
+
+-- Rich original ornamentation built from native textures; no external art assets.
+function O.Corners(frame,w,h)
+ if not frame or w<80 or h<55 then return false end
+ local gold={0.96,0.75,0.36}
+ for _,x in ipairs({3,w-28}) do
+  for _,y in ipairs({-3,-h+28}) do
+   strip(frame,x,y,25,2,gold[1],gold[2],gold[3],0.95)
+   strip(frame,x,y,2,25,gold[1],gold[2],gold[3],0.95)
+   strip(frame,x+5,y-5,13,1,0.75,0.52,0.24,0.75)
+   strip(frame,x+5,y-5,1,13,0.75,0.52,0.24,0.75)
+  end
+ end
+ return true
+end
+function O.Hero(frame,w,h)
+ if not frame or w<160 or h<70 then return false end
+ strip(frame,2,-2,w-4,2,0.97,0.73,0.32,0.95)
+ strip(frame,2,-h+4,w-4,2,0.67,0.46,0.21,0.84)
+ strip(frame,2,-3,2,h-6,0.64,0.46,0.24,0.85)
+ strip(frame,w-4,-3,2,h-6,0.64,0.46,0.24,0.85)
+ strip(frame,10,-9,w-20,1,0.50,0.35,0.18,0.8)
+ strip(frame,10,-h+11,w-20,1,0.50,0.35,0.18,0.8)
+ O.Corners(frame,w,h)
+ -- Small symmetric inset gems and heraldic gold strokes.
+ for _,x in ipairs({36,w-44}) do
+  strip(frame,x,-12,8,2,0.93,0.68,0.27,0.95)
+  strip(frame,x+3,-9,2,8,0.28,0.63,0.79,0.85)
+ end
+ return true
+end
+function O.Ribbon(frame,w,y)
+ if not frame or w<100 then return false end
+ strip(frame,16,y,w-32,2,0.66,0.44,0.18,0.8)
+ strip(frame,16,y-4,w-32,1,0.24,0.18,0.11,0.9)
+ strip(frame,12,y+2,7,7,0.90,0.65,0.29,0.95)
+ strip(frame,w-19,y+2,7,7,0.90,0.65,0.29,0.95)
+ return true
+end
