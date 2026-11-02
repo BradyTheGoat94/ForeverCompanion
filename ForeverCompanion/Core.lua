@@ -1,0 +1,171 @@
+local addonName = ...
+local addon = CreateFrame("Frame")
+local DATA = ForeverCompanionData
+local DB, window, titleText, content, currentTab
+local tabs = {"Overview", "Leveling", "Dungeons", "Professions", "PvP", "Settings"}
+local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
+local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
+local tabButtons = {}
+local checkButtons = {}
+local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
+local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
+local function classToken() return DB and DB.previewClass or actualClass() end
+local function classLabel() return classNames[classToken()] or classToken() end
+local function level() return UnitLevel("player") or 1 end
+local function toggleCheck(section, index)
+  if not DATA.checklist[section] then return end
+  DB.checks = DB.checks or {}
+  DB.checks[section] = DB.checks[section] or {}
+  DB.checks[section][index] = not DB.checks[section][index]
+end
+local function render()
+  if not window or not DB then return end
+  titleText:SetText("FOREVER COMPANION  |  "..classLabel().."  |  Level "..level())
+  for _, b in ipairs(tabButtons) do
+    if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
+  end
+  for _, b in ipairs(checkButtons) do b:Hide() end
+  local lines = {}
+  if currentTab == "Overview" then
+    lines = {"Welcome to Forever Companion v0.4 beta.", "This is a non-automating reference addon.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Use /fc help for commands. Some content is general guidance pending live-client verification."}
+  elseif currentTab == "Leveling" then
+    lines = {"CLASS GUIDANCE"}
+    for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
+    lines[#lines+1] = "LEVELING"
+    for _, band in ipairs(DATA.zones) do
+      if level() >= band[1] and level() <= band[2] then
+        lines[#lines+1] = "Level "..band[1].."-"..band[2]..": "..band[3]
+        lines[#lines+1] = band[4]
+        break
+      end
+    end
+  elseif currentTab == "Settings" then
+    lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "Class preview does not change your actual character class."}
+  else
+    lines = {string.upper(currentTab).." CHECKLIST"}
+    local entries = DATA.checklist[currentTab] or {}
+    for i, item in ipairs(entries) do
+      local done = DB.checks and DB.checks[currentTab] and DB.checks[currentTab][i]
+      lines[#lines+1] = (done and "[x] " or "[ ] ")..item
+      if checkButtons[i] then checkButtons[i]:SetText(done and "Undo "..i or "Done "..i); checkButtons[i]:Show() end
+    end
+    if currentTab == "Dungeons" then
+      lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
+      for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
+    elseif currentTab == "Professions" then
+      lines[#lines+1] = "Selected professions: "..(DB.professions or "Not selected")
+      lines[#lines+1] = "Set with /fc professions <names>"
+    elseif currentTab == "PvP" then
+      lines[#lines+1] = "Use game-supported tools and coordinate objectives with your group."
+    end
+  end
+  content:SetText(table.concat(lines, "\n\n"))
+end
+local function createUI()
+  local template = BackdropTemplateMixin and "BackdropTemplate" or nil
+  window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
+  window:SetSize(720, 560)
+  window:SetPoint("CENTER")
+  window:SetMovable(true)
+  window:EnableMouse(true)
+  window:RegisterForDrag("LeftButton")
+  window:SetScript("OnDragStart", function(self) self:StartMoving() end)
+  window:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+  window:SetClampedToScreen(true)
+  if window.SetBackdrop then
+    window:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=5,right=5,top=5,bottom=5}})
+  end
+  titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  titleText:SetPoint("TOPLEFT", 20, -20)
+  local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
+  close:SetPoint("TOPRIGHT", -4, -4)
+  for i, section in ipairs(tabs) do
+    local b = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+    b:SetSize(108, 28)
+    b:SetPoint("TOPLEFT", 20+(i-1)*113, -60)
+    b:SetText(section)
+    b.section = section
+    b:SetScript("OnClick", function() currentTab=section; DB.tab=section; render() end)
+    tabButtons[#tabButtons+1] = b
+  end
+  local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
+  scroll:SetPoint("TOPLEFT", 22, -104)
+  scroll:SetPoint("BOTTOMRIGHT", -35, 92)
+  local child = CreateFrame("Frame", nil, scroll)
+  child:SetSize(640, 800)
+  scroll:SetScrollChild(child)
+  content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  content:SetPoint("TOPLEFT", 5, -5)
+  content:SetWidth(620)
+  content:SetJustifyH("LEFT")
+  content:SetJustifyV("TOP")
+  for i=1,4 do
+    local b=CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+    b:SetSize(90, 25)
+    b:SetPoint("BOTTOMLEFT", 20+(i-1)*96, 48)
+    b:SetScript("OnClick", function() toggleCheck(currentTab,i); render() end)
+    b:Hide()
+    checkButtons[i]=b
+  end
+  local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  footer:SetPoint("BOTTOMLEFT", 20, 19)
+  footer:SetText("Prelaunch beta  |  No gameplay automation  |  /fc help")
+  currentTab = DB.tab or "Overview"
+  window:Hide()
+  render()
+end
+addon:RegisterEvent("ADDON_LOADED")
+addon:RegisterEvent("PLAYER_LEVEL_UP")
+addon:RegisterEvent("PLAYER_ENTERING_WORLD")
+addon:SetScript("OnEvent", function(_, event, arg)
+  if event == "ADDON_LOADED" and arg == addonName then
+    ForeverCompanionDB = ForeverCompanionDB or {}
+    DB = ForeverCompanionDB
+    DB.checks = DB.checks or {}
+    createUI()
+    if not DB.welcomed then DB.welcomed=true; window:Show() end
+  elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD") then
+    render()
+  end
+end)
+SLASH_FOREVERCOMPANION1 = "/fc"
+SLASH_FOREVERCOMPANION2 = "/forevercompanion"
+SlashCmdList.FOREVERCOMPANION = function(msg)
+  msg=(msg or ""):match("^%s*(.-)%s*$")
+  if not DB then return end
+  if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
+  if msg == "help" then say("/fc, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset"); return end
+  local class = msg:match("^class%s+(.+)$")
+  if class then
+    if class:lower()=="auto" then DB.previewClass=nil
+    else
+      local found
+      for token,name in pairs(classNames) do if name:lower()==class:lower() then found=token end end
+      if not found then say("Unknown class."); return end
+      DB.previewClass=found
+    end
+    DB.role=nil; render(); return
+  end
+  local role=msg:match("^role%s+(.+)$")
+  if role then
+    local valid=false
+    for _, r in ipairs(classRoles[classToken()] or {"Damage"}) do
+      if r:lower()==role:lower() then DB.role=r; valid=true end
+    end
+    if not valid then say("Invalid role for displayed class."); return end
+    render(); return
+  end
+  local prof=msg:match("^professions%s+(.+)$")
+  if prof then DB.professions=prof:sub(1,100); render(); return end
+  local section,index=msg:match("^check%s+(%a+)%s+(%d+)$")
+  if section then
+    for name,entries in pairs(DATA.checklist) do
+      if name:lower()==section:lower() and tonumber(index)>=1 and tonumber(index)<=#entries then
+        toggleCheck(name,tonumber(index)); currentTab=name; DB.tab=name; render(); return
+      end
+    end
+    say("Invalid checklist or step."); return
+  end
+  if msg=="reset" then DB.checks={}; render(); say("Checklist progress reset."); return end
+  say("Unknown command; type /fc help")
+end
