@@ -28,6 +28,14 @@
 - **Simulation:** a full built-in Forever Sim is deferred and not part of the beta scope.
 - **Release policy:** no public upload, merge to `main`, or claim of in-game validation based solely on CI.
 
+## Latest automated compliance gate (November 2, 2026)
+
+- **Passing commit:** `61af08a73eb0b848fa31886de3ad96007b706456`.
+- **Successful CI runs:** `41527147215` and `41527157565`.
+- Added `CURSEFORGE_COMPLIANCE.md` and a static scan for common protected gameplay calls.
+- Earlier runs failed because the new audit had an incorrectly escaped regular expression; the test was repaired and both workflows passed.
+- **Still unverified:** live-client installation, interface number, complete manual API/ToS review, genuine in-game screenshots, license decision and CurseForge moderation.
+
 ## Beta scope and transparency
 
 - Curated Warrior spell reference is a **partial client-data snapshot**, not a verified complete trainer/talent tree.
