@@ -356,14 +356,17 @@ local function createUI()
   materialPrevious:SetSize(65,22)
   materialPrevious:SetPoint("TOPLEFT",child,"TOPLEFT",8,-67)
   materialPrevious:SetText("Prev")
+  materialPrevious:Hide()
   materialPrevious:SetScript("OnClick",function() materialPage=math.max(1,materialPage-1); render() end)
   materialNext=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   materialNext:SetSize(65,22)
   materialNext:SetPoint("TOPLEFT",child,"TOPLEFT",195,-67)
   materialNext:SetText("Next")
+  materialNext:Hide()
   materialNext:SetScript("OnClick",function() materialPage=materialPage+1; render() end)
   materialPageLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
   materialPageLabel:SetPoint("TOPLEFT",child,"TOPLEFT",80,-72)
+  materialPageLabel:Hide()
   for i=1,5 do
     local entry={}
     entry.label=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
@@ -378,6 +381,7 @@ local function createUI()
     entry.plus:SetSize(34,24)
     entry.plus:SetPoint("LEFT",entry.minus,"RIGHT",4,0)
     entry.plus:SetText("+")
+    entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide()
     materialRows[i]=entry
   end
   for i=1,5 do
