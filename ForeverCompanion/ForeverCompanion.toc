@@ -29,6 +29,7 @@ CraftingPlanner.lua
 RecipePlans.lua
 CraftingAdvice.lua
 CraftCosts.lua
+ShoppingBudget.lua
 CraftingBridge.lua
 QuestPlanner.lua
 Diagnostics.lua
