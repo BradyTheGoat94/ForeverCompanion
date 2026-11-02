@@ -1,3 +1,11 @@
+## 3.11.1-beta (develop, November 2, 2026; mock-tested only)
+- Fixed dashboard recommendations that updated an untemplated Button instead of its visible FontString, and added optional full-text hover tooltips.
+- Added a two-line read-only data provenance footer for current/cached/unavailable quest snapshots, profession detection and manually entered material quantities.
+- Prevented zone-less quests from being mislabeled as a known zone and from disappearing under the current-zone filter; expanded mixed/unknown-zone regression coverage.
+- Added `/fc open <section>`, direct `/fc <section>` navigation and `/fc status` with no game-state mutation.
+- Improved gilded hover rails and graduated progress bars; made the offline dashboard preview display the actual mocked data-source label and manifest version.
+- Expanded UI regression tests and live-client checklist. Passing offline CI is **not** proof of compatibility, safety, or CurseForge approval.
+
 ## 3.11.0-beta (development branch, November 2, 2026; not client-verified)
 - Replaced generic quest-list buttons with native dark fantasy journal rows, including quest title, zone, ready/active status, focus highlight, and optional read-only objective tooltip.
 - Added persistent quest sorting (log, zone, ready) with UI selector and `/fcq sort`; preserved the underlying quest-log indices and addon-only focus selection.
