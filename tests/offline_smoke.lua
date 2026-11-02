@@ -398,7 +398,7 @@ IsSpellKnown=function(id) return id==23881 end
 local skillLines=ForeverCompanionSkillStudy.Format("WARRIOR",20)
 assert(skillLines:find("UPCOMING UNLOCKS",1,true),"skill guide must show upcoming abilities")
 assert(skillLines:find("CHECK TRAINER",1,true),"skill guide must show missing spells")
-assert(ForeverCompanionSkillStudy.Format("MAGE",20):find("No audited",1,true),"unaudited classes must not imply verified abilities")
+assert(ForeverCompanionSkillStudy.Format("PRIEST",20):find("No audited",1,true),"unaudited classes must not imply verified abilities")
 IsSpellKnown=priorKnown
 
 -- Shared material allocation is conservative across multiple recipes.
