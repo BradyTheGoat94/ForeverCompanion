@@ -143,6 +143,24 @@ ForeverCompanionBeginnerSpellHints={
 }
 -- Spellbook names are exact, not categories such as "Blessing" or "Curse".
 -- Conditional spells may be talent-only, trainer-gated, or absent in a given build.
+-- Level-only Mage unlock coaching, sourced from the ForeverDB Mage leveling
+-- guide. These are NOT curated spell-ID records and never count as audited IDs.
+ForeverCompanionMageLevelingMilestones={
+ {level=1,spell="Fireball",tip="Open from range; use the spell rank you have trained."},
+ {level=4,spell="Frostbolt",tip="Use its slow to create distance before enemies reach you."},
+ {level=6,spell="Fire Blast",tip="Instant damage while moving or finishing a low-health target."},
+ {level=8,spell="Polymorph",tip="Control an extra eligible enemy; avoid breaking it with damage."},
+ {level=10,spell="Frost Nova",tip="Freeze nearby enemies, step away, then resume casting."}
+}
+function ForeverCompanionMageMilestoneLines(playerLevel)
+ local result={}
+ local current=tonumber(playerLevel)
+ for _,entry in ipairs(ForeverCompanionMageLevelingMilestones) do
+  local gate=current and (current>=entry.level and "LEVEL REACHED" or "UPCOMING") or "LEVEL UNKNOWN"
+  result[#result+1]="["..gate.."] Lv "..entry.level.." "..entry.spell.." - "..entry.tip
+ end
+ return result
+end
 -- Count curated coverage without mistaking general spell hints for verified records.
 function ForeverCompanionBeginnerCoverage(class)
  local hints=ForeverCompanionBeginnerSpellHints[class] or {}
