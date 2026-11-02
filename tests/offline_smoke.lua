@@ -53,6 +53,16 @@ assert(recipes.Ingredient("Alchemy",3,"Crystal",2))
 assert(bridge.Sync("Alchemy"))
 assertEqual(#mats.GetEntries("Alchemy"),3,"add new ingredient")
 assertEqual(mats.GetEntries("Alchemy")[3].owned,0,"new ingredient owned")
+local shortages=mats.TopShortages(2)
+assertEqual(#shortages,2,"top shortage limit")
+assertEqual(shortages[1].name,"HERB","largest manual shortage first")
+assertEqual(shortages[1].missing,6,"manual shortage quantity")
+assertEqual(shortages[2].name,"Unrelated","second largest manual shortage")
+assert(mats.ShoppingSummary(2):find("Alchemy: HERB x6",1,true),"manual shopping summary must name the material")
+local originalMaterials=ForeverCompanionDB.materials
+ForeverCompanionDB.materials={Broken={{name="Bad",needed="oops",owned=0}}}
+assertEqual(#mats.TopShortages(),0,"invalid saved material counts must be ignored")
+ForeverCompanionDB.materials=originalMaterials
 dofile("ForeverCompanion/Diagnostics.lua")
 local report=ForeverCompanionDiagnostics.Collect()
 assert(report:find("Client: unknown",1,true),"diagnostics should tolerate missing client APIs")
