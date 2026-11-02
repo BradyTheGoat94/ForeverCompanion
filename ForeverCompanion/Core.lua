@@ -394,6 +394,7 @@ local function render()
         lines[#lines+1]="Pairs with: "..guide.pair
         if ForeverCompanionProfessionFieldGuide then lines[#lines+1]=ForeverCompanionProfessionFieldGuide.Format(guide.name) end
         if ForeverCompanionCampingGuide then lines[#lines+1]=ForeverCompanionCampingGuide.Format(guide.name) end
+        if ForeverCompanionCampingReadiness then lines[#lines+1]=ForeverCompanionCampingReadiness.ForProfession(guide.name) end
         if ForeverCompanionProfessionProgress then
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
