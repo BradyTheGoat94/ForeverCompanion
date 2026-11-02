@@ -25,6 +25,23 @@ function Loot.Add(record)
   Loot.records[#Loot.records+1]=record
   return true
 end
+-- Community beta observations, not guaranteed live drops or drop chances.
+-- Source: 60forever.com (beta records checked 2026-09-24).
+local betaDrops={
+  {"Bandsaw Wristbands","The Deadmines","Sneed's Shredder","Wrist",21},
+  {"Dull Sawblade","The Deadmines","Sneed","Ranged",21},
+  {"Ogre Loincloth","The Deadmines","Rhahk'Zor","Legs",22},
+  {"First Mate Band","The Deadmines","Mr. Smite","Finger",22},
+  {"Rockslicer","The Deadmines","Rhahk'Zor","Two-Hand",23},
+  {"Goblin Hammer","The Deadmines","Gilnid","Main Hand",23},
+  {"Lookie's Spyglass","The Deadmines","Cookie","Trinket",23},
+  {"Skum's Bucket","Wailing Caverns","Skum","Off Hand",22},
+}
+for _,entry in ipairs(betaDrops) do
+  Loot.Add({item=entry[1],dungeon=entry[2],boss=entry[3],slot=entry[4],
+    itemLevel=entry[5],status="Community beta report; unverified in live client",
+    source="https://60forever.com/"})
+end
 function Loot.Search(query)
   local results={}
   local term=type(query)=="string" and query:lower() or ""
