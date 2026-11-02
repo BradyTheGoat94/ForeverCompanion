@@ -267,7 +267,8 @@ ForeverCompanionSourcedPriorities={
   },
   Feral={
    source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-dps",
-   reviewed="Wowhead Oct 29, 2026; Energy and bleed uptime priority",
+   reviewed="Wowhead Oct 29 guide; Nov 2026 hotfix: Berserk removed, Lacerate talent added",
+   corroboration="https://www.wowhead.com/news/massive-talent-tree-changes-to-druids-and-paladins-class-tuning-for-wow-forever-383670",
    rules={
     "1. Apply Rake when a target will survive at least six seconds; do not clip early.",
     "2. Build five combo points and maintain Rip on durable priority targets.",
@@ -275,7 +276,7 @@ ForeverCompanionSourcedPriorities={
     "4. On Clearcasting, use Shred or Claw to avoid wasting the free action.",
     "5. Cast Shifting Power only when its Energy gain will not overflow your bar.",
     "6. Pool Energy ahead of Rake or Rip refreshes; Ferocious Bite is a finisher when the target is about to die.",
-    "7. On packs, spread Rake; during Berserk, prioritize Shred while maintaining bleeds.",
+    "7. On packs, spread Rake while maintaining bleeds; Berserk was removed in the November talent hotfix.",
    },
   },
   Balance={
