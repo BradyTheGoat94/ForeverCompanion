@@ -768,7 +768,7 @@ local function setupLootControls(child)
     if self.ClearFocus then self:ClearFocus() end
     render()
   end)
-  ForeverCompanionLootUI.searchBox:SetScript("OnEscapePressed",function(self) if self.ClearFocus then self:ClearFocus() end) end
+  ForeverCompanionLootUI.searchBox:SetScript("OnEscapePressed",function(self) if self.ClearFocus then self:ClearFocus() end end)
   ForeverCompanionLootUI.searchBox:Hide()
   ForeverCompanionLootUI.wishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   ForeverCompanionLootUI.wishButton:SetSize(245,24)
