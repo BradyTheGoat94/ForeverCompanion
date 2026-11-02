@@ -321,3 +321,13 @@ assert(warriorLow:find("Bloodthirst",1,true) and warriorLow:find("LOCKED BY LEVE
 assert(warriorHigh:find("Talent investment required",1,true),"talent abilities must not be presented as automatically learned")
 assert(warriorHigh:find("Quest completion required",1,true),"quest abilities must retain quest requirement")
 assert(table.concat(ForeverCompanionAbilityReferenceLines("MAGE",40)," "):find("pending",1,true),"unaudited classes must not claim verification")
+
+-- Ownership must never be inferred from level, and API restrictions must be safe.
+local previousIsSpellKnown=IsSpellKnown
+IsSpellKnown=function(id) return id==23881 end
+local known=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n")
+assert(known:find("KNOWN IN SPELLBOOK",1,true),"known spell should be labeled")
+assert(known:find("NOT KNOWN",1,true),"missing spell should be labeled")
+IsSpellKnown=function() error("restricted client API") end
+assert(table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n"):find("SPELLBOOK STATUS UNKNOWN",1,true),"restricted API must not invent spell ownership")
+IsSpellKnown=previousIsSpellKnown
