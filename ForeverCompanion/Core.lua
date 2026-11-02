@@ -24,6 +24,8 @@ local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, resetClassButton
 local dashboardCards={}
+local dashboardValues={}
+local dashboardNavButtons={}
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -53,7 +55,15 @@ local function render()
   titleText:SetText("FOREVER COMPANION")
   if subtitleText then subtitleText:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
-  for _,card in ipairs(dashboardCards) do if currentTab=="Overview" then card:Show() else card:Hide() end end
+  local isOverview=currentTab=="Overview"
+  for _,card in ipairs(dashboardCards) do if isOverview then card:Show() else card:Hide() end end
+  for _,button in ipairs(dashboardNavButtons) do if isOverview then button:Show() else button:Hide() end end
+  if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
+  if isOverview then
+    if dashboardValues.character then dashboardValues.character:SetText(classLabel().." | Level "..level().." | "..(DB.role or "Role not selected")) end
+    if dashboardValues.quests then dashboardValues.quests:SetText("Active quests: "..tostring(ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.AutoCount() or "Unavailable")) end
+    if dashboardValues.xp then dashboardValues.xp:SetText(experienceText()) end
+  end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
   end
