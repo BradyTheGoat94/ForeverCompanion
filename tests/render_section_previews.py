@@ -62,11 +62,13 @@ def quest_preview():
     top=y+223
     panel(d,cx,top,517,210,"JOURNAL AT A GLANCE")
     panel(d,cx+529,top,535,210,"FOCUSED OBJECTIVE")
-    count=next((s for s in strings if " active  |  " in s or " cached quests" in s),"Quest scan unavailable")
+    count=next((s for s in strings if re.match(r"^\d+ active\s+\d+ ready",s) or " cached quests" in s),"Quest scan unavailable")
+    if count=="Quest scan unavailable" and any(s.startswith("Live quest-log snapshot") for s in strings):
+        raise SystemExit("Active quest summary not found in captured UI strings")
     line(d,cx+23,top+78,count,49)
     line(d,cx+23,top+119,find(strings,"Top zone:","No zone data"),52,MUTED)
     line(d,cx+23,top+177,find(strings,"Live quest-log snapshot","Quest-log status unavailable"),55,GOLD)
-    match=re.search(r"(\d+) active  \|  (\d+) ready",count)
+    match=re.search(r"(\d+) active\s+(\d+) ready",count)
     frac=int(match.group(2))/int(match.group(1)) if match and int(match.group(1)) else None
     bar(d,cx+23,top+148,466,frac,(224,163,64))
     line(d,cx+552,top+78,find(strings,"Sample:","No focused quest"),53)
@@ -109,7 +111,7 @@ def profession_preview():
     lower=top+225
     panel(d,cx,lower,1064,263,"PROFESSION HANDBOOK & MATERIAL CHECKLIST")
     line(d,cx+23,lower+66,"Choose a profession to see general guidance and manage your manual materials.",105,MUTED)
-    handbook=["Alchemy","Blacksmithing","Enchanting","Engineering","Herbalism","Leatherworking","Mining","Skinning","Tailoring"]
+    handbook=[name for name in ("Alchemy","Blacksmithing","Enchanting","Engineering","Herbalism","Leatherworking","Mining","Skinning","Tailoring") if name in strings]
     for i,name in enumerate(handbook):
         bx=cx+22+(i%5)*202
         by=lower+105+(i//5)*60
