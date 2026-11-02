@@ -88,7 +88,11 @@ for i in range(7):
     bx=cx+780+i*41
     d.polygon([(bx,y+242),(bx,y+193),(bx+13,y+177),(bx+26,y+193),(bx+26,y+242)],fill=(39,43,56))
 d.text((cx+23,y+165),"Welcome to Forever Companion",font=F27,fill=white)
-d.text((cx+24,y+211),"Your in-game companion for quests, leveling, builds and professions",font=F16,fill=muted)
+d.text((cx+24,y+207),"Your in-game companion for quests, leveling, builds and professions",font=F16,fill=muted)
+status=next((s for s in strings if s.startswith("LEVEL ") and " quests" in s),None)
+if not status:
+    raise SystemExit("Dashboard snapshot missing live quest/material summary")
+d.text((cx+24,y+234),status[:100],font=F13,fill=gold)
 # Three data panels.
 cy=y+269
 panel(cx,cy,323,215,"CHARACTER OVERVIEW")
@@ -138,6 +142,10 @@ for i,prefix in enumerate(("1. ","2. ","3. ")):
     d.text((cx+32,by+13),str(i+1),font=F13,fill=gold)
     d.text((cx+61,by+11),val[3:58],font=F16,fill=white)
 focus=["Review active quests","Check leveling priorities","Review material goals","Check client diagnostics"]
+focus_count=next((s for s in strings if re.fullmatch(r"[0-4]/4 done",s)),None)
+if not focus_count:
+    raise SystemExit("Dashboard snapshot missing live daily focus counter")
+d.text((cx+926,ly+18),focus_count,font=F13,fill=gold)
 for i,name in enumerate(focus):
     label=next((v for v in strings if name in v),name)
     yy=ly+62+i*37
@@ -145,6 +153,11 @@ for i,name in enumerate(focus):
     if label.startswith("[x]"):
         d.line((cx+559,yy+9,cx+565,yy+15,cx+575,yy+3),fill=(82,212,95),width=3)
     d.text((cx+591,yy),name,font=F16,fill=white)
+# This thin bar represents the native dashboard focus completion meter.
+d.rectangle((cx+556,ly+200,cx+1046,ly+205),fill=(48,58,69))
+done=int(focus_count.split("/")[0])
+if done:
+    d.rectangle((cx+556,ly+200,cx+556+int(490*done/4),ly+205),fill=gold)
 # Safety banner.
 source=find("Quest data:","Quest data unavailable | Professions unavailable | Material goals manual")
 if not source.startswith("Quest data:"):
