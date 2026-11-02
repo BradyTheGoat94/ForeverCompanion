@@ -180,6 +180,21 @@ local missing=adventure.Summary(nil,"corrupted saved checks")
 assertEqual(missing.total,0,"missing checklist should not invent progress")
 assertEqual(missing.done,0,"invalid checks must not create completion")
 
+-- Settings compatibility report must distinguish exposed APIs from verified support.
+dofile("ForeverCompanion/SettingsBriefing.lua")
+local settings=ForeverCompanionSettingsBriefing
+local noApis=settings.Capabilities(nil)
+assertEqual(noApis.quests,false,"settings nil quest API")
+assertEqual(noApis.professions,false,"settings nil profession API")
+assertEqual(noApis.xp,false,"settings nil XP API")
+assertEqual(noApis.spellbook,false,"settings nil spellbook API")
+local mixed=settings.Capabilities({legacyQuests=true,modernProfessions=true,xp=true,legacySpellbook=true})
+assertEqual(mixed.quests,true,"settings legacy quest detection")
+assertEqual(mixed.professions,true,"settings modern profession detection")
+assertEqual(mixed.xp,true,"settings XP API detection")
+assertEqual(mixed.spellbook,true,"settings legacy spellbook detection")
+assertEqual(settings.Capabilities({modernQuests=1}).quests,false,"nonboolean API flag must not be treated as verified")
+
 -- Spec selection remains a manual preview; it must never query or change talents.
 dofile("ForeverCompanion/SpecPlanner.lua")
 local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
