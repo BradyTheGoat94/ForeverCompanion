@@ -145,6 +145,27 @@ end
 assert(step1 and step1.caption.text=="1. Ready to turn in: Sample: Speak with trainer","recommended quest must use visible caption")
 assert(step3 and step3.caption.text=="3. Gather 6 Sample Ore for Blacksmithing (manual).","material recommendation must be visible")
 assert(sourceLabel and sourceLabel.text:find("Professions: detected",1,true),"data source disclosure missing")
+-- Every dashboard progress metric must navigate to the matching read-only guide.
+local metricButtons={}
+for _,w in ipairs(frames) do
+ if w.dashboardTarget then metricButtons[w.dashboardTarget]=w end
+end
+for _,target in ipairs({"Leveling","Quests","Professions"}) do
+ local metric=metricButtons[target]
+ assert(metric and metric.OnClick and metric.OnEnter and metric.OnLeave,"missing navigable dashboard metric: "..target)
+ assert(type(metric.detail)=="string" and metric.detail~="","metric needs a readable value")
+ assert(pcall(metric.OnEnter,metric) and pcall(metric.OnLeave,metric),"metric hover should be safe without tooltip APIs")
+ metric.OnClick(metric)
+ assert(ForeverCompanionDB.tab==target,"dashboard metric did not open "..target)
+ SlashCmdList.FOREVERCOMPANION("overview")
+end
+local bannerStatus,focusCount
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text:find("ready of 3 quests",1,true) then bannerStatus=w end
+ if w.kind=="FontString" and w.text=="0/4 done" then focusCount=w end
+end
+assert(bannerStatus and bannerStatus.text:find("6 material units needed",1,true),"live dashboard briefing missing")
+assert(focusCount,"dashboard focus completion counter missing")
 local originalCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() return 0 end
 assert(ForeverCompanionQuestPlanner.Sync(),"empty quest log scan should succeed")
@@ -164,6 +185,7 @@ end
 assert(focusButton and focusButton.OnClick,"focus checklist button missing")
 focusButton.OnClick(focusButton)
 assert(ForeverCompanionDB.dashboardFocus[1]==true,"focus state did not persist")
+assert(focusCount.text=="1/4 done","focus completion meter should update after click")
 focusButton.OnClick(focusButton)
 assert(ForeverCompanionDB.dashboardFocus[1]==false,"focus toggle did not reverse")
 -- Today's Focus persists within the same day, then resets on the next day.
@@ -176,6 +198,7 @@ assert(ForeverCompanionDB.dashboardFocus[1]==true,"same-day focus must persist")
 date=function() return "2026-11-03" end
 ForeverCompanionDashboard.Render()
 assert(not ForeverCompanionDB.dashboardFocus[1],"new day must reset the focus checklist")
+assert(focusCount.text=="0/4 done","daily focus completion counter must reset")
 date=function() error("restricted date API") end
 assert(pcall(ForeverCompanionDashboard.Render),"restricted date API must not crash")
 date=originalDate
