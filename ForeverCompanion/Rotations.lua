@@ -169,6 +169,12 @@ function ForeverCompanionBeginnerAvailability(class,scan)
    if entry.kind=="Talent" then requirement=requirement.." (requires talent points)" end
    if entry.kind=="Quest" then requirement=requirement.." (requires quest)" end
   end
+  if entry and type(entry.level)=="number" and type(UnitLevel)=="function" then
+   local ok,current=pcall(UnitLevel,"player")
+   if ok and type(current)=="number" and current<entry.level then
+    label="[LEVEL "..entry.level.."+]"
+   end
+  end
   result[#result+1]=label.." "..spell.." | "..status..requirement
  end
  return result
