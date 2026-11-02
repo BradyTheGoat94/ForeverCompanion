@@ -16,6 +16,9 @@ local tabButtons = {}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local handbookIcon, handbookButtons={}, {}
+local materialRows={}
+local materialPage=1
+local materialPageLabel, materialPrevious, materialNext
 local professionIndex=1
 local questRows = {}
 local questPage=1
@@ -58,6 +61,8 @@ local function render()
   for _,row in ipairs(rotationRows) do row:Hide() end
   if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
   for _,b in ipairs(handbookButtons) do b:Hide() end
+  for _,entry in ipairs(materialRows) do entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide() end
+  if materialPageLabel then materialPageLabel:Hide(); materialPrevious:Hide(); materialNext:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
@@ -188,6 +193,24 @@ local function render()
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
         end
         if ForeverCompanionCraftingPlanner then
+          local materials=ForeverCompanionCraftingPlanner.GetEntries(guide.name)
+          local pages=math.max(1,math.ceil(#materials/5))
+          materialPage=math.min(materialPage,pages)
+          materialPageLabel:SetText("Materials "..materialPage.."/"..pages)
+          materialPageLabel:Show(); materialPrevious:Show(); materialNext:Show()
+          materialPrevious:SetEnabled(materialPage>1)
+          materialNext:SetEnabled(materialPage<pages)
+          for i,entry in ipairs(materialRows) do
+            local index=(materialPage-1)*5+i
+            local material=materials[index]
+            if material then
+              local remaining=math.max(0,(tonumber(material.needed) or 0)-(tonumber(material.owned) or 0))
+              entry.label:SetText(material.name.."  "..material.owned.."/"..material.needed.."  (need "..remaining..")")
+              entry.label:Show(); entry.minus:Show(); entry.plus:Show()
+              entry.minus:SetScript("OnClick",function() ForeverCompanionCraftingPlanner.AdjustOwned(guide.name,index,-1); render() end)
+              entry.plus:SetScript("OnClick",function() ForeverCompanionCraftingPlanner.AdjustOwned(guide.name,index,1); render() end)
+            end
+          end
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
         end
@@ -202,7 +225,7 @@ local function render()
         if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
         for i,button in ipairs(handbookButtons) do
           local entry=DATA.professionHandbook[i]
-          if entry then button:SetText(entry.name); button:SetScript("OnClick",function() professionIndex=i; render() end); button:Show() end
+          if entry then button:SetText(entry.name); button:SetScript("OnClick",function() professionIndex=i; materialPage=1; render() end); button:Show() end
         end
       end
       lines[#lines+1] = "Selected professions: "..(DB.professions or "Not selected")
@@ -214,8 +237,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -72 or (currentTab=="Leveling" and -48 or -5)))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 96 or (currentTab=="Leveling" and 70 or 24))))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -260 or (currentTab=="Leveling" and -48 or -5)))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 284 or (currentTab=="Leveling" and 70 or 24))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -329,6 +352,34 @@ local function createUI()
     b:Hide()
     handbookButtons[i]=b
   end
+  materialPrevious=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  materialPrevious:SetSize(65,22)
+  materialPrevious:SetPoint("TOPLEFT",child,"TOPLEFT",8,-67)
+  materialPrevious:SetText("Prev")
+  materialPrevious:SetScript("OnClick",function() materialPage=math.max(1,materialPage-1); render() end)
+  materialNext=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  materialNext:SetSize(65,22)
+  materialNext:SetPoint("TOPLEFT",child,"TOPLEFT",195,-67)
+  materialNext:SetText("Next")
+  materialNext:SetScript("OnClick",function() materialPage=materialPage+1; render() end)
+  materialPageLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+  materialPageLabel:SetPoint("TOPLEFT",child,"TOPLEFT",80,-72)
+  for i=1,5 do
+    local entry={}
+    entry.label=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    entry.label:SetWidth(445)
+    entry.label:SetJustifyH("LEFT")
+    entry.label:SetPoint("TOPLEFT",child,"TOPLEFT",8,-96-(i-1)*29)
+    entry.minus=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+    entry.minus:SetSize(34,24)
+    entry.minus:SetPoint("TOPLEFT",child,"TOPLEFT",510,-91-(i-1)*29)
+    entry.minus:SetText("-")
+    entry.plus=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+    entry.plus:SetSize(34,24)
+    entry.plus:SetPoint("LEFT",entry.minus,"RIGHT",4,0)
+    entry.plus:SetText("+")
+    materialRows[i]=entry
+  end
   for i=1,5 do
     local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
     row:SetSize(118,30)
@@ -418,7 +469,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.8.1 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v2.0.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
