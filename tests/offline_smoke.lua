@@ -435,3 +435,15 @@ assert(ready.known==0 and ready.notScanned==0,"unsupported spellbook must not im
 local checklist=ForeverCompanionSkillDiscovery.Checklist("WARRIOR",{supported=false,complete=false,inspected=0,known={}})
 assert(table.concat(checklist," "):find("unavailable",1,true) or table.concat(checklist," "):find("pending",1,true),"unsupported skill checklist must be cautious")
 assert(ForeverCompanionSkillDiscovery.FormatSummary("MAGE"):find("Not a class-completion score",1,true),"readiness must not imply full class coverage")
+
+dofile("ForeverCompanion/LevelingCurriculum.lua")
+dofile("ForeverCompanion/ProfessionFieldGuide.lua")
+for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}) do
+ for _,lvl in ipairs({1,15,25,40,55}) do
+  local guide=ForeverCompanionLevelingCurriculum.Format(class,lvl)
+  assert(guide:find("LEVELING PRACTICE",1,true) and guide:find("NEXT STAGE",1,true),"missing class leveling stage")
+ end
+end
+for _,profession in ipairs({"Alchemy","Blacksmithing","Enchanting","Engineering","Leatherworking","Tailoring","Herbalism","Mining","Skinning"}) do
+ assert(ForeverCompanionProfessionFieldGuide.Format(profession):find("Exact recipes",1,true),"missing profession field guidance")
+end
