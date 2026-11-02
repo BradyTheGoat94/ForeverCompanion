@@ -197,8 +197,18 @@ function Briefing.Render(page)
   local guide=handbook and handbook[token]
   local tip=guide and (page=="PvP" and guide.pvp or guide.dungeon)
   labels.tip:SetText(short(tip or "Review class guidance and coordinate with your group.",84))
-  local roleTips=data and data.roleAdvice and data.roleAdvice[role]
-  local roleTip=type(roleTips)=="table" and roleTips[1] or nil
+  local roleTip
+  if page=="PvP" then
+    local pvpRoleNotes={
+      Tank="Guard objectives, protect allies and communicate defensive cooldowns.",
+      Damage="Coordinate target focus and avoid overextending without support.",
+      Healer="Use line of sight, position safely and coordinate team defenses."
+    }
+    roleTip=pvpRoleNotes[role]
+  else
+    local roleTips=data and data.roleAdvice and data.roleAdvice[role]
+    roleTip=type(roleTips)=="table" and roleTips[1] or nil
+  end
   labels.roleTip:SetText(short(roleTip or "Confirm objectives, positioning and defensive plans.",62))
 end
 
