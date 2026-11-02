@@ -108,7 +108,14 @@ function B.Render()
     values.title:SetText(shorten(selected.title,46))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))
     values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "Objective details not supplied by client",48))
-    values.hint:SetText(stale and "Cached objective - verify in game" or "Select another quest below to change focus")
+    local done,known=planner.ObjectiveProgress and planner.ObjectiveProgress(selected)
+    if stale then
+      values.hint:SetText("Cached objective - verify in game")
+    elseif known then
+      values.hint:SetText("Known objectives: "..done.."/"..known.." complete | addon focus only")
+    else
+      values.hint:SetText("Select another quest below to change focus")
+    end
   else
     values.title:SetText("No focused quest")
     values.location:SetText("Select an active quest below")
