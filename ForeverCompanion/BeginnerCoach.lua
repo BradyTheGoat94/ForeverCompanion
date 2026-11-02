@@ -64,3 +64,16 @@ function ForeverCompanionGuideEvidenceLines(classToken)
  result[#result+1]="If a suggested ability is missing, skip it and check your trainer or talents."
  return result
 end
+
+-- Structured beginner checklist for the guide UI. Informational only.
+function ForeverCompanionBeginnerChecklist(classToken)
+  local coach=ForeverCompanionGetBeginnerCoach(classToken)
+  if not coach then return {} end
+  return {
+    "BEFORE COMBAT: "..coach.first,
+    "DURING COMBAT: "..coach.loop,
+    "WHEN STUCK: "..coach.recover,
+    "VERIFY IN GAME: "..coach.check,
+    "STATUS: Coaching only; not combat-log benchmark validated."
+  }
+end
