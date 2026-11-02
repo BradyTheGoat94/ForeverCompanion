@@ -262,7 +262,11 @@ local function render()
       end
       local coaching=type(ForeverCompanionForeverDpsCoaching)=="table" and ForeverCompanionForeverDpsCoaching[classToken()]
       if type(coaching)=="table" then
-        local selected=type(ForeverCompanionSpecPlanner)=="table" and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken())
+        local selected
+        if type(ForeverCompanionSpecPlanner)=="table" and type(ForeverCompanionSpecPlanner.Get)=="function" then
+          local ok,result=pcall(ForeverCompanionSpecPlanner.Get,classToken())
+          if ok then selected=result end
+        end
         local specName=type(selected)=="table" and type(selected[1])=="string" and selected[1] or ""
         local steps=coaching[string.lower(specName)]
         lines[#lines+1]="SPECIALIZATION DPS COACHING: "..(specName~="" and string.upper(specName) or "SELECT A SPEC")
