@@ -57,6 +57,22 @@ local function plate(parent,x,y,w,h)
   ornament(4,-h+19,2,15,0.68,0.49,0.23,0.95)
   ornament(w-6,-h+19,2,15,0.68,0.49,0.23,0.95)
   ornament(13,-34,w-26,1,0.57,0.42,0.23,0.55)
+  -- Soft inset framing and corner filigree give the hero cards depth while
+  -- keeping all artwork native to the client and inexpensive to render.
+  ornament(8,-9,w-16,1,0.28,0.23,0.17,0.46)
+  ornament(8,-h+10,w-16,1,0.70,0.48,0.22,0.34)
+  ornament(9,-12,1,h-24,0.43,0.33,0.21,0.28)
+  ornament(w-10,-12,1,h-24,0.43,0.33,0.21,0.28)
+  ornament(23,-12,13,1,0.90,0.69,0.32,0.75)
+  ornament(w-36,-12,13,1,0.90,0.69,0.32,0.75)
+  ornament(23,-h+13,13,1,0.78,0.54,0.24,0.60)
+  ornament(w-36,-h+13,13,1,0.78,0.54,0.24,0.60)
+  -- Header title remains legible over a restrained velvet-colored band.
+  local velvet=f:CreateTexture(nil,"BORDER")
+  velvet:SetPoint("TOPLEFT",f,"TOPLEFT",11,-12)
+  velvet:SetSize(w-22,21)
+  paint(velvet,0.17,0.12,0.085,0.33)
+
   if type(ForeverCompanionOrnaments)=="table" and type(ForeverCompanionOrnaments.Hero)=="function" then
     pcall(ForeverCompanionOrnaments.Hero,f,w,h)
   end
