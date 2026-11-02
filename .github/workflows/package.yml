@@ -73,6 +73,8 @@ jobs:
         run: python3 tests/validate_package.py ForeverCompanion.zip
       - name: Record beta package provenance
         run: python3 tests/write_build_manifest.py
+      - name: Verify beta provenance against packaged ZIP
+        run: python3 tests/validate_build_manifest.py
       - uses: actions/upload-artifact@v4
         with:
           name: ForeverCompanion
