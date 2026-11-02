@@ -107,8 +107,7 @@ function Planner.Sync()
   auto.supported=supported
   auto.scanned=true
   if not supported then
-    auto.entries={}
-    auto.lastCount=0
+    -- Preserve last successful snapshot if the client temporarily cannot provide quest data.
     if ForeverCompanionRefresh then ForeverCompanionRefresh() end
     return false
   end
