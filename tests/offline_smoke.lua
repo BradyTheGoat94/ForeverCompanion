@@ -421,3 +421,11 @@ assert(not ForeverCompanionRecipePlans.SetQuantity("ForecastTest",1,0),"zero tar
 assert(not ForeverCompanionRecipePlans.SetIngredient("ForecastTest",1,99,2),"missing ingredient must be rejected")
 assert(ForeverCompanionRecipePlans.RemoveIngredient("ForecastTest",1,2),"ingredient should be removable")
 assert(ForeverCompanionRecipePlans.Format("ForecastTest"):find("setingredient",1,true),"guide should document editing")
+
+dofile("ForeverCompanion/SkillDiscovery.lua")
+local discovery=ForeverCompanionSkillDiscovery
+local found=discovery.Find({"Frostbolt","Fireball","Blink"},{supported=true,complete=true,inspected=2,known={frostbolt=true,fireball=true}})
+assert(found[1].state=="IN SPELLBOOK" and found[3].state=="NOT IN SCANNED SPELLBOOK","complete spellbook scan should distinguish present and absent")
+local partial=discovery.Find({"Blink"},{supported=true,complete=false,inspected=1,known={}})
+assert(partial[1].state=="UNCONFIRMED","partial scan cannot prove absence")
+assert(discovery.Find({"Blink"},{supported=false,complete=false,inspected=0,known={}})[1].state=="UNCONFIRMED","unsupported scan cannot prove absence")
