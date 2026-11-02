@@ -84,6 +84,14 @@ local function render()
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
     if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
   end
+  if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
+  if ForeverCompanionProfessionBriefing then
+    ForeverCompanionProfessionBriefing.Show(currentTab=="Professions")
+    if currentTab=="Professions" then
+      local selected=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
+      ForeverCompanionProfessionBriefing.Render(selected and selected.name)
+    end
+  end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.SetCompact(DB.compact)
     ForeverCompanionDashboard.Show(isOverview)
@@ -469,6 +477,8 @@ local function createUI()
   scrollChild = child
   scroll:SetScrollChild(child)
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
+  if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
+  if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.Create(window,function(section)
       currentTab=section; DB.tab=section
