@@ -73,7 +73,7 @@ function Loot.WishlistSummary(db)
     end
   end
   if count==0 then lines[#lines+1]="No saved targets. Add a sourced item with /fc wish <item name>." end
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.Recommendations(classToken,role)
   -- Never infer class eligibility or best-in-slot from an unverified item name.
@@ -104,7 +104,7 @@ function Loot.RecommendationSummary(classToken,role)
       lines[#lines+1]="Recommendation source: "..record.recommendationSource
     end
   end
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.Search(query)
   local results={}
@@ -140,7 +140,7 @@ function Loot.Detail(record,db)
   end
   lines[#lines+1]="Drop chance: not verified unless independently sourced."
   lines[#lines+1]="Class/spec suitability: not verified unless explicitly documented."
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.CountByDungeon()
   local counts={}
@@ -159,7 +159,7 @@ function Loot.CatalogSummary()
     lines[#lines+1]=name..": "..counts[name].." sourced records"
   end
   lines[#lines+1]="This is not a complete dungeon loot table."
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.Format(query)
   local lines={"LOOT ATLAS / FOREVER", "Source-attributed dungeon and boss drops only.",
