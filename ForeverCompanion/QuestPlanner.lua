@@ -94,7 +94,7 @@ local function questRows()
               end
             end
           end
-          rows[#rows+1]={id=id,title=clean(info.title,100),zone=info.zoneName or info.zone or header,complete=completed,objectives=objectives}
+          rows[#rows+1]={id=id,title=clean(info.title,100),zone=clean(info.zoneName or info.zone or header,70),complete=completed,objectives=objectives}
         end
       end
     end
@@ -204,6 +204,51 @@ function Planner.FormatFocused()
   if #q.objectives==0 then lines[#lines+1]="No objective details available from this client." end
   for _,objective in ipairs(q.objectives) do lines[#lines+1]="  "..objective end
   return table.concat(lines,"\n")
+end
+-- Snapshot analytics use only the client's read-only quest log and retain stale warnings.
+function Planner.Overview()
+  local groups={}
+  local ready=0
+  for _,q in ipairs(auto.entries) do
+    if q.complete then ready=ready+1 end
+    local zone=type(q.zone)=="string" and q.zone~="" and q.zone or "Unspecified zone"
+    groups[zone]=(groups[zone] or 0)+1
+  end
+  local zones={}
+  for zone,count in pairs(groups) do zones[#zones+1]={zone=zone,count=count} end
+  table.sort(zones,function(a,b)
+    if a.count==b.count then return a.zone<b.zone end
+    return a.count>b.count
+  end)
+  return {
+    scanned=auto.scanned,
+    supported=auto.supported,
+    stale=Planner.IsSnapshotStale(),
+    total=#auto.entries,
+    ready=ready,
+    remaining=#auto.entries-ready,
+    zones=zones
+  }
+end
+function Planner.FormatOverview()
+  local report=Planner.Overview()
+  local lines={"QUEST JOURNAL SUMMARY"}
+  if not report.scanned then
+    lines[#lines+1]="Waiting for the first quest-log scan."
+  elseif not report.supported then
+    lines[#lines+1]="Client quest API unavailable. Cached entries may be outdated."
+  else
+    lines[#lines+1]=report.total.." active | "..report.remaining.." in progress | "..report.ready.." ready"
+  end
+  if report.total>0 then
+    lines[#lines+1]="QUESTS BY ZONE (reported by client)"
+    for i=1,math.min(4,#report.zones) do
+      local zone=report.zones[i]
+      lines[#lines+1]=zone.zone..": "..zone.count
+    end
+    if #report.zones>4 then lines[#lines+1]="+"..(#report.zones-4).." more zones in quest log" end
+  end
+  return table.concat(lines,"\\n")
 end
 function Planner.FormatAuto()
   local result={"ACTIVE QUESTS", "Automatically detected from your quest log.", "NEXT STEP: "..Planner.Recommend()}
