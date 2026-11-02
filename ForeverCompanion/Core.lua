@@ -166,6 +166,9 @@ local function render()
       lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
       for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
     elseif currentTab == "Professions" then
+      if ForeverCompanionProfessionScanner then
+        lines[#lines+1]=ForeverCompanionProfessionScanner.Format()
+      end
       local guide=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
       if guide then
         lines[#lines+1]="PROFESSION HANDBOOK: "..guide.name
@@ -397,7 +400,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.5.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.6.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
