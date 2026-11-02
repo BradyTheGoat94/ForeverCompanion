@@ -9,7 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
+local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -32,6 +32,7 @@ local sectionDescriptions={
   Alts="Alternate character leveling and preparation checklist",
   Quests="Read-only quest journal, objectives and personal notes",
   Dungeons="Party preparation, role checklists and general guidance",
+  Loot="Boss drops, equipment sources and verification status",
   Professions="Skill progression, recipes and manual material goals",
   PvP="Preparation, positioning and class reference",
   Settings="Preferences, diagnostics and client compatibility"
@@ -42,6 +43,7 @@ local sectionIcons={
   Alts="Interface\\Icons\\INV_Misc_Map_01",
   Quests="Interface\\Icons\\INV_Misc_Note_01",
   Dungeons="Interface\\Icons\\INV_Weapon_ShortBlade_01",
+  Loot="Interface\\Icons\\INV_Chest_Chain_04",
   Professions="Interface\\Icons\\Trade_BlackSmithing",
   PvP="Interface\\Icons\\Ability_DualWield",
   Settings="Interface\\Icons\\INV_Gizmo_02"
@@ -215,6 +217,13 @@ local function render()
     if ForeverCompanionCraftingPlanner then lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary() end
     if ForeverCompanionReadiness then lines[#lines+1]=ForeverCompanionReadiness.Format(classToken(),level(),(DB and DB.professions or "")) end
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
+  elseif currentTab == "Loot" then
+    lines = {"LOOT ATLAS"}
+    if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
+      lines[#lines+1]=ForeverCompanionLoot.Format()
+    else
+      lines[#lines+1]="Loot reference is unavailable."
+    end
   elseif currentTab == "Legacy" then
     lines = {"LEGACY SYSTEM / FOREVER REFERENCE",
       "STATUS: Forever-specific rules are not yet verified.",
@@ -820,22 +829,23 @@ local function createUI()
     "Interface\\Icons\\INV_Misc_Map_01",
     "Interface\\Icons\\INV_Misc_Note_01",
     "Interface\\Icons\\INV_Weapon_ShortBlade_01",
+    "Interface\\Icons\\INV_Chest_Chain_04",
     "Interface\\Icons\\Trade_BlackSmithing",
     "Interface\\Icons\\Ability_DualWield",
     "Interface\\Icons\\INV_Gizmo_02"
   }
   for i, section in ipairs(tabs) do
     local b = CreateFrame("Button", nil, window)
-    b:SetSize(164, 34)
-    b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*37)
+    b:SetSize(164, 31)
+    b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*34)
     b.section=section
-    if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,34) end
+    if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,31) end
     b.navBackground=b:CreateTexture(nil,"BACKGROUND")
     b.navBackground:SetAllPoints(b)
     colorTexture(b.navBackground,0.10,0.13,0.17,1)
     b.navAccent=b:CreateTexture(nil,"ARTWORK")
     b.navAccent:SetPoint("TOPLEFT",b,"TOPLEFT",0,0)
-    b.navAccent:SetSize(3,34)
+    b.navAccent:SetSize(3,31)
     colorTexture(b.navAccent,0.29,0.25,0.18,1)
     local icon=b:CreateTexture(nil,"ARTWORK")
     icon:SetPoint("LEFT",b,"LEFT",11,0)
