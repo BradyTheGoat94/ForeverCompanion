@@ -86,3 +86,41 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
  end
  return result
 end
+
+-- Resolve an ability reference without guessing that a spell is learned.
+function ForeverCompanionAbilityState(classToken,spellID,level)
+ local data=ForeverCompanionVerifiedAbilities
+ local entries=data.entries[classToken]
+ if not entries then return "UNAUDITED","No client-data reference for this class" end
+ for _,entry in ipairs(entries) do
+  if entry.id==spellID then
+   local n=tonumber(level)
+   if not n then return "LEVEL UNKNOWN","Character level is unavailable" end
+   if n<entry.level then return "LEVEL LOCKED","Requires level "..entry.level end
+   local known=ForeverCompanionKnownSpell(entry.id)
+   if known==true then return "KNOWN","Present in the character spellbook" end
+   if known==false then
+    if entry.kind=="Talent" then return "TALENT UNLEARNED","Requires the relevant talent investment" end
+    if entry.kind=="Quest" then return "QUEST UNLEARNED","Check the associated quest unlock" end
+    return "NOT LEARNED","Visit a trainer or inspect the spellbook"
+   end
+   return "UNCONFIRMED","Level eligible; client spellbook API unavailable"
+  end
+ end
+ return "NOT AUDITED","This spell has not been included in the curated reference"
+end
+
+function ForeverCompanionAvailableAbilitySummary(classToken,level)
+ local data=ForeverCompanionVerifiedAbilities
+ local entries=data.entries[classToken]
+ if not entries then return "Spellbook audit: class pending review" end
+ local known,locked,unlearned,unknown=0,0,0,0
+ for _,entry in ipairs(entries) do
+  local state=ForeverCompanionAbilityState(classToken,entry.id,level)
+  if state=="KNOWN" then known=known+1
+  elseif state=="LEVEL LOCKED" then locked=locked+1
+  elseif state=="NOT LEARNED" or state=="TALENT UNLEARNED" or state=="QUEST UNLEARNED" then unlearned=unlearned+1
+  else unknown=unknown+1 end
+ end
+ return "SPELLBOOK AUDIT: "..known.." known | "..locked.." level-locked | "..unlearned.." unlearned | "..unknown.." unconfirmed"
+end
