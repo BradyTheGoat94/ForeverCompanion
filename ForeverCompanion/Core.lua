@@ -131,6 +131,7 @@ local function render()
   if ForeverCompanionAdventureBriefing then
     ForeverCompanionAdventureBriefing.Show(currentTab)
   end
+  if ForeverCompanionSettingsBriefing then ForeverCompanionSettingsBriefing.Show(currentTab=="Settings") end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.SetCompact(DB.compact)
     ForeverCompanionDashboard.Show(isOverview)
@@ -395,8 +396,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -278 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or -5)))))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 302 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or 24)))))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -278 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5))))))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 302 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -586,6 +587,22 @@ local function createUI()
   end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.Create(window,openSection,{db=function() return DB end,class=classLabel,level=level})
+  end
+  if ForeverCompanionSettingsBriefing then
+    ForeverCompanionSettingsBriefing.Create(child,{
+      db=function() return DB end,
+      actualClass=function() return classNames[actualClass()] or "Unknown class" end,
+      displayClass=classLabel,
+      autoClass=function() DB.previewClass=nil;DB.role=nil;render() end,
+      centerWindow=function() DB.position=nil;window:ClearAllPoints();window:SetPoint("CENTER");render() end,
+      toggleCompact=function()
+        DB.compact=not DB.compact
+        window:SetHeight(DB.compact and 620 or 720)
+        fitWindow()
+        if compactButton then compactButton:SetText(DB.compact and "Expand" or "Compact") end
+        render()
+      end
+    })
   end
   filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   filterButton:SetSize(140,23)
@@ -815,7 +832,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.12.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
+  footer:SetText("v3.13.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
