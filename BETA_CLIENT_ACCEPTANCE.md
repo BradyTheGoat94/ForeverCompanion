@@ -20,6 +20,10 @@ Mark each item PASS / FAIL / NOT TESTED, and record the first Lua error.
 | Clean install folder contains ForeverCompanion.toc directly | NOT TESTED | |
 | Addon loads with no Lua error | NOT TESTED | |
 | Class guide art and black/gold borders match reference | NOT TESTED | |
+| Long class names, roles, phase labels and priority text remain inside cards | NOT TESTED | |
+| XP unavailable state is visibly distinguished from 0% XP | NOT TESTED | |
+| Navigation gold trim and icons remain readable when selected and hovered | NOT TESTED | |
+| Rotation tile hover color resets after leaving or changing tabs | NOT TESTED | |
 | Navigation, selected tabs, scrolling and window resizing | NOT TESTED | |
 | Leveling guidance for all nine classes | NOT TESTED | |
 | Spellbook and missing-API behavior | NOT TESTED | |
