@@ -46,3 +46,16 @@ The user's two reference concepts show a premium black-and-gold fantasy guide, n
 - The offline preview is an illustration of mocked widgets, **not proof of in-game rendering**.
 
 Prioritize functional fidelity and test coverage over artificial commit counts. Never merge develop into main without explicit approval.
+
+## Third overnight implementation pass
+
+- Added native black-and-gold quest briefing cards for current quest count, ready-to-turn-in count, leading reported zone, selected quest and its first objective.
+- Added a real quest-ready progress strip and explicit cached/stale/unavailable states. Quest list, filter, paging and long-form guidance were repositioned below the cards.
+- Added native profession skill/cap bars for up to two detected professions and an aggregate **manual** material-goal bar, with selected handbook context.
+- Reflowed profession handbook buttons and material +/- controls to prevent overlap with the new panels.
+- Added mock-client interaction assertions for the cards, navigation, stale quest scans, restricted profession APIs, manual material updates, and unavailable player class/level reads.
+- Added two new illustrative CI preview images, both checked against required headings from the actual mocked UI tree.
+- Replaced repeated generic class and crafting paragraphs with 63 distinct class-specific and 54 profession-specific planning tips. These remain **general, unverified reference guidance**, not optimized Forever builds.
+- Guarded client reads for class, level, XP, zone and profession skill conversion; missing data is explicitly labeled instead of inventing a character class or skill level.
+
+Still to do: genuine original crest/banner art, finer pixel-level layout fidelity, client-verified spells and talents, live-client interaction and scaling tests, license approval, confirmed Interface number and supported CurseForge game flavor.
