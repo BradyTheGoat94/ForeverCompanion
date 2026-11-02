@@ -789,7 +789,7 @@ local function selectSpec(class,name)
  error("missing spec "..class.." "..name)
 end
 selectSpec("PRIEST","Shadow")
-assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("30% of your maximum health",1,true),"Shadow Word: Death backlash caution missing")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("30% of maximum health",1,true),"Shadow Word: Death backlash caution missing")
 selectSpec("PRIEST","Holy")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("Holy Binding",1,true),"Holy Binding hotfix missing")
 selectSpec("DRUID","Restoration")
