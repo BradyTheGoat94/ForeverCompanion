@@ -450,6 +450,11 @@ assert(ForeverCompanionDB.tab=="PvP","PvP navigation failed")
 local pvpHeading
 for _,w in ipairs(frames) do if w.text=="PVP PREPARATION" then pvpHeading=w end end
 assert(pvpHeading,"PvP preparation title did not update")
+local pvpRoleAdvice=false
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text:find("Coordinate target focus and avoid overextending",1,true) then pvpRoleAdvice=true end
+end
+assert(pvpRoleAdvice,"PvP role guidance must not reuse dungeon-only tank-target instructions")
 assert(frames[dungeonRoot].visible,"PvP must reuse the same native briefing cards")
 assert(progressLabel.text=="0/4 preparation tasks marked complete","PvP must have separate manual checklist progress")
 local pvpDone
