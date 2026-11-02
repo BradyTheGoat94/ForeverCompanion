@@ -7,6 +7,8 @@ local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
 local checkButtons = {}
+local scrollFrame, scrollChild, classButton, roleButton
+local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
 local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
 local function classToken() return DB and DB.previewClass or actualClass() end
@@ -40,7 +42,7 @@ local function render()
       end
     end
   elseif currentTab == "Settings" then
-    lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "Class preview does not change your actual character class."}
+    lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
     lines = {string.upper(currentTab).." CHECKLIST"}
     local entries = DATA.checklist[currentTab] or {}
@@ -60,17 +62,30 @@ local function render()
     end
   end
   content:SetText(table.concat(lines, "\n\n"))
+  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + 24)) end
+  if scrollFrame then scrollFrame:SetVerticalScroll(0) end
+  if classButton then classButton:SetText("Class: "..classLabel()) end
+  if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
 end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
   window:SetSize(720, 560)
-  window:SetPoint("CENTER")
+  if DB.position and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
+    window:SetPoint("CENTER", UIParent, "CENTER", DB.position.x, DB.position.y)
+  else
+    window:SetPoint("CENTER")
+  end
   window:SetMovable(true)
   window:EnableMouse(true)
   window:RegisterForDrag("LeftButton")
   window:SetScript("OnDragStart", function(self) self:StartMoving() end)
-  window:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+  window:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local x, y = self:GetCenter()
+    local ux, uy = UIParent:GetCenter()
+    if x and y and ux and uy then DB.position = {x=x-ux, y=y-uy} end
+  end)
   window:SetClampedToScreen(true)
   if window.SetBackdrop then
     window:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=5,right=5,top=5,bottom=5}})
@@ -89,10 +104,12 @@ local function createUI()
     tabButtons[#tabButtons+1] = b
   end
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
+  scrollFrame = scroll
   scroll:SetPoint("TOPLEFT", 22, -104)
   scroll:SetPoint("BOTTOMRIGHT", -35, 92)
   local child = CreateFrame("Frame", nil, scroll)
   child:SetSize(640, 800)
+  scrollChild = child
   scroll:SetScrollChild(child)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
@@ -107,10 +124,34 @@ local function createUI()
     b:Hide()
     checkButtons[i]=b
   end
+  classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+  classButton:SetSize(150, 26)
+  classButton:SetPoint("BOTTOMRIGHT", -180, 45)
+  classButton:SetScript("OnClick", function()
+    local token=classToken()
+    for i, candidate in ipairs(classOrder) do
+      if candidate == token then DB.previewClass=classOrder[(i % #classOrder)+1]; break end
+    end
+    DB.role=nil
+    render()
+  end)
+  roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
+  roleButton:SetSize(145, 26)
+  roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
+  roleButton:SetScript("OnClick", function()
+    local roles=classRoles[classToken()] or {"Damage"}
+    local nextIndex=1
+    for i, role in ipairs(roles) do if DB.role==role then nextIndex=(i % #roles)+1 end end
+    DB.role=roles[nextIndex]
+    render()
+  end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
   footer:SetText("Prelaunch beta  |  No gameplay automation  |  /fc help")
   currentTab = DB.tab or "Overview"
+  local validTab=false
+  for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
+  if not validTab then currentTab="Overview" end
   window:Hide()
   render()
 end
@@ -121,7 +162,8 @@ addon:SetScript("OnEvent", function(_, event, arg)
   if event == "ADDON_LOADED" and arg == addonName then
     ForeverCompanionDB = ForeverCompanionDB or {}
     DB = ForeverCompanionDB
-    DB.checks = DB.checks or {}
+    if type(DB.checks)~="table" then DB.checks={} end
+    if type(DB.tab)~="string" then DB.tab="Overview" end
     createUI()
     if not DB.welcomed then DB.welcomed=true; window:Show() end
   elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD") then
@@ -167,5 +209,6 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     say("Invalid checklist or step."); return
   end
   if msg=="reset" then DB.checks={}; render(); say("Checklist progress reset."); return end
+  if msg=="position reset" then DB.position=nil; window:ClearAllPoints(); window:SetPoint("CENTER"); say("Window centered."); return end
   say("Unknown command; type /fc help")
 end
