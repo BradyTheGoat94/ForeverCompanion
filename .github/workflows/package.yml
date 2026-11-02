@@ -27,6 +27,7 @@ jobs:
           python3 -m pip install --quiet pillow
           python3 tests/render_ui_snapshot.py
           python3 tests/render_class_preview.py
+          python3 tests/render_section_previews.py
       - name: Upload offline UI text snapshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -37,6 +38,10 @@ jobs:
             ui_preview.png
             ui_leveling_snapshot.txt
             ui_class_preview.png
+            ui_quest_snapshot.txt
+            ui_profession_snapshot.txt
+            ui_quest_preview.png
+            ui_profession_preview.png
           if-no-files-found: ignore
       - name: Validate manifest
         run: |
