@@ -253,7 +253,9 @@ local function render()
       if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
         lines[#lines+1]=ForeverCompanionSkillStudy.FormatNextActions(classToken(),level())
         lines[#lines+1]=ForeverCompanionSkillStudy.PracticePlan(classToken(),level()) end
-      if ForeverCompanionSkillDiscovery then lines[#lines+1]=ForeverCompanionSkillDiscovery.Format(classToken()) end
+      if ForeverCompanionSkillDiscovery then
+        lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatSummary(classToken())
+        lines[#lines+1]=ForeverCompanionSkillDiscovery.Format(classToken()) end
       local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
       if specNotes then
         lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
