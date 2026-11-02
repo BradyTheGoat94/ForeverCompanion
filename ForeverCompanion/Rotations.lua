@@ -180,6 +180,10 @@ function ForeverCompanionBeginnerAvailability(class,scan)
   if label=="[FOUND]" and entry and entry.kind=="Talent" then
    requirement=requirement.." (spellbook found; talent build not independently audited)"
   end
+  if label=="[LEVEL "..tostring(entry and entry.level).."+]" and status=="found in spellbook" then
+   label="[FOUND]"
+   requirement=requirement.." (spellbook confirms known despite curated level gate; recheck source/build)"
+  end
   result[#result+1]=label.." "..spell.." | "..status..requirement
  end
  return result
