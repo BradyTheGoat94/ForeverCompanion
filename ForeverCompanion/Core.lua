@@ -298,6 +298,11 @@ local function render()
           lines[#lines+1]=note
         end
       end
+      if type(ForeverCompanionSimResearchLines)=="function" then
+        for _,note in ipairs(ForeverCompanionSimResearchLines()) do
+          lines[#lines+1]=note
+        end
+      end
       if type(ForeverCompanionNovemberTuningLines)=="function" then
         for _,note in ipairs(ForeverCompanionNovemberTuningLines(classToken())) do
           lines[#lines+1]=note
