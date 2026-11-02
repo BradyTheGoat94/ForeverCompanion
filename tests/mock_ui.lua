@@ -397,6 +397,17 @@ for _,w in ipairs(frames) do
  end
 end
 assert(priorityTile and priorityNumber,"six-slot rotation strip should display numbered ability tiles")
+-- All nine class-preview buttons must be interactive, and must not mutate the player.
+local classTokens={"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
+assert(ForeverCompanionClassStripButtons and #ForeverCompanionClassStripButtons==9,"class strip must offer all nine classes")
+for i,token in ipairs(classTokens) do
+ local button=ForeverCompanionClassStripButtons[i]
+ assert(button.classToken==token and button.OnClick and button.visible,"class strip button missing or hidden")
+ button.OnClick(button)
+ assert(ForeverCompanionDB.previewClass==token,"class selector did not update addon preview")
+end
+ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
+
 local classSnapshot={}
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
