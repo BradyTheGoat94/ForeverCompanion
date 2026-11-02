@@ -494,6 +494,13 @@ for _,w in ipairs(frames) do
  if w.caption and w.caption.text=="TOGGLE COMPACT" then compactSettingsButton=w end
 end
 assert(settingsHeading and apiHeading and clientLabel,"native Settings cards or client metadata missing")
+local questApiDisclosure=false
+local professionApiDisclosure=false
+for _,w in ipairs(frames) do
+ if w.text=="Quest log: API exposed; compatibility unverified" then questApiDisclosure=true end
+ if w.text=="Professions: API exposed; compatibility unverified" then professionApiDisclosure=true end
+end
+assert(questApiDisclosure and professionApiDisclosure,"Settings must distinguish API exposure from live compatibility")
 assert(frames[frames[settingsHeading.parent].parent].visible,"Settings cards should be visible")
 assert(autoButton and centerButton and compactSettingsButton,"Settings preference actions missing")
 SlashCmdList.FOREVERCOMPANION("class mage")
