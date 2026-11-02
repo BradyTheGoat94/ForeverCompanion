@@ -118,6 +118,49 @@ function Loot.Search(query)
   end
   return results
 end
+function Loot.Detail(record,db)
+  if type(record)~="table" then return "Select a loot result to inspect its source." end
+  local saved=Loot.Wishlist(db)[record.item]==true
+  local lines={
+    "ITEM DETAIL / "..record.item,
+    "Dungeon: "..record.dungeon,
+    "Boss: "..record.boss,
+    "Verification: "..record.status,
+    "Reference: "..record.source,
+    "Wishlist: "..(saved and "Saved" or "Not saved"),
+  }
+  if clean(record.slot) then lines[#lines+1]="Equipment slot: "..record.slot end
+  if type(record.itemLevel)=="number" then lines[#lines+1]="Item level: "..record.itemLevel end
+  if clean(record.rarity) then lines[#lines+1]="Rarity: "..record.rarity end
+  if clean(record.requiredLevel) then lines[#lines+1]="Required level: "..record.requiredLevel end
+  if type(record.stats)=="table" then
+    for _,stat in ipairs(record.stats) do
+      if type(stat)=="string" then lines[#lines+1]=stat end
+    end
+  end
+  lines[#lines+1]="Drop chance: not verified unless independently sourced."
+  lines[#lines+1]="Class/spec suitability: not verified unless explicitly documented."
+  return table.concat(lines,"\\n")
+end
+function Loot.CountByDungeon()
+  local counts={}
+  for _,record in ipairs(Loot.records) do
+    counts[record.dungeon]=(counts[record.dungeon] or 0)+1
+  end
+  return counts
+end
+function Loot.CatalogSummary()
+  local counts=Loot.CountByDungeon()
+  local names={}
+  for name in pairs(counts) do names[#names+1]=name end
+  table.sort(names)
+  local lines={"BOSS DROP COVERAGE / COMMUNITY BETA"}
+  for _,name in ipairs(names) do
+    lines[#lines+1]=name..": "..counts[name].." sourced records"
+  end
+  lines[#lines+1]="This is not a complete dungeon loot table."
+  return table.concat(lines,"\\n")
+end
 function Loot.Format(query)
   local lines={"LOOT ATLAS / FOREVER", "Source-attributed dungeon and boss drops only.",
     "Beta data may change. A reported drop is not a confirmed drop rate.",
