@@ -401,6 +401,21 @@ local function render()
     questFocusText:SetText(currentTab=="Quests" and (q and ("Focused: "..q.title) or "No quest selected") or "")
   end
 end
+-- One navigation path for the sidebar, dashboard shortcuts and slash commands.
+-- Changes only the addon's current guide page, never the game quest log.
+local function openSection(name)
+  if type(name)~="string" then return false end
+  for _,section in ipairs(tabs) do
+    if section:lower()==name:lower() then
+      currentTab=section
+      DB.tab=section
+      if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
+      render()
+      return true
+    end
+  end
+  return false
+end
 local function fitWindow()
   if not window or not window.SetScale or not UIParent or not UIParent.GetWidth or not UIParent.GetHeight then return end
   local ok,width,height=pcall(function() return UIParent:GetWidth(),UIParent:GetHeight() end)
@@ -509,11 +524,7 @@ local function createUI()
     b:SetScript("OnLeave",function(self)
       if currentTab~=self.section then colorTexture(self.navBackground,0.10,0.13,0.17,1) end
     end)
-    b:SetScript("OnClick", function()
-      currentTab=section; DB.tab=section
-      if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
-      render()
-    end)
+    b:SetScript("OnClick", function() openSection(section) end)
     tabButtons[#tabButtons+1]=b
   end
   local panel=CreateFrame("Frame",nil,window)
@@ -556,11 +567,7 @@ local function createUI()
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionDashboard then
-    ForeverCompanionDashboard.Create(window,function(section)
-      currentTab=section; DB.tab=section
-      if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
-      render()
-    end,{db=function() return DB end,class=classLabel,level=level})
+    ForeverCompanionDashboard.Create(window,openSection,{db=function() return DB end,class=classLabel,level=level})
   end
   filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   filterButton:SetSize(140,23)
@@ -822,7 +829,20 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
-  if msg == "help" then say("/fc, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc, /fc open <section>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  local requested=msg:match("^open%s+(.+)$") or msg
+  if openSection(requested) then window:Show(); return end
+  if msg=="status" then
+    local planner=ForeverCompanionQuestPlanner
+    local supported=planner and planner.IsSupported and planner.IsSupported()
+    local stale=planner and planner.IsSnapshotStale and planner.IsSnapshotStale()
+    local count=planner and planner.AutoCount and planner.AutoCount() or 0
+    local label=supported and "current snapshot" or (stale and "cached/outdated" or "unavailable")
+    local craft=ForeverCompanionCraftingPlanner
+    local stats=craft and craft.Stats and craft.Stats()
+    say("Quest log: "..label.." ("..tostring(count).." recorded). Material goals: "..tostring(stats and stats.complete or 0).."/"..tostring(stats and stats.materials or 0).." complete, "..tostring(stats and stats.missing or 0).." units missing (manual).")
+    return
+  end
   local class = msg:match("^class%s+(.+)$")
   if class then
     if class:lower()=="auto" then DB.previewClass=nil
