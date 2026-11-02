@@ -777,6 +777,21 @@ for index,choice in ipairs(ForeverCompanionSpecs.DRUID) do
  if choice[1]=="Feral" then ForeverCompanionDB.specSelections.DRUID=index break end
 end
 local feralSourced=table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," ")
-assert(feralSourced:find("Berserk was removed",1,true),"Feral hotfix warning missing")
+assert(feralSourced:find("Berserk is no longer a Feral talent",1,true),"Feral hotfix warning missing")
 assert(not feralSourced:find("during Berserk, prioritize",1,true),"obsolete Feral Berserk rotation")
+ForeverCompanionDB.specSelections={}
+
+-- Late-October client changes must not regress into unsafe guide instructions.
+local function selectSpec(class,name)
+ for i,choice in ipairs(ForeverCompanionSpecs[class]) do
+  if choice[1]==name then ForeverCompanionDB.specSelections[class]=i return end
+ end
+ error("missing spec "..class.." "..name)
+end
+selectSpec("PRIEST","Shadow")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("30% of your maximum health",1,true),"Shadow Word: Death backlash caution missing")
+selectSpec("PRIEST","Holy")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("Holy Binding",1,true),"Holy Binding hotfix missing")
+selectSpec("DRUID","Restoration")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," "):find("consumes the HoT",1,true),"Swiftmend HoT-consumption missing")
 ForeverCompanionDB.specSelections={}
