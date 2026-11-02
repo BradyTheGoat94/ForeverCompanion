@@ -390,6 +390,7 @@ local function render()
       if guide then
         lines[#lines+1]="PROFESSION HANDBOOK: "..guide.name
         lines[#lines+1]="Pairs with: "..guide.pair
+        if ForeverCompanionProfessionFieldGuide then lines[#lines+1]=ForeverCompanionProfessionFieldGuide.Format(guide.name) end
         if ForeverCompanionProfessionProgress then
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
