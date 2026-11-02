@@ -7,7 +7,7 @@ local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
 local checkButtons = {}
-local scrollFrame, scrollChild, classButton, roleButton
+local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
 local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
@@ -22,7 +22,9 @@ local function toggleCheck(section, index)
 end
 local function render()
   if not window or not DB then return end
-  titleText:SetText("FOREVER COMPANION  |  "..classLabel().."  |  Level "..level())
+  titleText:SetText("FOREVER COMPANION")
+  if subtitleText then subtitleText:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
+  if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
   end
@@ -72,7 +74,7 @@ end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
-  window:SetSize(720, 560)
+  window:SetSize(720, DB.compact and 470 or 560)
   if DB.position and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
     window:SetPoint("CENTER", UIParent, "CENTER", DB.position.x, DB.position.y)
   else
@@ -92,8 +94,23 @@ local function createUI()
   if window.SetBackdrop then
     window:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=5,right=5,top=5,bottom=5}})
   end
+  background=window:CreateTexture(nil,"BACKGROUND")
+  background:SetAllPoints(window)
+  background:SetColorTexture(0.055,0.065,0.085,0.94)
+  accentBar=window:CreateTexture(nil,"BORDER")
+  accentBar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-8)
+  accentBar:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-8)
+  accentBar:SetHeight(3)
+  accentBar:SetColorTexture(0.94,0.65,0.22,1)
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   titleText:SetPoint("TOPLEFT", 20, -20)
+  titleText:SetTextColor(1,0.79,0.36)
+  subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  subtitleText:SetPoint("TOPLEFT",20,-43)
+  subtitleText:SetTextColor(0.72,0.78,0.84)
+  questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  questCountText:SetPoint("TOPRIGHT",-48,-43)
+  questCountText:SetTextColor(0.70,0.85,0.74)
   local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -4, -4)
   for i, section in ipairs(tabs) do
@@ -105,6 +122,12 @@ local function createUI()
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; render() end)
     tabButtons[#tabButtons+1] = b
   end
+  local panel=CreateFrame("Frame",nil,window)
+  panel:SetPoint("TOPLEFT",16,-98)
+  panel:SetPoint("BOTTOMRIGHT",-16,88)
+  local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
+  panelTexture:SetAllPoints(panel)
+  panelTexture:SetColorTexture(0.085,0.105,0.13,0.95)
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
   scroll:SetPoint("TOPLEFT", 22, -104)
@@ -115,7 +138,8 @@ local function createUI()
   scroll:SetScrollChild(child)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
-  content:SetWidth(620)
+  content:SetWidth(610)
+  content:SetSpacing(4)
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
   for i=1,4 do
@@ -147,9 +171,19 @@ local function createUI()
     DB.role=roles[nextIndex]
     render()
   end)
+  compactButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  compactButton:SetSize(92,23)
+  compactButton:SetPoint("BOTTOMRIGHT",-25,16)
+  compactButton:SetText(DB.compact and "Expand" or "Compact")
+  compactButton:SetScript("OnClick",function()
+    DB.compact=not DB.compact
+    window:SetHeight(DB.compact and 470 or 560)
+    compactButton:SetText(DB.compact and "Expand" or "Compact")
+    render()
+  end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("Prelaunch beta  |  No gameplay automation  |  /fc help")
+  footer:SetText("v0.5.2 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
@@ -178,7 +212,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
-  if msg == "help" then say("/fc, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset"); return end
+  if msg == "help" then say("/fc, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local class = msg:match("^class%s+(.+)$")
   if class then
     if class:lower()=="auto" then DB.previewClass=nil
