@@ -427,6 +427,7 @@ local function render()
         if ForeverCompanionRecipePlans then
           lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
           lines[#lines+1]=ForeverCompanionRecipePlans.FormatForecast(guide.name)
+          if ForeverCompanionCraftCosts then lines[#lines+1]=ForeverCompanionCraftCosts.Format(guide.name) end
           if ForeverCompanionCraftingAdvice then lines[#lines+1]=ForeverCompanionCraftingAdvice.Format(guide.name)
             lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatAllocation(guide.name)
             lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatGatherList(guide.name,8) end
