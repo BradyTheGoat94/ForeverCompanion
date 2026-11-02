@@ -29,6 +29,17 @@ function P.Add(profession,name,needed,owned)
   items[profession][#items[profession]+1]={name=name,needed=needed,owned=owned}
   return true,"Tracked "..name.." for "..profession
 end
+function P.GetEntries(profession)
+  return db()[key(profession)] or {}
+end
+function P.AdjustOwned(profession,index,delta)
+  local entries=P.GetEntries(profession)
+  index=tonumber(index)
+  delta=tonumber(delta)
+  if not index or not entries[index] or not delta then return false,"Invalid material." end
+  local amount=math.max(0,math.min(999999,(tonumber(entries[index].owned) or 0)+delta))
+  return P.SetOwned(profession,index,amount)
+end
 function P.SetOwned(profession,index,amount)
   local entries=db()[key(profession)]
   index=tonumber(index)
