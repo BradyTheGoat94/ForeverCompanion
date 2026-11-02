@@ -22,6 +22,7 @@ ClassChangeIndex.lua
 DungeonPreparation.lua
 PvPPreparation.lua
 SpecPlanner.lua
+SpecPlaybooks.lua
 ProfessionScanner.lua
 ProfessionProgress.lua
 ProfessionFieldGuide.lua
