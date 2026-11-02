@@ -213,6 +213,17 @@ local function render()
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE",experienceText()}
+    -- Put the immediately actionable, spec-specific steps first in the
+    -- scrollable guide, before long reference material and rotation notes.
+    if type(ForeverCompanionQuickStartLines)=="function" then
+      local ok,quick=pcall(ForeverCompanionQuickStartLines,classToken())
+      if ok and type(quick)=="table" then
+        lines[#lines+1]="START HERE / THREE PRACTICE STEPS"
+        for _,note in ipairs(quick) do
+          if type(note)=="string" then lines[#lines+1]=note end
+        end
+      end
+    end
     local rotations=ROTATIONS and ROTATIONS[classToken()]
     if rotations then
       local mode=rotationModes[rotationMode]
@@ -290,11 +301,6 @@ local function render()
       end
       if type(ForeverCompanionSpecPriorityNoteLines)=="function" then
         for _,note in ipairs(ForeverCompanionSpecPriorityNoteLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionQuickStartLines)=="function" then
-        for _,note in ipairs(ForeverCompanionQuickStartLines(classToken())) do
           lines[#lines+1]=note
         end
       end
