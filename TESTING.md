@@ -39,3 +39,11 @@ This addon is **not verified on the target client**. Use this checklist on the f
 - Quest counts and objective states match the native quest log.
 - Accurate quest detection for the actual Forever client API; if unsupported, ship with an explicit compatibility notice instead of claiming it works.
 - Save screenshots for CurseForge listing and issue reports.
+
+## v0.8 additional verification
+23. Cycle quest filters All / Ready / Zone; verify counts and empty states.
+24. Check that current-zone filtering matches the native quest-log header data; do not claim accurate zones when the API omits them.
+25. Change classes using the preview button, then select Auto Class; confirm actual class returns.
+26. Choose Tank, Damage and Healer where supported; verify role-specific guide notes.
+27. Verify focus text does not overlap Previous/Next buttons at compact and expanded heights.
+28. Verify no quest data is modified by filter changes or tab switches.
