@@ -58,6 +58,13 @@ local function shorten(value,max)
   if #v>max then return v:sub(1,max-3).."..." end
   return v
 end
+local function safeNumber(value)
+  local ok,n=pcall(function()
+    local number=tonumber(value)
+    if type(number)=="number" and number>=0 and number<=100000000 then return number end
+  end)
+  if ok then return n end
+end
 function B.Create(parent)
   root=CreateFrame("Frame",nil,parent)
   root:SetSize(770,156)
@@ -99,8 +106,8 @@ function B.Render(guideName)
     local item=type(learned)=="table" and learned[i] or nil
     local caption=values["skill"..i]
     if item then
-      local skill=tonumber(item.skill)
-      local cap=tonumber(item.maxSkill)
+      local skill=safeNumber(item.skill)
+      local cap=safeNumber(item.maxSkill)
       caption:SetText(shorten(item.name,23).."  "..(skill and tostring(skill) or "?").."/"..(cap and tostring(cap) or "?"))
       skillBars[i]:SetWidth(skill and cap and cap>0 and math.max(1,math.floor(344*math.max(0,math.min(1,skill/cap)))) or 1)
     else
@@ -114,9 +121,9 @@ function B.Render(guideName)
     local ok,result=pcall(craft.Stats)
     if ok and type(result)=="table" then stats=result end
   end
-  local total=stats and tonumber(stats.materials) or 0
-  local complete=stats and tonumber(stats.complete) or 0
-  local missing=stats and tonumber(stats.missing) or 0
+  local total=stats and safeNumber(stats.materials) or 0
+  local complete=stats and safeNumber(stats.complete) or 0
+  local missing=stats and safeNumber(stats.missing) or 0
   values.materials:SetText(total>0 and (complete.."/"..total.." material goals completed") or "No material goals tracked")
   values.missing:SetText(total>0 and (missing.." units remaining (manual counts)") or "Add materials with /fcm add")
   materialFill:SetWidth(total>0 and math.max(1,math.floor(345*math.max(0,math.min(1,complete/total)))) or 1)
@@ -125,10 +132,12 @@ function B.Render(guideName)
     local ok,entries=pcall(craft.GetEntries,guideName)
     if ok and type(entries)=="table" then
       for _,item in ipairs(entries) do
-        local needed=tonumber(item.needed) or 0
-        local owned=tonumber(item.owned) or 0
-        local shortage=math.max(0,needed-owned)
-        if shortage>highest then highest,highestName=shortage,item.name end
+        if type(item)=="table" then
+          local needed=safeNumber(item.needed) or 0
+          local owned=safeNumber(item.owned) or 0
+          local shortage=math.max(0,needed-owned)
+          if shortage>highest then highest,highestName=shortage,item.name end
+        end
       end
     end
   end
