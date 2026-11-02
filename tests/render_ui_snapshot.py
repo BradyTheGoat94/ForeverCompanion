@@ -44,6 +44,11 @@ d.rounded_rectangle((x+29,y+42,x+103,y+116),radius=5,fill=(26,28,33),outline=gol
 d.rounded_rectangle((x+35,y+48,x+97,y+110),radius=3,outline=goldDim,width=2)
 if strings.count("FC")<2:
     raise SystemExit("Native header/dashboard heraldic marks missing from mock widget tree")
+# Inset shield, crown jewel and rivets approximate native heraldry strips.
+d.line((x+45,y+97,x+87,y+97),fill=goldDim,width=2)
+d.line((x+49,y+103,x+83,y+103),fill=gold,width=2)
+d.line((x+56,y+109,x+76,y+109),fill=goldDim,width=2)
+d.rectangle((x+64,y+50,x+68,y+55),fill=(104,198,218))
 d.text((x+47,y+64),"FC",font=F27,fill=gold)
 d.text((x+121,y+37),find("Forever Companion","Forever Companion"),font=F37,fill=gold)
 d.text((x+123,y+88),find("Guides  -","Guides  -  Professions  -  Quests  -  Builds  -  More"),font=F16,fill=white)
