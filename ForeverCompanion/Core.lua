@@ -414,7 +414,8 @@ local function render()
           lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
           lines[#lines+1]=ForeverCompanionRecipePlans.FormatForecast(guide.name)
           if ForeverCompanionCraftingAdvice then lines[#lines+1]=ForeverCompanionCraftingAdvice.Format(guide.name)
-            lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatAllocation(guide.name) end
+            lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatAllocation(guide.name)
+            lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatGatherList(guide.name,8) end
         end
         if ForeverCompanionCraftingBridge then
           lines[#lines+1]=ForeverCompanionCraftingBridge.Preview(guide.name)
