@@ -5,6 +5,10 @@ local function safeText(value)
   if type(value)=="string" and value~="" then return value end
   return nil
 end
+local function safeNumber(value)
+  local ok,n=pcall(tonumber,value)
+  if ok and type(n)=="number" and n>=0 and n<=100000 then return n end
+end
 function scanner.Read()
   if type(GetProfessions)~="function" or type(GetProfessionInfo)~="function" then
     return nil,"Profession API unavailable on this client."
@@ -16,7 +20,7 @@ function scanner.Read()
     if type(index)=="number" then
       local success,name,icon,skill,maxSkill=pcall(GetProfessionInfo,index)
       if success and safeText(name) then
-        results[#results+1]={name=name,icon=icon,skill=tonumber(skill),maxSkill=tonumber(maxSkill)}
+        results[#results+1]={name=name,icon=icon,skill=safeNumber(skill),maxSkill=safeNumber(maxSkill)}
       end
     end
   end
