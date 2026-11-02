@@ -82,6 +82,22 @@ assert(ForeverCompanionQuestPlanner.FormatOverview():find("outdated",1,true),"st
 C_QuestLog=nil
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"unsupported quest API")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"unsupported API snapshot retained")
+-- Legacy Classic quest log: headings, completion and objectives are read-only.
+GetNumQuestLogEntries=function() return 2,1 end
+GetQuestLogTitle=function(index)
+ if index==1 then return "Westfall",nil,nil,true end
+ return "Collect 5 apples",10,0,false,false,1,nil,77
+end
+GetNumQuestLeaderBoards=function(index) return index==2 and 1 or 0 end
+GetQuestLogLeaderBoard=function() return "Apples: 5/5","item",true end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"legacy quest scan")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"legacy quest count")
+assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"legacy ready status")
+assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].zone,"Westfall","legacy zone heading")
+assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].objectives[1],"Apples: 5/5","legacy objectives")
+GetNumQuestLogEntries=function() error("simulated legacy API outage") end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"legacy scan outage")
+assertEqual(ForeverCompanionQuestPlanner.IsSnapshotStale(),true,"legacy cached snapshot stale")
 -- Spec selection remains a manual preview; it must never query or change talents.
 dofile("ForeverCompanion/SpecPlanner.lua")
 local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
