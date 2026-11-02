@@ -9,7 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
+local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -28,6 +28,8 @@ local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
   Leveling="Class priorities, specialization reference and leveling notes",
+  Legacy="Legacy system progression, unlocks and evidence status",
+  Alts="Alternate character leveling and preparation checklist",
   Quests="Read-only quest journal, objectives and personal notes",
   Dungeons="Party preparation, role checklists and general guidance",
   Professions="Skill progression, recipes and manual material goals",
@@ -36,6 +38,8 @@ local sectionDescriptions={
 }
 local sectionIcons={
   Leveling="Interface\\Icons\\INV_Misc_Book_09",
+  Legacy="Interface\\Icons\\INV_Misc_Book_11",
+  Alts="Interface\\Icons\\INV_Misc_Map_01",
   Quests="Interface\\Icons\\INV_Misc_Note_01",
   Dungeons="Interface\\Icons\\INV_Weapon_ShortBlade_01",
   Professions="Interface\\Icons\\Trade_BlackSmithing",
@@ -211,6 +215,26 @@ local function render()
     if ForeverCompanionCraftingPlanner then lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary() end
     if ForeverCompanionReadiness then lines[#lines+1]=ForeverCompanionReadiness.Format(classToken(),level(),(DB and DB.professions or "")) end
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
+  elseif currentTab == "Legacy" then
+    lines = {"LEGACY SYSTEM / FOREVER REFERENCE",
+      "STATUS: Forever-specific rules are not yet verified.",
+      "UNLOCKS: Confirm the first available level, quest or prerequisite in the live client.",
+      "PROGRESSION: Check whether progress is per-character or account-wide.",
+      "REWARDS: Verify exact rewards and requirements before spending resources.",
+      "RESETS: Confirm season, weekly or permanent progression rules.",
+      "ALT BENEFITS: Do not assume unlocks transfer between characters.",
+      "NEXT STEP: Record an official source and client version for each confirmed rule.",
+      "No Legacy mechanics from other WoW versions are presented as Forever facts."}
+  elseif currentTab == "Alts" then
+    lines = {"ALT LEVELING / PLANNING GUIDE",
+      "1. Verify whether any Legacy or account unlocks benefit new characters.",
+      "2. Prepare class training, starter gear, bags and consumables.",
+      "3. Compare questing, dungeon runs and rested experience when XP rules are known.",
+      "4. Review dungeon entry levels, quests and role requirements before queuing.",
+      "5. Check profession training and travel unlocks on each alt.",
+      "6. Revisit class-specific ability priorities under Leveling.",
+      "STATUS: Forever alt XP rates, boosts and shared unlocks remain unverified.",
+      "Use this as a planning checklist, not a claim of available game features."}
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE",experienceText(),
       "ALT LEVELING / PRE-LAUNCH CHECKLIST",
@@ -775,6 +799,8 @@ local function createUI()
   local navIcons={
     "Interface\\Icons\\INV_Misc_Map_01",
     "Interface\\Icons\\INV_Misc_Book_09",
+    "Interface\\Icons\\INV_Misc_Book_11",
+    "Interface\\Icons\\INV_Misc_Map_01",
     "Interface\\Icons\\INV_Misc_Note_01",
     "Interface\\Icons\\INV_Weapon_ShortBlade_01",
     "Interface\\Icons\\Trade_BlackSmithing",
@@ -783,8 +809,8 @@ local function createUI()
   }
   for i, section in ipairs(tabs) do
     local b = CreateFrame("Button", nil, window)
-    b:SetSize(164, 37)
-    b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*43)
+    b:SetSize(164, 34)
+    b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*37)
     b.section=section
     if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,37) end
     b.navBackground=b:CreateTexture(nil,"BACKGROUND")
