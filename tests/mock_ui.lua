@@ -137,6 +137,14 @@ compactButton.OnClick(compactButton)
 assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==720 and not ForeverCompanionDB.compact,"expand layout failed")
+local savedXP=UnitXP
+UnitXP=function() error("simulated restricted XP API") end
+assert(pcall(ForeverCompanionDashboard.Render),"dashboard should tolerate restricted XP reads")
+local xpUnavailable=false
+for _,w in ipairs(frames) do if w.kind=="FontString" and w.text=="N/A" then xpUnavailable=true end end
+assert(xpUnavailable,"unavailable XP should be labeled N/A")
+UnitXP=savedXP
+ForeverCompanionDashboard.Render()
 SlashCmdList.FOREVERCOMPANION("")
 SlashCmdList.FOREVERCOMPANION("")
 local foundTitle=false
