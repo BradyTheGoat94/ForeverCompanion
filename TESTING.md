@@ -111,3 +111,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 74. Verify /fcm clear Profession removes completed goals but preserves unfinished goals.
 75. Verify goal summaries persist after /reload and across tab switches.
 76. Verify malformed quantities and missing list indices do not crash the addon.
+
+## v1.8.1 UI reliability
+77. Scroll the Leveling guide and verify rotation tiles scroll with the content rather than floating over other tabs.
+78. Hover a rotation tile and verify its full priority guidance appears in a tooltip.
+79. Verify all rotation tiles remain legible at compact and normal window heights.
+80. Confirm no modulo-by-zero error occurs when icon metadata is absent or empty.
+81. Add the same material twice in one profession; duplicate should be rejected without changing totals.
