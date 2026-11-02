@@ -144,3 +144,12 @@ This addon is **not verified on the target client**. Use this checklist on the f
 99. Confirm spell names marked talent-dependent or version-dependent are not presented as guaranteed learned abilities.
 100. Confirm cooldown guide is advisory only and never casts spells or starts timers.
 101. Verify rotation and cooldown guide content remains scrollable in compact and standard layouts.
+
+## v3.0 specialization planning
+102. Cycle every class and all specialization previews; confirm selected name and role-based guidance.
+103. Test five modes per spec and verify offense/defense/utility timing advice remains visible.
+104. Confirm specialization selections persist across /reload and remain independent for each class.
+105. Confirm spec selector disappears on non-Leveling tabs and reappears on Leveling.
+106. Confirm /fcspec WARRIOR cycles the preview and rejects invalid class tokens safely.
+107. Confirm no spell casting, combat automation, or unsupported claims of optimized rotations.
+108. Verify cooldown text and specialization button fit standard and compact window sizes.
