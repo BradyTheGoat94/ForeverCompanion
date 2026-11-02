@@ -412,3 +412,12 @@ IsSpellKnown=function(id) return id==23881 end
 assert(ForeverCompanionSkillStudy.PracticePlan("WARRIOR",40):find("Bloodthirst",1,true),"practice plan must include known audited spells")
 assert(ForeverCompanionSkillStudy.PracticePlan("MAGE",40):find("No audited",1,true),"unaudited class must be disclosed")
 IsSpellKnown=previousSpellKnown
+
+-- Editing goals must immediately propagate to material forecasts.
+assert(ForeverCompanionRecipePlans.SetQuantity("ForecastTest",1,4),"recipe target should be editable")
+assert(ForeverCompanionRecipePlans.SetIngredient("ForecastTest",1,1,2),"ingredient amounts should be editable")
+assert(ForeverCompanionRecipePlans.MaterialForecast("ForecastTest")[1].shortage>=0,"forecast should remain valid after edits")
+assert(not ForeverCompanionRecipePlans.SetQuantity("ForecastTest",1,0),"zero target must be rejected")
+assert(not ForeverCompanionRecipePlans.SetIngredient("ForecastTest",1,99,2),"missing ingredient must be rejected")
+assert(ForeverCompanionRecipePlans.RemoveIngredient("ForecastTest",1,2),"ingredient should be removable")
+assert(ForeverCompanionRecipePlans.Format("ForecastTest"):find("setingredient",1,true),"guide should document editing")
