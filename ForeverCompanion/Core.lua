@@ -2,6 +2,10 @@ local addonName = ...
 local addon = CreateFrame("Frame")
 local DATA = ForeverCompanionData
 local ADVANCED = ForeverCompanionAdvanced
+local ROTATIONS = ForeverCompanionRotations
+local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
+local rotationMode=1
+local rotationButton
 local DB, window, titleText, content, currentTab
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -41,6 +45,7 @@ local function render()
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
   if handbookIcon then handbookIcon:Hide() end
+  if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
   for _,b in ipairs(handbookButtons) do b:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
@@ -50,6 +55,13 @@ local function render()
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE"}
+    local rotations=ROTATIONS and ROTATIONS[classToken()]
+    if rotations then
+      local mode=rotationModes[rotationMode]
+      lines[#lines+1]="ROTATION / PRIORITY: "..string.upper(mode)
+      for i,ability in ipairs(rotations[mode] or {}) do lines[#lines+1]=i..". "..ability end
+      lines[#lines+1]="General reference only; verify abilities and talents on Forever."
+    end
     local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
     if guide then
       lines[#lines+1]="LEVELING: "..guide.leveling
@@ -242,6 +254,11 @@ local function createUI()
   pageForward:SetScript("OnClick",function() questPage=math.min(math.max(1,math.ceil(#ForeverCompanionQuestPlanner.GetVisible() / #questRows)),questPage+1); render() end)
   pageLabel=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   pageLabel:SetPoint("LEFT",pageBack,"RIGHT",12,0)
+  rotationButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  rotationButton:SetSize(155,23)
+  rotationButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",60,80)
+  rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; render() end)
+  rotationButton:Hide()
   handbookIcon=window:CreateTexture(nil,"OVERLAY")
   handbookIcon:SetSize(30,30)
   handbookIcon:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,82)
@@ -332,7 +349,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.0.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.1.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
