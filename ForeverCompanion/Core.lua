@@ -7,7 +7,7 @@ local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
 local checkButtons = {}
-local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, questFocusText, welcomeTip
+local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
 local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
@@ -44,7 +44,7 @@ local function render()
       end
     end
   elseif currentTab == "Quests" then
-    lines = {ForeverCompanionQuestPlanner.FormatAuto(), "", ForeverCompanionQuestPlanner.Format()}
+    lines = {ForeverCompanionQuestPlanner.FormatFocused(), "", ForeverCompanionQuestPlanner.FormatAuto(), "", ForeverCompanionQuestPlanner.Format()}
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
@@ -71,6 +71,7 @@ local function render()
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
   if nextQuestButton then if currentTab=="Quests" then nextQuestButton:Show() else nextQuestButton:Hide() end end
+  if previousQuestButton then if currentTab=="Quests" then previousQuestButton:Show() else previousQuestButton:Hide() end end
   if questFocusText then
     local q=ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.GetSelected()
     questFocusText:SetText(currentTab=="Quests" and (q and ("Focused: "..q.title) or "No quest selected") or "")
@@ -157,6 +158,12 @@ local function createUI()
   nextQuestButton:SetText("Next Quest")
   nextQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Next(); render() end)
   nextQuestButton:Hide()
+  previousQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  previousQuestButton:SetSize(118,25)
+  previousQuestButton:SetPoint("RIGHT",nextQuestButton,"LEFT",-5,0)
+  previousQuestButton:SetText("Previous")
+  previousQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Previous(); render() end)
+  previousQuestButton:Hide()
   for i=1,4 do
     local b=CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
     b:SetSize(90, 25)
@@ -198,7 +205,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.6.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v0.6.1 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
