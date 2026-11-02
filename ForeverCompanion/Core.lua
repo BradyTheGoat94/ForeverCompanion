@@ -47,6 +47,11 @@ local function colorTexture(texture,r,g,b,a)
   else texture:SetTexture(r,g,b,a) end
 end
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
+local function clipText(value,limit)
+  local text=tostring(value or ""):gsub("[\r\n]"," ")
+  if #text>limit then return text:sub(1,limit-3).."..." end
+  return text
+end
 local function actualClass()
   if type(UnitClass)~="function" then return "UNKNOWN" end
   local ok,token=pcall(function()
@@ -258,8 +263,31 @@ local function render()
       local absoluteIndex=item.index
       local q=item.quest
       local btn=questRows[i]
-      btn:SetText((selectedIndex==absoluteIndex and "> " or "  ")..(q.complete and "[Ready] " or "")..q.title)
+      local selected=selectedIndex==absoluteIndex
+      btn.title:SetText((selected and "> " or "  ")..clipText(q.title,52))
+      btn.zone:SetText(clipText(q.zone or "Zone unavailable",23))
+      btn.status:SetText(q.complete and "READY" or "ACTIVE")
+      btn.status:SetTextColor(q.complete and 0.48 or 0.77,q.complete and 0.88 or 0.76,q.complete and 0.53 or 0.70)
+      colorTexture(btn.bg,selected and 0.24 or 0.085,selected and 0.20 or 0.11,selected and 0.13 or 0.15,1)
+      colorTexture(btn.trim,selected and 0.98 or 0.30,selected and 0.75 or 0.28,selected and 0.33 or 0.21,1)
+      btn.selected=selected
       btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex) end)
+      btn:SetScript("OnEnter",function(self)
+        colorTexture(self.bg,0.20,0.18,0.14,1)
+        if GameTooltip then
+          GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+          GameTooltip:SetText(q.title or "Quest",1,0.8,0.3)
+          if q.zone then GameTooltip:AddLine(q.zone,0.8,0.8,0.8) end
+          for j=1,math.min(3,#(q.objectives or {})) do
+            GameTooltip:AddLine(q.objectives[j],1,1,1,true)
+          end
+          GameTooltip:Show()
+        end
+      end)
+      btn:SetScript("OnLeave",function(self)
+        colorTexture(self.bg,self.selected and 0.24 or 0.085,self.selected and 0.20 or 0.11,self.selected and 0.13 or 0.15,1)
+        if GameTooltip then GameTooltip:Hide() end
+      end)
       btn:Show()
     end
     if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
@@ -622,10 +650,32 @@ local function createUI()
   questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-177)
   questSectionLabel:SetTextColor(1,0.79,0.36)
   questSectionLabel:Hide()
+  -- Native journal rows replace stock gray buttons; all selection is addon-local.
   for i=1,15 do
-    local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-    row:SetSize(700,23)
+    local row=CreateFrame("Button",nil,child)
+    row:SetSize(754,24)
     row:SetPoint("TOPLEFT",child,"TOPLEFT",8,-210-(i-1)*25)
+    row.bg=row:CreateTexture(nil,"BACKGROUND")
+    row.bg:SetAllPoints(row)
+    colorTexture(row.bg,0.085,0.11,0.15,1)
+    row.trim=row:CreateTexture(nil,"ARTWORK")
+    row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
+    row.trim:SetSize(3,24)
+    colorTexture(row.trim,0.30,0.28,0.21,1)
+    row.title=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    row.title:SetPoint("LEFT",row,"LEFT",13,0)
+    row.title:SetWidth(460)
+    row.title:SetJustifyH("LEFT")
+    row.title:SetTextColor(0.95,0.89,0.78)
+    row.zone=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    row.zone:SetPoint("LEFT",row,"LEFT",479,0)
+    row.zone:SetWidth(164)
+    row.zone:SetJustifyH("LEFT")
+    row.zone:SetTextColor(0.68,0.74,0.80)
+    row.status=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    row.status:SetPoint("LEFT",row,"LEFT",651,0)
+    row.status:SetWidth(93)
+    row.status:SetJustifyH("RIGHT")
     row:Hide()
     questRows[i]=row
   end
