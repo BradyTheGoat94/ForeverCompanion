@@ -1,4 +1,4 @@
--- Manual quest planner. No quest automation, map pins or unverified quest database.
+-- Read-only live quest log with optional manual notes; no quest automation or invented route data.
 local addonName = ...
 local Planner = {}
 ForeverCompanionQuestPlanner = Planner
@@ -75,6 +75,10 @@ local function questRows()
       if info and not info.isHeader and info.title then
         local id=info.questID
         local completed=info.isComplete or false
+        if id and type(C_QuestLog.IsComplete)=="function" then
+          local ok,value=pcall(C_QuestLog.IsComplete,id)
+          if ok and value~=nil then completed=value end
+        end
         local objectives={}
         if id and type(C_QuestLog.GetQuestObjectives)=="function" then
           local items=C_QuestLog.GetQuestObjectives(id)
@@ -84,7 +88,7 @@ local function questRows()
             end
           end
         end
-        rows[#rows+1]={id=id,title=clean(info.title,100),complete=completed,objectives=objectives}
+        rows[#rows+1]={id=id,title=clean(info.title,100),zone=info.zoneName or info.zone,complete=completed,objectives=objectives}
       end
     end
     return rows,true
@@ -136,9 +140,14 @@ function Planner.Sync()
 end
 function Planner.AutoCount() return auto.lastCount end
 function Planner.GetFilter() return auto.filter end
+function Planner.IsSupported() return auto.supported end
+function Planner.HasZoneMetadata()
+  for _,q in ipairs(auto.entries) do if type(q.zone)=="string" and q.zone~="" then return true end end
+  return false
+end
 function Planner.CycleFilter()
   if auto.filter=="all" then auto.filter="ready"
-  elseif auto.filter=="ready" then auto.filter="zone"
+  elseif auto.filter=="ready" then auto.filter=Planner.HasZoneMetadata() and "zone" or "all"
   else auto.filter="all" end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
@@ -149,7 +158,7 @@ function Planner.GetVisible()
   elseif type(GetZoneText)=="function" then zone=GetZoneText() end
   for i,q in ipairs(auto.entries) do
     if auto.filter=="all" or (auto.filter=="ready" and q.complete)
-      or (auto.filter=="zone" and (not zone or zone=="" or q.zone==zone)) then
+      or (auto.filter=="zone" and (not zone or zone=="" or not Planner.HasZoneMetadata() or not q.zone or q.zone==zone)) then
       visible[#visible+1]={index=i,quest=q}
     end
   end
