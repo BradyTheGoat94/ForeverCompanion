@@ -138,6 +138,19 @@ focusButton.OnClick(focusButton)
 assert(ForeverCompanionDB.dashboardFocus[1]==true,"focus state did not persist")
 focusButton.OnClick(focusButton)
 assert(ForeverCompanionDB.dashboardFocus[1]==false,"focus toggle did not reverse")
+-- Today's Focus persists within the same day, then resets on the next day.
+local originalDate=date
+date=function() return "2026-11-02" end
+focusButton.OnClick(focusButton)
+assert(ForeverCompanionDB.dashboardFocus[1]==true,"daily focus should save")
+ForeverCompanionDashboard.Render()
+assert(ForeverCompanionDB.dashboardFocus[1]==true,"same-day focus must persist")
+date=function() return "2026-11-03" end
+ForeverCompanionDashboard.Render()
+assert(not ForeverCompanionDB.dashboardFocus[1],"new day must reset the focus checklist")
+date=function() error("restricted date API") end
+assert(pcall(ForeverCompanionDashboard.Render),"restricted date API must not crash")
+date=originalDate
 local questAction
 for _,w in ipairs(frames) do if w.caption and w.caption.text=="Quests" then questAction=w end end
 assert(questAction and questAction.OnClick,"quest shortcut missing")
