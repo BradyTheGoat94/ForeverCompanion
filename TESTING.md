@@ -137,3 +137,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 94. Confirm invalid recipe indices, quantities, and over-limit lists fail safely.
 95. Confirm recipe demand remains separate from manually owned materials and never claims live bag counts.
 96. Confirm all recipe text appears in the Professions guide without obstructing the interactive material controls.
+
+## v2.2 cooldown guide integration
+97. Verify each of the nine classes displays offensive, defensive, and utility cooldown candidates.
+98. Cycle leveling, dungeon, boss, AoE, and PvP modes and verify the cooldown context changes.
+99. Confirm spell names marked talent-dependent or version-dependent are not presented as guaranteed learned abilities.
+100. Confirm cooldown guide is advisory only and never casts spells or starts timers.
+101. Verify rotation and cooldown guide content remains scrollable in compact and standard layouts.
