@@ -145,8 +145,8 @@ ForeverCompanionSpecPlaybooks={
   ["Arcane"]={
    "Keep Arcane Intellect active and conserve mana between pulls",
    "Use Arcane Blast only if talented; do not assume Retail Arcane Charges",
-   "Use Arcane Missiles or other trained Arcane attacks as appropriate",
-   "React to Missile Barrage only if the talent is acquired",
+   "In Arcane/Fire builds, cast Pyroblast at three Heating Up stacks if the talents are acquired",
+   "When Missile Barrage triggers, use Arcane Missiles; otherwise consider Arcane Wrath before Arcane Blast",
    "Use Frost Nova, Polymorph or Counterspell for control",
   },
   ["Fire"]={
@@ -222,6 +222,6 @@ function ForeverCompanionSpecPlaybookLines(classToken)
  local lines={"BEGINNER BUTTON ORDER | "..name.." | ADVISORY"}
  for i,step in ipairs(steps) do lines[#lines+1]=i..". "..step end
  lines[#lines+1]="These are practice decisions, not an automated rotation. Skip untrained spells."
- lines[#lines+1]="Sources: Blizzard class deep dives; mobalytics.gg/wow-forever/classes; Wowhead Forever tuning."
+ lines[#lines+1]="Sources: Blizzard class deep dives; Mobalytics Forever class guides; Wowhead Forever rotations and tuning."
  return lines
 end
