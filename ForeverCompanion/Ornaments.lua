@@ -37,15 +37,16 @@ end
 
 -- Rich original ornamentation built from native textures; no external art assets.
 function O.Corners(frame,w,h)
- if not frame or w<80 or h<55 then return false end
+ if not frame or type(w)~="number" or type(h)~="number" or w<80 or h<35 then return false end
  local gold={0.96,0.75,0.36}
  for _,x in ipairs({3,w-28}) do
-  for _,y in ipairs({-3,-h+28}) do
-   strip(frame,x,y,25,2,gold[1],gold[2],gold[3],0.95)
-   strip(frame,x,y,2,25,gold[1],gold[2],gold[3],0.95)
-   strip(frame,x+5,y-5,13,1,0.75,0.52,0.24,0.75)
-   strip(frame,x+5,y-5,1,13,0.75,0.52,0.24,0.75)
-  end
+  -- Both lower brackets point inward, not below the frame boundary.
+  strip(frame,x,-3,25,2,gold[1],gold[2],gold[3],0.95)
+  strip(frame,x,-3,2,25,gold[1],gold[2],gold[3],0.95)
+  strip(frame,x,-h+5,25,2,gold[1],gold[2],gold[3],0.95)
+  strip(frame,x,-h+28,2,25,gold[1],gold[2],gold[3],0.95)
+  strip(frame,x+5,-8,13,1,0.75,0.52,0.24,0.75)
+  strip(frame,x+5,-h+10,13,1,0.75,0.52,0.24,0.75)
  end
  return true
 end
