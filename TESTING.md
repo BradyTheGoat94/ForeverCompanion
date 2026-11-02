@@ -79,3 +79,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 50. If the quest API is unavailable, show an explicit compatibility warning instead of silently displaying zero quests.
 51. Verify the addon does not inspect secret combat values or automate gameplay.
 52. Enable /console scriptErrors 1 and test UI loading, class preview, profession selection, and quest updates.
+
+## v1.5.0 modern client compatibility
+53. Confirm unknown events do not abort addon loading on Forever.
+54. Verify XP current/max and percentage at low level, level-up, and level cap.
+55. Confirm missing or restricted XP values produce a readable unavailable message rather than Lua errors.
+56. Confirm the in-game footer version matches the TOC version.
+57. Recheck quest-log updates after safe event registration.
