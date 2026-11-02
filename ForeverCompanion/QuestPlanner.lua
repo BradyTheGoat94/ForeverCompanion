@@ -68,46 +68,34 @@ end
 local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=1, filter="all"}
 local function questRows()
   local rows={}
-  if C_QuestLog and type(C_QuestLog.GetNumQuestLogEntries)=="function" and type(C_QuestLog.GetInfo)=="function" then
-    local count=C_QuestLog.GetNumQuestLogEntries() or 0
-    for i=1,count do
-      local info=C_QuestLog.GetInfo(i)
-      if info and not info.isHeader and info.title then
-        local id=info.questID
-        local completed=info.isComplete or false
-        if id and type(C_QuestLog.IsComplete)=="function" then
-          local ok,value=pcall(C_QuestLog.IsComplete,id)
-          if ok and value~=nil then completed=value end
-        end
-        local objectives={}
-        if id and type(C_QuestLog.GetQuestObjectives)=="function" then
-          local items=C_QuestLog.GetQuestObjectives(id)
-          if type(items)=="table" then
-            for _,obj in ipairs(items) do
-              if obj.text then objectives[#objectives+1]=clean(obj.text,140) end
-            end
-          end
-        end
-        rows[#rows+1]={id=id,title=clean(info.title,100),zone=info.zoneName or info.zone,complete=completed,objectives=objectives}
-      end
-    end
-    return rows,true
-  elseif type(GetNumQuestLogEntries)=="function" and type(GetQuestLogTitle)=="function" then
-    local count=GetNumQuestLogEntries() or 0
+  local modern=C_QuestLog
+  if type(modern)=="table" and type(modern.GetNumQuestLogEntries)=="function" and type(modern.GetInfo)=="function" then
+    local ok,count=pcall(modern.GetNumQuestLogEntries)
+    if not ok or type(count)~="number" or count<0 or count>1000 then return rows,false end
     local header="Quest log"
     for i=1,count do
-      local title,_,_,isHeader,_,isComplete,_,questID=GetQuestLogTitle(i)
-      if isHeader then header=clean(title,70)
-      elseif title then
-        local objectives={}
-        if type(GetNumQuestLeaderBoards)=="function" and type(GetQuestLogLeaderBoard)=="function" then
-          local n=GetNumQuestLeaderBoards(i) or 0
-          for j=1,n do
-            local text=GetQuestLogLeaderBoard(j,i)
-            if text then objectives[#objectives+1]=clean(text,140) end
+      local good,info=pcall(modern.GetInfo,i)
+      if not good then return {},false end
+      if type(info)=="table" then
+        if info.isHeader then header=clean(info.title or header,70)
+        elseif type(info.title)=="string" and info.title~="" then
+          local id=info.questID
+          local completed=info.isComplete==true
+          if type(id)=="number" and type(modern.IsComplete)=="function" then
+            local done,value=pcall(modern.IsComplete,id)
+            if done and type(value)=="boolean" then completed=value end
           end
+          local objectives={}
+          if type(id)=="number" and type(modern.GetQuestObjectives)=="function" then
+            local got,items=pcall(modern.GetQuestObjectives,id)
+            if got and type(items)=="table" then
+              for _,obj in ipairs(items) do
+                if type(obj)=="table" and type(obj.text)=="string" then objectives[#objectives+1]=clean(obj.text,140) end
+              end
+            end
+          end
+          rows[#rows+1]={id=id,title=clean(info.title,100),zone=info.zoneName or info.zone or header,complete=completed,objectives=objectives}
         end
-        rows[#rows+1]={id=questID,title=clean(title,100),zone=header,complete=isComplete==1 or isComplete==true,objectives=objectives}
       end
     end
     return rows,true
