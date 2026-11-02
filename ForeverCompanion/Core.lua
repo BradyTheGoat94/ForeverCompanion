@@ -10,7 +10,7 @@ local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local questRows = {}
 local questPage=1
-local pageBack, pageForward, pageLabel
+local pageBack, pageForward, pageLabel, filterButton, resetClassButton
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -39,6 +39,7 @@ local function render()
   for _, b in ipairs(checkButtons) do b:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
+  if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
   local lines = {}
   if currentTab == "Overview" then
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
@@ -55,17 +56,20 @@ local function render()
     end
   elseif currentTab == "Quests" then
     local live=ForeverCompanionQuestPlanner.GetLive()
+    local visible=ForeverCompanionQuestPlanner.GetVisible()
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
     lines = {ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
     if questSectionLabel then
-      questSectionLabel:SetText("QUEST LOG  |  "..#live.." detected  |  Click to focus")
+      questSectionLabel:SetText("QUEST LOG  |  "..#live.." active  |  "..ForeverCompanionQuestPlanner.ReadyCount().." ready")
       questSectionLabel:Show()
     end
-    local pages=math.max(1,math.ceil(#live/#questRows))
+    if filterButton then filterButton:SetText("Show: "..ForeverCompanionQuestPlanner.GetFilter()) end
+    local pages=math.max(1,math.ceil(#visible/#questRows))
     if questPage>pages then questPage=pages end
-    for i=1,math.min(#questRows,math.max(0,#live-(questPage-1)*#questRows)) do
-      local absoluteIndex=(questPage-1)*#questRows+i
-      local q=live[absoluteIndex]
+    for i=1,math.min(#questRows,math.max(0,#visible-(questPage-1)*#questRows)) do
+      local item=visible[(questPage-1)*#questRows+i]
+      local absoluteIndex=item.index
+      local q=item.quest
       local btn=questRows[i]
       btn:SetText((selectedIndex==absoluteIndex and "> " or "  ")..(q.complete and "[Ready] " or "")..q.title)
       btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex) end)
@@ -172,6 +176,12 @@ local function createUI()
   child:SetSize(640, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  filterButton:SetSize(140,23)
+  filterButton:SetPoint("TOPRIGHT",child,"TOPRIGHT",-42,-7)
+  filterButton:SetText("Show: all")
+  filterButton:SetScript("OnClick",function() questPage=1; ForeverCompanionQuestPlanner.CycleFilter() end)
+  filterButton:Hide()
   pageBack=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   pageBack:SetSize(90,24)
   pageBack:SetPoint("TOPLEFT",child,"TOPLEFT",8,-415)
@@ -258,7 +268,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.7.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v0.8.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
