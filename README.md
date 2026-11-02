@@ -6,6 +6,18 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Premium dashboard (develop beta)
+
+The Overview is now a native WoW UI with a gold-accented sidebar, welcome banner, character summary, four quick actions, read-only progress bars, recommended next steps, and a manually checked **Today's Focus** list. The checklist is saved per character; it never executes gameplay actions. The compact toggle hides the lower dashboard panels, and the window scales down when the game UI is smaller.
+
+- Character name, class, level, and role preference come from game APIs and saved settings.
+- Quest count, ready count, and selected quest come from the quest log **only if that API is available and a successful scan has occurred**.
+- Experience progress uses optional XP APIs and shows N/A when unavailable.
+- Profession names/skill levels use the profession API when available. Crafting-goal progress comes from **manual** /fcm entries, not inventory scans.
+- Diagnostics opens Settings, where API-presence information is displayed. These checks do not establish compatibility or compliance.
+
+The GitHub Actions `offline-ui-snapshot` artifact includes a source-validated PNG illustration of the mocked interface. It is **not an in-game screenshot**, and the example character, quests, and materials are test fixtures. The real target-client Interface number and API behavior remain unverified.
+
 ## Beta features
 
 - Seven-tab guide window: Overview, Leveling, Quests, Dungeons, Professions, PvP and Settings
@@ -29,7 +41,7 @@ Prelaunch beta. Not yet tested in the target game client. Game-specific claims, 
 - `/fcq done 1` — toggle quest completion
 - `/fcq remove 1` — remove a quest
 
-**Prelaunch limitations:** This is not a full Questie replacement. There is no verified Forever-specific quest database, automatic quest detection, map overlay or pathfinding yet. The manifest Interface value is provisional. Live client testing is required before claiming compatibility.
+**Prelaunch limitations:** This is not a full Questie replacement. It attempts passive automatic quest-log detection through supported APIs, but that behavior has not been verified in the Forever client. There is no verified Forever-specific quest database, map overlay or pathfinding. The manifest Interface value is provisional. Live client testing is required before claiming compatibility.
 
 ## Development
 
