@@ -5,6 +5,7 @@ end
 local output={}
 print=function(message) output[#output+1]=tostring(message) end
 SlashCmdList={}
+CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
 ForeverCompanionDB={}
 C_SpellBook={
  GetNumSpellBookSkillLines=function() return 1 end,
