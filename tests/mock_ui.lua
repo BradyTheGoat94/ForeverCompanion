@@ -2,6 +2,22 @@
 local frames={}
 local snapshot={}
 local function clean(v) return (tostring(v or ""):gsub("[\r\n|]"," ")) end
+local function exportSnapshot(path)
+ local lines={"id|kind|parent|visible|width|height|anchor|x|y|text|texture"}
+ for _,f in ipairs(frames) do
+  local anchor=f.point and clean(f.point[1]) or ""
+  local x,y="",""
+  if f.point then
+   for _,v in ipairs(f.point) do
+    if type(v)=="number" then if x=="" then x=v else y=v end end
+   end
+  end
+  lines[#lines+1]=table.concat({f.id,f.kind,f.parent or "",f.visible and "1" or "0",f.width or "",f.height or "",anchor,x,y,clean(f.text),clean(f.texture)},"|")
+ end
+ local out=assert(io.open(path,"w"))
+ out:write(table.concat(lines,string.char(10)))
+ out:close()
+end
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
  function w:SetText(v) self.text=tostring(v or "") end
