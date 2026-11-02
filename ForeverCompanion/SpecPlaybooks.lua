@@ -640,6 +640,26 @@ ForeverCompanionHotfixCautions={
  HUNTER="HOTFIX DATA (unconfirmed in official notes): Hunter talents and damage tuning changed. Confirm current trained spells and priority.",
  PRIEST="HOTFIX DATA (unconfirmed in official notes): Priest talent tuning and Shadow Word: Death backlash changed. Confirm live tooltip.",
 }
+-- A static readiness note. Never query protected combat values to decide
+-- which spell a player should cast: Forever inherits Mainline secret-value rules.
+function ForeverCompanionGuideReadinessLines()
+ local lines={}
+ local level=type(UnitLevel)=="function" and UnitLevel("player") or nil
+ if type(level)=="number" then
+  if level<10 then
+   lines[#lines+1]="CURRENT LEVEL "..level..": talents are not unlocked yet. Practice your trained basic spells first."
+  elseif level<40 then
+   lines[#lines+1]="CURRENT LEVEL "..level..": follow only spells and talent ranks you have learned; dual specialization unlocks later."
+  else
+   lines[#lines+1]="CURRENT LEVEL "..level..": confirm your active talent loadout after switching specialization."
+  end
+ else
+  lines[#lines+1]="CURRENT LEVEL UNKNOWN: check your level, spellbook and active talents in game."
+ end
+ lines[#lines+1]="STATIC REFERENCE ONLY: Forever's protected combat information cannot be used to automate live spell decisions."
+ return lines
+end
+
 function ForeverCompanionSourcedPriorityLines(classToken)
  local planner=ForeverCompanionSpecPlanner
  if type(planner)~="table" or type(planner.Get)~="function" then return {} end
@@ -653,6 +673,7 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  lines[#lines+1]="LEVEL GATE: talents unlock at level 10; abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
  lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
  lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."
+ for _,note in ipairs(ForeverCompanionGuideReadinessLines()) do lines[#lines+1]=note end
 
  if ForeverCompanionHotfixCautions[classToken] then lines[#lines+1]=ForeverCompanionHotfixCautions[classToken] end
  for _,rule in ipairs(entry.rules) do lines[#lines+1]=rule end
