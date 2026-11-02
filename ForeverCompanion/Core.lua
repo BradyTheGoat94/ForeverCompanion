@@ -244,6 +244,8 @@ local function render()
       local matches=ForeverCompanionLoot.Search(lootUI.query)
       local selected=matches[lootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
+      lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
+      lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
       lines[#lines+1]=ForeverCompanionLoot.Format(lootUI.query)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
       lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
