@@ -23,10 +23,6 @@ local professionIndex=1
 local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, resetClassButton
-local dashboardCards={}
-local dashboardValues={}
-local dashboardNavButtons={}
-local dashboardXPBar
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -57,19 +53,10 @@ local function render()
   if subtitleText then subtitleText:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
   local isOverview=currentTab=="Overview"
-  for _,card in ipairs(dashboardCards) do if isOverview then card:Show() else card:Hide() end end
-  for _,button in ipairs(dashboardNavButtons) do if isOverview then button:Show() else button:Hide() end end
   if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
-  if isOverview then
-    if dashboardValues.character then dashboardValues.character:SetText(classLabel().." | Level "..level().." | "..(DB.role or "Role not selected")) end
-    if dashboardValues.quests then dashboardValues.quests:SetText("Active quests: "..tostring(ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.AutoCount() or "Unavailable")) end
-    if dashboardValues.xp then dashboardValues.xp:SetText(experienceText()) end
-    if dashboardXPBar then
-      local current=type(UnitXP)=="function" and tonumber(UnitXP("player")) or nil
-      local maximum=type(UnitXPMax)=="function" and tonumber(UnitXPMax("player")) or nil
-      local fraction=(current and maximum and maximum>0) and math.max(0,math.min(1,current/maximum)) or 0
-      dashboardXPBar:SetWidth(math.max(1,math.floor(290*fraction)))
-    end
+  if ForeverCompanionDashboard then
+    ForeverCompanionDashboard.SetCompact(DB.compact)
+    ForeverCompanionDashboard.Show(isOverview)
   end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
@@ -198,6 +185,7 @@ local function render()
     if pageBack then pageBack:SetEnabled(questPage>1); pageForward:SetEnabled(questPage<pages) end
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
+    if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
   else
     lines = {string.upper(currentTab).." CHECKLIST"}
     local entries = DATA.checklist[currentTab] or {}
@@ -290,7 +278,7 @@ end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
-  window:SetSize(900, DB.compact and 520 or 620)
+  window:SetSize(1080, DB.compact and 620 or 720)
   if DB.position and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
     window:SetPoint("CENTER", UIParent, "CENTER", DB.position.x, DB.position.y)
   else
@@ -347,68 +335,27 @@ local function createUI()
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
     tabButtons[#tabButtons+1] = b
   end
-  local function dashboardCard(x,y,w,h,heading,key)
-    local plate=window:CreateTexture(nil,"BORDER")
-    plate:SetPoint("TOPLEFT",window,"TOPLEFT",x,y)
-    plate:SetSize(w,h)
-    colorTexture(plate,0.115,0.145,0.19,0.99)
-    dashboardCards[#dashboardCards+1]=plate
-    local trim=window:CreateTexture(nil,"ARTWORK")
-    trim:SetPoint("TOPLEFT",window,"TOPLEFT",x,y)
-    trim:SetSize(w,2)
-    colorTexture(trim,0.91,0.65,0.24,1)
-    dashboardCards[#dashboardCards+1]=trim
-    local title=window:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-    title:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-14)
-    title:SetText(heading)
-    title:SetTextColor(0.95,0.75,0.36)
-    dashboardCards[#dashboardCards+1]=title
-    local value=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    value:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-47)
-    value:SetWidth(w-30)
-    value:SetJustifyH("LEFT")
-    dashboardValues[key]=value
-    dashboardCards[#dashboardCards+1]=value
-  end
-  dashboardCard(208,-116,666,92,"CHARACTER PROFILE","character")
-  dashboardCard(208,-220,323,102,"QUEST JOURNAL","quests")
-  dashboardCard(543,-220,331,102,"LEVELING PROGRESS","xp")
-  dashboardCard(208,-334,666,118,"QUICK ACCESS","shortcuts")
-  local shortcuts={{"QUESTS","Quests"},{"BUILDS","Leveling"},{"CRAFTING","Professions"},{"PVP","PvP"}}
-  for i,entry in ipairs(shortcuts) do
-    local button=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-    button:SetSize(143,32)
-    button:SetPoint("TOPLEFT",window,"TOPLEFT",225+(i-1)*157,-397)
-    button:SetText(entry[1])
-    local target=entry[2]
-    button:SetScript("OnClick",function() currentTab=target;DB.tab=target;render() end)
-    dashboardNavButtons[#dashboardNavButtons+1]=button
-  end
-  dashboardValues.shortcuts:SetText("Choose a section to open your guide")
-  local xpTrack=window:CreateTexture(nil,"ARTWORK")
-  xpTrack:SetPoint("TOPLEFT",window,"TOPLEFT",558,-293)
-  xpTrack:SetSize(290,8)
-  colorTexture(xpTrack,0.21,0.25,0.31,1)
-  dashboardCards[#dashboardCards+1]=xpTrack
-  dashboardXPBar=window:CreateTexture(nil,"OVERLAY")
-  dashboardXPBar:SetPoint("TOPLEFT",window,"TOPLEFT",558,-293)
-  dashboardXPBar:SetSize(1,8)
-  colorTexture(dashboardXPBar,0.95,0.69,0.29,1)
-  dashboardCards[#dashboardCards+1]=dashboardXPBar
   local panel=CreateFrame("Frame",nil,window)
-  panel:SetPoint("TOPLEFT",188,-98)
+  panel:SetPoint("TOPLEFT",198,-98)
   panel:SetPoint("BOTTOMRIGHT",-16,88)
   local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
   panelTexture:SetAllPoints(panel)
   colorTexture(panelTexture,0.085,0.105,0.13,0.95)
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
-  scroll:SetPoint("TOPLEFT", 198, -108)
+  scroll:SetPoint("TOPLEFT", 216, -108)
   scroll:SetPoint("BOTTOMRIGHT", -35, 92)
   local child = CreateFrame("Frame", nil, scroll)
-  child:SetSize(660, 800)
+  child:SetSize(790, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  if ForeverCompanionDashboard then
+    ForeverCompanionDashboard.Create(window,function(section)
+      currentTab=section; DB.tab=section
+      if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
+      render()
+    end,{db=function() return DB end,class=classLabel,level=level})
+  end
   filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   filterButton:SetSize(140,23)
   filterButton:SetPoint("TOPRIGHT",child,"TOPRIGHT",-42,-7)
@@ -502,12 +449,12 @@ local function createUI()
   questSectionLabel:Hide()
   for i=1,15 do
     local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-    row:SetSize(590,23)
+    row:SetSize(700,23)
     row:SetPoint("TOPLEFT",child,"TOPLEFT",8,-34-(i-1)*25)
     row:Hide()
     questRows[i]=row
   end
-  content:SetWidth(630)
+  content:SetWidth(760)
   if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
@@ -567,7 +514,7 @@ local function createUI()
   compactButton:SetText(DB.compact and "Expand" or "Compact")
   compactButton:SetScript("OnClick",function()
     DB.compact=not DB.compact
-    window:SetHeight(DB.compact and 520 or 620)
+    window:SetHeight(DB.compact and 620 or 720)
     compactButton:SetText(DB.compact and "Expand" or "Compact")
     render()
   end)
