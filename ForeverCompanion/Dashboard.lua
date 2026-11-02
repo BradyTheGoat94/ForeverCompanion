@@ -51,15 +51,16 @@ local function panel(x,y,w,h,label,icon)
   text(p,p,start,-13,w-start-12,label,"GameFontNormal",GOLD)
   return p
 end
-local function action(parent,x,y,w,label,icon,fn)
+local function action(parent,x,y,w,label,icon,fn,height)
+  local h=height or 46
   local b=CreateFrame("Button",nil,parent)
-  b:SetSize(w,46)
+  b:SetSize(w,h)
   b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
   local bg=b:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(b)
   paint(bg,0.12,0.15,0.20,1)
   strip(b,0,0,w,1,{0.60,0.45,0.23,1})
-  strip(b,0,-45,w,1,{0.45,0.35,0.21,1})
+  strip(b,0,-h+1,w,1,{0.45,0.35,0.21,1})
   local offset=12
   if icon then
     local i=b:CreateTexture(nil,"ARTWORK")
@@ -80,10 +81,10 @@ local function action(parent,x,y,w,label,icon,fn)
   b:SetScript("OnLeave",function() paint(bg,0.12,0.15,0.20,1) end)
   return b
 end
-local function progress(parent,x,y,w,label)
+local function progress(parent,x,y,w,label,color)
   local caption=text(parent,parent,x,y,w,label,"GameFontHighlightSmall",PALE)
   local track=strip(parent,x,y-20,w,9,{0.18,0.22,0.29,1})
-  local fill=strip(parent,x,y-20,1,9,{0.27,0.72,0.39,1})
+  local fill=strip(parent,x,y-20,1,9,color or {0.27,0.72,0.39,1})
   local value=text(parent,parent,x+w-78,y,78,"","GameFontHighlightSmall",GOLD)
   value:SetJustifyH("RIGHT")
   bars[label]={fill=fill,width=w,value=value,caption=caption}
@@ -134,7 +135,7 @@ function D.Create(parent,openPage,ctx)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",210,-100)
   root:SetSize(846,535)
   -- Welcome banner: a real in-game widget, not baked into the preview.
-  local banner=panel(0,0,846,95,"","Interface\\Icons\\INV_Misc_Book_09")
+  local banner=panel(0,0,846,95,"",nil)
   local bannerBg=banner:CreateTexture(nil,"ARTWORK")
   bannerBg:SetPoint("TOPLEFT",banner,"TOPLEFT",1,-3)
   bannerBg:SetSize(844,90)
@@ -157,9 +158,9 @@ function D.Create(parent,openPage,ctx)
   action(quick,12,-100,137,"Professions","Interface\\Icons\\Trade_BlackSmithing",function() navigate("Professions") end)
   action(quick,157,-100,137,"Diagnostics","Interface\\Icons\\INV_Gizmo_02",function() navigate("Settings") end)
   local goals=panel(593,-108,253,176,"PROGRESS & GOALS","Interface\\Icons\\INV_Misc_Rune_01")
-  progress(goals,15,-48,221,"Experience")
-  progress(goals,15,-88,221,"Quests ready")
-  progress(goals,15,-128,221,"Materials ready")
+  progress(goals,15,-48,221,"Experience",{0.30,0.76,0.40,1})
+  progress(goals,15,-88,221,"Quests ready",{0.25,0.60,0.94,1})
+  progress(goals,15,-128,221,"Materials ready",{0.94,0.67,0.23,1})
   local steps=panel(0,-296,416,186,"RECOMMENDED NEXT STEPS","Interface\\Icons\\INV_Misc_Map_01")
   values.step1=text(steps,steps,18,-48,382,"","GameFontHighlightSmall",PALE)
   values.step2=text(steps,steps,18,-90,382,"","GameFontHighlightSmall",PALE)
@@ -172,8 +173,7 @@ function D.Create(parent,openPage,ctx)
       local state=focusState()
       state[index]=not state[index]
       D.Render()
-    end)
-    button:SetHeight(29)
+    end,29)
     focusButtons[i]=button
     focusLabels[i]=label
   end
