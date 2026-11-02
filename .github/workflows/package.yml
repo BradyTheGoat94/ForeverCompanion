@@ -18,6 +18,8 @@ jobs:
       - name: Check Lua syntax
         run: |
           find ForeverCompanion -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
+      - name: Run mocked WoW API smoke tests
+        run: lua5.1 tests/offline_smoke.lua
       - name: Validate manifest
         run: |
           python3 - <<'PY'
