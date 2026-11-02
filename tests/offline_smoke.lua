@@ -245,6 +245,7 @@ assertEqual(professions[1].skill,125,"profession skill")
 dofile("ForeverCompanion/ProfessionProgress.lua")
 local professionOverview=ForeverCompanionProfessionProgress.Overview()
 assertEqual(professionOverview[1].remaining,100,"profession skill to cap")
+assertEqual(professionOverview[1].percent,56,"profession progress percentage rounds correctly")
 assert(ForeverCompanionProfessionProgress.FormatOverview():find("100 skill to current cap",1,true),"profession progress summary missing")
 -- Invalid and partial profession records must not produce fabricated progress.
 local originalRead=ForeverCompanionProfessionScanner.Read
@@ -258,6 +259,8 @@ assertEqual(guarded[2].maximum,nil,"zero cap should be unknown")
 assertEqual(guarded[2].remaining,nil,"missing cap cannot have remaining")
 assertEqual(guarded[3].skill,nil,"NaN skill should be unknown")
 assertEqual(guarded[4].remaining,50,"valid skill progress remains accurate")
+assertEqual(guarded[4].percent,33,"valid profession percentage")
+assertEqual(guarded[1].percent,nil,"unknown skill percentage must remain unavailable")
 assertEqual(guarded[1].name,"Broken","valid profession names preserved")
 ForeverCompanionProfessionScanner.Read=function() return {{skill=20,maxSkill=75}} end
 local unnamed=ForeverCompanionProfessionProgress.Overview()
