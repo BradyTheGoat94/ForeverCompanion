@@ -1,79 +1,123 @@
-"""Illustrative mock-client dashboard preview using actual exported widget text.
-Not a live WoW screenshot; native fonts, textures and anchors are approximated.
+"""Illustrative offline preview using the addon mock's actual widget strings.
+This is NOT a WoW screenshot: textures, fonts, and geometry are approximated.
 """
 import csv
+import re
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 rows=list(csv.DictReader(Path("ui_snapshot.txt").open(encoding="utf-8"),delimiter="|"))
-def actual(phrase, fallback):
-    for row in rows:
-        if row.get("kind")=="FontString" and phrase in row.get("text",""):
-            return row["text"][:100]
-    return fallback
-
-def at(x,y,fallback):
-    for row in rows:
-        if row.get("kind")=="FontString" and row.get("x")==str(x) and row.get("y")==str(y):
-            return row.get("text") or fallback
-    return fallback
-def width_of(x,y,fallback):
-    for row in rows:
-        if row.get("kind")=="Texture" and row.get("x")==str(x) and row.get("y")==str(y) and row.get("width"):
-            return int(row["width"])
-    return fallback
-im=Image.new("RGB",(1180,800),(12,16,24))
+strings=[r["text"] for r in rows if r.get("kind")=="FontString" and r.get("text")]
+required=["WELCOME TO FOREVER COMPANION","CHARACTER OVERVIEW","QUICK ACTIONS",
+          "PROGRESS & GOALS","RECOMMENDED NEXT STEPS","TODAY'S FOCUS"]
+missing=[s for s in required if s not in strings]
+if missing:
+    raise SystemExit("Dashboard snapshot missing actual widgets: "+", ".join(missing))
+def find(prefix,default="Unavailable"):
+    return next((s for s in strings if s.startswith(prefix)),default)
+def font(size,bold=False):
+    suffix="-Bold" if bold else ""
+    try:
+        return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans"+suffix+".ttf",size)
+    except OSError:
+        return ImageFont.load_default()
+F13,F16,F18,F21,F27,F37=(font(13),font(16),font(18),font(21,True),font(27,True),font(37,True))
+gold=(240,190,90); goldDim=(135,99,46); white=(241,235,220); muted=(172,182,196)
+W,H=1500,950
+im=Image.new("RGB",(W,H),(12,15,22))
 d=ImageDraw.Draw(im)
-try:
-    font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",16)
-    small=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",13)
-    title=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",28)
-    heading=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",18)
-except OSError:
-    font=small=title=heading=ImageFont.load_default()
-gold=(226,176,83); pale=(222,224,229); muted=(150,163,182)
-x,y=140,78
-d.rounded_rectangle((x,y,x+900,y+620),radius=12,fill=(23,29,41),outline=(164,124,60),width=3)
-d.rectangle((x+8,y+8,x+892,y+88),fill=(30,36,49))
-d.rectangle((x+14,y+12,x+886,y+15),fill=gold)
-d.text((x+26,y+29),at(20,-20,"FOREVER COMPANION"),font=title,fill=gold)
-d.text((x+27,y+64),at(20,-43,"Class | Level | Role"),font=small,fill=muted)
-d.rounded_rectangle((x+12,y+98,x+178,y+527),radius=5,fill=(30,39,55))
-d.text((x+27,y+115),"NAVIGATION",font=heading,fill=gold)
-for i,name in enumerate(["Overview","Leveling","Quests","Dungeons","Professions","PvP","Settings"]):
-    yy=y+153+i*43
-    d.rounded_rectangle((x+23,yy,x+165,yy+35),radius=5,fill=(102,76,42) if i==0 else (44,54,70),outline=(155,120,66) if i==0 else (60,70,86))
-    d.text((x+37,yy+9),name,font=small,fill=pale)
-def panel(left,top,width,height,label,value):
-    d.rounded_rectangle((x+left,y+top,x+left+width,y+top+height),radius=6,fill=(37,47,63),outline=(77,79,83),width=1)
-    d.rectangle((x+left,y+top,x+left+width,y+top+3),fill=gold)
-    d.text((x+left+17,y+top+14),label,font=heading,fill=gold)
-    d.text((x+left+17,y+top+49),value[:55],font=small,fill=pale)
-panel(208,116,666,92,"CHARACTER PROFILE",at(223,-163,"Character data unavailable"))
-panel(208,220,323,102,"QUEST JOURNAL",at(223,-267,"Quest count unavailable"))
-panel(543,220,331,102,"LEVELING PROGRESS",at(558,-267,"XP data unavailable"))
-d.rounded_rectangle((x+558,y+293,x+848,y+302),radius=3,fill=(73,82,93))
-fill=next((int(row["width"]) for row in rows if row.get("kind")=="Texture" and row.get("x")=="558" and row.get("y")=="-293" and row.get("width") and int(row["width"])<290),0)
-if fill:
-    d.rounded_rectangle((x+558,y+293,x+558+fill,y+302),radius=3,fill=gold)
-panel(208,334,666,118,"QUICK ACCESS","Choose a section to open your guide")
-for i,label in enumerate(["QUESTS","BUILDS","CRAFTING","PVP"]):
-    bx=x+225+i*157
-    d.rounded_rectangle((bx,y+396,bx+143,y+428),radius=4,fill=(87,69,44),outline=gold)
-    d.text((bx+14,y+404),label,font=small,fill=pale)
-# Bottom controls are rendered from exported button labels and anchor offsets.
-for row in rows:
-    if row.get("kind")!="Button" or row.get("visible")!="1" or row.get("parent")!="4":
-        continue
-    label=row.get("text","")
-    if not label or row.get("anchor")!="BOTTOMRIGHT":
-        continue
-    bw=int(row.get("width") or 0);bh=int(row.get("height") or 0)
-    bx=x+900+int(row["x"])-bw
-    by=y+620-int(row["y"])-bh
-    d.rounded_rectangle((bx,by,bx+bw,by+bh),radius=4,fill=(67,57,43),outline=(149,117,68))
-    d.text((bx+9,by+5),label,font=small,fill=pale)
-d.text((x+20,y+604),at(20,19,"v3.9 beta"),font=small,fill=muted)
-d.text((140,733),"OFFLINE MOCK-CLIENT PREVIEW — NOT A LIVE WOW SCREENSHOT",font=font,fill=gold)
+# A framed fantasy interface, scaled from the addon layout. Visual-only treatment.
+x,y=70,62
+d.rounded_rectangle((x,y,x+1360,y+804),radius=15,fill=(16,20,28),outline=goldDim,width=4)
+d.rounded_rectangle((x+6,y+6,x+1354,y+798),radius=10,outline=(100,78,45),width=1)
+d.rectangle((x+12,y+12,x+1348,y+18),fill=(155,109,42))
+d.rectangle((x+14,y+22,x+1346,y+125),fill=(24,28,39))
+# Crest-shaped book/compass approximation; actual addon references a game icon.
+d.ellipse((x+29,y+42,x+103,y+116),fill=(23,24,29),outline=gold,width=3)
+d.polygon([(x+65,y+55),(x+83,y+68),(x+79,y+94),(x+65,y+106),(x+51,y+94),(x+47,y+68)],outline=gold)
+d.line((x+65,y+60,x+65,y+100),fill=gold,width=2)
+d.text((x+121,y+37),find("Forever Companion","Forever Companion"),font=F37,fill=gold)
+d.text((x+123,y+88),find("Guides  -","Guides  -  Professions  -  Quests  -  Builds  -  More"),font=F16,fill=white)
+d.text((x+1080,y+48),"v3.9 BETA",font=F16,fill=gold)
+# Left navigation.
+sx,sy=x+14,y+139
+d.rounded_rectangle((sx,sy,sx+246,sy+589),radius=8,fill=(20,26,34),outline=(75,61,43))
+d.text((sx+22,sy+18),"NAVIGATION",font=F21,fill=gold)
+tabs=["Overview","Leveling","Quests","Dungeons","Professions","PvP","Settings"]
+for i,label in enumerate(tabs):
+    yy=sy+62+i*64
+    active=i==0
+    d.rounded_rectangle((sx+12,yy,sx+234,yy+53),radius=5,
+        fill=(80,57,24) if active else (29,36,46),
+        outline=gold if active else (66,67,67),width=2 if active else 1)
+    d.ellipse((sx+26,yy+18,sx+43,yy+35),fill=gold if active else goldDim)
+    d.text((sx+57,yy+15),label,font=F18,fill=gold if active else white)
+# Main welcome banner.
+cx=x+276
+cw=1068
+def panel(px,py,pw,ph,title):
+    d.rounded_rectangle((px,py,px+pw,py+ph),radius=8,fill=(22,28,37),outline=(110,87,51),width=2)
+    d.rectangle((px+2,py+2,px+pw-2,py+6),fill=goldDim)
+    if title:
+        d.text((px+20,py+17),title,font=F21,fill=gold)
+panel(cx,y+139,cw,115,"")
+# Gold architectural ornament is illustrative; not an asset embedded in the addon.
+for i in range(7):
+    bx=cx+780+i*41
+    d.polygon([(bx,y+242),(bx,y+193),(bx+13,y+177),(bx+26,y+193),(bx+26,y+242)],fill=(39,43,56))
+d.text((cx+23,y+165),"Welcome to Forever Companion",font=F27,fill=white)
+d.text((cx+24,y+211),"Your in-game companion for quests, leveling, builds and professions",font=F16,fill=muted)
+# Three data panels.
+cy=y+269
+panel(cx,cy,323,215,"CHARACTER OVERVIEW")
+panel(cx+335,cy,376,215,"QUICK ACTIONS")
+panel(cx+723,cy,345,215,"PROGRESS & GOALS")
+character=[find("PreviewCharacter"),find("Class:"),find("Role preference:"),find("Professions:")]
+for i,value in enumerate(character):
+    d.text((cx+20,cy+61+i*35),value[:37],font=F16,fill=white if i==0 else muted)
+quick=[("Leveling","LVL"),("Quests","QST"),("Professions","PRO"),("Diagnostics","API")]
+for i,(label,abbrev) in enumerate(quick):
+    bx=cx+351+(i%2)*177
+    by=cy+60+(i//2)*68
+    d.rounded_rectangle((bx,by,bx+164,by+55),radius=5,fill=(41,44,49),outline=goldDim)
+    d.text((bx+10,by+11),abbrev,font=F13,fill=gold)
+    d.text((bx+52,by+16),label,font=F13,fill=white)
+def progress(py,label,value,color):
+    bx=cx+743
+    d.text((bx,py),label,font=F16,fill=white)
+    d.text((bx+251,py),value,font=F16,fill=gold)
+    d.rounded_rectangle((bx,py+26,bx+301,py+37),radius=4,fill=(57,63,73))
+    frac=0.0
+    percent=re.search(r"(\d+)%",value)
+    count=re.search(r"(\d+)/(\d+)",value)
+    if percent: frac=min(1,int(percent.group(1))/100)
+    elif count and int(count.group(2)): frac=min(1,int(count.group(1))/int(count.group(2)))
+    if frac>0:
+        d.rounded_rectangle((bx,py+26,bx+max(3,int(301*frac)),py+37),radius=3,fill=color)
+progress(cy+57,"Experience",find("50%","N/A"),(73,185,87))
+progress(cy+110,"Quests ready",find("1/3","N/A"),(70,157,227))
+progress(cy+163,"Materials ready",find("0/1","N/A"),(224,160,65))
+# Recommended steps and manual focus checklist.
+ly=y+497
+panel(cx,ly,524,214,"RECOMMENDED NEXT STEPS")
+panel(cx+536,ly,532,214,"TODAY'S FOCUS")
+for i,prefix in enumerate(("1. ","2. ","3. ")):
+    val=find(prefix,"No recommendation available")
+    d.ellipse((cx+20,ly+61+i*46,cx+49,ly+90+i*46),outline=gold,width=2)
+    d.text((cx+29,ly+67+i*46),str(i+1),font=F13,fill=gold)
+    d.text((cx+62,ly+67+i*46),val[3:58],font=F16,fill=white)
+focus=["Review active quests","Check leveling priorities","Review material goals","Check client diagnostics"]
+for i,name in enumerate(focus):
+    label=next((v for v in strings if name in v),name)
+    yy=ly+62+i*37
+    d.rectangle((cx+557,yy,cx+576,yy+19),outline=gold,width=2)
+    if label.startswith("[x]"):
+        d.line((cx+559,yy+9,cx+565,yy+15,cx+575,yy+3),fill=(82,212,95),width=3)
+    d.text((cx+591,yy),name,font=F16,fill=white)
+# Safety banner.
+d.rounded_rectangle((cx,y+725,cx+cw,y+773),radius=6,fill=(17,38,30),outline=(71,123,76))
+d.text((cx+20,y+738),"READ-ONLY ADVISOR",font=F18,fill=(120,228,142))
+d.text((cx+273,y+740),"No gameplay automation   •   Check /fcdiag for API support",font=F16,fill=white)
+d.text((x+4,y+830),"OFFLINE MOCK-CLIENT PREVIEW — SIMULATED CHARACTER/QUEST DATA — NOT A LIVE WOW SCREENSHOT",font=F16,fill=gold)
 im.save("ui_preview.png")
-print("Rendered illustrative preview from",len(rows),"exported widgets")
+print("Rendered",len(rows),"mock widgets; required dashboard headings verified")
