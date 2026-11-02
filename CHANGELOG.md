@@ -1,3 +1,12 @@
+## 3.14.0-beta (develop, 2026-11-02; mocked-client verification only)
+- Added persistent, per-character quest priorities with a real Pin Focus / Unpin Focus control in the native Quest Journal.
+- Highlighted pinned rows with [PIN] badges, a pinned quest count in the journal summary, and a fourth sorting mode that puts pinned quests first.
+- Dashboard recommendations still prioritize ready-to-turn-in quests, then unfinished pinned quests. Clicking a recommendation focuses the corresponding quest in the addon before navigating.
+- Added /fcq pin N, /fcq pin selected, /fcq pins and /fcq clearpins. Pins are capped at 100 and never alter the game's quest tracking or map.
+- Reworked the quest toolbar spacing so pin, sort, filter and section information remain distinct. Updated the mock-derived quest preview to render the actual toolbar and highlighted rows.
+- Expanded Lua and mock UI regression tests for pin persistence, sorting, slash commands, and visual controls. This is offline verification only; no Forever-client compatibility is claimed.
+- Interface version, guide accuracy, original illustrated artwork, licensing and CurseForge version support remain unverified.
+
 ## 3.13.0-beta (2026-11-02)
 - Replaced the Settings page's plain top section with two native, black-and-gold briefing cards for per-character preferences and exposed client APIs.
 - Added working Settings shortcuts to restore automatic class detection, center the addon window, and toggle compact layout. These change only addon preferences and never protected game state.
