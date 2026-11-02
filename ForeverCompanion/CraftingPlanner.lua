@@ -42,6 +42,46 @@ function P.Remove(profession,index)
   table.remove(entries,index)
   return true,"Removed "..name
 end
+function P.Summary()
+  local all=db()
+  local lists,materials,missing,complete=0,0,0,0
+  for _,entries in pairs(all) do
+    if type(entries)=="table" and #entries>0 then
+      lists=lists+1
+      for _,item in ipairs(entries) do
+        local need=math.max(0,tonumber(item.needed) or 0)
+        local owned=math.max(0,tonumber(item.owned) or 0)
+        materials=materials+1
+        missing=missing+math.max(0,need-owned)
+        if owned>=need then complete=complete+1 end
+      end
+    end
+  end
+  return "CRAFTING GOALS: "..lists.." profession lists | "..complete.."/"..materials.." materials ready | "..missing.." units remaining"
+end
+function P.SetNeeded(profession,index,amount)
+  local entries=db()[key(profession)]
+  index=tonumber(index)
+  amount=tonumber(amount)
+  if not entries or not index or not entries[index] or not amount or amount<1 or amount>999999 then
+    return false,"Invalid material or required quantity."
+  end
+  entries[index].needed=math.floor(amount)
+  return true,"Updated target for "..entries[index].name
+end
+function P.ClearCompleted(profession)
+  local entries=db()[key(profession)]
+  if not entries then return true,"No tracked materials." end
+  local removed=0
+  for i=#entries,1,-1 do
+    local item=entries[i]
+    if (tonumber(item.owned) or 0)>=(tonumber(item.needed) or 0) then
+      table.remove(entries,i)
+      removed=removed+1
+    end
+  end
+  return true,"Cleared "..removed.." completed material goals."
+end
 function P.Format(profession)
   local entries=db()[key(profession)] or {}
   local lines={"MATERIAL CHECKLIST (MANUAL)", "Use /fcm add "..key(profession).." | Material | Needed | Owned"}
@@ -61,11 +101,16 @@ SlashCmdList.FOREVERCOMPANIONMATERIALS=function(msg)
   local profession,name,needed,owned=msg:match("^add%s+([^|]+)%s*|%s*([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
   local p,i,n=msg:match("^owned%s+([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
   local rp,ri=msg:match("^remove%s+([^|]+)%s*|%s*(%d+)%s*$")
+  local np,ni,nn=msg:match("^needed%s+([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
+  local cp=msg:match("^clear%s+(.+)$")
   local ok,answer
   if profession then ok,answer=P.Add(profession,name,needed,owned)
   elseif p then ok,answer=P.SetOwned(p,i,n)
   elseif rp then ok,answer=P.Remove(rp,ri)
-  else answer="Commands: /fcm add Profession | Material | Needed | Owned; /fcm owned Profession | Index | Count; /fcm remove Profession | Index" end
+  elseif np then ok,answer=P.SetNeeded(np,ni,nn)
+  elseif cp then ok,answer=P.ClearCompleted(cp)
+  elseif msg=="summary" then answer=P.Summary()
+  else answer="Commands: /fcm add Profession | Material | Needed | Owned; /fcm owned Profession | Index | Count; /fcm needed Profession | Index | Count; /fcm remove Profession | Index; /fcm clear Profession; /fcm summary" end
   print("|cffffcc66Forever Companion Materials:|r "..answer)
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
