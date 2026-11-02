@@ -5,7 +5,7 @@ local ADVANCED = ForeverCompanionAdvanced
 local ROTATIONS = ForeverCompanionRotations
 local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
-local rotationButton
+local rotationButton, rotationIcon, rotationDescription
 local DB, window, titleText, content, currentTab
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -45,6 +45,7 @@ local function render()
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
   if handbookIcon then handbookIcon:Hide() end
+  if rotationIcon then rotationIcon:Hide() end
   if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
   for _,b in ipairs(handbookButtons) do b:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
@@ -59,6 +60,8 @@ local function render()
     if rotations then
       local mode=rotationModes[rotationMode]
       lines[#lines+1]="ROTATION / PRIORITY: "..string.upper(mode)
+      local icons=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
+      if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]); rotationIcon:Show() end
       for i,ability in ipairs(rotations[mode] or {}) do lines[#lines+1]=i..". "..ability end
       lines[#lines+1]="General reference only; verify abilities and talents on Forever."
     end
@@ -254,6 +257,10 @@ local function createUI()
   pageForward:SetScript("OnClick",function() questPage=math.min(math.max(1,math.ceil(#ForeverCompanionQuestPlanner.GetVisible() / #questRows)),questPage+1); render() end)
   pageLabel=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   pageLabel:SetPoint("LEFT",pageBack,"RIGHT",12,0)
+  rotationIcon=window:CreateTexture(nil,"OVERLAY")
+  rotationIcon:SetSize(28,28)
+  rotationIcon:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",220,78)
+  rotationIcon:Hide()
   rotationButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   rotationButton:SetSize(155,23)
   rotationButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",60,80)
@@ -349,7 +356,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.1.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.2.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
