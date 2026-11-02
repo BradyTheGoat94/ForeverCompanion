@@ -1,3 +1,9 @@
+## 3.4.0-beta
+- Added a CI-enforced static release audit for manifest completeness and legacy API patterns.
+- Expanded CurseForge moderation readiness and publication requirements based on official author guidance.
+- Added release ZIP, client validation, licensing, and moderation acceptance test cases.
+- CurseForge approval has not been requested or granted; live Forever client testing remains required.
+
 ## 3.2.0-beta
 - Added guarded read-only spellbook inspection for candidate cooldown availability.
 - Shows learned, not-found, or unverified states where spellbook API support permits.
