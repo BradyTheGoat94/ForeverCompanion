@@ -103,6 +103,23 @@ ForeverCompanionForeverMechanics = {
   "FOREVER: Fire Nova is a spell rather than a totem."
  }
 }
+-- Beginner coaching for the changed Forever combat rules. Check talents and spellbook first.
+ForeverCompanionForeverDpsCoaching={
+ SHAMAN={
+  elemental={"Apply Flame Shock before Lava Burst if both are learned and the target will live long enough.","Use Lightning Bolt as filler; check Lightning Overload talent before expecting bonus casts.","Reposition totems with Totemic Projection rather than repeatedly replacing the full set."},
+  enhancement={"Use an appropriate two-handed weapon for the Forever Enhancement design.","When Maelstrom Weapon is talented, account for its Lightning Bolt cast-time and mana reduction.","Keep Windfury Totem available to support your group when trained."}
+ },
+ ROGUE={
+  assassination={"Build combo points with your trained attacks.","Use Venom only if talented; it enhances poison-focused damage.","Avoid energy capping; do not treat the priority as a fixed macro."},
+  subtlety={"Maintain bleed effects only when they will tick and will not disrupt crowd control.","Cutthroat can enable Ambush outside stealth when talented.","Keep energy available for interrupts or required control."}
+ },
+ WARRIOR={
+  fury={"Use Whirlwind and Cleave interactions only when Raging Blows is talented.","Maintain melee uptime and manage rage rather than queuing every spender.","Do not treat defensive cooldowns as damage cooldowns."}
+ },
+ WARLOCK={
+  affliction={"Forever Banes and utility Curses are distinct; check the exact spells in your book.","Maintain applicable damage effects without clipping them excessively.","Choose filler spells and pet based on learned abilities and encounter length."}
+ }
+}
 ForeverCompanionForeverMechanicsSources={
  HUNTER="https://www.wowhead.com/news/druid-and-hunter-class-deep-dives-in-world-of-warcraft-forever-383190",
  WARRIOR="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189",
