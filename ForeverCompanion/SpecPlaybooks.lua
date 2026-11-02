@@ -251,6 +251,20 @@ end
 -- Never substitute similarly named Midnight guides for Forever mechanics.
 ForeverCompanionSourcedPriorities={
  DRUID={
+  Restoration={
+   source="https://www.wowhead.com/forever/guide/classes/druid/restoration/rotation-cooldowns-pve-healer",
+   reviewed="Wowhead Oct 31, 2026; responsive healing",
+   rules={
+    "1. Before predictable damage, put Rejuvenation on allies likely to be hit.",
+    "2. For a moderate single-target hit, use Regrowth; use Rejuvenation for light sustained damage.",
+    "3. For three or more damaged players in one party, use Wild Growth after the damage lands.",
+    "4. If an ally may die before a cast completes, use Swiftmend on an active HoT.",
+    "5. If Swiftmend is unavailable, pair Nature's Swiftness with Healing Touch when talented.",
+    "6. During raid damage, heal your assigned party first, then blanket Rejuvenation as resources permit.",
+    "7. Use Innervate on a healer who needs Mana; save Rebirth for a recoverable combat death.",
+    "8. The Oct 31 guide does not recommend Tranquility as routine throughput; revisit after tuning.",
+   },
+  },
   Feral={
    source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 29, 2026; Energy and bleed uptime priority",
@@ -279,6 +293,20 @@ ForeverCompanionSourcedPriorities={
   },
  },
  PRIEST={
+  Holy={
+   source="https://www.wowhead.com/forever/guide/classes/priest/holy/rotation-cooldowns-pve-healer",
+   reviewed="Wowhead Oct 31, 2026; mana-aware healing",
+   rules={
+    "1. Maintain Renew on a tank receiving steady damage.",
+    "2. Use Heal for efficient tank healing; choose Flash Heal if the tank may die before Heal lands.",
+    "3. When you and the tank are injured, cast Binding Heal if learned.",
+    "4. When trained, put Prayer of Mending on a damaged target to bounce between injured allies.",
+    "5. When most of one party is low, cast Prayer of Healing on a member of that party; it is costly.",
+    "6. Use Holy Nova when nearby allies are stacked and need a quick threat-free heal.",
+    "7. Greater Heal is learned at level 40; never suggest it to a level-30 character.",
+    "8. When talented for Litany of Light, alternate suitable heals to receive its Mana refund.",
+   },
+  },
   Discipline={
    source="https://www.wowhead.com/forever/guide/classes/priest/discipline/rotation-cooldowns-pve-healer",
    reviewed="Wowhead Oct 30, 2026",
@@ -392,6 +420,20 @@ ForeverCompanionSourcedPriorities={
   },
  },
  WARLOCK={
+  Destruction={
+   source="https://www.wowhead.com/forever/guide/classes/warlock/destruction/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 26, 2026; talented Shadow and Flame raid build",
+   rules={
+    "1. Before a boss pull, pre-cast Soul Fire if you have a spare Soul Shard; send your pet as the pull begins.",
+    "2. Keep the assigned Curse, Immolate, Corruption and one Bane on durable targets.",
+    "3. Choose Bane of Doom if at least a minute remains; otherwise Amplify Curse and Bane of Agony.",
+    "4. Use Conflagrate and Shadowburn as they become ready when trained; talented Shadow and Flame changes their benefits.",
+    "5. Cast Incinerate as filler; use Life Tap during safe movement or gaps before DoT refreshes.",
+    "6. For two durable enemies, place Bane of Havoc on the secondary target.",
+    "7. For three or more targets, channel Hellfire only if health and threat allow; otherwise use ranged Rain of Fire.",
+    "8. Do not refresh DoTs on enemies about to die, or use Soul Fire as ordinary in-combat filler.",
+   },
+  },
   Demonology={
    source="https://www.wowhead.com/forever/guide/classes/warlock/demonology/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/demonology-warlock-ranged-dps-pve-guide",
@@ -421,6 +463,20 @@ ForeverCompanionSourcedPriorities={
   },
  },
  PALADIN={
+  Protection={
+   source="https://www.wowhead.com/forever/guide/classes/paladin/protection/rotation-cooldowns-pve-tank",
+   reviewed="Wowhead Oct 29, 2026; threat and survival before damage",
+   rules={
+    "1. Before the pull, activate Righteous Fury and the assigned Aura; maintain Seal of Fury while tanking.",
+    "2. Apply a Seal of Crusader or Wisdom debuff with Judgement only on enemies expected to live 20-30 seconds.",
+    "3. Use Judgement whenever useful; it is off the global cooldown in Forever.",
+    "4. Use Consecration if Mana allows; preserve Mana for emergency threat and defensive actions.",
+    "5. Use talented Holy Shield and Holy Shock when available, then Holy Strike.",
+    "6. On multi-target pulls, keep enemies controlled with Consecration and Holy Shield rather than over-spending Mana.",
+    "7. Reserve Templar's Bulwark for dangerous spikes; Cleanse or Blessing of Protection when mechanics require them.",
+    "8. Divine Shield can make enemies ignore you unless you manage taunt; do not bubble casually while tanking.",
+   },
+  },
   Holy={
    source="https://www.wowhead.com/forever/guide/classes/paladin/holy/rotation-cooldowns-pve-healer",
    corroboration="https://www.icy-veins.com/wow-forever/holy-paladin-healer-pve-guide/",
