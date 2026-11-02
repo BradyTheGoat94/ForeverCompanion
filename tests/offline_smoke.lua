@@ -643,3 +643,21 @@ for _,line in ipairs(gated) do
 end
 assert(foundExecute,"missing Execute beginner hint")
 UnitLevel=originalUnitLevel
+
+-- A live spellbook match takes precedence over stale curated level gates.
+local oldLevel=UnitLevel
+local oldBook=ForeverCompanionSpellbook
+UnitLevel=function() return 10 end
+ForeverCompanionSpellbook={Status=function(name) return name=="Execute" and "found in spellbook" or "unverified (test)" end}
+local live=ForeverCompanionBeginnerAvailability("WARRIOR",{supported=true,inspected=1,complete=false,known={}})
+local matched=false
+for _,line in ipairs(live) do
+ if line:find("Execute",1,true) then
+  assert(line:find("[FOUND]",1,true),"known spell must override stale level gate")
+  assert(line:find("recheck source/build",1,true),"source discrepancy must be visible")
+  matched=true
+ end
+end
+assert(matched,"Execute missing from live check")
+UnitLevel=oldLevel
+ForeverCompanionSpellbook=oldBook
