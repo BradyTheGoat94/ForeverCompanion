@@ -824,3 +824,13 @@ for class,choices in pairs(ForeverCompanionSpecs) do
 end
 assertEqual(standardSpecs,27,"all standard specs must have source-reviewed guidance")
 ForeverCompanionDB.specSelections={}
+
+-- Source-review completeness is separate from hotfix evidence status.
+for _,class in ipairs({"DRUID","PALADIN","MAGE","HUNTER","PRIEST"}) do
+ local lines=ForeverCompanionSourcedPriorityLines(class)
+ assert(table.concat(lines," "):find("unconfirmed in official notes",1,true),"missing hotfix evidence warning: "..class)
+end
+for _,class in ipairs({"WARRIOR","ROGUE","SHAMAN","WARLOCK"}) do
+ local lines=ForeverCompanionSourcedPriorityLines(class)
+ assert(not table.concat(lines," "):find("unconfirmed in official notes",1,true),"unrelated hotfix warning: "..class)
+end
