@@ -366,3 +366,17 @@ assert(recipe.Done("ForecastTest",1,2))
 local revised=recipe.MaterialForecast("ForecastTest")
 assert(revised[1].required==8 and revised[1].shortage==4,"completed crafts must reduce future demand")
 assert(recipe.FormatForecast("ForecastTest"):find("MANUAL INVENTORY",1,true),"forecast must disclose manual quantities")
+
+-- Profession and skill guides must remain deterministic and read-only.
+dofile("ForeverCompanion/CraftingAdvice.lua")
+local advice=ForeverCompanionCraftingAdvice.Plan("ForecastTest")
+assert(advice.ready==1 and advice.blocked==1,"recipe readiness must distinguish craftable and missing materials")
+assert(ForeverCompanionCraftingAdvice.Format("ForecastTest"):find("shared materials",1,true),"shared materials caveat required")
+dofile("ForeverCompanion/SkillStudy.lua")
+local priorKnown=IsSpellKnown
+IsSpellKnown=function(id) return id==23881 end
+local skillLines=ForeverCompanionSkillStudy.Format("WARRIOR",20)
+assert(skillLines:find("UPCOMING UNLOCKS",1,true),"skill guide must show upcoming abilities")
+assert(skillLines:find("CHECK TRAINER",1,true),"skill guide must show missing spells")
+assert(ForeverCompanionSkillStudy.Format("MAGE",20):find("No audited",1,true),"unaudited classes must not imply verified abilities")
+IsSpellKnown=priorKnown
