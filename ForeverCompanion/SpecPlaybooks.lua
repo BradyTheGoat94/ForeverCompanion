@@ -650,6 +650,10 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  if type(entry)~="table" then return {} end
  local lines={"SOURCE-REVIEWED CONDITIONAL PRIORITY | "..name,entry.reviewed}
  lines[#lines+1]="VERIFY IN GAME: this guide is a source-reviewed starting priority, not a DPS benchmark or proof of live talent availability."
+ lines[#lines+1]="LEVEL GATE: talents unlock at level 10; abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
+ lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
+ lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."
+
  if ForeverCompanionHotfixCautions[classToken] then lines[#lines+1]=ForeverCompanionHotfixCautions[classToken] end
  for _,rule in ipairs(entry.rules) do lines[#lines+1]=rule end
  lines[#lines+1]="Re-check after each action; skip unavailable or untalented abilities."
