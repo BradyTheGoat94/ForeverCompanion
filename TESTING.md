@@ -103,3 +103,11 @@ This addon is **not verified on the target client**. Use this checklist on the f
 68. Verify invalid counts, missing entries, and oversized material lists are rejected.
 69. Confirm the detected profession progress text is absent or safely falls back if API data is missing.
 70. Verify no crafting, inventory modification, or purchases occur.
+
+## v1.8 crafting dashboard
+71. Verify Overview shows correct profession-list, completed-material, and remaining-unit totals.
+72. Verify /fcm summary matches the Overview dashboard.
+73. Verify /fcm needed Profession | Index | Count changes the target and remaining units.
+74. Verify /fcm clear Profession removes completed goals but preserves unfinished goals.
+75. Verify goal summaries persist after /reload and across tab switches.
+76. Verify malformed quantities and missing list indices do not crash the addon.
