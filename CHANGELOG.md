@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1-beta (prelaunch, client testing pending)
+- Previous/Next quest browsing and focused quest details.
+- Shows available quest objectives and status from the game quest log.
+- Added legacy texture API fallbacks and optional UI method checks.
+- No quest route map or quest database is claimed.
+
 ## 0.5.2-beta (visual polish; live-client testing pending)
 - Dark, higher-contrast panel with gold accent and improved status header.
 - Compact and expanded guide window modes, saved per character.
