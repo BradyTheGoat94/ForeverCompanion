@@ -1,3 +1,12 @@
+## 3.12.0-beta (develop, November 2, 2026; offline mock testing only)
+- Added native dark-gold Dungeon and PvP preparation cards showing the current class, manually chosen role, general class guidance, and the next unchecked preparation task.
+- Replaced duplicate stock checklist controls on those pages with four real interactive preparation tiles. Each tile persists its checked state per character; the gold progress bar represents **manual checklist completion only**, not actual dungeon/PvP readiness.
+- Added working shortcuts from both preparation pages to Leveling and Quests, without casting spells, queueing, targeting, or modifying game quests.
+- Introduced an original geometric **FC heraldic monogram** drawn with built-in WoW textures and fonts, shared by the main header and dashboard banner. This is not yet the full illustrated fantasy crest from the reference concept.
+- Extended mocked-client tests for independent Dungeon/PvP progress, undo, navigation, hidden panels, and crest presence. Added separate mock-derived Dungeon/PvP PNG previews and snapshots to the CI workflow.
+- Reflowed the long-form guide text below the new native tiles and retained slash-command checklist access.
+- Target client, actual Interface version, exact rendering, guide mechanics, and CurseForge support still require live verification.
+
 ## 3.11.1-beta (develop, November 2, 2026; mock-tested only)
 - Fixed dashboard recommendations that updated an untemplated Button instead of its visible FontString, and added optional full-text hover tooltips.
 - Added a two-line read-only data provenance footer for current/cached/unavailable quest snapshots, profession detection and manually entered material quantities.
