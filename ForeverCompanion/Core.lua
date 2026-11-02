@@ -293,6 +293,11 @@ local function render()
           lines[#lines+1]=note
         end
       end
+      if type(ForeverCompanionQuickStartLines)=="function" then
+        for _,note in ipairs(ForeverCompanionQuickStartLines(classToken())) do
+          lines[#lines+1]=note
+        end
+      end
       if type(ForeverCompanionSourcedPriorityLines)=="function" then
         for _,note in ipairs(ForeverCompanionSourcedPriorityLines(classToken())) do
           lines[#lines+1]=note
