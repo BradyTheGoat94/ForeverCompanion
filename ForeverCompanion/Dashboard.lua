@@ -247,7 +247,8 @@ function D.Create(parent,openPage,ctx)
     focusLabels[i]=label
   end
   lowerWidgets={steps,focus}
-  safePlate=panel(0,-495,846,39,"READ-ONLY ADVISOR   •   NO AUTOMATION   •   CHECK /fcdiag FOR API SUPPORT",nil)
+  safePlate=panel(0,-495,846,55,"READ-ONLY ADVISOR   •   NO AUTOMATION   •   CHECK /fcdiag FOR API SUPPORT",nil)
+  values.sources=text(safePlate,safePlate,16,-34,805,"Quest data: awaiting scan   |   Professions: awaiting scan   |   Materials: manually entered","GameFontHighlightSmall",MUTED)
   setCompact(false)
   return root
 end
@@ -282,8 +283,12 @@ function D.Render()
   local planner=ForeverCompanionQuestPlanner
   local questSupported=planner and planner.IsSupported and planner.IsSupported()
   local questCount=questSupported and planner.AutoCount() or nil
+  local questStale=planner and planner.IsSnapshotStale and planner.IsSnapshotStale()
   local ready=questSupported and planner.ReadyCount() or nil
   setBar("Quests ready",questCount and questCount>0 and ready/questCount or nil,questCount and (ready.."/"..questCount) or "N/A")
+  local questSource=questSupported and "current snapshot" or (questStale and "CACHED - VERIFY IN GAME" or "unavailable")
+  local professionSource=type(detected)=="table" and (#detected>0 and "detected" or "none detected") or "API unavailable"
+  if values.sources then values.sources:SetText("Quest data: "..questSource.."   |   Professions: "..professionSource.."   |   Materials: manual counts") end
   local craft=ForeverCompanionCraftingPlanner
   local stats=craft and craft.Stats and craft.Stats()
   setBar("Materials ready",stats and stats.materials>0 and stats.complete/stats.materials or nil,
