@@ -799,6 +799,23 @@ local function setupLootControls(child)
   end)
   ForeverCompanionLootUI.nextButton:Hide()
 end
+local function cyclePreviewClass()
+  local token=classToken()
+  for i,candidate in ipairs(classOrder) do
+    if candidate==token then DB.previewClass=classOrder[(i % #classOrder)+1]; break end
+  end
+  DB.role=nil
+  render()
+end
+local function cyclePreviewRole()
+  local roles=classRoles[classToken()] or {"Damage"}
+  local nextIndex=1
+  for i,role in ipairs(roles) do
+    if DB.role==role then nextIndex=(i % #roles)+1 end
+  end
+  DB.role=roles[nextIndex]
+  render()
+end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
@@ -1320,14 +1337,7 @@ local function createUI()
   classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   classButton:SetSize(150, 26)
   classButton:SetPoint("BOTTOMRIGHT", -180, 45)
-  classButton:SetScript("OnClick", function()
-    local token=classToken()
-    for i, candidate in ipairs(classOrder) do
-      if candidate == token then DB.previewClass=classOrder[(i % #classOrder)+1]; break end
-    end
-    DB.role=nil
-    render()
-  end)
+  classButton:SetScript("OnClick",cyclePreviewClass)
   resetClassButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   resetClassButton:SetSize(92,23)
   resetClassButton:SetPoint("BOTTOMRIGHT",-125,16)
@@ -1336,13 +1346,7 @@ local function createUI()
   roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   roleButton:SetSize(145, 26)
   roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
-  roleButton:SetScript("OnClick", function()
-    local roles=classRoles[classToken()] or {"Damage"}
-    local nextIndex=1
-    for i, role in ipairs(roles) do if DB.role==role then nextIndex=(i % #roles)+1 end end
-    DB.role=roles[nextIndex]
-    render()
-  end)
+  roleButton:SetScript("OnClick",cyclePreviewRole)
   compactButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   compactButton:SetSize(92,23)
   compactButton:SetPoint("BOTTOMRIGHT",-25,16)
