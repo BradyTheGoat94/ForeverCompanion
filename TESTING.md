@@ -180,3 +180,13 @@ This addon is **not verified on the target client**. Use this checklist on the f
 127. Confirm learned spells are reported as found in spellbook rather than claimed verified for Forever mechanics.
 128. Confirm unsupported APIs fail safely and the guide still renders.
 129. Re-audit remaining legacy quest/profession APIs against captured Forever client definitions.
+
+## v3.4 CurseForge release gate
+130. Confirm CI runs the static release audit and refuses ZIP packaging on manifest/API failures.
+131. Inspect ZIP: one ForeverCompanion root folder, TOC and every declared Lua file.
+132. Confirm TOC version, changelog and file upload version match.
+133. Verify every tab, /fc, /reload, SavedVariables and error-free login on the actual Forever client.
+134. Capture authentic in-game screenshots and client build number; never use unlabelled mockups.
+135. Verify CurseForge offers the correct game flavor and compatible version before upload.
+136. Confirm owner-approved licensing and rights for artwork/code before publishing.
+137. Confirm author-account project moderation and file approval before calling the addon CurseForge-approved.
