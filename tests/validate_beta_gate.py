@@ -48,12 +48,16 @@ import re
 section=guide.split("classHandbook = {",1)[1].split("professionHandbook = {",1)[0]
 for class_name in ("WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST",
                    "SHAMAN","MAGE","WARLOCK","DRUID"):
-    entry=re.search(class_name+r'\\s*=\\s*\\{\\s*icon\\s*=\\s*("[^"]+")',section)
-    assert entry,f"Missing native class icon for {class_name}"
-    icon=entry.group(1)
-    assert icon.startswith('"Interface') and "Icons" in icon, (
+    # Match the actual serialized Lua table line without regex escaping pitfalls.
+    lines=[line.strip() for line in section.splitlines()
+           if line.strip().startswith(class_name+"=")]
+    assert len(lines)==1,f"Missing or duplicate class entry for {class_name}"
+    line=lines[0]
+    assert line.startswith(class_name+'={icon="Interface'), (
         f"Class icon for {class_name} must use a Blizzard client icon path"
     )
+    icon=line.split('icon=',1)[1].split(',',1)[0]
+    assert "Icons" in icon,f"Missing icon directory for {class_name}"
     assert "http" not in icon.lower(),f"External icon reference for {class_name}"
 print("PASS: nine class icons reference native Blizzard interface textures")
 
