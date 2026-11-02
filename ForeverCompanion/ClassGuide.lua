@@ -188,8 +188,8 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
   values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",24))
   local contexts=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts
-  local context=contexts and contexts[mode]
-  values.mode:SetText("Priority context: "..short(context and context.title or mode or "Leveling",24))
+  local context=type(contexts)=="table" and contexts[mode]
+  values.mode:SetText("Priority context: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
   local fraction=safeXP()
   if fraction then
     values.xpCaption:SetText("LEVEL PROGRESS")
