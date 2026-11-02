@@ -29,6 +29,28 @@ function ForeverCompanionNovemberTuningLines(classToken)
  return lines
 end
 
+-- MythicSim Forever is a separate experimental simulator, not proof of
+-- in-game DPS or a source of live combat data for this addon.
+ForeverCompanionSimResearch={
+ source="https://mythicsim.com/wow-forever",
+ rotation="https://mythicsim.com/wow-forever/rotation-guide",
+ quickSim="https://mythicsim.com/wow-forever/sim",
+ audit="https://mythicsim.com/wow-forever/tier-list",
+ snapshot="November 2, 2026; 30 October hotfix, client 70707",
+}
+function ForeverCompanionSimResearchLines()
+ return {
+  "MYTHICSIM | EXPERIMENTAL FOREVER THEORYCRAFT",
+  "Rotation rules are priority checks, not a fixed one-button cast sequence.",
+  "Conditions may depend on learned spells, talents, auras, resources and targets.",
+  "Sim comparisons assume specific gear, talents, race, buffs and fight length.",
+  "A sim ranking is not a verified recommendation for leveling or real encounters.",
+  "Current research snapshot: "..ForeverCompanionSimResearch.snapshot,
+  "Reference: "..ForeverCompanionSimResearch.rotation,
+  "Character sim: "..ForeverCompanionSimResearch.quickSim,
+ }
+end
+
 function ForeverCompanionForeverLessonLines(classToken)
  local data=ForeverCompanionForeverLessons[classToken]
  if not data then return {} end
