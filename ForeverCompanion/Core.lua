@@ -270,6 +270,7 @@ local function render()
         local specName=type(selected)=="table" and type(selected[1])=="string" and selected[1] or ""
         local steps=coaching[string.lower(specName)]
         lines[#lines+1]="SPECIALIZATION DPS COACHING: "..(specName~="" and string.upper(specName) or "SELECT A SPEC")
+        lines[#lines+1]="Use the Spec button above to change your selected specialization."
         if type(steps)=="table" then
           lines[#lines+1]="PRACTICE IN ORDER — then repeat the priority as conditions change:"
           for step,tip in ipairs(steps) do
