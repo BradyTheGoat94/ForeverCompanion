@@ -128,3 +128,12 @@ This addon is **not verified on the target client**. Use this checklist on the f
 87. Reload UI; verify quantities persist and buttons show correct saved values.
 88. Verify no overlap between profession selectors, material controls, and handbook text at both window heights.
 89. Check text clipping for long material names and small UI scale.
+
+## v2.1 multi-recipe planning
+90. Add two recipes under Alchemy with a shared ingredient; verify demand aggregates correctly.
+91. Record completed crafts and confirm remaining demand decreases without going negative.
+92. Confirm recipe goals persist after /reload and are isolated by profession.
+93. Confirm duplicate recipe names and duplicate ingredients are rejected.
+94. Confirm invalid recipe indices, quantities, and over-limit lists fail safely.
+95. Confirm recipe demand remains separate from manually owned materials and never claims live bag counts.
+96. Confirm all recipe text appears in the Professions guide without obstructing the interactive material controls.
