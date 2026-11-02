@@ -125,12 +125,14 @@ SlashCmdList.FOREVERCOMPANIONRECIPES=function(msg)
   local dp,di,dc=msg:match("^done%s+([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
   local rp,ri=msg:match("^remove%s+([^|]+)%s*|%s*(%d+)%s*$")
   local sp=msg:match("^show%s+(.+)$")
+  local fp=msg:match("^forecast%s+(.+)$")
   local ok,result
   if prof then ok,result=P.Add(prof,name,amount)
   elseif ip then ok,result=P.Ingredient(ip,ii,ingredient,per)
   elseif dp then ok,result=P.Done(dp,di,dc)
   elseif rp then ok,result=P.Remove(rp,ri)
   elseif sp then result=P.Format(sp)
-  else result="Commands: /fcr add Profession | Recipe | Quantity; /fcr ingredient Profession | RecipeIndex | Material | PerCraft; /fcr done Profession | RecipeIndex | Crafted; /fcr remove Profession | RecipeIndex; /fcr show Profession" end
+  elseif fp then result=P.FormatForecast(fp)
+  else result="Commands: /fcr add Profession | Recipe | Quantity; /fcr ingredient Profession | RecipeIndex | Material | PerCraft; /fcr done Profession | RecipeIndex | Crafted; /fcr remove Profession | RecipeIndex; /fcr show Profession; /fcr forecast Profession" end
   print("|cffffcc66Forever Companion Recipes:|r "..result)
 end
