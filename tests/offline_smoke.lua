@@ -875,3 +875,24 @@ for _,bad in ipairs({0,-5,101,999,"forty",{},false}) do
 end
 UnitLevel=previousLevel
 issecretvalue=previousSecretCheck
+
+-- Beginner quick-start covers each standard specialization and is never a
+-- combat automation or a replacement for the sourced conditional priority.
+local quickCount=0
+for class,choices in pairs(ForeverCompanionSpecs) do
+ for index,choice in ipairs(choices) do
+  if choice[1]~="Guardian / Bear" then
+   ForeverCompanionDB.specSelections[class]=index
+   local lines=ForeverCompanionQuickStartLines(class)
+   assert(#lines==6,"quick start must have header, prep, three actions, next step: "..class.." "..choice[1])
+   assert(lines[1]:find(choice[1],1,true),"quick start spec mismatch: "..class.." "..choice[1])
+   assert(lines[3]:find("PRACTICE 1:",1,true),"first practice action missing")
+   assert(lines[4]:find("PRACTICE 2:",1,true),"second practice action missing")
+   assert(lines[5]:find("PRACTICE 3:",1,true),"third practice action missing")
+   assert(lines[6]:find("not a live DPS rotation",1,true),"quick start safety missing")
+   quickCount=quickCount+1
+  end
+ end
+end
+assertEqual(quickCount,27,"quick start must cover all standard specializations")
+ForeverCompanionDB.specSelections={}
