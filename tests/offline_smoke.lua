@@ -607,3 +607,14 @@ for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","M
  assert(type(hints)=="table" and #hints>=4,"missing beginner spellbook hints: "..class)
  assert(hints[1]:find("unverified",1,true),"unsupported scan must not claim availability: "..class)
 end
+
+-- Availability labels should be readable and avoid generic category lookups.
+local categoryHints=ForeverCompanionBeginnerSpellHints
+for _,name in ipairs(categoryHints.PALADIN) do
+ assert(name~="Blessing" and name~="Seal","generic paladin spell category is not a spellbook entry")
+end
+for _,name in ipairs(categoryHints.WARLOCK) do
+ assert(name~="Curse","generic warlock spell category is not a spellbook entry")
+end
+local unknownHints=ForeverCompanionBeginnerAvailability("MAGE",{supported=false,inspected=0,complete=false,known={}})
+assert(unknownHints[1]:find("[UNKNOWN]",1,true),"unknown spells need a visible status")
