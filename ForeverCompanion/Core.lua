@@ -60,6 +60,9 @@ local function render()
     if rotations then
       local mode=rotationModes[rotationMode]
       lines[#lines+1]="ROTATION / PRIORITY: "..string.upper(mode)
+      local presentation=ForeverCompanionRotationPresentation
+      local context=presentation and presentation.contexts[mode]
+      if context then lines[#lines+1]=context.title.." - "..context.description end
       local icons=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
       if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]); rotationIcon:Show() end
       for i,ability in ipairs(rotations[mode] or {}) do lines[#lines+1]=i..". "..ability end
