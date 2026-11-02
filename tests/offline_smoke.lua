@@ -391,3 +391,14 @@ local nextSkills=ForeverCompanionSkillStudy.NextActions("WARRIOR",40,3)
 assert(#nextSkills<=3 and #nextSkills>0,"next skill checklist must be bounded")
 assert(ForeverCompanionSkillStudy.FormatNextActions("MAGE",40):find("pending class",1,true),"unverified classes need honest fallback")
 IsSpellKnown=savedKnown
+
+-- Recipe ordering changes how scarce shared materials are allocated.
+local before=ForeverCompanionCraftingAdvice.Allocation("ForecastTest")
+assert(before[1].craftable==1 and before[2].craftable==0,"initial recipe priority incorrect")
+assert(ForeverCompanionRecipePlans.Move("ForecastTest",2,1),"recipe priority change should succeed")
+local after=ForeverCompanionCraftingAdvice.Allocation("ForecastTest")
+assert(after[1].name=="Elixir" and after[1].craftable==1 and after[2].craftable==0,"priority reorder must reserve inventory for first recipe")
+assert(not ForeverCompanionRecipePlans.Move("ForecastTest",1,99),"out-of-range recipe move must fail")
+local gather=ForeverCompanionCraftingAdvice.GatherList("ForecastTest")
+assert(#gather>0 and gather[1].shortage>0,"gather list must include shortages")
+assert(ForeverCompanionCraftingAdvice.FormatGatherList("ForecastTest",1):find("GATHER NEXT",1,true),"gather summary missing")
