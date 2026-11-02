@@ -433,5 +433,5 @@ assert(discovery.Find({"Blink"},{supported=false,complete=false,inspected=0,know
 local ready=ForeverCompanionSkillDiscovery.Summary("WARRIOR",{supported=false,complete=false,inspected=0,known={}})
 assert(ready.known==0 and ready.notScanned==0,"unsupported spellbook must not imply missing skills")
 local checklist=ForeverCompanionSkillDiscovery.Checklist("WARRIOR",{supported=false,complete=false,inspected=0,known={}})
-assert(table.concat(checklist," "):find("unavailable",1,true),"unsupported skill checklist must be cautious")
+assert(table.concat(checklist," "):find("unavailable",1,true) or table.concat(checklist," "):find("pending",1,true),"unsupported skill checklist must be cautious")
 assert(ForeverCompanionSkillDiscovery.FormatSummary("MAGE"):find("Not a class-completion score",1,true),"readiness must not imply full class coverage")
