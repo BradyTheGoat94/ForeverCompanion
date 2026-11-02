@@ -120,7 +120,7 @@ local function render()
       local matches=ForeverCompanionLoot and lootMatches() or {}
       if ForeverCompanionLootUI.selectedIndex>#matches then ForeverCompanionLootUI.selectedIndex=math.max(1,#matches) end
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
-      ForeverCompanionLootUI.wishButton:SetText(selected and ("Wishlist: "..selected.item) or "Wishlist: no match")
+      ForeverCompanionLootUI.wishButton:SetText(selected and ((ForeverCompanionLoot.Wishlist(DB)[selected.item] and "Remove: " or "Save: ")..selected.item) or "Wishlist: no match")
       if ForeverCompanionLootUI.wishButton.SetEnabled then ForeverCompanionLootUI.wishButton:SetEnabled(selected~=nil) end
       ForeverCompanionLootUI.prevButton:SetText("Previous ("..ForeverCompanionLootUI.selectedIndex.."/"..#matches..")")
       ForeverCompanionLootUI.nextButton:SetText("Next")
@@ -816,9 +816,9 @@ local function setupLootControls(child)
     local names=ForeverCompanionLoot.DungeonNames()
     local nextIndex=1
     for i,name in ipairs(names) do
-      if ForeverCompanionLootUI.dungeon==name then nextIndex=i+2 end
+      if ForeverCompanionLootUI.dungeon==name then nextIndex=i+1; break end
     end
-    ForeverCompanionLootUI.dungeon=names[nextIndex-1] or ""
+    ForeverCompanionLootUI.dungeon=names[nextIndex] or ""
     ForeverCompanionLootUI.selectedIndex=1
     render()
   end)
