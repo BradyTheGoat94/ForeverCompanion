@@ -340,28 +340,44 @@ local function createUI()
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
     tabButtons[#tabButtons+1] = b
   end
-  local function dashboardCard(x,y,w,h,heading,detail)
+  local function dashboardCard(x,y,w,h,heading,key)
     local plate=window:CreateTexture(nil,"BORDER")
     plate:SetPoint("TOPLEFT",window,"TOPLEFT",x,y)
     plate:SetSize(w,h)
     colorTexture(plate,0.115,0.145,0.19,0.99)
     dashboardCards[#dashboardCards+1]=plate
-    local title=window:CreateFontString(nil,"OVERLAY","GameFontNormal")
-    title:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-12)
+    local trim=window:CreateTexture(nil,"ARTWORK")
+    trim:SetPoint("TOPLEFT",window,"TOPLEFT",x,y)
+    trim:SetSize(w,2)
+    colorTexture(trim,0.91,0.65,0.24,1)
+    dashboardCards[#dashboardCards+1]=trim
+    local title=window:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+    title:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-14)
     title:SetText(heading)
     title:SetTextColor(0.95,0.75,0.36)
     dashboardCards[#dashboardCards+1]=title
-    local caption=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    caption:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-35)
-    caption:SetWidth(w-30)
-    caption:SetJustifyH("LEFT")
-    caption:SetText(detail)
-    dashboardCards[#dashboardCards+1]=caption
+    local value=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    value:SetPoint("TOPLEFT",window,"TOPLEFT",x+15,y-47)
+    value:SetWidth(w-30)
+    value:SetJustifyH("LEFT")
+    dashboardValues[key]=value
+    dashboardCards[#dashboardCards+1]=value
   end
-  dashboardCard(208,-116,318,82,"CHARACTER OVERVIEW","Class and level shown above | Manual role preference")
-  dashboardCard(538,-116,336,82,"ADVENTURE PROGRESS","Quest count above | Open Quests for details")
-  dashboardCard(208,-211,318,78,"LEVELING & BUILDS","Class guidance | Spellbook checks | Spec previews")
-  dashboardCard(538,-211,336,78,"PROFESSIONS & CRAFTING","Materials | Recipe goals | Read-only tracking")
+  dashboardCard(208,-116,666,92,"CHARACTER PROFILE","character")
+  dashboardCard(208,-220,323,102,"QUEST JOURNAL","quests")
+  dashboardCard(543,-220,331,102,"LEVELING PROGRESS","xp")
+  dashboardCard(208,-334,666,118,"QUICK ACCESS","shortcuts")
+  local shortcuts={{"QUESTS","Quests"},{"BUILDS","Leveling"},{"CRAFTING","Professions"},{"PVP","PvP"}}
+  for i,entry in ipairs(shortcuts) do
+    local button=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+    button:SetSize(143,32)
+    button:SetPoint("TOPLEFT",window,"TOPLEFT",225+(i-1)*157,-397)
+    button:SetText(entry[1])
+    local target=entry[2]
+    button:SetScript("OnClick",function() currentTab=target;DB.tab=target;render() end)
+    dashboardNavButtons[#dashboardNavButtons+1]=button
+  end
+  dashboardValues.shortcuts:SetText("Choose a section to open your guide")
   local panel=CreateFrame("Frame",nil,window)
   panel:SetPoint("TOPLEFT",188,-98)
   panel:SetPoint("BOTTOMRIGHT",-16,88)
