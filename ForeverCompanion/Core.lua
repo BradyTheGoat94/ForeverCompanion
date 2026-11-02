@@ -135,9 +135,9 @@ local function render()
     ForeverCompanionLootUI.itemSubtitle:SetText(selected and (selected.boss.." / "..selected.dungeon.." | "..(selected.slot or "Slot unknown").." | Beta reference") or "Change your search or filters")
     ForeverCompanionLootUI.itemStatus:SetText(selected and ((ForeverCompanionLoot.Wishlist(DB)[selected.item] and "[SAVED]  " or "[NOT SAVED]  ")..(selected.status or "Verification unknown")) or "No matching source-attributed item")
     if selected and ForeverCompanionLoot.Wishlist(DB)[selected.item] then
-      ForeverCompanionLootUI.itemAccent:SetVertexColor(0.31,0.78,0.53,1)
+      if ForeverCompanionLootUI.itemAccent.SetVertexColor then ForeverCompanionLootUI.itemAccent:SetVertexColor(0.31,0.78,0.53,1) end
     else
-      ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1)
+      if ForeverCompanionLootUI.itemAccent.SetVertexColor then ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1) end
     end
     ForeverCompanionLootUI.itemCard:Show()
     else
@@ -849,12 +849,12 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.itemBackground=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"BACKGROUND")
   ForeverCompanionLootUI.itemBackground:SetAllPoints(ForeverCompanionLootUI.itemCard)
   ForeverCompanionLootUI.itemBackground:SetTexture("Interface\\\\Buttons\\\\WHITE8X8")
-  ForeverCompanionLootUI.itemBackground:SetVertexColor(0.075,0.095,0.14,0.93)
+  if ForeverCompanionLootUI.itemBackground.SetVertexColor then ForeverCompanionLootUI.itemBackground:SetVertexColor(0.075,0.095,0.14,0.93) end
   ForeverCompanionLootUI.itemAccent=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"BORDER")
   ForeverCompanionLootUI.itemAccent:SetSize(4,64)
   ForeverCompanionLootUI.itemAccent:SetPoint("LEFT",ForeverCompanionLootUI.itemCard,"LEFT",0,0)
   ForeverCompanionLootUI.itemAccent:SetTexture("Interface\\\\Buttons\\\\WHITE8X8")
-  ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1)
+  if ForeverCompanionLootUI.itemAccent.SetVertexColor then ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1) end
   ForeverCompanionLootUI.itemIcon=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"ARTWORK")
   ForeverCompanionLootUI.itemIcon:SetSize(42,42)
   ForeverCompanionLootUI.itemIcon:SetPoint("LEFT",ForeverCompanionLootUI.itemCard,"LEFT",8,0)
