@@ -16,6 +16,7 @@ SkillDiscovery.lua
 LevelingCurriculum.lua
 ForeverWorldGuide.lua
 ForeverClassChanges.lua
+ClassChangeIndex.lua
 DungeonPreparation.lua
 PvPPreparation.lua
 SpecPlanner.lua
