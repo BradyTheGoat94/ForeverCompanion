@@ -8,6 +8,7 @@ GuideData.lua
 AdvancedGuides.lua
 Rotations.lua
 VerifiedAbilities.lua
+SkillStudy.lua
 CooldownGuides.lua
 Spellbook.lua
 SpecPlanner.lua
