@@ -54,7 +54,7 @@ function Planner.Summary()
 end
 function Planner.Format()
   local entries=ensure()
-  local result={"QUEST PLANNER (manual tracking)", "No automatic quest detection or navigation.", "Commands: /fcq add Quest name | Zone", "/fcq done 1   /fcq remove 1   /fcq list"}
+  local result={"PERSONAL NOTES (optional)", "Custom goals separate from the automatically detected quest log.", "Commands: /fcq add Quest name | Zone", "/fcq done 1   /fcq remove 1   /fcq list"}
   if #entries==0 then result[#result+1]="No quests tracked yet." end
   for i,e in ipairs(entries) do
     result[#result+1]=i..". "..(e.done and "[x] " or "[ ] ")..e.name.." — "..e.zone
@@ -65,7 +65,7 @@ function Planner.Format()
 end
 
 -- Read-only quest-log synchronization. Never accepts/turns in quests or changes tracking.
-local auto = {entries={}, supported=false, scanned=false, lastCount=0}
+local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=1}
 local function questRows()
   local rows={}
   if C_QuestLog and type(C_QuestLog.GetNumQuestLogEntries)=="function" and type(C_QuestLog.GetInfo)=="function" then
@@ -115,14 +115,52 @@ function Planner.Sync()
   auto.supported=supported
   auto.scanned=true
   if not supported then return false end
+  local old=auto.entries[auto.selected]
   auto.entries=rows
   auto.lastCount=#rows
+  if old then
+    for i,q in ipairs(rows) do
+      if (old.id and q.id==old.id) or (not old.id and q.title==old.title) then auto.selected=i; break end
+    end
+  end
+  if auto.selected>#rows then auto.selected=1 end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
   return true
 end
 function Planner.AutoCount() return auto.lastCount end
+function Planner.GetLive() return auto.entries end
+function Planner.GetSelected()
+  if #auto.entries==0 then return nil end
+  if auto.selected>#auto.entries then auto.selected=1 end
+  return auto.entries[auto.selected],auto.selected
+end
+function Planner.Select(index)
+  index=tonumber(index)
+  if not index or index<1 or index>#auto.entries then return false end
+  auto.selected=index
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true
+end
+function Planner.Next()
+  if #auto.entries==0 then return false end
+  auto.selected=(auto.selected % #auto.entries)+1
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true
+end
+function Planner.Recommend()
+  if #auto.entries==0 then return "No active quests detected yet." end
+  local ready={}
+  local unfinished={}
+  for i,q in ipairs(auto.entries) do
+    if q.complete then ready[#ready+1]=q.title else unfinished[#unfinished+1]={i=i,q=q} end
+  end
+  if #ready>0 then return "Ready for turn-in: "..ready[1]..". Check your in-game quest log for the destination." end
+  local selected=Planner.GetSelected()
+  if selected and not selected.complete then return "Focus quest: "..selected.title..". Review its objectives below." end
+  return "Choose a quest to focus on. No route optimization data is available yet."
+end
 function Planner.FormatAuto()
-  local result={"ACTIVE QUESTS", "Automatically detected from your quest log."}
+  local result={"ACTIVE QUESTS", "Automatically detected from your quest log.", "NEXT STEP: "..Planner.Recommend()}
   if not auto.scanned then
     result[#result+1]="Waiting for the first quest-log scan."
   elseif not auto.supported then
@@ -169,6 +207,12 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
   if name then ok,answer=Planner.Add(name,zone)
   elseif msg:match("^done%s+%d+$") then ok,answer=Planner.Toggle(msg:match("%d+"))
   elseif msg:match("^remove%s+%d+$") then ok,answer=Planner.Remove(msg:match("%d+"))
+  elseif msg=="next" then
+    if not Planner.Next() then say("No active quests detected.") end
+    return
+  elseif msg:match("^focus%s+%d+$") then
+    if not Planner.Select(msg:match("%d+")) then say("Invalid active quest number.") end
+    return
   elseif msg=="sync" then
     if Planner.Sync() then say("Quest log synchronized: "..Planner.AutoCount().." active quests.") else say("Quest log API not available.") end
     return
