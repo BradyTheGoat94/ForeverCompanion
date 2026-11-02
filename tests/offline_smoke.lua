@@ -331,3 +331,8 @@ assert(known:find("NOT KNOWN",1,true),"missing spell should be labeled")
 IsSpellKnown=function() error("restricted client API") end
 assert(table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n"):find("SPELLBOOK STATUS UNKNOWN",1,true),"restricted API must not invent spell ownership")
 IsSpellKnown=previousIsSpellKnown
+
+local audit=ForeverCompanionAbilityAudit()
+assert(audit.total==12,"reference audit should count the current curated spell entries")
+assert(audit.classes.WARRIOR==12 and audit.classes.MAGE==0,"coverage must distinguish audited and unaudited classes")
+assert(#audit.issues==0,"curated spell records must pass integrity validation")
