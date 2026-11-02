@@ -10,6 +10,7 @@ local function ensure()
   db = ForeverCompanionDB
   if type(db.quests) ~= "table" then db.quests = {} end
   if type(db.questSort) ~= "string" then db.questSort = "zone" end
+  if type(db.questPins) ~= "table" then db.questPins = {} end
   return db.quests
 end
 local function clean(value, limit)
@@ -185,6 +186,47 @@ function Planner.Sync()
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
   return true
 end
+-- Pins are addon-only, per-character planning metadata. They never change the
+-- game's quest tracking or map markers. Prefer stable quest IDs where supplied.
+local function pinKey(quest)
+  if type(quest)~="table" then return nil end
+  if type(quest.id)=="number" and quest.id>0 then return "id:"..tostring(quest.id) end
+  if type(quest.title)~="string" or quest.title=="" then return nil end
+  return "name:"..quest.title:lower().."@"..tostring(quest.zone or ""):lower()
+end
+function Planner.IsPinned(quest)
+  ensure()
+  local key=pinKey(quest)
+  return key~=nil and db.questPins[key]==true
+end
+function Planner.TogglePin(index)
+  ensure()
+  index=tonumber(index)
+  if not index or index%1~=0 or index<1 or index>#auto.entries then return false,"Invalid active quest number." end
+  local quest=auto.entries[index]
+  local key=pinKey(quest)
+  if not key then return false,"This quest has no usable identity." end
+  if not db.questPins[key] then
+    local count=0
+    for _,pinned in pairs(db.questPins) do if pinned==true then count=count+1 end end
+    if count>=100 then return false,"Pin limit reached (100); unpin an older quest first." end
+    db.questPins[key]=true
+  else
+    db.questPins[key]=nil
+  end
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true,(db.questPins[key] and "Pinned: " or "Unpinned: ")..quest.title
+end
+function Planner.PinnedCount()
+  local count=0
+  for _,quest in ipairs(auto.entries) do if Planner.IsPinned(quest) then count=count+1 end end
+  return count
+end
+function Planner.GetPinned()
+  for i,quest in ipairs(auto.entries) do
+    if Planner.IsPinned(quest) then return quest,i end
+  end
+end
 function Planner.AutoCount() return auto.lastCount end
 function Planner.GetFilter() return auto.filter end
 function Planner.IsSupported() return auto.supported end
@@ -199,10 +241,10 @@ function Planner.CycleFilter()
   else auto.filter="all" end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
-local sortModes={"log","zone","ready"}
+local sortModes={"log","zone","ready","pinned"}
 function Planner.GetSort()
   ensure()
-  if db.questSort~="log" and db.questSort~="zone" and db.questSort~="ready" then
+  if db.questSort~="log" and db.questSort~="zone" and db.questSort~="ready" and db.questSort~="pinned" then
     db.questSort="log"
   end
   return db.questSort
@@ -241,6 +283,10 @@ function Planner.GetVisible()
     table.sort(visible,function(a,b)
       local aq,bq=a.quest,b.quest
       if mode=="ready" and aq.complete~=bq.complete then return aq.complete==true end
+      if mode=="pinned" then
+        local ap,bp=Planner.IsPinned(aq),Planner.IsPinned(bq)
+        if ap~=bp then return ap end
+      end
       local az,bz=(aq.zone or ""):lower(),(bq.zone or ""):lower()
       if az~=bz then return az<bz end
       local at,bt=(aq.title or ""):lower(),(bq.title or ""):lower()
@@ -303,6 +349,8 @@ function Planner.Recommend()
     if q.complete then ready[#ready+1]=q.title else unfinished[#unfinished+1]={i=i,q=q} end
   end
   if #ready>0 then return "Ready for turn-in: "..ready[1]..". Check your in-game quest log for the destination." end
+  local pinned=Planner.GetPinned()
+  if pinned and not pinned.complete then return "Pinned priority: "..pinned.title..". Review its objectives below." end
   local selected=Planner.GetSelected()
   if selected and not selected.complete then return "Focus quest: "..selected.title..". Review its objectives below." end
   return "Choose a quest to focus on. No route optimization data is available yet."
@@ -312,6 +360,7 @@ function Planner.FormatFocused()
   if not q then return "No quest selected. Your active quest log will appear here." end
   local lines={"FOCUSED QUEST "..index.."/"..#auto.entries, q.title, q.complete and "Ready for turn-in" or "In progress"}
   if not auto.supported then lines[#lines+1]="WARNING: cached quest data; verify in game." end
+  if Planner.IsPinned(q) then lines[#lines+1]="PINNED: personal priority (not a game map marker)" end
   if q.zone then lines[#lines+1]="Zone: "..q.zone end
   local done,known=Planner.ObjectiveProgress(q)
   if known then lines[#lines+1]="Known objectives complete: "..done.."/"..known end
@@ -340,6 +389,7 @@ function Planner.Overview()
     stale=Planner.IsSnapshotStale(),
     total=#auto.entries,
     ready=ready,
+    pinned=Planner.PinnedCount(),
     remaining=#auto.entries-ready,
     zones=zones
   }
@@ -352,7 +402,7 @@ function Planner.FormatOverview()
   elseif not report.supported then
     lines[#lines+1]="Client quest API unavailable. Cached entries may be outdated."
   else
-    lines[#lines+1]=report.total.." active | "..report.remaining.." in progress | "..report.ready.." ready"
+    lines[#lines+1]=report.total.." active | "..report.remaining.." in progress | "..report.ready.." ready | "..report.pinned.." pinned"
   end
   if report.total>0 then
     lines[#lines+1]="QUESTS BY ZONE (reported by client)"
@@ -388,7 +438,7 @@ function Planner.FormatAuto()
       result[#result+1]="\n"..string.upper(zone)
       table.sort(groups[zone],function(a,b) return a.title<b.title end)
       for _,q in ipairs(groups[zone]) do
-        result[#result+1]=(q.complete and "[Ready] " or "[ ] ")..q.title
+        result[#result+1]=(Planner.IsPinned(q) and "[Pinned] " or "")..(q.complete and "[Ready] " or "[ ] ")..q.title
         for j=1,math.min(#q.objectives,4) do result[#result+1]="  - "..q.objectives[j] end
       end
     end
@@ -425,6 +475,14 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
     return
   elseif msg=="sort" then
     say("Quest sort: "..Planner.CycleSort())
+    return
+  elseif msg=="pin selected" then
+    ok,answer=Planner.TogglePin(auto.selected)
+  elseif msg:match("^pin%s+%d+$") then
+    ok,answer=Planner.TogglePin(msg:match("%d+"))
+  elseif msg=="pins" then
+    say(Planner.PinnedCount().." pinned active quests (addon-only priorities).")
+    for i,q in ipairs(auto.entries) do if Planner.IsPinned(q) then say(i..". "..q.title) end end
     return
   elseif msg=="sync" then
     if Planner.Sync() then say("Quest log synchronized: "..Planner.AutoCount().." active quests.") else say("Quest log API not available.") end
