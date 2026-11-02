@@ -163,6 +163,36 @@ assert(foundTitle,"main window title not rendered")
 local foundBanner=false
 for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foundBanner=true end end
 assert(foundBanner,"premium dashboard welcome banner missing")
+-- Exercise the native class-guide hero and capture its real mock widget tree.
+local levelingButton
+for _,w in ipairs(frames) do if w.section=="Leveling" then levelingButton=w end end
+assert(levelingButton and levelingButton.OnClick,"leveling sidebar navigation missing")
+levelingButton.OnClick(levelingButton)
+assert(ForeverCompanionDB.tab=="Leveling","leveling navigation failed")
+local classHeading,buildHeading,rotationControl
+for _,w in ipairs(frames) do
+ if w.text=="CHARACTER & LEVELING" then classHeading=w end
+ if w.text=="BUILD & ROTATION REFERENCE" then buildHeading=w end
+ if w.text=="Rotation: leveling" then rotationControl=w end
+end
+assert(classHeading and buildHeading,"native class-guide header cards missing")
+assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
+assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
+local classSnapshot={}
+for _,f in ipairs(frames) do
+ local anchor=f.point and clean(f.point[1]) or ""
+ local x,y="",""
+ if f.point then
+  for _,v in ipairs(f.point) do if type(v)=="number" then if x=="" then x=v else y=v end end end
+ end
+ classSnapshot[#classSnapshot+1]=table.concat({f.id,f.kind,f.parent or "",f.visible and "1" or "0",f.width or "",f.height or "",anchor,x,y,clean(f.text),clean(f.texture)},"|")
+end
+local classOut=assert(io.open("ui_leveling_snapshot.txt","w"))
+classOut:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",string.char(10))
+classOut:write(table.concat(classSnapshot,string.char(10)))
+classOut:close()
+overviewButton.OnClick(overviewButton)
+assert(not frames[classHeading.parent].visible,"class guide should hide outside Leveling")
 mockXP=2000
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
 local xpUpdated=false
