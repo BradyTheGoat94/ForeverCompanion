@@ -374,8 +374,8 @@ levelingButton.OnClick(levelingButton)
 assert(ForeverCompanionDB.tab=="Leveling","leveling navigation failed")
 local classHeading,buildHeading,rotationControl
 for _,w in ipairs(frames) do
- if w.text=="CHARACTER & LEVELING" then classHeading=w end
- if w.text=="BUILD & ROTATION REFERENCE" then buildHeading=w end
+ if w.text=="CLASS GUIDE  /  LEVELING" then classHeading=w end
+ if w.text=="TALENTS  /  ROTATIONS  /  GEAR" then buildHeading=w end
  if w.text=="Rotation: leveling" then rotationControl=w end
 end
 assert(classHeading and buildHeading,"native class-guide header cards missing")
