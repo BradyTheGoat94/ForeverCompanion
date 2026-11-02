@@ -11,3 +11,16 @@ ForeverCompanionRotations = {
  WARLOCK={leveling={"Select an appropriate pet","Maintain useful damage-over-time effects","Use efficient filler spells","Balance health and mana safely"},dungeon={"Keep pet from accidental pulls","Coordinate crowd control and Healthstones","Manage threat"},boss={"Maintain useful damage-over-time effects","Use specialization filler and cooldowns","Manage pet and resources"},aoe={"Control pet positioning","Apply multi-target damage safely"},pvp={"Maintain pressure with effects","Coordinate fear and pet utility","Use defensives proactively"}},
  DRUID={leveling={"Select form suited to current fight","Maintain appropriate buffs","Use form-specific resources efficiently","Heal between pulls when useful"},dungeon={"Tank: control threat and positioning","Healer: manage mana and dispels","Damage: maintain role-specific uptime"},boss={"Use specialization-specific form and abilities","Manage resources and cooldowns"},aoe={"Choose safe multi-target tools for your role","Avoid excessive threat"},pvp={"Shift forms for mobility and utility","Use control and healing","Manage defensive cooldowns"}}
 }
+
+-- Optional illustrative ability icons. A missing texture should fall back to readable text.
+ForeverCompanionRotationIcons = {
+ WARRIOR={"Interface\\Icons\\Ability_Warrior_BattleShout","Interface\\Icons\\Ability_Warrior_Charge"},
+ PALADIN={"Interface\\Icons\\Spell_Holy_SealOfMight","Interface\\Icons\\Spell_Holy_HolyBolt"},
+ HUNTER={"Interface\\Icons\\Ability_Hunter_BeastTaming","Interface\\Icons\\Ability_Hunter_AspectOfTheHawk"},
+ ROGUE={"Interface\\Icons\\Ability_Stealth","Interface\\Icons\\Ability_Rogue_SliceDice"},
+ PRIEST={"Interface\\Icons\\Spell_Holy_PowerWordShield","Interface\\Icons\\Spell_Holy_Renew"},
+ SHAMAN={"Interface\\Icons\\Spell_Nature_Lightning","Interface\\Icons\\Spell_Nature_HealingWaveGreater"},
+ MAGE={"Interface\\Icons\\Spell_Frost_FrostBolt02","Interface\\Icons\\Spell_Frost_FrostNova"},
+ WARLOCK={"Interface\\Icons\\Spell_Shadow_CurseOfSargeras","Interface\\Icons\\Spell_Shadow_DeathCoil"},
+ DRUID={"Interface\\Icons\\Ability_Druid_Maul","Interface\\Icons\\Spell_Nature_Rejuvenation"}
+}
