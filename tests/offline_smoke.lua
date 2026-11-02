@@ -898,3 +898,22 @@ for class,choices in pairs(ForeverCompanionSpecs) do
 end
 assertEqual(quickCount,27,"quick start must cover all standard specializations")
 ForeverCompanionDB.specSelections={}
+
+-- The class hero checklist must cover all nine classes and keep its
+-- evidence label explicit; this is informational UI, never automation.
+if type(ForeverCompanionBeginnerChecklist)~="function" then
+ dofile("ForeverCompanion/BeginnerCoach.lua")
+end
+local checklistCount=0
+for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}) do
+ local steps=ForeverCompanionBeginnerChecklist(class)
+ assertEqual(#steps,5,"beginner checklist completeness: "..class)
+ assert(steps[1]:find("BEFORE COMBAT:",1,true)==1,"missing preparation: "..class)
+ assert(steps[2]:find("DURING COMBAT:",1,true)==1,"missing basic loop: "..class)
+ assert(steps[3]:find("WHEN STUCK:",1,true)==1,"missing recovery: "..class)
+ assert(steps[4]:find("VERIFY IN GAME:",1,true)==1,"missing client check: "..class)
+ assert(steps[5]:find("not combat-log benchmark validated",1,true),"missing evidence warning: "..class)
+ checklistCount=checklistCount+1
+end
+assertEqual(checklistCount,9,"all class hero checklists present")
+assertEqual(#ForeverCompanionBeginnerChecklist("UNKNOWN"),0,"unsupported class must not invent coaching")
