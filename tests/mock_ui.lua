@@ -341,6 +341,11 @@ assert(foundTitle,"main window title not rendered")
 local foundBanner=false
 for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foundBanner=true end end
 assert(foundBanner,"premium dashboard welcome banner missing")
+local heraldicMarks=0
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text=="FC" then heraldicMarks=heraldicMarks+1 end
+end
+assert(heraldicMarks>=2,"header and dashboard must use the same original heraldic crest")
 -- Exercise the native class-guide hero and capture its real mock widget tree.
 local levelingButton
 for _,w in ipairs(frames) do if w.section=="Leveling" then levelingButton=w end end
