@@ -156,7 +156,7 @@ function Guide.Create(parent)
 end
 function Guide.Render(classToken,classLabel,level,role,mode)
   if not root then return end
-  local handbook=ForeverCompanionData and ForeverCompanionData.classHandbook
+  local handbook=type(ForeverCompanionData)=="table" and ForeverCompanionData.classHandbook
   local entry=type(handbook)=="table" and handbook[classToken]
   values.icon:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
   values.heroArt:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
