@@ -97,3 +97,7 @@ The Leveling rotation panel now attempts to inspect the player's spellbook using
 Forever beta uses a modern Mainline-derived API despite interface 16001. The spellbook reader has been migrated from removed legacy globals to `C_SpellBook.GetNumSpellBookSkillLines`, `C_SpellBook.GetSpellBookSkillLineInfo`, and `C_SpellBook.GetSpellBookItemName` with the Player spellbook bank. Missing or incomplete results are handled conservatively. Sources: [captured Forever API](https://atraeau.github.io/WoW-Addons/), [beta client testing](https://github.com/Thunderz96/forever-addon-kit), and [C_SpellBook API](https://warcraft.wiki.gg/wiki/API_C_SpellBook.GetSpellBookItemName).
 
 Other legacy API modules still require audit and live-client tests. Spec previews are manual and not a claim of the player's active Forever talent specialization. Combat secrets and restricted data limit automated combat-driven features.
+
+## Safe client diagnostics (3.5 beta)
+
+Use `/fcdiag` to print the detected client build and the availability of key spellbook, talent, quest, profession and XP APIs. The same compatibility summary appears in Overview. These are passive presence checks only: they do not run combat actions, inspect process memory, access network packets, or prove that an API behaves correctly. Record the report and any Lua errors during a future official test window; do not treat a successful report as Blizzard approval.
