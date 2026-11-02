@@ -286,7 +286,7 @@ function D.Render()
   end
   values.role:SetText("Role preference: "..tostring(db.role or "Not selected"))
   local professions=ForeverCompanionProfessionScanner
-  local detected=professions and professions.Read and professions.Read()
+  local detected=safeCall(professions and professions.Read)
   if type(detected)=="table" and #detected>0 then
     local names={}
     for i=1,math.min(2,#detected) do
@@ -309,9 +309,12 @@ function D.Render()
   local professionSource=type(detected)=="table" and (#detected>0 and "detected" or "none detected") or "API unavailable"
   if values.sources then values.sources:SetText("Quest data: "..questSource.."   |   Professions: "..professionSource.."   |   Materials: manual counts") end
   local craft=ForeverCompanionCraftingPlanner
-  local stats=craft and craft.Stats and craft.Stats()
-  setBar("Materials ready",stats and stats.materials>0 and stats.complete/stats.materials or nil,
-    stats and stats.materials>0 and (stats.complete.."/"..stats.materials) or "N/A")
+  local stats=safeCall(craft and craft.Stats)
+  local materialTotal=type(stats)=="table" and tonumber(stats.materials) or nil
+  local materialDone=type(stats)=="table" and tonumber(stats.complete) or nil
+  local materialValid=materialTotal and materialDone and materialTotal>0 and materialDone>=0 and materialDone==materialDone
+  setBar("Materials ready",materialValid and materialDone/materialTotal or nil,
+    materialValid and (materialDone.."/"..materialTotal) or "N/A")
   local selected=planner and planner.GetSelected and planner.GetSelected()
   local firstReady
   if questSupported and planner.GetLive then
