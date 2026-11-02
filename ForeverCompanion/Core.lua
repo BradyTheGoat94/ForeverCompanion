@@ -222,7 +222,7 @@ local function createUI()
     b:SetPoint("TOPLEFT", 20+(i-1)*97, -60)
     b:SetText(section)
     b.section = section
-    b:SetScript("OnClick", function() currentTab=section; DB.tab=section; render() end)
+    b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
     tabButtons[#tabButtons+1] = b
   end
   local panel=CreateFrame("Frame",nil,window)
