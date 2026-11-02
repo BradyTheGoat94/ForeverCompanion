@@ -59,3 +59,12 @@ Prioritize functional fidelity and test coverage over artificial commit counts. 
 - Guarded client reads for class, level, XP, zone and profession skill conversion; missing data is explicitly labeled instead of inventing a character class or skill level.
 
 Still to do: genuine original crest/banner art, finer pixel-level layout fidelity, client-verified spells and talents, live-client interaction and scaling tests, license approval, confirmed Interface number and supported CurseForge game flavor.
+
+## Fourth overnight implementation pass (3.12 beta)
+
+- Added native Dungeon and PvP hero panels with gold ornament, class/role notes, manual preparation progress and next unchecked step.
+- Added four actual clickable task tiles per page, replacing duplicate stock buttons while preserving the existing slash-command checklist API.
+- Added independent SavedVariables progress for Dungeon and PvP tasks, plus working in-panel guide navigation.
+- Added a reusable original geometric FC monogram crest to the dashboard and main header, drawn with native WoW UI textures and fontstrings. This improves consistency but is **not** yet the detailed illustrated crest requested in the reference artwork.
+- Extended mocked UI tests, two new illustrative CI previews, and live-client testing instructions.
+- Keep remaining visual goals: richer banner artwork, class-guide hierarchy, verified spell/quest content, and real-client screenshot comparisons.
