@@ -731,6 +731,7 @@ ForeverCompanionDB.specSelections={}
 
 -- Sourced rotation references must render for the correct selected build.
 for _,case in ipairs({
+ {"PALADIN","Retribution","Seal of Command"},
  {"MAGE","Arcane","Heating Up"},
  {"MAGE","Frost","Fingers of Frost"},
  {"ROGUE","Combat","Slice and Dice"},
