@@ -666,7 +666,7 @@ ForeverCompanionSpellbook=oldBook
 local warriorCovered,warriorTotal=ForeverCompanionBeginnerCoverage("WARRIOR")
 assert(warriorTotal==4 and warriorCovered>=2 and warriorCovered<=warriorTotal,"unexpected Warrior curated coverage")
 local mageCovered,mageTotal=ForeverCompanionBeginnerCoverage("MAGE")
-assert(mageTotal==4 and mageCovered==0,"unaudited Mage hints must not claim curated unlock coverage")
+assert(mageTotal==4 and mageCovered==1,"Mage coverage must count only its curated Arcane Intellect hint")
 
 -- Mage curated entries must be sourced and counted without assuming spell ownership.
 local mageData=ForeverCompanionVerifiedAbilities
