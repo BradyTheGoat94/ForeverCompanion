@@ -284,6 +284,22 @@ local function render()
           lines[#lines+1]="Use the general priority above and check your spellbook for available abilities."
         end
       end
+      if type(ForeverCompanionBeginnerAvailability)=="function" then
+        lines[#lines+1]="BEGINNER SPELLBOOK CHECK (READ-ONLY)"
+        local scan
+        if type(ForeverCompanionSpellbook)=="table" and type(ForeverCompanionSpellbook.Scan)=="function" then
+          local ok,value=pcall(ForeverCompanionSpellbook.Scan)
+          if ok then scan=value end
+        end
+        if type(scan)~="table" then scan={supported=false,inspected=0,complete=false,known={}} end
+        local ok,results=pcall(ForeverCompanionBeginnerAvailability,classToken(),scan)
+        if ok and type(results)=="table" then
+          for _,line in ipairs(results) do lines[#lines+1]=line end
+        else
+          lines[#lines+1]="Spell availability could not be checked in this client."
+        end
+        lines[#lines+1]="Unknown or absent entries do not prove a spell is unavailable; check talents, trainer and ranks."
+      end
       if ForeverCompanionAvailableAbilitySummary then
         lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
       end
