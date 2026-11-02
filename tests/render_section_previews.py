@@ -28,8 +28,12 @@ def draw_base(section):
     x,y=72,54
     d.rounded_rectangle((x,y,x+1356,y+807),radius=13,fill=(17,21,30),outline=(143,105,52),width=4)
     d.rectangle((x+13,y+12,x+1342,y+17),fill=(185,131,48))
-    d.text((x+42,y+35),"FOREVER COMPANION",font=F35,fill=GOLD)
-    d.text((x+44,y+84),"Leveling   /   Quest Journal   /   Professions   /   Builds",font=F17,fill=MUTED)
+    # Original FC crest exists as native textures/fontstrings on every page.
+    d.rounded_rectangle((x+20,y+29,x+93,y+103),radius=4,fill=(18,24,34),outline=GOLD,width=3)
+    d.rounded_rectangle((x+26,y+35,x+87,y+97),radius=3,outline=(113,81,38),width=2)
+    d.text((x+35,y+53),"FC",font=F28,fill=GOLD)
+    d.text((x+119,y+35),"FOREVER COMPANION",font=F35,fill=GOLD)
+    d.text((x+121,y+84),"Leveling   /   Quest Journal   /   Professions   /   Builds",font=F17,fill=MUTED)
     d.text((x+1140,y+44),"BETA",font=F17,fill=GOLD)
     d.rounded_rectangle((x+14,y+136,x+256,y+730),radius=6,fill=(22,28,39),outline=(84,69,47))
     d.text((x+35,y+155),"NAVIGATION",font=F21,fill=GOLD)
