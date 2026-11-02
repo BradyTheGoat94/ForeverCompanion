@@ -118,3 +118,13 @@ This addon is **not verified on the target client**. Use this checklist on the f
 79. Verify all rotation tiles remain legible at compact and normal window heights.
 80. Confirm no modulo-by-zero error occurs when icon metadata is absent or empty.
 81. Add the same material twice in one profession; duplicate should be rejected without changing totals.
+
+## v2.0 visual crafting controls
+82. Add six materials to one profession; confirm first five appear and the sixth is on page two.
+83. Click plus/minus and confirm owned quantity and remaining count update immediately.
+84. Minus at zero must remain zero; plus must not exceed 999999.
+85. Switch profession and confirm material page resets to first page.
+86. Switch away from Professions; verify all material buttons and labels disappear.
+87. Reload UI; verify quantities persist and buttons show correct saved values.
+88. Verify no overlap between profession selectors, material controls, and handbook text at both window heights.
+89. Check text clipping for long material names and small UI scale.
