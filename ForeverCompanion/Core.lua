@@ -250,6 +250,7 @@ local function render()
           lines[#lines+1]=referenceLine
         end
       end
+      if ForeverCompanionLevelingCurriculum then lines[#lines+1]=ForeverCompanionLevelingCurriculum.Format(classToken(),level()) end
       if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
         lines[#lines+1]=ForeverCompanionSkillStudy.FormatNextActions(classToken(),level())
         lines[#lines+1]=ForeverCompanionSkillStudy.PracticePlan(classToken(),level()) end
