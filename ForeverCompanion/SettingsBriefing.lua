@@ -80,7 +80,7 @@ end
 function S.Create(parent,context)
   ctx=context or {}
   root=CreateFrame("Frame",nil,parent)
-  root:SetSize(770,235)
+  root:SetSize(770,259)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
   values={}
   local left=plate(root,0,376,"PREFERENCES & CHARACTER")
@@ -95,7 +95,7 @@ function S.Create(parent,context)
   values.profession=label(right,16,-91,349,"Profession API: checking","GameFontHighlightSmall",{0.69,0.75,0.81})
   values.spellbook=label(right,16,-113,349,"Spellbook API: checking","GameFontHighlightSmall",{0.69,0.75,0.81})
   values.xp=label(right,16,-135,349,"XP API: checking","GameFontHighlightSmall",{0.69,0.75,0.81})
-  values.warning=label(root,14,-240,740,"API visibility is not a compatibility test. Verify in the actual client before publishing.","GameFontHighlightSmall",{0.93,0.71,0.38})
+  values.warning=label(root,14,-238,740,"API visibility is not a compatibility test. Verify in the actual client before publishing.","GameFontHighlightSmall",{0.93,0.71,0.38})
   actions={
     button(root,0,"AUTO-DETECT CLASS",ctx.autoClass),
     button(root,264,"CENTER WINDOW",ctx.centerWindow),
