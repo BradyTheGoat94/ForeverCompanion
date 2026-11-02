@@ -49,4 +49,32 @@ assertEqual(mats.GetEntries("Alchemy")[3].owned,0,"new ingredient owned")
 dofile("ForeverCompanion/Diagnostics.lua")
 local report=ForeverCompanionDiagnostics.Collect()
 assert(report:find("Client: unknown",1,true),"diagnostics should tolerate missing client APIs")
-io.write("PASS: offline spellbook, crafting, and diagnostic smoke tests\n")
+
+-- Modern quest log compatibility and transient failure preservation.
+C_QuestLog={
+ GetNumQuestLogEntries=function() return 2 end,
+ GetInfo=function(i)
+  if i==1 then return {isHeader=true,title="Test Zone"} end
+  return {questID=42,title="Sample Quest",isComplete=false}
+ end,
+ IsComplete=function() return true end,
+ GetQuestObjectives=function() return {{text="Collect 3 samples"}} end,
+}
+dofile("ForeverCompanion/QuestPlanner.lua")
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"quest scan")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"quest count")
+assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"quest completion")
+C_QuestLog.GetNumQuestLogEntries=function() error("simulated temporary failure") end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"failed quest scan")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"last successful snapshot retained")
+C_QuestLog=nil
+assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"unsupported quest API")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"unsupported API snapshot retained")
+-- Spec selection remains a manual preview; it must never query or change talents.
+dofile("ForeverCompanion/SpecPlanner.lua")
+local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
+assertEqual(first[1],"Arms","default spec preview")
+ForeverCompanionSpecPlanner.Next("WARRIOR")
+local second=ForeverCompanionSpecPlanner.Get("WARRIOR")
+assertEqual(second[1],"Fury","next spec preview")
+io.write("PASS: offline spellbook, crafting, diagnostics, quests and specs\n")
