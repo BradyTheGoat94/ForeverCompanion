@@ -236,6 +236,17 @@ function D.Create(parent,openPage,ctx)
   bannerBg:SetPoint("TOPLEFT",banner,"TOPLEFT",1,-3)
   bannerBg:SetSize(844,90)
   paint(bannerBg,0.105,0.116,0.16,0.98)
+  -- Layered atmospheric bands and distant ridge lines enrich the banner
+  -- without external artwork or additional client dependencies.
+  strip(banner,2,-5,840,1,{0.78,0.57,0.28,0.46})
+  strip(banner,3,-86,838,1,{0.39,0.31,0.21,0.62})
+  strip(banner,504,-14,326,1,{0.65,0.49,0.30,0.18})
+  strip(banner,550,-25,270,1,{0.56,0.44,0.28,0.16})
+  for i=1,7 do
+    local x=510+(i-1)*46
+    local height=11+(i%3)*7
+    strip(banner,x,-86+height,47,1,{0.26,0.28,0.33,0.36})
+  end
   -- A lightweight castle skyline built from native UI textures, not a fake image.
   local towers={{615,28,29},{648,44,36},{689,33,31},{724,58,41},{770,39,34},{808,27,25}}
   for _,tower in ipairs(towers) do
