@@ -271,7 +271,7 @@ end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
-  window:SetSize(720, DB.compact and 470 or 560)
+  window:SetSize(900, DB.compact and 520 or 620)
   if DB.position and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
     window:SetPoint("CENTER", UIParent, "CENTER", DB.position.x, DB.position.y)
   else
@@ -310,27 +310,36 @@ local function createUI()
   questCountText:SetTextColor(0.70,0.85,0.74)
   local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -4, -4)
+  local sidebar=window:CreateTexture(nil,"BORDER")
+  sidebar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-98)
+  sidebar:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,92)
+  sidebar:SetWidth(166)
+  colorTexture(sidebar,0.09,0.115,0.16,0.98)
+  local navHeading=window:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+  navHeading:SetPoint("TOPLEFT",window,"TOPLEFT",28,-112)
+  navHeading:SetText("NAVIGATION")
+  navHeading:SetTextColor(0.95,0.72,0.32)
   for i, section in ipairs(tabs) do
     local b = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-    b:SetSize(94, 28)
-    b:SetPoint("TOPLEFT", 20+(i-1)*97, -60)
+    b:SetSize(142, 36)
+    b:SetPoint("TOPLEFT", 23, -138-(i-1)*43)
     b:SetText(section)
     b.section = section
     b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
     tabButtons[#tabButtons+1] = b
   end
   local panel=CreateFrame("Frame",nil,window)
-  panel:SetPoint("TOPLEFT",16,-98)
+  panel:SetPoint("TOPLEFT",188,-98)
   panel:SetPoint("BOTTOMRIGHT",-16,88)
   local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
   panelTexture:SetAllPoints(panel)
   colorTexture(panelTexture,0.085,0.105,0.13,0.95)
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
-  scroll:SetPoint("TOPLEFT", 22, -104)
+  scroll:SetPoint("TOPLEFT", 198, -108)
   scroll:SetPoint("BOTTOMRIGHT", -35, 92)
   local child = CreateFrame("Frame", nil, scroll)
-  child:SetSize(640, 800)
+  child:SetSize(660, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
   filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
@@ -431,7 +440,7 @@ local function createUI()
     row:Hide()
     questRows[i]=row
   end
-  content:SetWidth(610)
+  content:SetWidth(630)
   if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
@@ -491,13 +500,13 @@ local function createUI()
   compactButton:SetText(DB.compact and "Expand" or "Compact")
   compactButton:SetScript("OnClick",function()
     DB.compact=not DB.compact
-    window:SetHeight(DB.compact and 470 or 560)
+    window:SetHeight(DB.compact and 520 or 620)
     compactButton:SetText(DB.compact and "Expand" or "Compact")
     render()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.9.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v3.9.0 beta  |  /fc help  |  Advisory only  |  No automated gameplay")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
