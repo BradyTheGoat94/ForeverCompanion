@@ -162,7 +162,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.heroArt:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
   -- Tint the class motif with native class colors when exposed by the client.
   local classColor=type(RAID_CLASS_COLORS)=="table" and RAID_CLASS_COLORS[classToken]
-  if values.heroArt.SetVertexColor then
+  if type(values.heroArt.SetVertexColor)=="function" then
     if type(classColor)=="table" then
       values.heroArt:SetVertexColor(type(classColor.r)=="number" and classColor.r or 1,type(classColor.g)=="number" and classColor.g or 1,type(classColor.b)=="number" and classColor.b or 1)
     else
