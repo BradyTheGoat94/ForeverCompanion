@@ -11,6 +11,7 @@ VerifiedAbilities.lua
 SkillStudy.lua
 CooldownGuides.lua
 Spellbook.lua
+SkillDiscovery.lua
 SpecPlanner.lua
 ProfessionScanner.lua
 ProfessionProgress.lua
