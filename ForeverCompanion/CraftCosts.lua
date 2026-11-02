@@ -46,3 +46,15 @@ function C.Format(prof)
  lines[#lines+1]="Prices are user-entered, not live market values. Estimates cover planned materials, not fees or yields."
  return table.concat(lines,"\n")
 end
+
+SLASH_FOREVERCOMPANIONCOST1="/fccost"
+SlashCmdList.FOREVERCOMPANIONCOST=function(msg)
+ msg=tostring(msg or ""):match("^%s*(.-)%s*$")
+ local prof,material,amount=msg:match("^set%s+([^|]+)%s*|%s*([^|]+)%s*|%s*(%d+)%s*$")
+ local show=msg:match("^show%s+(.+)$")
+ local result
+ if prof then local ok;ok,result=C.Set(prof,material,amount)
+ elseif show then result=C.Format(show)
+ else result="Commands: /fccost set Profession | Material | CopperPerUnit; /fccost show Profession" end
+ print("|cffffcc66Forever Companion Costs:|r "..result)
+end
