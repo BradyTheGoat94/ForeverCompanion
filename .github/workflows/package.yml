@@ -71,8 +71,12 @@ jobs:
         run: zip -r ForeverCompanion.zip ForeverCompanion -x '*.DS_Store'
       - name: Verify packaged addon integrity and manifest completeness
         run: python3 tests/validate_package.py ForeverCompanion.zip
+      - name: Record beta package provenance
+        run: python3 tests/write_build_manifest.py
       - uses: actions/upload-artifact@v4
         with:
           name: ForeverCompanion
-          path: ForeverCompanion.zip
+          path: |
+            ForeverCompanion.zip
+            beta-build-manifest.json
           if-no-files-found: error
