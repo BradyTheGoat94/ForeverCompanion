@@ -162,6 +162,7 @@ local function render()
       colorTexture(b.navTop,0.92,0.69,0.29,0.98)
       colorTexture(b.navMarker,0.96,0.76,0.38,1)
       b.navLabel:SetTextColor(1,0.83,0.43)
+      if b.navIcon and b.navIcon.SetVertexColor then b.navIcon:SetVertexColor(1,0.84,0.52) end
     else
       colorTexture(b.navBackground,0.050,0.067,0.100,1)
       if b.navGlow then colorTexture(b.navGlow,0.08,0.18,0.36,0) end
@@ -169,6 +170,7 @@ local function render()
       colorTexture(b.navTop,0.48,0.36,0.21,0.65)
       colorTexture(b.navMarker,0.85,0.63,0.28,0)
       b.navLabel:SetTextColor(0.88,0.87,0.83)
+      if b.navIcon and b.navIcon.SetVertexColor then b.navIcon:SetVertexColor(0.78,0.79,0.80) end
     end
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
@@ -634,6 +636,7 @@ local function createUI()
     b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
     b.navLabel:SetText(section)
     b.navLabel:SetTextColor(0.88,0.87,0.83)
+    b.navIcon=icon
     b:SetScript("OnEnter",function(self)
       if currentTab~=self.section then colorTexture(self.navBackground,0.18,0.17,0.14,1) end
     end)
