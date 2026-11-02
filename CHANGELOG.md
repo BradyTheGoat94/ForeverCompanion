@@ -1,3 +1,11 @@
+## 0.8.0-beta (source only; target client unverified)
+- Added one-click quest filters: all, ready for turn-in, and current zone (where zone metadata is exposed).
+- Live quest header shows active and ready counts; filters preserve the underlying quest log.
+- Added role-specific tank, damage and healer preparation guidance to Leveling and Dungeons.
+- Added Auto Class button to restore real class detection after previewing another class.
+- Reduced focused quest label width to avoid overlapping quest navigation buttons.
+- No map pins, verified quest coordinates, or automatic navigation included.
+
 ## 0.7.0-beta (source committed; live-client verification pending)
 - Added up to 15 clickable quest rows per page, with previous/next page navigation.
 - Selecting a quest displays its focused details and objective text.
