@@ -126,3 +126,32 @@ ForeverCompanionForeverMechanicsSources={
  ROGUE="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189",
  SHAMAN="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189"
 }
+
+
+-- Read-only availability labels for beginner priorities. These are text hints,
+-- not proof that a spell is trained, talented, or usable in combat.
+ForeverCompanionBeginnerSpellHints={
+ WARRIOR={"Battle Shout","Charge","Heroic Strike","Execute"},
+ PALADIN={"Blessing","Seal","Judgement","Crusader Strike"},
+ HUNTER={"Serpent Sting","Arcane Shot","Aimed Shot","Multi-Shot"},
+ ROGUE={"Sinister Strike","Slice and Dice","Eviscerate","Ambush"},
+ PRIEST={"Shadow Word: Pain","Mind Blast","Mind Flay","Smite"},
+ SHAMAN={"Flame Shock","Lava Burst","Lightning Bolt","Earth Shock"},
+ MAGE={"Frostbolt","Frost Nova","Fireball","Arcane Intellect"},
+ WARLOCK={"Corruption","Shadow Bolt","Life Tap","Curse"},
+ DRUID={"Cat Form","Claw","Moonfire","Wrath"}
+}
+function ForeverCompanionBeginnerAvailability(class,scan)
+ local hints=ForeverCompanionBeginnerSpellHints[class] or {}
+ local result={}
+ local book=ForeverCompanionSpellbook
+ for _,spell in ipairs(hints) do
+  local status="unverified (spellbook scan unavailable)"
+  if type(book)=="table" and type(book.Status)=="function" then
+   local ok,value=pcall(book.Status,spell,scan)
+   if ok and type(value)=="string" then status=value end
+  end
+  result[#result+1]=spell.." | "..status
+ end
+ return result
+end
