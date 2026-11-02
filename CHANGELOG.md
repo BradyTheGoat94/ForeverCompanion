@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1-beta (prelaunch, API compatibility unverified)
+- Added automatic read-only detection of active quests from the in-game quest log.
+- Refreshes on world entry and quest-related events.
+- Supports both C_QuestLog and legacy quest-log APIs where exposed.
+- Displays available quest objectives and ready-to-turn-in state.
+- Manual planner remains available for optional custom goals.
+- Does not auto-accept, abandon, turn in or navigate quests.
+
 ## 0.5.0-beta (prelaunch source, not in-client tested)
 - Added Quests tab and persistent manual quest planner (up to 100 entries).
 - Track quest name, zone, and completion; list, complete, reopen and remove entries with `/fcq`.
