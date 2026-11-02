@@ -286,6 +286,15 @@ local function render()
       end
       if type(ForeverCompanionBeginnerAvailability)=="function" then
         lines[#lines+1]="BEGINNER SPELLBOOK CHECK (READ-ONLY)"
+        if type(ForeverCompanionBeginnerCoverage)=="function" then
+          local ok,covered,total=pcall(ForeverCompanionBeginnerCoverage,classToken())
+          if ok and type(covered)=="number" and type(total)=="number" then
+            lines[#lines+1]="CURATED UNLOCK DATA: "..covered.."/"..total.." suggested spells cross-referenced."
+            if covered<total then
+              lines[#lines+1]="Other suggestions are general coaching only; unlock levels are not verified."
+            end
+          end
+        end
         local scan
         if type(ForeverCompanionSpellbook)=="table" and type(ForeverCompanionSpellbook.Scan)=="function" then
           local ok,value=pcall(ForeverCompanionSpellbook.Scan)
