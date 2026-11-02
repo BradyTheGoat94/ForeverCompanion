@@ -138,5 +138,65 @@ def profession_preview():
     line(d,cx+23,lower+225,"Recipe and material quantities are manual planning data, not a verified game database.",100,GOLD)
     im.save("ui_profession_preview.png")
     print("Profession preview generated from",len(strings),"widget strings")
+def adventure_preview(section,slug):
+    rows=read_rows("ui_"+slug+"_snapshot.txt")
+    strings=[r["text"] for r in rows if r.get("text")]
+    heading="PVP PREPARATION" if section=="PvP" else "DUNGEON PREPARATION"
+    for required in (heading,"CLASS & ROLE GUIDANCE","OPEN CLASS GUIDE","OPEN QUEST JOURNAL"):
+        if required not in strings:
+            raise SystemExit(slug+" preview missing real native widget: "+required)
+    progressText=next((v for v in strings if re.match(r"^\\d+/\\d+ preparation tasks marked complete$",v)),None)
+    if not progressText:
+        raise SystemExit(slug+" preview missing actual manual progress")
+    children={}
+    for widget in rows:
+        children.setdefault(widget.get("parent"),[]).append(widget)
+    taskRows=[]
+    for widget in rows:
+        if widget.get("kind")!="Button" or widget.get("visible")!="1":
+            continue
+        labels=[w.get("text","") for w in children.get(widget["id"],[])
+                if w.get("kind")=="FontString"]
+        if len(labels)>=3 and labels[-1] in ("DONE","TODO"):
+            taskRows.append((labels[0],labels[1],labels[-1]))
+    if len(taskRows)!=4:
+        raise SystemExit(slug+" preview needs four actual clickable checklist tiles; got "+str(len(taskRows)))
+    im,d,x,y,cx=draw_base(section)
+    top=y+223
+    panel(d,cx,top,517,212,heading)
+    panel(d,cx+529,top,535,212,"CLASS & ROLE GUIDANCE")
+    line(d,cx+23,top+75,progressText,51)
+    line(d,cx+23,top+113,find(strings,"Next:","No next task"),54,MUTED)
+    m=re.match(r"(\\d+)/(\\d+)",progressText)
+    frac=int(m.group(1))/int(m.group(2)) if m and int(m.group(2)) else None
+    bar(d,cx+23,top+147,466,frac,(230,174,75))
+    line(d,cx+23,top+177,find(strings,"Manual checklist only","Manual planning"),52,GOLD)
+    role=next((v for v in strings if re.search(r"\\s\\|\\s",v) and "Warrior" in v),"Class and role unavailable")
+    line(d,cx+552,top+76,role,55)
+    line(d,cx+552,top+112,"Read-only class guidance; verify game-specific abilities.",57,MUTED)
+    for i,name in enumerate(("OPEN CLASS GUIDE","OPEN QUEST JOURNAL")):
+        bx=cx+552+i*232
+        by=top+157
+        d.rounded_rectangle((bx,by,bx+215,by+36),radius=4,fill=(70,54,33),outline=GOLD)
+        d.text((bx+11,by+11),name,font=F14,fill=PALE)
+    lower=top+227
+    panel(d,cx,lower,1064,268,"MANUAL PREPARATION CHECKLIST")
+    line(d,cx+23,lower+60,"Click a tile in game to mark a preparation task; progress is saved per character.",100,MUTED)
+    for i,(number,title,status) in enumerate(taskRows):
+        col=i%2;row=i//2
+        bx=cx+20+col*524
+        by=lower+95+row*78
+        d.rounded_rectangle((bx,by,bx+505,by+66),radius=5,
+                            fill=(53,48,35) if status=="DONE" else (34,43,56),
+                            outline=GOLD if status=="DONE" else (101,83,52),width=2)
+        d.ellipse((bx+14,by+18,bx+42,by+46),outline=GOLD,width=2)
+        d.text((bx+23,by+23),number,font=F14,fill=GOLD)
+        d.text((bx+57,by+22),title[:39],font=F17,fill=PALE)
+        d.text((bx+425,by+24),status,font=F14,fill=GOLD if status=="DONE" else MUTED)
+    im.save("ui_"+slug+"_preview.png")
+    print(section,"preview generated from",len(strings),"widget strings and",len(taskRows),"real task buttons")
+
 quest_preview()
 profession_preview()
+adventure_preview("Dungeons","dungeon")
+adventure_preview("PvP","pvp")
