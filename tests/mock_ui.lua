@@ -292,6 +292,13 @@ end
 assert(alchemyTab and alchemyTab.OnClick,"styled profession handbook selector missing")
 alchemyTab.OnClick(alchemyTab)
 assert(alchemyTab.selected,"selected profession handbook tab should highlight")
+local sourcedCampingVisible=false
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text:find("Mana Well",1,true) and w.text:find("Blizzard Forever Camping preview (2026-10-21)",1,true) then
+  sourcedCampingVisible=true
+ end
+end
+assert(sourcedCampingVisible,"profession panel must show official source-attributed camp feature")
 local materialStatus=false
 for _,w in ipairs(frames) do if w.text=="0/1 material goals completed" then materialStatus=true end end
 assert(materialStatus,"manual material goal status incorrect")
