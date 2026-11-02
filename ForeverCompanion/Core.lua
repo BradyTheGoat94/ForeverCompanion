@@ -7,7 +7,7 @@ local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
 local checkButtons = {}
-local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background
+local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, questFocusText, welcomeTip
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
 local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
@@ -31,7 +31,7 @@ local function render()
   for _, b in ipairs(checkButtons) do b:Hide() end
   local lines = {}
   if currentTab == "Overview" then
-    lines = {"Welcome to Forever Companion v0.4 beta.", "This is a non-automating reference addon.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Use /fc help for commands. Some content is general guidance pending live-client verification."}
+    lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE"}
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
@@ -70,6 +70,11 @@ local function render()
   if scrollFrame then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
+  if nextQuestButton then if currentTab=="Quests" then nextQuestButton:Show() else nextQuestButton:Hide() end end
+  if questFocusText then
+    local q=ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.GetSelected()
+    questFocusText:SetText(currentTab=="Quests" and (q and ("Focused: "..q.title) or "No quest selected") or "")
+  end
 end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
@@ -142,6 +147,16 @@ local function createUI()
   content:SetSpacing(4)
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
+  questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  questFocusText:SetPoint("BOTTOMLEFT",20,83)
+  questFocusText:SetWidth(520)
+  questFocusText:SetJustifyH("LEFT")
+  nextQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  nextQuestButton:SetSize(118,25)
+  nextQuestButton:SetPoint("BOTTOMRIGHT",-25,81)
+  nextQuestButton:SetText("Next Quest")
+  nextQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Next(); render() end)
+  nextQuestButton:Hide()
   for i=1,4 do
     local b=CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
     b:SetSize(90, 25)
@@ -183,7 +198,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.5.2 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v0.6.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
