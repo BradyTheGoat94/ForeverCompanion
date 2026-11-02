@@ -9,6 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
+local lootSearchBox, lootWishButton, lootSearchQuery=""
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -111,6 +112,19 @@ function ForeverCompanionClassStripRender(tab,selectedToken)
 end
 local function render()
   if not window or not DB then return end
+  if lootSearchBox then
+    if currentTab=="Loot" then
+      lootSearchBox:Show()
+      lootWishButton:Show()
+      local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootSearchQuery) or {}
+      local first=matches[1]
+      lootWishButton:SetText(first and ("Wishlist: "..first.item) or "Wishlist: no match")
+      lootWishButton:SetEnabled(first~=nil)
+    else
+      lootSearchBox:Hide()
+      lootWishButton:Hide()
+    end
+  end
   titleText:SetText("Forever Companion")
   if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..tostring(level() or "?").."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then
@@ -220,7 +234,7 @@ local function render()
   elseif currentTab == "Loot" then
     lines = {"LOOT ATLAS"}
     if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
-      lines[#lines+1]=ForeverCompanionLoot.Format()
+      lines[#lines+1]=ForeverCompanionLoot.Format(lootSearchQuery)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
       lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
     else
@@ -1157,6 +1171,30 @@ local function createUI()
     row:Hide()
     rotationRows[i]=row
   end
+  lootSearchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
+  lootSearchBox:SetSize(270,24)
+  lootSearchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
+  lootSearchBox:SetAutoFocus(false)
+  lootSearchBox:SetMaxLetters(80)
+  lootSearchBox:SetScript("OnEnterPressed",function(self)
+    lootSearchQuery=self:GetText() or ""
+    self:ClearFocus()
+    render()
+  end)
+  lootSearchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
+  lootSearchBox:Hide()
+  lootWishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootWishButton:SetSize(245,24)
+  lootWishButton:SetPoint("LEFT",lootSearchBox,"RIGHT",15,0)
+  lootWishButton:SetScript("OnClick",function()
+    if not ForeverCompanionLoot then return end
+    local first=ForeverCompanionLoot.Search(lootSearchQuery)[1]
+    if first then
+      ForeverCompanionLoot.ToggleWish(DB,first.item)
+      render()
+    end
+  end)
+  lootWishButton:Hide()
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
