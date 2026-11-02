@@ -117,6 +117,34 @@ GetZoneText=nil
 GetNumQuestLogEntries=function() error("simulated legacy API outage") end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"legacy scan outage")
 assertEqual(ForeverCompanionQuestPlanner.IsSnapshotStale(),true,"legacy cached snapshot stale")
+-- Zone-less modern quests must not be mislabeled as the placeholder "Quest log".
+-- The current-zone filter should preserve unknown-zone quests rather than hide them.
+C_QuestLog={
+ GetNumQuestLogEntries=function() return 2 end,
+ GetInfo=function(i)
+  if i==1 then return {questID=91,title="Quest with unknown zone"} end
+  return {questID=92,title="Westfall quest",zoneName="Westfall"}
+ end,
+}
+GetZoneText=function() return "Westfall" end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"mixed-zone quest scan")
+assertEqual(ForeverCompanionQuestPlanner.HasZoneMetadata(),true,"mixed zone metadata")
+assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].zone,"Unspecified zone","missing zone must not be fabricated")
+ForeverCompanionQuestPlanner.CycleFilter() -- all -> ready
+ForeverCompanionQuestPlanner.CycleFilter() -- ready -> zone
+assertEqual(ForeverCompanionQuestPlanner.GetFilter(),"zone","mixed-zone filter")
+assertEqual(#ForeverCompanionQuestPlanner.GetVisible(),2,"unknown-zone quest should stay visible")
+C_QuestLog.GetNumQuestLogEntries=function() return 1 end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"zone-less quest scan")
+assertEqual(ForeverCompanionQuestPlanner.HasZoneMetadata(),false,"zone-less quest should not report metadata")
+assertEqual(#ForeverCompanionQuestPlanner.GetVisible(),1,"active zone filter should not hide zone-less quests")
+assertEqual(ForeverCompanionQuestPlanner.Overview().zones[1].zone,"Unspecified zone","zone overview must be honest")
+ForeverCompanionQuestPlanner.CycleFilter() -- zone -> all
+ForeverCompanionQuestPlanner.CycleFilter() -- all -> ready
+ForeverCompanionQuestPlanner.CycleFilter() -- ready -> all (skip zone without metadata)
+assertEqual(ForeverCompanionQuestPlanner.GetFilter(),"all","zone filter skipped when no metadata")
+C_QuestLog=nil
+GetZoneText=nil
 -- Class planning references should be substantial and distinct, not duplicated filler.
 dofile("ForeverCompanion/AdvancedGuides.lua")
 local distinct={}
