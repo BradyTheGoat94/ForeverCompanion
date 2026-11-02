@@ -1,3 +1,10 @@
+## 1.0.0-beta (development milestone, not a stable release)
+- Added AdvancedGuides.lua with nine original-class specialization overviews, core priorities, party guidance and progression checklists.
+- Added five-stage introductory progression guidance for nine gathering and crafting professions.
+- Integrated advanced content into the existing icon-backed class and profession handbook pages.
+- Expanded in-game testing checklist for handbook coverage and long-page scrolling.
+- Not yet included: verified Forever-specific talent builds, recipe IDs, material quantities, exact skill-level ranges, map routing, or confirmed client compatibility.
+
 ## 0.9.0-beta (source committed; live-client validation pending)
 - Introduced class handbook sections for nine original classes, with icon references, leveling, dungeon, PvP and profession notes.
 - Added selectable icon-backed profession handbook pages for nine gathering and crafting professions.
