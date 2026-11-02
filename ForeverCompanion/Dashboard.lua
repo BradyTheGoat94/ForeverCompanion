@@ -97,10 +97,13 @@ local function action(parent,x,y,w,label,icon,fn,height)
     paint(bg,0.24,0.20,0.12,1)
     paint(rail,0.98,0.73,0.30,1)
     caption:SetTextColor(1,0.91,0.72)
-    if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" then
+    if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" and type(GameTooltip.SetText)=="function" then
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
       GameTooltip:SetText(self.detail,1,0.84,0.47)
-      GameTooltip:Show()
+      if self.extraDetail and type(GameTooltip.AddLine)=="function" then
+        GameTooltip:AddLine(self.extraDetail,0.74,0.80,0.83,true)
+      end
+      if type(GameTooltip.Show)=="function" then GameTooltip:Show() end
     end
   end)
   b:SetScript("OnLeave",function()
@@ -142,14 +145,14 @@ local function progress(parent,x,y,w,label,color,target,explanation)
   hit:SetScript("OnClick",function() if type(navigate)=="function" then navigate(target) end end)
   hit:SetScript("OnEnter",function(self)
     paint(hover,0.94,0.71,0.31,0.95)
-    if GameTooltip and type(GameTooltip.SetOwner)=="function" then
+    if GameTooltip and type(GameTooltip.SetOwner)=="function" and type(GameTooltip.SetText)=="function" then
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
       GameTooltip:SetText(label,1,0.82,0.48)
       if type(GameTooltip.AddLine)=="function" then
         GameTooltip:AddLine(explanation or "Open the related guide.",0.89,0.89,0.82,true)
         GameTooltip:AddLine("Current: "..tostring(self.detail or "N/A"),0.70,0.79,0.85)
       end
-      GameTooltip:Show()
+      if type(GameTooltip.Show)=="function" then GameTooltip:Show() end
     end
   end)
   hit:SetScript("OnLeave",function()
@@ -360,6 +363,14 @@ function D.Render()
     end
   end
   local pinned=questSupported and safeCall(planner.GetPinned) or nil
+  local questFocus=firstReady or (type(pinned)=="table" and not pinned.complete and pinned) or selected
+  values.step1.extraDetail=nil
+  if type(questFocus)=="table" then
+    local zone=type(questFocus.zone)=="string" and questFocus.zone or "Zone not supplied"
+    local objective=type(questFocus.objectives)=="table" and questFocus.objectives[1] or nil
+    objective=type(objective)=="string" and objective or "Objective details not supplied"
+    values.step1.extraDetail=("Zone: "..zone.."  |  Objective: "..objective.."  |  Addon focus only"):sub(1,350)
+  end
   if firstReady and firstReady.title then
     updateAction(values.step1,"1. Ready to turn in: "..tostring(firstReady.title))
   elseif questSupported and pinned and pinned.title and not pinned.complete then
@@ -372,7 +383,9 @@ function D.Render()
     updateAction(values.step1,"1. Quest API unavailable; check the game log or manual notes.")
   end
   updateAction(values.step2,"2. Review "..tostring(class).." leveling and rotation priorities.")
+  values.step2.extraDetail="Select a specialization and compare trained spells before using advisory priorities."
   local shortage=type(stats)=="table" and tonumber(stats.missing) or nil
+  values.step3.extraDetail="Material totals are manual planning entries, not an inventory or market-price scan."
   if shortage and shortage>0 then
     local top=safeCall(craft and craft.TopShortages,1)
     local item=type(top)=="table" and top[1] or nil
