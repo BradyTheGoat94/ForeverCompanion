@@ -42,3 +42,15 @@ Copy the `ForeverCompanion` folder to the game's `Interface/AddOns` directory. E
 ## License
 
 All rights reserved pending an explicit license decision. Do not assume public distribution of source grants permission to reuse it.
+
+## Crafting planner (1.7.0 beta)
+
+The Professions tab displays detected skills when the client exposes the profession API, introductory progression advice, and a persistent **manual** material checklist per profession. No inventory scanning or automatic crafting is performed.
+
+Example commands:
+
+- `/fcm add Alchemy | Peacebloom | 20 | 7` — track 20 required, 7 owned.
+- `/fcm owned Alchemy | 1 | 12` — update owned quantity of entry 1.
+- `/fcm remove Alchemy | 1` — delete an entry.
+
+These example materials are not a verified Forever recipe or leveling route. Skill stage labels are broad orientation, not verified recipe thresholds. Existing class rotations are educational priorities rather than tested optimization.
