@@ -161,6 +161,41 @@ function Loot.CatalogSummary()
   lines[#lines+1]="This is not a complete dungeon loot table."
   return table.concat(lines,"\n")
 end
+function Loot.Filter(query, dungeon, savedOnly, db)
+  local matches=Loot.Search(query)
+  local results={}
+  local wishes=savedOnly and Loot.Wishlist(db) or nil
+  for _,record in ipairs(matches) do
+    if (not dungeon or dungeon=="" or record.dungeon==dungeon)
+      and (not savedOnly or wishes[record.item]) then
+      results[#results+1]=record
+    end
+  end
+  table.sort(results,function(a,b)
+    if a.dungeon~=b.dungeon then return a.dungeon<b.dungeon end
+    if a.boss~=b.boss then return a.boss<b.boss end
+    return a.item<b.item
+  end)
+  return results
+end
+function Loot.DungeonNames()
+  local counts=Loot.CountByDungeon()
+  local names={}
+  for name in pairs(counts) do names[#names+1]=name end
+  table.sort(names)
+  return names
+end
+function Loot.FormatMatches(matches)
+  local lines={"MATCHING BOSS DROPS / "..#matches}
+  if #matches==0 then
+    lines[#lines+1]="No matching records. Try a different dungeon or turn off wishlist-only."
+  end
+  for i,record in ipairs(matches) do
+    lines[#lines+1]=i..". "..record.item.." | "..record.boss.." / "..record.dungeon
+    lines[#lines+1]="Status: "..record.status.." | Source: "..record.source
+  end
+  return table.concat(lines,"\\n")
+end
 function Loot.Format(query)
   local lines={"LOOT ATLAS / FOREVER", "Source-attributed dungeon and boss drops only.",
     "Beta data may change. A reported drop is not a confirmed drop rate.",
