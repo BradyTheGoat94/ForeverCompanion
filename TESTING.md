@@ -27,7 +27,7 @@ This addon is **not verified on the target client**. Use this checklist on the f
 15. Test Previous/Next Quest and list pagination with more than 15 active quests.
 16. Abandon or turn in a quest; verify the live list updates and selection remains valid.
 17. Test with an empty quest log and with no recognized quest-log API.
-18. Verify all seven tabs fit at 720px width and no buttons overlap at 470px and 560px height.
+18. Verify all seven sidebar tabs fit at the new 1080px logical width; test the 720px expanded and 620px compact heights, plus automatic scaling on smaller displays.
 19. Drag the window, reload, confirm position persists; use `/fc position reset`.
 20. Check compact mode, character switching, different UI scales, and the initial welcome page.
 21. Confirm manual quest notes are not erased when automatic quest-log state changes.
@@ -197,3 +197,16 @@ This addon is **not verified on the target client**. Use this checklist on the f
 140. Confirm Overview displays the same passive API presence report.
 141. Confirm diagnostics do not trigger spells, targeting, movement, combat actions or network calls.
 142. Verify a fresh login and /reload with unsupported C_Traits or C_SpellBook namespaces.
+
+## Premium dashboard v3.9 beta release gate
+
+- Confirm the gold-accented navigation, banner, three top cards, two lower cards, and safety strip are visible in expanded mode. The offline preview is illustrative and cannot substitute for this check.
+- Open every quick action and return via the sidebar; verify no hidden content or click-blocking overlay remains.
+- Verify character name, level, role, professions, XP and quest counts against the live client. Unknown values must show an honest fallback, not a fabricated zero or 100%.
+- Check the Experience, Quests ready and Materials ready bars at zero, partial, full and unavailable states. Do not interpret ready-to-turn-in as total quest completion.
+- Toggle all four Today's Focus entries, reload, and confirm per-character persistence and independence across characters.
+- Add and update manual material goals using /fcm; verify the dashboard totals change without moving items or crafting anything.
+- Toggle Compact/Expand repeatedly at 1920x1080, 1366x768, and smaller resolutions if available. Confirm the safety strip relocates and the hidden lower panels cannot intercept clicks.
+- Trigger quest-log changes, level-ups, profession changes and /reload; confirm no Lua errors or stale UI that misrepresents unsupported APIs.
+- Open Settings via Diagnostics and verify the API report identifies unavailable functions without claiming the game flavor is certified.
+- Record real screenshots, the client build and TOC Interface value before publishing. The GitHub mock PNG is not acceptable as a real CurseForge gameplay screenshot.
