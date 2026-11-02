@@ -1,3 +1,8 @@
+## 3.5.0-beta
+- Added passive /fcdiag client build and API availability report.
+- Added Overview compatibility summary for modern spellbook, talents, quests, professions and XP.
+- Continued account-safety-first testing with no combat actions or automated gameplay.
+
 ## 3.4.0-beta
 - Added a CI-enforced static release audit for manifest completeness and legacy API patterns.
 - Expanded CurseForge moderation readiness and publication requirements based on official author guidance.
