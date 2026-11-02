@@ -38,16 +38,21 @@ end
 -- Rich original ornamentation built from native textures; no external art assets.
 function O.Corners(frame,w,h)
  if not frame or type(w)~="number" or type(h)~="number" or w<80 or h<35 then return false end
- local gold={0.96,0.75,0.36}
- for _,x in ipairs({3,w-28}) do
-  -- Both lower brackets point inward, not below the frame boundary.
-  strip(frame,x,-3,25,2,gold[1],gold[2],gold[3],0.95)
-  strip(frame,x,-3,2,25,gold[1],gold[2],gold[3],0.95)
-  strip(frame,x,-h+5,25,2,gold[1],gold[2],gold[3],0.95)
-  strip(frame,x,-h+28,2,25,gold[1],gold[2],gold[3],0.95)
-  strip(frame,x+5,-8,13,1,0.75,0.52,0.24,0.75)
-  strip(frame,x+5,-h+10,13,1,0.75,0.52,0.24,0.75)
- end
+ local r,g,b=0.96,0.75,0.36
+ -- Mirror all four L-brackets so the short strokes face the panel interior.
+ strip(frame,3,-3,25,2,r,g,b,0.95)
+ strip(frame,3,-3,2,25,r,g,b,0.95)
+ strip(frame,w-28,-3,25,2,r,g,b,0.95)
+ strip(frame,w-5,-3,2,25,r,g,b,0.95)
+ strip(frame,3,-h+5,25,2,r,g,b,0.95)
+ strip(frame,3,-h+28,2,25,r,g,b,0.95)
+ strip(frame,w-28,-h+5,25,2,r,g,b,0.95)
+ strip(frame,w-5,-h+28,2,25,r,g,b,0.95)
+ -- Secondary inner lines echo the shape without touching card text.
+ strip(frame,8,-8,13,1,0.75,0.52,0.24,0.75)
+ strip(frame,w-21,-8,13,1,0.75,0.52,0.24,0.75)
+ strip(frame,8,-h+10,13,1,0.75,0.52,0.24,0.75)
+ strip(frame,w-21,-h+10,13,1,0.75,0.52,0.24,0.75)
  return true
 end
 function O.Hero(frame,w,h)
