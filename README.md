@@ -91,3 +91,9 @@ Synchronization is never automatic. Existing checklist targets matching recipe i
 The Leveling rotation panel now attempts to inspect the player's spellbook using guarded legacy spellbook APIs and labels simple cooldown candidates **learned**, **not found in scanned spellbook**, or **unverified**. Compound alternatives and version/talent-qualified candidates remain explicitly unverified rather than being guessed. Unsupported clients display an unavailable notice. This does **not** verify rank, talents, cooldown duration, or server mechanics and does not cast spells.
 
 **Important:** Class preview may show a class different from the player's real character; spellbook results always reflect the actual player's known spells, not the preview class. This feature needs live testing on the Forever client before relying on its availability labels.
+
+## Forever API compatibility research (3.3 beta)
+
+Forever beta uses a modern Mainline-derived API despite interface 16001. The spellbook reader has been migrated from removed legacy globals to `C_SpellBook.GetNumSpellBookSkillLines`, `C_SpellBook.GetSpellBookSkillLineInfo`, and `C_SpellBook.GetSpellBookItemName` with the Player spellbook bank. Missing or incomplete results are handled conservatively. Sources: [captured Forever API](https://atraeau.github.io/WoW-Addons/), [beta client testing](https://github.com/Thunderz96/forever-addon-kit), and [C_SpellBook API](https://warcraft.wiki.gg/wiki/API_C_SpellBook.GetSpellBookItemName).
+
+Other legacy API modules still require audit and live-client tests. Spec previews are manual and not a claim of the player's active Forever talent specialization. Combat secrets and restricted data limit automated combat-driven features.
