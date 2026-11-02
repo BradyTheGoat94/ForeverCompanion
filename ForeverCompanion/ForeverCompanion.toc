@@ -17,4 +17,5 @@ RecipePlans.lua
 CraftingBridge.lua
 QuestPlanner.lua
 Diagnostics.lua
+Dashboard.lua
 Core.lua
