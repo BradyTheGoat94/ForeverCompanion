@@ -153,3 +153,13 @@ This addon is **not verified on the target client**. Use this checklist on the f
 106. Confirm /fcspec WARRIOR cycles the preview and rejects invalid class tokens safely.
 107. Confirm no spell casting, combat automation, or unsupported claims of optimized rotations.
 108. Verify cooldown text and specialization button fit standard and compact window sizes.
+
+## v3.1 recipe-to-material bridge
+109. Create two recipes sharing a material; preview must aggregate outstanding ingredient demand.
+110. Set manually owned material count and verify missing quantity is reduced without going negative.
+111. Sync recipe goals and verify existing matching checklist targets update while owned counts persist.
+112. Confirm unrelated checklist materials remain untouched by sync.
+113. Confirm new ingredients are added with zero owned and matching is case-insensitive.
+114. Confirm checklist capacity and quantity overflow abort sync without partial modifications.
+115. Confirm preview never mutates material goals and no inventory or crafting API is invoked.
+116. Confirm profession switching shows correct recipe demand and owned quantities.
