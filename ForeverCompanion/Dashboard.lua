@@ -36,7 +36,10 @@ local function panel(x,y,w,h,label,icon)
   local bg=p:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(p)
   paint(bg,0.055,0.069,0.093,0.98)
+  -- Layered header rule and inset bevel create a deeper gilded card frame.
   strip(p,0,0,w,2,GOLD)
+  strip(p,3,-4,w-6,1,{0.72,0.53,0.25,0.52})
+  strip(p,5,-h+6,w-10,1,{0.22,0.28,0.34,0.85})
   strip(p,0,-h+2,w,1,{0.36,0.29,0.19,0.9})
   strip(p,0,0,1,h,{0.34,0.29,0.22,0.8})
   strip(p,w-1,0,1,h,{0.34,0.29,0.22,0.8})
@@ -48,6 +51,8 @@ local function panel(x,y,w,h,label,icon)
   strip(p,w-6,-4,2,15,corner)
   strip(p,4,-h+19,2,15,corner)
   strip(p,w-6,-h+19,2,15,corner)
+  -- A restrained illuminated title rail reinforces hierarchy on every card.
+  strip(p,12,-37,w-24,1,{0.48,0.36,0.21,0.48})
   local start=15
   if icon then
     local image=p:CreateTexture(nil,"OVERLAY")
