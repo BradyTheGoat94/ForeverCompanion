@@ -6,6 +6,7 @@ local ROTATIONS = ForeverCompanionRotations
 local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription
+local rotationRows={}
 local DB, window, titleText, content, currentTab
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -46,6 +47,7 @@ local function render()
   for _, b in ipairs(checkButtons) do b:Hide() end
   if handbookIcon then handbookIcon:Hide() end
   if rotationIcon then rotationIcon:Hide() end
+  for _,row in ipairs(rotationRows) do row:Hide() end
   if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
   for _,b in ipairs(handbookButtons) do b:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
@@ -279,6 +281,13 @@ local function createUI()
     b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%5)*120,-10-math.floor((i-1)/5)*25)
     b:Hide()
     handbookButtons[i]=b
+  end
+  for i=1,5 do
+    local row=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+    row:SetSize(118,21)
+    row:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20+(i-1)*137,112)
+    row:Hide()
+    rotationRows[i]=row
   end
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
