@@ -294,6 +294,9 @@ end
 assert(staleWarning,"quest briefing must warn about cached data")
 ForeverCompanionDashboard.Render()
 assert(sourceLabel.text:find("CACHED - VERIFY IN GAME",1,true),"dashboard must disclose stale quest data")
+assert(bannerStatus.text:find("Quest snapshot stale",1,true),"welcome briefing must not report stale quests as live")
+assert(step1.detail:find("Quest API unavailable",1,true),"stale quest snapshot must not generate a live recommendation")
+assert(metricButtons.Quests.detail=="N/A","stale quest progress must not display an old readiness ratio")
 C_QuestLog.GetNumQuestLogEntries=originalQuestCount
 assert(ForeverCompanionQuestPlanner.Sync(),"quest scanner should recover after transient error")
 local bannerText
