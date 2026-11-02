@@ -192,7 +192,7 @@ classOut:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",str
 classOut:write(table.concat(classSnapshot,string.char(10)))
 classOut:close()
 overviewButton.OnClick(overviewButton)
-assert(not frames[classHeading.parent].visible,"class guide should hide outside Leveling")
+assert(not frames[frames[classHeading.parent].parent].visible,"class guide should hide outside Leveling")
 mockXP=2000
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
 local xpUpdated=false
