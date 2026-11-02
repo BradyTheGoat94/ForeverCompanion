@@ -1,3 +1,10 @@
+## 2.1.0-beta
+- Added per-profession manual recipe goals and per-recipe ingredient quantities.
+- Aggregated material demand across outstanding crafts, accounting for recorded completion.
+- Added /fcr chat commands for adding recipes, ingredients, progress and removal.
+- Displayed recipe plans in the Professions handbook and added regression coverage.
+- No verified Forever recipe database, bag scanning, or crafting automation is included.
+
 ## 2.0.0-beta
 - Added in-window crafting material rows with current/needed/remaining quantities.
 - Added plus/minus buttons for quick manual quantity updates and five-row pagination.
