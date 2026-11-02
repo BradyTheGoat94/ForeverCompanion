@@ -65,7 +65,7 @@ end
 
 function ForeverCompanionAbilityReferenceLines(classToken,level)
  local data=ForeverCompanionVerifiedAbilities
- local result={"FOREVER CLIENT SPELL REFERENCE | "..data.build,
+ local result={"CURATED SPELL REFERENCE | "..data.build,
                data.status.." | Last reviewed "..data.checked}
  local entries=data.entries[classToken]
  if not entries then
