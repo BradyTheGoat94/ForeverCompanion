@@ -8,7 +8,7 @@ This addon is **not verified on the target client**. Use this checklist on the f
 4. Run `/fc` to show/hide the window. Confirm the window is movable and can be closed.
 5. Check that class and level are detected correctly. Test `/fc class Mage` then `/fc class auto`.
 6. Test `/fc role Damage` and `/fc professions Mining + Blacksmithing`.
-7. Open Dungeons and click Done 1; reload UI, reopen, and verify the checkbox state persists.
+7. Open Dungeons and click the first gold-accented preparation tile; reload UI, reopen, and verify the marked state persists.
 8. Check the Leveling, Professions, PvP and Settings tabs for rendering errors.
 9. Test at different UI scales and screen resolutions if available.
 10. Record the client build, exact error messages and screenshots in a GitHub issue.
@@ -249,3 +249,14 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Check `/fc open Quests`, `/fc leveling`, `/fc overview`, `/fc status`, and invalid navigation strings. These must affect only the addon's UI and printed guidance.
 - Inspect the compact dashboard footer and source labels at multiple UI scales; verify the additional status line does not clip or overlap the footer.
 - These checks must be repeated in the actual target client. Offline mocked tests and preview PNGs are not substitutes for live compatibility evidence.
+
+## v3.12.0 Dungeon/PvP and crest verification (target client required)
+
+- Open Dungeons and PvP. Confirm two gold-framed summary cards and four native checklist tiles on each page, with no overlapping text or footer controls.
+- Click and undo individual tasks. Confirm the manual completion count, gold progress bar, and DONE/TODO badge update immediately. Reload and switch characters to verify per-character isolation.
+- Confirm the Dungeon and PvP checklists remain independent, including after using `/fc check Dungeons 1` and `/fc check PvP 1`.
+- Use both in-panel shortcuts to open Leveling and Quests. Confirm no spells are cast, no game quest is selected or turned in, and no PvP queue is joined.
+- Confirm class/role advice changes when the displayed class or manual role preference changes. Verify that class guidance is clearly labeled general reference material.
+- Inspect the original geometric FC crest in the top header and welcome banner. Verify that both render at common UI scales, and note any client font or texture incompatibilities.
+- Verify long quest, class and profession pages still scroll and their controls do not overlap the new panels.
+- Capture **actual in-game screenshots** for a release review; mock-generated previews are not substitutes.
