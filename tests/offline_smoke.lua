@@ -349,3 +349,20 @@ assert(ForeverCompanionAbilityState("WARRIOR",999999,40)=="NOT AUDITED","unknown
 assert(ForeverCompanionAbilityState("MAGE",1,40)=="UNAUDITED","pending class must not be verified")
 assert(ForeverCompanionAvailableAbilitySummary("WARRIOR",40):find("1 known",1,true),"summary must count known spells")
 IsSpellKnown=oldKnown
+
+-- Crafting forecast merges repeated ingredients across recipes and subtracts
+-- only manually recorded owned quantities, never imaginary bag contents.
+local recipe=ForeverCompanionRecipePlans
+local material=ForeverCompanionCraftingPlanner
+assert(recipe.Add("ForecastTest","Potion",3))
+assert(recipe.Ingredient("ForecastTest",1,"Silverleaf",2))
+assert(recipe.Add("ForecastTest","Elixir",2))
+assert(recipe.Ingredient("ForecastTest",2,"Silverleaf",3))
+assert(recipe.Ingredient("ForecastTest",2,"Peacebloom",1))
+assert(material.Add("ForecastTest","Silverleaf",12,4))
+local forecast=recipe.MaterialForecast("ForecastTest")
+assert(forecast[1].name=="Silverleaf" and forecast[1].required==12 and forecast[1].owned==4 and forecast[1].shortage==8,"merged ingredient shortage incorrect")
+assert(recipe.Done("ForecastTest",1,2))
+local revised=recipe.MaterialForecast("ForecastTest")
+assert(revised[1].required==8 and revised[1].shortage==4,"completed crafts must reduce future demand")
+assert(recipe.FormatForecast("ForecastTest"):find("MANUAL INVENTORY",1,true),"forecast must disclose manual quantities")
