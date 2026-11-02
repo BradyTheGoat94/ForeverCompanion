@@ -165,6 +165,21 @@ for name,guide in pairs(ForeverCompanionAdvanced.crafting) do
   craftFirst[guide.stages[1]]=true
 end
 assertEqual(craftCount,9,"profession handbook coverage")
+-- Adventure preparation progress is manual, deterministic, and never a claim
+-- about actual dungeon/PvP readiness.
+dofile("ForeverCompanion/AdventureBriefing.lua")
+local adventure=ForeverCompanionAdventureBriefing
+local tasks={"Confirm group","Review objectives","Plan cooldowns"}
+local summary=adventure.Summary(tasks,{[1]=true,[3]=true})
+assertEqual(summary.total,3,"adventure checklist total")
+assertEqual(summary.done,2,"adventure checklist completed")
+assertEqual(summary.nextTask,"Review objectives","adventure next unfinished task")
+local finished=adventure.Summary(tasks,{true,true,true})
+assertEqual(finished.nextTask,nil,"finished checklist has no next task")
+local missing=adventure.Summary(nil,"corrupted saved checks")
+assertEqual(missing.total,0,"missing checklist should not invent progress")
+assertEqual(missing.done,0,"invalid checks must not create completion")
+
 -- Spec selection remains a manual preview; it must never query or change talents.
 dofile("ForeverCompanion/SpecPlanner.lua")
 local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
