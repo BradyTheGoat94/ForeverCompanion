@@ -682,6 +682,21 @@ local function createUI()
   if window.SetBackdrop then
     window:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=5,right=5,top=5,bottom=5}})
   end
+  -- Reference-inspired outer frame: gilded corner brackets and a recessed
+  -- double-line border. Native textures keep the art crisp at UI scales.
+  if ForeverCompanionOrnaments then
+    ForeverCompanionOrnaments.Corners(window,1080,DB.compact and 620 or 720)
+  end
+  local frameTopInset=window:CreateTexture(nil,"BORDER")
+  frameTopInset:SetPoint("TOPLEFT",window,"TOPLEFT",31,-7)
+  frameTopInset:SetPoint("TOPRIGHT",window,"TOPRIGHT",-31,-7)
+  frameTopInset:SetHeight(1)
+  colorTexture(frameTopInset,0.58,0.39,0.17,0.78)
+  local frameBottomInset=window:CreateTexture(nil,"BORDER")
+  frameBottomInset:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",31,7)
+  frameBottomInset:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-31,7)
+  frameBottomInset:SetHeight(1)
+  colorTexture(frameBottomInset,0.58,0.39,0.17,0.78)
   background=window:CreateTexture(nil,"BACKGROUND")
   background:SetAllPoints(window)
   colorTexture(background,0.025,0.031,0.048,0.98)
