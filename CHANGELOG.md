@@ -1,3 +1,9 @@
+## 3.0.0-beta
+- Added 28 selectable specialization preview profiles across nine classes.
+- Added context-aware role planning for five rotation modes and offensive, defensive, and utility cooldown usage.
+- Added a specialization selector next to rotation modes with saved per-class selections and /fcspec commands.
+- Expanded documentation and manual testing; spell priorities remain unverified for the Forever client.
+
 ## 2.1.0-beta
 - Added per-profession manual recipe goals and per-recipe ingredient quantities.
 - Aggregated material demand across outstanding crafts, accounting for recorded completion.
