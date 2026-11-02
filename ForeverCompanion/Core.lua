@@ -548,6 +548,13 @@ local function render()
         lines[#lines+1]="YOUR ROLE PREPARATION"
         for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
       end
+      lines[#lines+1] = "DUNGEON MECHANICS / ENCOUNTER CHECKLIST"
+      lines[#lines+1] = "Before pull: identify dangerous casts, crowd control targets and patrols."
+      lines[#lines+1] = "During boss: watch telegraphs, interrupts, dispels and add spawns."
+      lines[#lines+1] = "Tank: face threats away from party and coordinate defensive cooldowns."
+      lines[#lines+1] = "Healer: plan mana, dispels and recovery after unavoidable damage."
+      lines[#lines+1] = "Damage: respect threat, interrupt assigned casts and avoid hazards."
+      lines[#lines+1] = "FOREVER BOSS DATABASE: Pending verified encounter names and mechanics."
       lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
       for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
     elseif currentTab == "Professions" then
