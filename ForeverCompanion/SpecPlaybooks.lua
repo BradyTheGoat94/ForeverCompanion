@@ -627,6 +627,10 @@ ForeverCompanionSourcedPriorities={
   },
  },
 }
+-- Forever class evidence only. Blizzard's Oct 30 general Hotfixes page
+-- (https://worldofwarcraft.blizzard.com/en-us/news/24307310/)
+-- covers Midnight and Classic branches, NOT Forever. Never import its
+-- class damage percentages into Forever rotation recommendations.
 -- October 30 live-server hotfix data, not confirmed in official development notes.
 -- This warning applies to talent-sensitive guides even if the cited guide is older.
 ForeverCompanionHotfixCautions={
@@ -645,6 +649,7 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  entry=type(entry)=="table" and entry[name]
  if type(entry)~="table" then return {} end
  local lines={"SOURCE-REVIEWED CONDITIONAL PRIORITY | "..name,entry.reviewed}
+ lines[#lines+1]="VERIFY IN GAME: this guide is a source-reviewed starting priority, not a DPS benchmark or proof of live talent availability."
  if ForeverCompanionHotfixCautions[classToken] then lines[#lines+1]=ForeverCompanionHotfixCautions[classToken] end
  for _,rule in ipairs(entry.rules) do lines[#lines+1]=rule end
  lines[#lines+1]="Re-check after each action; skip unavailable or untalented abilities."
