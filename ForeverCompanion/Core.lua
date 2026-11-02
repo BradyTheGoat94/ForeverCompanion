@@ -812,13 +812,13 @@ local function createUI()
     b:SetSize(164, 34)
     b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*37)
     b.section=section
-    if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,37) end
+    if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,34) end
     b.navBackground=b:CreateTexture(nil,"BACKGROUND")
     b.navBackground:SetAllPoints(b)
     colorTexture(b.navBackground,0.10,0.13,0.17,1)
     b.navAccent=b:CreateTexture(nil,"ARTWORK")
     b.navAccent:SetPoint("TOPLEFT",b,"TOPLEFT",0,0)
-    b.navAccent:SetSize(3,37)
+    b.navAccent:SetSize(3,34)
     colorTexture(b.navAccent,0.29,0.25,0.18,1)
     local icon=b:CreateTexture(nil,"ARTWORK")
     icon:SetPoint("LEFT",b,"LEFT",11,0)
