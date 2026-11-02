@@ -78,3 +78,34 @@ ForeverCompanionSpecGuidance = {
   {name="Feral",focus="Form-specific resources, positioning and finishers",levels="Check cat and bear form unlocks and trained skills",solo="Select forms for pull safety",group="Confirm tank or damage assignment"},
   {name="Restoration",focus="Healing-over-time planning and mana efficiency",levels="Check healing ranks and talent unlocks",solo="Use safe damage between recovery",group="Maintain group survival and dispel coverage"}}
 }
+
+-- Forever-specific mechanics cross-checked against Wowhead's September 30 class deep dives.
+-- These are conditional coaching notes, not measured best-in-slot DPS sequences.
+ForeverCompanionForeverMechanics = {
+ HUNTER={
+  "FOREVER: Aimed Shot becomes baseline at level 20; check your spellbook before adding it to the priority.",
+  "FOREVER: Arcane Shot and Aimed Shot have separate cooldowns; Multi-Shot shares a cooldown with Aimed Shot.",
+  "FOREVER: Traps can be placed in combat; plan around their 30-second cooldown."
+ },
+ WARRIOR={
+  "FOREVER: Thunder Clap can be used in Defensive Stance; Vanguard can allow charging from Defensive Stance when talented.",
+  "FOREVER: Shield Wall, Retaliation and Recklessness no longer share a cooldown.",
+  "FOREVER: Fury's Raging Blows changes Whirlwind and Cleave interaction when talented."
+ },
+ ROGUE={
+  "FOREVER: Energy regenerates continuously; avoid sitting at full energy.",
+  "FOREVER: Subtlety's Cutthroat can permit Ambush outside stealth when talented.",
+  "FOREVER: Assassination gains Venom as a poison-focused finisher when talented."
+ },
+ SHAMAN={
+  "FOREVER: The new totem bar supports assigning totems to a single cast; Totemic Projection can reposition them.",
+  "FOREVER: Elemental Lava Burst gains bonus damage when Flame Shock is active, when both abilities are available.",
+  "FOREVER: Fire Nova is a spell rather than a totem."
+ }
+}
+ForeverCompanionForeverMechanicsSources={
+ HUNTER="https://www.wowhead.com/news/druid-and-hunter-class-deep-dives-in-world-of-warcraft-forever-383190",
+ WARRIOR="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189",
+ ROGUE="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189",
+ SHAMAN="https://www.wowhead.com/forever/news/class-highlights-for-warriors-rogues-and-shamans-in-wow-forever-383189"
+}
