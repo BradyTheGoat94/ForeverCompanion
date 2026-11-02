@@ -42,3 +42,25 @@ function ForeverCompanionSpecCoachLines(classToken)
  result[#result+1]="Always check trained spells, role, and actual Forever talents."
  return result
 end
+
+-- Guide status is explicitly tracked per information source, not inferred from
+-- a successful addon build or from a class having a text entry.
+ForeverCompanionGuideEvidence={
+  reference="Forever client-data snapshot 1.60.1.70707; partial Mage/Warrior entries",
+  classes={"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"},
+  evidence="Unverified gameplay guidance",
+  clientTested=false,
+  combatLogValidated=false
+}
+function ForeverCompanionGuideEvidenceLines(classToken)
+ local result={"GUIDE EVIDENCE / SAFETY"}
+ local evidence=ForeverCompanionGuideEvidence
+ local abilities=ForeverCompanionVerifiedAbilities
+ local entries=type(abilities)=="table" and type(abilities.entries)=="table" and abilities.entries[classToken]
+ local count=type(entries)=="table" and #entries or 0
+ result[#result+1]="Curated client-data spell entries: "..count.." (not proof they are trained)."
+ result[#result+1]="Specialization coaching: illustrative; not benchmark validated."
+ result[#result+1]="Live Forever spellbook and combat-log validation: pending."
+ result[#result+1]="If a suggested ability is missing, skip it and check your trainer or talents."
+ return result
+end
