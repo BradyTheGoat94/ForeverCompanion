@@ -387,6 +387,7 @@ local function render()
         lines[#lines+1]="Pairs with: "..guide.pair
         if ForeverCompanionProfessionProgress then
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
+          lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
         end
         if ForeverCompanionCraftingPlanner then
           local materials=ForeverCompanionCraftingPlanner.GetEntries(guide.name)
