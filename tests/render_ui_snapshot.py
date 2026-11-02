@@ -137,9 +137,13 @@ for i,name in enumerate(focus):
         d.line((cx+559,yy+9,cx+565,yy+15,cx+575,yy+3),fill=(82,212,95),width=3)
     d.text((cx+591,yy),name,font=F16,fill=white)
 # Safety banner.
-d.rounded_rectangle((cx,y+725,cx+cw,y+773),radius=6,fill=(17,38,30),outline=(71,123,76))
-d.text((cx+20,y+738),"READ-ONLY ADVISOR",font=F18,fill=(120,228,142))
-d.text((cx+273,y+740),"No gameplay automation   •   Check /fcdiag for API support",font=F16,fill=white)
+source=find("Quest data:","Quest data unavailable | Professions unavailable | Material goals manual")
+if not source.startswith("Quest data:"):
+    raise SystemExit("Dashboard snapshot missing real data provenance label")
+d.rounded_rectangle((cx,y+725,cx+cw,y+790),radius=6,fill=(17,38,30),outline=(71,123,76))
+d.text((cx+20,y+735),"READ-ONLY ADVISOR",font=F18,fill=(120,228,142))
+d.text((cx+273,y+737),"No gameplay automation   •   Check /fcdiag for API support",font=F16,fill=white)
+d.text((cx+20,y+763),source[:118],font=F13,fill=muted)
 d.text((x+4,y+830),"OFFLINE MOCK-CLIENT PREVIEW — SIMULATED CHARACTER/QUEST DATA — NOT A LIVE WOW SCREENSHOT",font=F16,fill=gold)
 im.save("ui_preview.png")
 print("Rendered",len(rows),"mock widgets; required dashboard headings verified")
