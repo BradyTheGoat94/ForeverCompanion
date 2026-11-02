@@ -165,7 +165,10 @@ function D.Create(parent,openPage,ctx)
   text(banner,banner,94,-52,700,"Your in-game guide for leveling, quests, builds and professions","GameFontHighlight",PALE)
   -- Three-card top row, echoing the original reference artwork.
   local character=panel(0,-108,263,176,"CHARACTER OVERVIEW","Interface\\Icons\\INV_Misc_Head_Human_01")
-  values.character=text(character,character,16,-48,236,"","GameFontHighlight",PALE)
+  values.character=text(character,character,16,-48,185,"","GameFontHighlight",PALE)
+  values.classIcon=character:CreateTexture(nil,"OVERLAY")
+  values.classIcon:SetPoint("TOPRIGHT",character,"TOPRIGHT",-15,-48)
+  values.classIcon:SetSize(34,34)
   values.class=text(character,character,16,-76,236,"","GameFontHighlightSmall",MUTED)
   values.role=text(character,character,16,-99,236,"","GameFontHighlightSmall",MUTED)
   values.professions=text(character,character,16,-125,236,"","GameFontHighlightSmall",MUTED)
@@ -207,6 +210,11 @@ function D.Render()
   local player=safeCall(UnitName,"player") or "Adventurer"
   values.character:SetText(tostring(player).."   •   Level "..tostring(level))
   values.class:SetText("Class: "..tostring(class))
+  if values.classIcon then
+    local handbook=ForeverCompanionData and ForeverCompanionData.classHandbook
+    local entry=handbook and handbook[string.upper(tostring(class))]
+    values.classIcon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+  end
   values.role:SetText("Role preference: "..tostring(db.role or "Not selected"))
   local professions=ForeverCompanionProfessionScanner
   local detected=professions and professions.Read and professions.Read()
