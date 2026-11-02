@@ -1,6 +1,21 @@
 # Forever Companion — November 4 Beta Gate
 
-**Target:** playable, read-only WoW Forever guide addon beta, not a finished authoritative database.
+**Target:** an offline-tested, read-only WoW Forever release candidate while the client is unavailable; a playable, client-verified beta only after launch. This is not a finished authoritative database.
+
+## Two-stage readiness while Forever is unreleased
+
+**Stage A — offline release candidate (can complete before launch):**
+- [ ] All CI workflows pass on the same commit, including native icon references, Lua syntax, mock UI navigation, ZIP integrity and protected-action checks.
+- [ ] Compare the offline UI snapshot against the design reference; fix clipped text, misaligned elements, contrast and compact mode.
+- [ ] Audit all source code, metadata, assets and licensing; prepare an accurate draft CurseForge description and changelog.
+- [ ] Produce a clearly labeled *unverified preview build* for private/offline testing only. No claim that it works in the Forever client.
+
+**Stage B — client-verified beta (blocked until Forever client is available):**
+- [ ] Confirm the actual client interface number, spell and texture APIs, and the nine-class data assumptions.
+- [ ] Test real installation, UI, SavedVariables, rotations and error handling in the client.
+- [ ] Capture real client screenshots, complete final moderation review, and obtain explicit approval before public submission.
+
+The launch date and client availability must not be inferred from the intended November 4 beta target.
 
 ## Must pass before public upload
 
