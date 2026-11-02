@@ -34,6 +34,8 @@ jobs:
               assert (root / name).is_file(), f"Missing Lua file: {name}"
           print("Validated", len(lua_files), "manifest files")
           PY
+      - name: Audit release compatibility
+        run: python3 release_audit.py
       - name: Package addon
         run: zip -r ForeverCompanion.zip ForeverCompanion -x '*.DS_Store'
       - uses: actions/upload-artifact@v4
