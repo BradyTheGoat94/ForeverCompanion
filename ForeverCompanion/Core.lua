@@ -816,6 +816,18 @@ local function cyclePreviewRole()
   DB.role=roles[nextIndex]
   render()
 end
+local function resetPreviewClass()
+  DB.previewClass=nil
+  DB.role=nil
+  render()
+end
+local function toggleCompactMode()
+  DB.compact=not DB.compact
+  window:SetHeight(DB.compact and 620 or 720)
+  fitWindow()
+  compactButton:SetText(DB.compact and "Expand" or "Compact")
+  render()
+end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
@@ -1342,7 +1354,7 @@ local function createUI()
   resetClassButton:SetSize(92,23)
   resetClassButton:SetPoint("BOTTOMRIGHT",-125,16)
   resetClassButton:SetText("Auto Class")
-  resetClassButton:SetScript("OnClick",function() DB.previewClass=nil; DB.role=nil; render() end)
+  resetClassButton:SetScript("OnClick",resetPreviewClass)
   roleButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   roleButton:SetSize(145, 26)
   roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
@@ -1351,13 +1363,7 @@ local function createUI()
   compactButton:SetSize(92,23)
   compactButton:SetPoint("BOTTOMRIGHT",-25,16)
   compactButton:SetText(DB.compact and "Expand" or "Compact")
-  compactButton:SetScript("OnClick",function()
-    DB.compact=not DB.compact
-    window:SetHeight(DB.compact and 620 or 720)
-    fitWindow()
-    compactButton:SetText(DB.compact and "Expand" or "Compact")
-    render()
-  end)
+  compactButton:SetScript("OnClick",toggleCompactMode)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
   footer:SetText("v3.14.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
