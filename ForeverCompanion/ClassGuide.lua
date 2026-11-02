@@ -179,17 +179,17 @@ function Guide.Render(classToken,classLabel,level,role,mode)
       if number>=candidate[1] and number<=candidate[2] then band=candidate;break end
     end
   end
-  values.band:SetText(band and ("Leveling phase: "..short(band[3],27).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
+  values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
   local curriculum=ForeverCompanionLevelingCurriculum
   local stage=curriculum and curriculum.Stage and curriculum.Stage(level)
   local notes=curriculum and curriculum.classes and curriculum.classes[classToken]
   values.currentTip=notes and notes[stage] or (entry and entry.leveling or "Review class-specific tips below.")
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
-  values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",30))
+  values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",24))
   local contexts=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts
   local context=contexts and contexts[mode]
-  values.mode:SetText("Priority context: "..short(context and context.title or mode or "Leveling",38))
+  values.mode:SetText("Priority context: "..short(context and context.title or mode or "Leveling",24))
   local fraction=safeXP()
   if fraction then
     values.xp:SetText("Experience progress: "..math.floor(fraction*100+0.5).."%")
