@@ -127,6 +127,15 @@ function Guide.Create(parent)
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
       GameTooltip:SetText("CURRENT LEVELING FOCUS",0.96,0.75,0.36)
       GameTooltip:AddLine(values.currentTip,0.92,0.89,0.82,true)
+      if type(ForeverCompanionBeginnerChecklist)=="function" then
+        local checklist=ForeverCompanionBeginnerChecklist(values.currentClass)
+        if type(checklist)=="table" then
+          GameTooltip:AddLine(" ",1,1,1)
+          for _,step in ipairs(checklist) do
+            GameTooltip:AddLine(step,0.88,0.83,0.70,true)
+          end
+        end
+      end
       GameTooltip:AddLine("General guidance: verify skills and unlocks in the live Forever client.",0.67,0.76,0.83,true)
       GameTooltip:Show()
     end
@@ -170,6 +179,7 @@ function Guide.Create(parent)
 end
 function Guide.Render(classToken,classLabel,level,role,mode)
   if not root then return end
+  values.currentClass=classToken
   local handbook=type(ForeverCompanionData)=="table" and ForeverCompanionData.classHandbook
   local entry=type(handbook)=="table" and handbook[classToken]
   values.icon:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
