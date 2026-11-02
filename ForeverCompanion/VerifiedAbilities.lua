@@ -25,6 +25,20 @@ ForeverCompanionVerifiedAbilities = {
   }
  }
 }
+-- Optional character spellbook checks are independent of the level gate:
+-- level eligibility never implies the spell was trained or a talent was chosen.
+function ForeverCompanionKnownSpell(spellID)
+ if type(IsSpellKnown)=="function" then
+  local ok,known=pcall(IsSpellKnown,spellID)
+  if ok and type(known)=="boolean" then return known end
+ end
+ if type(IsPlayerSpell)=="function" then
+  local ok,known=pcall(IsPlayerSpell,spellID)
+  if ok and type(known)=="boolean" then return known end
+ end
+ return nil
+end
+
 function ForeverCompanionAbilityReferenceLines(classToken,level)
  local data=ForeverCompanionVerifiedAbilities
  local result={"FOREVER CLIENT SPELL REFERENCE | "..data.build,
@@ -37,8 +51,10 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
  local n=tonumber(level)
  for _,entry in ipairs(entries) do
   local gate=not n and "LEVEL UNKNOWN" or (n>=entry.level and "LEVEL MET" or "LOCKED BY LEVEL")
+  local known=ForeverCompanionKnownSpell(entry.id)
+  local ownership=known==true and "KNOWN IN SPELLBOOK" or (known==false and "NOT KNOWN" or "SPELLBOOK STATUS UNKNOWN")
   local requirement=entry.kind=="Talent" and "Talent investment required" or (entry.kind=="Quest" and "Quest completion required" or "Trainer / spellbook check required")
-  result[#result+1]=entry.name.." (spell "..entry.id..") | "..entry.tree.." | level "..entry.level.." | "..gate
+  result[#result+1]=entry.name.." (spell "..entry.id..") | "..entry.tree.." | level "..entry.level.." | "..gate.." | "..ownership
   result[#result+1]="  "..requirement..". "..entry.note
  end
  return result
