@@ -181,8 +181,8 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   end
   values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
   local curriculum=ForeverCompanionLevelingCurriculum
-  local stage=curriculum and curriculum.Stage and curriculum.Stage(number or 1)
-  local notes=curriculum and curriculum.classes and curriculum.classes[classToken]
+  local stage=curriculum and type(curriculum.Stage)=="function" and curriculum.Stage(number or 1)
+  local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
   values.currentTip=notes and notes[stage] or (entry and entry.leveling or "Review class-specific tips below.")
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
