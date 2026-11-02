@@ -280,6 +280,17 @@ for _,w in ipairs(frames) do if w.kind=="FontString" and w.text=="67%" then xpUp
 assert(xpUpdated,"XP event should refresh live progress")
 mockXP=1500
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
+local savedClass,savedLevel=UnitClass,UnitLevel
+UnitClass=function() error("class API restricted") end
+UnitLevel=function() error("level API restricted") end
+assert(pcall(ForeverCompanionRefresh),"restricted class and level must not crash the dashboard")
+local unknownClass=false
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text:find("Unknown class",1,true) then unknownClass=true end
+end
+assert(unknownClass,"missing class API must not impersonate Warrior")
+UnitClass,UnitLevel=savedClass,savedLevel
+ForeverCompanionRefresh()
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
