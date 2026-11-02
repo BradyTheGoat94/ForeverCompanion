@@ -9,7 +9,8 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-local lootSearchBox, lootWishButton, lootPrevButton, lootNextButton, lootSearchQuery="", lootSelectedIndex=1
+local lootSearchBox, lootWishButton, lootPrevButton, lootNextButton
+local lootSearchQuery, lootSelectedIndex = "", 1
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -718,7 +719,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5))))))
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -85 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 346 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
