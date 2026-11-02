@@ -8,6 +8,8 @@ local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"
 local tabButtons = {}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
+local questRows = {}
+local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
   if texture.SetColorTexture then texture:SetColorTexture(r,g,b,a)
@@ -33,6 +35,8 @@ local function render()
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
+  for _, b in ipairs(questRows) do b:Hide() end
+  if questSectionLabel then questSectionLabel:Hide() end
   local lines = {}
   if currentTab == "Overview" then
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
@@ -48,7 +52,20 @@ local function render()
       end
     end
   elseif currentTab == "Quests" then
-    lines = {ForeverCompanionQuestPlanner.FormatFocused(), "", ForeverCompanionQuestPlanner.FormatAuto(), "", ForeverCompanionQuestPlanner.Format()}
+    local live=ForeverCompanionQuestPlanner.GetLive()
+    local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
+    lines = {ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
+    if questSectionLabel then
+      questSectionLabel:SetText("QUEST LOG  |  "..#live.." detected  |  Click to focus")
+      questSectionLabel:Show()
+    end
+    for i=1,math.min(#live,#questRows) do
+      local q=live[i]
+      local btn=questRows[i]
+      btn:SetText((selectedIndex==i and "> " or "  ")..(q.complete and "[Ready] " or "")..q.title)
+      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(i) end)
+      btn:Show()
+    end
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
@@ -70,7 +87,9 @@ local function render()
     end
   end
   content:SetText(table.concat(lines, "\n\n"))
-  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + 24)) end
+  content:ClearAllPoints()
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -420 or -5)
+  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + (currentTab=="Quests" and 445 or 24))) end
   if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -148,6 +167,17 @@ local function createUI()
   scroll:SetScrollChild(child)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
+  questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
+  questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-10)
+  questSectionLabel:SetTextColor(1,0.79,0.36)
+  questSectionLabel:Hide()
+  for i=1,15 do
+    local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+    row:SetSize(590,23)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",8,-34-(i-1)*25)
+    row:Hide()
+    questRows[i]=row
+  end
   content:SetWidth(610)
   if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
@@ -209,7 +239,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.6.1 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v0.7.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
