@@ -47,16 +47,38 @@ local function colorTexture(texture,r,g,b,a)
   else texture:SetTexture(r,g,b,a) end
 end
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
-local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
-local function classToken() return DB and DB.previewClass or actualClass() end
-local function classLabel() return classNames[classToken()] or classToken() end
-local function level() return UnitLevel("player") or 1 end
+local function actualClass()
+  if type(UnitClass)~="function" then return "UNKNOWN" end
+  local ok,token=pcall(function()
+    local _,class=UnitClass("player")
+    if type(class)=="string" and classNames[class] then return class end
+  end)
+  return ok and token or "UNKNOWN"
+end
+local function classToken()
+  if DB and type(DB.previewClass)=="string" and classNames[DB.previewClass] then return DB.previewClass end
+  return actualClass()
+end
+local function classLabel() return classNames[classToken()] or "Unknown class" end
+local function safeNumber(fn,...)
+  if type(fn)~="function" then return nil end
+  local ok,value=pcall(fn,...)
+  if not ok then return nil end
+  local converted,number=pcall(tonumber,value)
+  if converted and type(number)=="number" then return number end
+end
+local function level()
+  local value=safeNumber(UnitLevel,"player")
+  if value and value>=1 and value<=1000 then return value end
+end
 local function experienceText()
-  if type(UnitXP)~="function" or type(UnitXPMax)~="function" then return "XP: not available" end
-  local value=tonumber(UnitXP("player"))
-  local maximum=tonumber(UnitXPMax("player"))
-  if not value or not maximum or maximum<=0 then return "XP: not available at this level" end
-  return "XP: "..value.." / "..maximum.." ("..math.floor(value*100/maximum+0.5).."%)"
+  local value=safeNumber(UnitXP,"player")
+  local maximum=safeNumber(UnitXPMax,"player")
+  if not value or not maximum or maximum<=0 then return "XP: unavailable on this client or level" end
+  local ok,answer=pcall(function()
+    return "XP: "..value.." / "..maximum.." ("..math.floor(value*100/maximum+0.5).."%)"
+  end)
+  return ok and answer or "XP: unavailable on this client or level"
 end
 local function toggleCheck(section, index)
   if not DATA.checklist[section] then return end
@@ -67,8 +89,17 @@ end
 local function render()
   if not window or not DB then return end
   titleText:SetText("Forever Companion")
-  if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
-  if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
+  if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..tostring(level() or "?").."  |  "..(DB.role or "Choose role")) end
+  if questCountText and ForeverCompanionQuestPlanner then
+    local planner=ForeverCompanionQuestPlanner
+    if planner.IsSupported() then
+      questCountText:SetText("Active quests: "..planner.AutoCount())
+    elseif planner.IsSnapshotStale() then
+      questCountText:SetText("Cached quests: "..planner.AutoCount().." (outdated)")
+    else
+      questCountText:SetText("Quest API unavailable")
+    end
+  end
   local isOverview=currentTab=="Overview"
   if sectionHeader then
     if isOverview then sectionHeader:Hide()
@@ -199,7 +230,7 @@ local function render()
     end
     lines[#lines+1] = "LEVELING"
     for _, band in ipairs(DATA.zones) do
-      if level() >= band[1] and level() <= band[2] then
+      if (level() or 0) >= band[1] and (level() or 0) <= band[2] then
         lines[#lines+1] = "Level "..band[1].."-"..band[2]..": "..band[3]
         lines[#lines+1] = band[4]
         break
