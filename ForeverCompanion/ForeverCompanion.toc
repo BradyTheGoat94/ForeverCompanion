@@ -5,6 +5,7 @@
 ## Version: 3.14.0-beta
 ## SavedVariablesPerCharacter: ForeverCompanionDB
 GuideData.lua
+Ornaments.lua
 AdvancedGuides.lua
 Rotations.lua
 VerifiedAbilities.lua
