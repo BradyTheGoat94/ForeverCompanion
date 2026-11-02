@@ -32,3 +32,34 @@ The addon does not automate combat, movement, targeting, or questing. Content is
 - Do not claim official Blizzard endorsement or CurseForge certification.
 - Do not claim complete dungeon boss and loot coverage without verified data.
 - Do not upload to CurseForge without the owner's approval and account access.
+
+## Current moderation readiness (November 2026)
+
+**Not approved or submitted.** CurseForge project and file moderation is a separate process from GitHub Actions. The project owner must authorize submission and complete account-side actions. Do not claim CurseForge certification before approval.
+
+### Required before public submission
+1. Run the GitHub Lua syntax, manifest, release audit and ZIP jobs; inspect the packaged folder structure.
+2. Test on the actual Forever release client, not just the beta. Record build number, login, /reload, opening /fc, all seven tabs, quest and profession scanning, class/spec preview, spellbook inspection, and SavedVariables persistence. Record errors and screenshots.
+3. Select a license with the owner and confirm any third-party art/code is compatible. Avoid implying Blizzard endorsement.
+4. Confirm that CurseForge offers an appropriate WoW Forever game version/flavor. Use only supported versions actually tested.
+5. Prepare an original 400x400 project icon (PNG preferred), real in-game screenshots, one-sentence summary, accurate detailed description, changelog, and a valid ZIP.
+6. Submit from the owner's CurseForge author account; the uploaded file remains under review until moderation acts. Keep beta files marked beta until validated.
+7. If moderation requests changes, address the feedback on the existing project rather than resubmitting duplicate projects.
+
+### Moderation considerations
+- No executable installers, external download links, paid features, automated combat, or deceptive compatibility claims.
+- No AI-generated showcase that falsely depicts the actual addon UI; disclose generated or edited promotional images where required.
+- Project name must be distinct; avoid game/version labels in the name.
+- Changelogs should describe substantial changes; never upload cosmetic version bumps solely to boost visibility.
+- A public support channel is recommended. The repository is currently private, so GitHub Issues may not be accessible to all users.
+- Blizzard's UI addon policy and CurseForge's moderation policy are independent requirements. Approval is not guaranteed.
+
+Official guidance:
+- https://support.curseforge.com/support/solutions/articles/9000197241-creating-and-submitting-a-project
+- https://support.curseforge.com/support/solutions/articles/9000197279
+
+### Proposed first upload
+**File:** ForeverCompanion.zip from the successful packaging workflow
+**Release type:** Beta until live client verification passes
+**Description accuracy:** Read-only leveling/quest/class/cooldown/profession/PvP planning; recipe and inventory quantities are manual; spellbook availability is experimental; specialization names are guide previews.
+**Version:** Match the TOC and changelog exactly.
