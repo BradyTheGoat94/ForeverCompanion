@@ -3,6 +3,7 @@ Illustrative layout only: not a live game screenshot or verified gameplay advice
 """
 import csv
 import re
+import textwrap
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -91,7 +92,9 @@ for i,val in enumerate(priority):
     tx=cx+20+i*(tile_width+13)
     yy=ry+101
     d.rounded_rectangle((tx,yy,tx+tile_width,yy+58),radius=5,fill=(68,52,31) if i==0 else (40,47,57),outline=gold if i==0 else dim)
-    d.text((tx+13,yy+17),val[:28],font=small,fill=cream)
+    lines=textwrap.wrap(val,width=27,break_long_words=False,break_on_hyphens=False)
+    for line_index,line in enumerate(lines[:2]):
+        d.text((tx+13,yy+10+line_index*20),line,font=small,fill=cream)
 by=ry+198
 card(cx,by,1054,179,"GUIDE DETAILS & SAFETY")
 d.text((cx+22,by+66),"Explore specialization context, role notes, cooldowns and leveling guidance below.",font=body,fill=cream)
