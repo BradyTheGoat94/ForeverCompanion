@@ -24,6 +24,14 @@ Status: PRE-SUBMISSION REVIEW, not approval or legal certification. Review updat
 - Respect Forever-specific API restrictions, including combat data restrictions. Do not bypass restricted or secret values.
 - Avoid excessive scans, network/chat spam, and performance degradation.
 
+## Pre-upload intellectual-property review
+
+- Inspect every packaged file, not only Lua: confirm there are no extracted Blizzard art files, unlicensed fonts, third-party addon code, copyrighted guide screenshots or misleading branding.
+- Blizzard trademarks and game art remain Blizzard property; project name, logo and listing must not imply official endorsement.
+- Referencing built-in client icon paths is not a grant of permission to republish those images outside the game, including in a future mobile app.
+- A phone companion is out of scope for this beta and would require its own licensing, data-access and privacy review.
+- Record any third-party source and its license in the release notes; block upload when rights are unclear.
+
 ## CurseForge submission
 - Select the World of Warcraft **Forever** flavor and verify the supported game version against the actual installed client.
 - Provide an English project title, clear one-sentence summary, accurate feature description and substantive changelog.
