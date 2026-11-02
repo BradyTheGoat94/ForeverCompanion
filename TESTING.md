@@ -220,3 +220,22 @@ This addon is **not verified on the target client**. Use this checklist on the f
 - On Quests, compare active, in-progress, ready and zone totals against the live client. Temporarily unavailable quest APIs must show stale warnings, not imply a successful scan.
 - On Professions, compare detected skills, current caps and remaining points to the live profession UI. Missing APIs must show an explicit unavailable state.
 - Test the new class preview artifact as an *offline illustration only*; obtain separate screenshots inside the real Forever client before a CurseForge listing.
+
+## Quest and profession briefing regression pass
+
+The black-and-gold briefing cards are native addon widgets; CI's PNGs are illustrative mock-client previews, **not in-game screenshots**.
+
+1. Open Quests and confirm **JOURNAL AT A GLANCE** and **FOCUSED OBJECTIVE** are visible above the quest list, with no overlap at default or compact scale.
+2. Accept a quest and complete an objective. Confirm the active/ready counts, top-zone label, focused title and objective text update from the client. Do not assume a ready quest has a known turn-in location.
+3. Click another quest, Next Quest and Previous. Verify focus changes only within Forever Companion; the game's selected quest and tracking state must not be changed.
+4. Cycle All / Ready / Zone filters and page through more than 15 quests. Confirm the selected quest, pagination and long text remain readable after scrolling.
+5. If a quest API fails or is temporarily unavailable, verify cached entries are labeled **STALE DATA** and no old count is presented as live. Test with a real client if possible; CI only simulates the failure.
+6. Open Professions. Verify **PROFESSION SKILLS** and **MATERIAL GOALS** appear above the handbook and manual controls without clipping.
+7. Confirm skill/cap values match the game's profession window. If an API is unavailable, verify the card says so rather than showing guessed numbers.
+8. Add manual materials with `/fcm add`, then use the visible +/- controls. Confirm the global material-goal card updates, and that its totals are clearly identified as spanning all tracked profession lists.
+9. Select each handbook entry and verify its general advice, selected guide label, material pagination, and saved material counts remain consistent after `/reload`.
+10. Check 1024x768 and a smaller UI scale if supported, plus compact/expanded mode. Record overlapping elements, truncated labels and missing icons with screenshots.
+11. Confirm no gameplay actions occur from any guide button: no spell casts, targeting, quest acceptance, turn-ins, inventory movement or crafting.
+12. Record the exact client build and Interface version before calling any feature compatible with WoW Forever.
+
+CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`, `ui_quest_preview.png`, and `ui_profession_preview.png` accompany the dashboard and Leveling previews.
