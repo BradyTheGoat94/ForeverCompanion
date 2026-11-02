@@ -26,6 +26,7 @@ local pageBack, pageForward, pageLabel, filterButton, resetClassButton
 local dashboardCards={}
 local dashboardValues={}
 local dashboardNavButtons={}
+local dashboardXPBar
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -63,6 +64,12 @@ local function render()
     if dashboardValues.character then dashboardValues.character:SetText(classLabel().." | Level "..level().." | "..(DB.role or "Role not selected")) end
     if dashboardValues.quests then dashboardValues.quests:SetText("Active quests: "..tostring(ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.AutoCount() or "Unavailable")) end
     if dashboardValues.xp then dashboardValues.xp:SetText(experienceText()) end
+    if dashboardXPBar then
+      local current=type(UnitXP)=="function" and tonumber(UnitXP("player")) or nil
+      local maximum=type(UnitXPMax)=="function" and tonumber(UnitXPMax("player")) or nil
+      local fraction=(current and maximum and maximum>0) and math.max(0,math.min(1,current/maximum)) or 0
+      dashboardXPBar:SetWidth(math.max(1,math.floor(290*fraction)))
+    end
   end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
@@ -378,6 +385,16 @@ local function createUI()
     dashboardNavButtons[#dashboardNavButtons+1]=button
   end
   dashboardValues.shortcuts:SetText("Choose a section to open your guide")
+  local xpTrack=window:CreateTexture(nil,"ARTWORK")
+  xpTrack:SetPoint("TOPLEFT",window,"TOPLEFT",558,-293)
+  xpTrack:SetSize(290,8)
+  colorTexture(xpTrack,0.21,0.25,0.31,1)
+  dashboardCards[#dashboardCards+1]=xpTrack
+  dashboardXPBar=window:CreateTexture(nil,"OVERLAY")
+  dashboardXPBar:SetPoint("TOPLEFT",window,"TOPLEFT",558,-293)
+  dashboardXPBar:SetSize(1,8)
+  colorTexture(dashboardXPBar,0.95,0.69,0.29,1)
+  dashboardCards[#dashboardCards+1]=dashboardXPBar
   local panel=CreateFrame("Frame",nil,window)
   panel:SetPoint("TOPLEFT",188,-98)
   panel:SetPoint("BOTTOMRIGHT",-16,88)
