@@ -250,6 +250,7 @@ local function render()
       local matches=lootMatches()
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
+      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB)
       lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
       lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
       lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
