@@ -31,6 +31,13 @@ local function actualClass() local _, token = UnitClass("player"); return token 
 local function classToken() return DB and DB.previewClass or actualClass() end
 local function classLabel() return classNames[classToken()] or classToken() end
 local function level() return UnitLevel("player") or 1 end
+local function experienceText()
+  if type(UnitXP)~="function" or type(UnitXPMax)~="function" then return "XP: not available" end
+  local value=tonumber(UnitXP("player"))
+  local maximum=tonumber(UnitXPMax("player"))
+  if not value or not maximum or maximum<=0 then return "XP: not available at this level" end
+  return "XP: "..value.." / "..maximum.." ("..math.floor(value*100/maximum+0.5).."%)"
+end
 local function toggleCheck(section, index)
   if not DATA.checklist[section] then return end
   DB.checks = DB.checks or {}
@@ -58,7 +65,7 @@ local function render()
   if currentTab == "Overview" then
     lines = {"WELCOME, ADVENTURER", "Start here: open Quests to see your automatically detected quest log.", "Use Next Quest to switch focus. The suggested next step is based on available quest status, not pathfinding.", "Open Leveling for class tips, Dungeons for party preparation, and Professions for your checklist.", "Detected class: "..(classNames[actualClass()] or actualClass()), "Displayed class: "..classLabel(), "Role preference: "..(DB.role or "Not selected"), "Tip: drag the title area to move the window; use Compact to save space.", "All gameplay remains under your control."}
   elseif currentTab == "Leveling" then
-    lines = {"CLASS GUIDANCE"}
+    lines = {"CLASS GUIDANCE",experienceText()}
     local rotations=ROTATIONS and ROTATIONS[classToken()]
     if rotations then
       local mode=rotationModes[rotationMode]
