@@ -324,6 +324,11 @@ for _,w in ipairs(frames) do
  if w.text=="Rotation: leveling" then rotationControl=w end
 end
 assert(classHeading and buildHeading,"native class-guide header cards missing")
+local levelBandFound=false
+for _,w in ipairs(frames) do
+ if w.text=="Leveling phase: Endgame preparation (50-60)" then levelBandFound=true end
+end
+assert(levelBandFound,"leveling hero should show the current level band")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
 local levelingHeading
