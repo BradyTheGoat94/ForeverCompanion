@@ -27,10 +27,20 @@ The user's two reference concepts show a premium black-and-gold fantasy guide, n
 - Source-validated offline UI preview with simulated data and explicit watermark.
 - Lua 5.1 syntax, mocked client interaction, release audit and ZIP packaging in CI.
 
+## Second overnight implementation pass
+
+- Added a native Leveling hero with character/class icon, preferred role, selected spec preview, rotation context, live XP percentage and progress bar. Unavailable XP is labeled rather than fabricated.
+- Replaced five stock rotation buttons with gold-accented, selectable ability-priority tiles. Full advisory text remains available via tooltip and guide details.
+- Relocated rotation/spec controls, quest focus text and checklist actions away from the sidebar to reduce collisions.
+- Added a reusable gold-trimmed header to Leveling, Quests, Dungeons, Professions, PvP and Settings, with context-specific labels and icons.
+- Added a read-only quest journal overview showing active/in-progress/ready counts, top reported zones and explicit stale-data warnings.
+- Added detected profession skill/cap summaries with current-cap distance; recipe availability remains unverified.
+- Expanded mocked client tests and added a second illustrative PNG preview generated from the actual Leveling widget snapshot.
+
 ## Still missing / release blockers
 
 - Original goat/ram crest artwork and high-quality fantasy banner texture; built-in game icons are temporary stand-ins.
-- Class-guide visual hierarchy, rotation tile layout, and rich data coverage comparable to the second reference image.
+- Further class-guide visual fidelity, including original crest artwork, class-specific visual assets, and deeper verified ability/talent coverage.
 - Pixel-level verification on a real WoW Forever client, including all seven sections, icons, compact layout, UI scales and SavedVariables.
 - Verified target-client Interface number, game flavor availability on CurseForge, licensing decision, real in-game screenshots and author-side submission.
 - The offline preview is an illustration of mocked widgets, **not proof of in-game rendering**.
