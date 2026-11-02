@@ -336,3 +336,16 @@ local audit=ForeverCompanionAbilityAudit()
 assert(audit.total==12,"reference audit should count the current curated spell entries")
 assert(audit.classes.WARRIOR==12 and audit.classes.MAGE==0,"coverage must distinguish audited and unaudited classes")
 assert(#audit.issues==0,"curated spell records must pass integrity validation")
+
+-- Spell availability is a distinct state machine, never inferred from level.
+local oldKnown=IsSpellKnown
+IsSpellKnown=function(id) return id==23881 end
+assert(ForeverCompanionAbilityState("WARRIOR",23881,20)=="LEVEL LOCKED","talent cannot bypass level gate")
+assert(ForeverCompanionAbilityState("WARRIOR",23881,40)=="KNOWN","trained talent should resolve as known")
+assert(ForeverCompanionAbilityState("WARRIOR",2458,40)=="QUEST UNLEARNED","quest ability needs its unlock")
+assert(ForeverCompanionAbilityState("WARRIOR",12296,40)=="TALENT UNLEARNED","talent is not automatically awarded")
+assert(ForeverCompanionAbilityState("WARRIOR",676,40)=="NOT LEARNED","trainer ability must be known")
+assert(ForeverCompanionAbilityState("WARRIOR",999999,40)=="NOT AUDITED","unknown spell is not audited")
+assert(ForeverCompanionAbilityState("MAGE",1,40)=="UNAUDITED","pending class must not be verified")
+assert(ForeverCompanionAvailableAbilitySummary("WARRIOR",40):find("1 known",1,true),"summary must count known spells")
+IsSpellKnown=oldKnown
