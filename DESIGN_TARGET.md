@@ -33,7 +33,7 @@ The user's two reference concepts show a premium black-and-gold fantasy guide, n
 - Replaced five stock rotation buttons with gold-accented, selectable ability-priority tiles. Full advisory text remains available via tooltip and guide details.
 - Relocated rotation/spec controls, quest focus text and checklist actions away from the sidebar to reduce collisions.
 - Added a reusable gold-trimmed header to Leveling, Quests, Dungeons, Professions, PvP and Settings, with context-specific labels and icons.
-- Added a read-only quest journal overview showing active/in-progress/ready counts, top reported zones and explicit stale-data warnings.
+- Added a read-only quest journal overview showing active/in-progress/ready counts, top reported zones and explicit stale-data warnings. A guarded Classic-era legacy quest-log reader is now available when the modern C_QuestLog API is absent.
 - Added detected profession skill/cap summaries with current-cap distance; recipe availability remains unverified.
 - Expanded mocked client tests and added a second illustrative PNG preview generated from the actual Leveling widget snapshot.
 
