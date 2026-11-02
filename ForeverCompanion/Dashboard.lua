@@ -140,6 +140,23 @@ function D.Create(parent,openPage,ctx)
   bannerBg:SetPoint("TOPLEFT",banner,"TOPLEFT",1,-3)
   bannerBg:SetSize(844,90)
   paint(bannerBg,0.105,0.116,0.16,0.98)
+  -- A lightweight castle skyline built from native UI textures, not a fake image.
+  local towers={{615,28,29},{648,44,36},{689,33,31},{724,58,41},{770,39,34},{808,27,25}}
+  for _,tower in ipairs(towers) do
+    local left,height,width=tower[1],tower[2],tower[3]
+    local silhouette=banner:CreateTexture(nil,"ARTWORK")
+    silhouette:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left,5)
+    silhouette:SetSize(width,height)
+    paint(silhouette,0.14,0.16,0.22,1)
+    local spire=banner:CreateTexture(nil,"ARTWORK")
+    spire:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left+math.floor(width/2)-2,height+5)
+    spire:SetSize(4,12)
+    paint(spire,0.20,0.18,0.20,1)
+    local windowLight=banner:CreateTexture(nil,"OVERLAY")
+    windowLight:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left+math.floor(width/2)-2,11)
+    windowLight:SetSize(4,8)
+    paint(windowLight,0.76,0.53,0.22,0.8)
+  end
   local crest=banner:CreateTexture(nil,"OVERLAY")
   crest:SetPoint("TOPLEFT",banner,"TOPLEFT",19,-16)
   crest:SetSize(59,59)
