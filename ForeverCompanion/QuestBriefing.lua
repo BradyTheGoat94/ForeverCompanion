@@ -108,7 +108,8 @@ function B.Render()
     values.title:SetText(shorten(selected.title,46))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))
     values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "Objective details not supplied by client",48))
-    local done,known=planner.ObjectiveProgress and planner.ObjectiveProgress(selected)
+    local done,known
+    if type(planner.ObjectiveProgress)=="function" then done,known=planner.ObjectiveProgress(selected) end
     if stale then
       values.hint:SetText("Cached objective - verify in game")
     elseif known then
