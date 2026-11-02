@@ -59,7 +59,8 @@ SlashCmdList={}
 ForeverCompanionDB={welcomed=false}
 UnitClass=function() return "Warrior","WARRIOR" end
 UnitLevel=function() return 60 end
-UnitXP=function() return 1500 end
+local mockXP=1500
+UnitXP=function() return mockXP end
 UnitXPMax=function() return 3000 end
 UnitName=function() return "PreviewCharacter" end
 GetProfessions=function() return 1,2 end
@@ -162,6 +163,13 @@ assert(foundTitle,"main window title not rendered")
 local foundBanner=false
 for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foundBanner=true end end
 assert(foundBanner,"premium dashboard welcome banner missing")
+mockXP=2000
+addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
+local xpUpdated=false
+for _,w in ipairs(frames) do if w.kind=="FontString" and w.text=="67%" then xpUpdated=true end end
+assert(xpUpdated,"XP event should refresh live progress")
+mockXP=1500
+addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
