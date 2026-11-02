@@ -8,7 +8,7 @@ function A.Plan(profession)
  local forecast=recipes.MaterialForecast and recipes.MaterialForecast(profession) or {}
  local available={}
  for _,row in ipairs(forecast) do available[clean(row.name):lower()]=tonumber(row.owned) or 0 end
- local result={lines={"CRAFTING DECISION GUIDE (MANUAL MATERIAL COUNTS)"},ready=0,blocked=0}
+ local result={lines={"CRAFTING DECISION GUIDE (MANUAL MATERIAL COUNTS)","Per-recipe estimates only; use the shared-stock allocation for a feasible combined queue."},ready=0,blocked=0}
  for index,recipe in ipairs(recipes.Get(profession)) do
   local remaining=math.max(0,(tonumber(recipe.quantity) or 0)-(tonumber(recipe.done) or 0))
   if remaining>0 then
