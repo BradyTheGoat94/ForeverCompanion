@@ -249,6 +249,18 @@ local function render()
           row:Show()
         end
       end
+      -- Read-only beginner coaching appears in the visible guide text for every class.
+      -- These instructions are conditional, never an automated combat sequence.
+      local coach=type(ForeverCompanionGetBeginnerCoach)=="function"
+        and ForeverCompanionGetBeginnerCoach(classToken())
+      if type(coach)=="table" then
+        lines[#lines+1]="BEGINNER COACH (ILLUSTRATIVE - VERIFY IN FOREVER)"
+        lines[#lines+1]="RESOURCE: "..coach.resource
+        lines[#lines+1]="BEFORE COMBAT: "..coach.first
+        lines[#lines+1]="YOUR BASIC LOOP: "..coach.loop
+        lines[#lines+1]="IF SOMETHING GOES WRONG: "..coach.recover
+        lines[#lines+1]="VERIFY IN CLIENT: "..coach.check
+      end
       -- Sourced Forever mechanics are displayed separately from generic leveling
       -- priorities; they remain conditional on trained spells and chosen talents.
       local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
