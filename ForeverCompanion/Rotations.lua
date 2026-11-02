@@ -147,6 +147,14 @@ function ForeverCompanionBeginnerAvailability(class,scan)
  local hints=ForeverCompanionBeginnerSpellHints[class] or {}
  local result={}
  local book=ForeverCompanionSpellbook
+ local verified=type(ForeverCompanionVerifiedAbilities)=="table" and ForeverCompanionVerifiedAbilities.entries
+ local entries=type(verified)=="table" and verified[class] or nil
+ local byName={}
+ if type(entries)=="table" then
+  for _,entry in ipairs(entries) do
+   if type(entry)=="table" and type(entry.name)=="string" then byName[entry.name:lower()]=entry end
+  end
+ end
  for _,spell in ipairs(hints) do
   local status="unverified (spellbook scan unavailable)"
   if type(book)=="table" and type(book.Status)=="function" then
@@ -154,7 +162,14 @@ function ForeverCompanionBeginnerAvailability(class,scan)
    if ok and type(value)=="string" then status=value end
   end
   local label=status=="found in spellbook" and "[FOUND]" or (status:find("unverified",1,true) and "[UNKNOWN]" or "[CHECK TRAINER/TALENTS]")
-  result[#result+1]=label.." "..spell.." | "..status
+  local entry=byName[spell:lower()]
+  local requirement=""
+  if entry then
+   requirement=" | curated client-data level "..tostring(entry.level).." / "..tostring(entry.kind)
+   if entry.kind=="Talent" then requirement=requirement.." (requires talent points)" end
+   if entry.kind=="Quest" then requirement=requirement.." (requires quest)" end
+  end
+  result[#result+1]=label.." "..spell.." | "..status..requirement
  end
  return result
 end
