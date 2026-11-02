@@ -93,7 +93,7 @@ C_QuestLog={
   return examples[i]
  end,
  IsComplete=function(id) return id==102 end,
- GetQuestObjectives=function(id) return {{text="Illustrative objective for test "..tostring(id)}} end
+ GetQuestObjectives=function(id) return {{text="Illustrative objective for test "..tostring(id),finished=id==102}} end
 }
 GetBuildInfo=function() return "OfflineMock","0","0",16001 end
 print=function() end
@@ -191,6 +191,11 @@ assert(readyRow.status.text=="READY","quest row completion badge incorrect")
 readyRow.OnClick(readyRow)
 assert(ForeverCompanionQuestPlanner.GetSelected().title=="Sample: Speak with trainer","journal row focus failed")
 assert(readyRow.selected,"selected quest row must be highlighted")
+local knownObjective=false
+for _,w in ipairs(frames) do
+ if w.text=="Known objectives: 1/1 complete | addon focus only" then knownObjective=true end
+end
+assert(knownObjective,"quest focus card should show verified objective progress")
 exportSnapshot("ui_quest_snapshot.txt")
 local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
