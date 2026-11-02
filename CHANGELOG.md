@@ -1,3 +1,9 @@
+## 1.1.0-beta (development; rotations not yet client-verified)
+- Added Rotations.lua with beginner-friendly priority sequences for all nine original classes.
+- Five selectable contexts per class: leveling, dungeon, boss, AoE and PvP.
+- Added a rotation-mode button in the Leveling handbook.
+- Sequences are general Classic-era teaching examples, not tested or optimized Forever-specific builds; icons per individual ability are not implemented yet.
+
 ## 1.0.0-beta (development milestone, not a stable release)
 - Added AdvancedGuides.lua with nine original-class specialization overviews, core priorities, party guidance and progression checklists.
 - Added five-stage introductory progression guidance for nine gathering and crafting professions.
