@@ -169,7 +169,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
       values.heroArt:SetVertexColor(0.95,0.72,0.36)
     end
   end
-  values.name:SetText(short(classLabel,18).."  |  Lv "..tostring(level or "?"))
+  values.name:SetText(short(classLabel,18).."  |  Lv "..short(level or "?",4))
   values.classSigil:SetText(({WARRIOR="I",PALADIN="II",HUNTER="III",ROGUE="IV",PRIEST="V",SHAMAN="VI",MAGE="VII",WARLOCK="VIII",DRUID="IX"})[classToken] or "*")
   values.role:SetText("Preferred role: "..short(role or "Not selected",23))
   local band,number=nil,tonumber(level)
@@ -181,7 +181,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   end
   values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
   local curriculum=ForeverCompanionLevelingCurriculum
-  local stage=curriculum and curriculum.Stage and curriculum.Stage(level)
+  local stage=curriculum and curriculum.Stage and curriculum.Stage(number or 1)
   local notes=curriculum and curriculum.classes and curriculum.classes[classToken]
   values.currentTip=notes and notes[stage] or (entry and entry.leveling or "Review class-specific tips below.")
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
