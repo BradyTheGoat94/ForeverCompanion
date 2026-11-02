@@ -518,3 +518,11 @@ assert(estimate.complete and estimate.copper==750,"3 crafts * 2 herbs * 125 copp
 assert(ForeverCompanionRecipePlans.Done("CostTest",1,1))
 assert(ForeverCompanionCraftCosts.Estimate("CostTest")[1].copper==500,"completed crafts must reduce estimated cost")
 assert(not ForeverCompanionCraftCosts.Set("CostTest","Herb",-1),"negative prices must be rejected")
+
+dofile("ForeverCompanion/ShoppingBudget.lua")
+local budget=ForeverCompanionShoppingBudget.Build("CostTest")
+assert(budget.complete and budget.knownCopper==500,"remaining two crafts require four herbs at 125 copper")
+assert(ForeverCompanionCraftCosts.Set("CostTest","Herb",nil)==false,"nil unit prices invalid")
+assert(ForeverCompanionRecipePlans.Ingredient("CostTest",1,"Vial",1))
+budget=ForeverCompanionShoppingBudget.Build("CostTest")
+assert(not budget.complete and budget.unknown==1 and budget.knownCopper==500,"unknown prices must remain incomplete")
