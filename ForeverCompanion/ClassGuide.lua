@@ -134,7 +134,7 @@ function Guide.Create(parent)
   values.spec=label(build,16,-45,351,"","GameFontHighlight",PALE)
   values.mode=label(build,16,-70,351,"","GameFontHighlightSmall",MUTED)
   values.xp=label(build,16,-93,351,"","GameFontHighlightSmall",PALE)
-  values.xpCaption=label(build,16,-113,351,"LEVEL PROGRESS","GameFontNormalSmall",GOLD)
+  values.xpCaption=label(build,16,-108,351,"LEVEL PROGRESS","GameFontNormalSmall",GOLD)
   local trackShadow=build:CreateTexture(nil,"BORDER")
   trackShadow:SetPoint("TOPLEFT",build,"TOPLEFT",14,-123)
   trackShadow:SetSize(354,12)
@@ -188,10 +188,10 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local planner=ForeverCompanionSpecPlanner
   local spec=type(planner)=="table" and type(planner.Get)=="function" and planner.Get(classToken)
-  values.spec:SetText("Spec preview: "..short(type(spec)=="table" and spec[1] or "Not available",24))
+  values.spec:SetText("Suggested build: "..short(type(spec)=="table" and spec[1] or "Not available",24))
   local contexts=type(ForeverCompanionRotationPresentation)=="table" and ForeverCompanionRotationPresentation.contexts
   local context=type(contexts)=="table" and contexts[mode]
-  values.mode:SetText("Priority context: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
+  values.mode:SetText("Suggested priority: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
   local fraction=safeXP()
   if fraction then
     values.xpCaption:SetText("LEVEL PROGRESS")
