@@ -176,8 +176,14 @@ end
 function Planner.GetVisible()
   local visible={}
   local zone
-  if type(GetRealZoneText)=="function" then zone=GetRealZoneText()
-  elseif type(GetZoneText)=="function" then zone=GetZoneText() end
+  if type(GetRealZoneText)=="function" then
+    local ok,value=pcall(GetRealZoneText)
+    if ok and type(value)=="string" then zone=value end
+  end
+  if not zone and type(GetZoneText)=="function" then
+    local ok,value=pcall(GetZoneText)
+    if ok and type(value)=="string" then zone=value end
+  end
   for i,q in ipairs(auto.entries) do
     if auto.filter=="all" or (auto.filter=="ready" and q.complete)
       or (auto.filter=="zone" and (not zone or zone=="" or not Planner.HasZoneMetadata() or not q.zone or q.zone==zone)) then
