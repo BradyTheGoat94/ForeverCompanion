@@ -8,7 +8,7 @@ local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
-local DB, window, titleText, content, currentTab
+local DB, window, titleText, content, currentTab, headerMeta
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -49,8 +49,8 @@ local function toggleCheck(section, index)
 end
 local function render()
   if not window or not DB then return end
-  titleText:SetText("FOREVER COMPANION")
-  if subtitleText then subtitleText:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
+  titleText:SetText("Forever Companion")
+  if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
   local isOverview=currentTab=="Overview"
   if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
@@ -315,11 +315,19 @@ local function createUI()
   accentBar:SetHeight(3)
   colorTexture(accentBar,0.94,0.65,0.22,1)
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  titleText:SetPoint("TOPLEFT", 20, -20)
+  titleText:SetPoint("TOPLEFT", 86, -22)
   titleText:SetTextColor(1,0.79,0.36)
   subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  subtitleText:SetPoint("TOPLEFT",20,-43)
+  subtitleText:SetPoint("TOPLEFT",86,-51)
+  subtitleText:SetText("Guides  -  Professions  -  Quests  -  Builds  -  More")
   subtitleText:SetTextColor(0.72,0.78,0.84)
+  local crest=window:CreateTexture(nil,"OVERLAY")
+  crest:SetPoint("TOPLEFT",window,"TOPLEFT",19,-17)
+  crest:SetSize(54,54)
+  crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+  headerMeta=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  headerMeta:SetPoint("TOPRIGHT",window,"TOPRIGHT",-48,-22)
+  headerMeta:SetTextColor(0.94,0.78,0.47)
   questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   questCountText:SetPoint("TOPRIGHT",-48,-43)
   questCountText:SetTextColor(0.70,0.85,0.74)
@@ -561,7 +569,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.9.0 beta  |  /fc help  |  Advisory only  |  No automated gameplay")
+  footer:SetText("v3.9 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
