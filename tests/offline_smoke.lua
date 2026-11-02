@@ -481,3 +481,10 @@ assert(not world.Format(15):find("Riverglades",1,true),"Riverglades must not be 
 assert(world.Format(39):find("level 40",1,true),"dual spec upcoming milestone missing")
 assert(world.Format(40):find("starting at level 40",1,true),"dual spec milestone missing")
 assert(world.Format(60):find("level cap",1,true),"official level cap missing")
+
+dofile("ForeverCompanion/CampingGuide.lua")
+dofile("ForeverCompanion/CampingReadiness.lua")
+assert(ForeverCompanionCampingReadiness.Check("Alchemy",19).status=="BELOW PREVIEW GATE")
+assert(ForeverCompanionCampingReadiness.Check("Alchemy",20).status=="MEETS PREVIEW GATE")
+assert(ForeverCompanionCampingReadiness.Check("Alchemy",nil).status=="CHECK SKILL")
+assert(ForeverCompanionCampingReadiness.Check("Mining",300).status=="UNCONFIRMED")
