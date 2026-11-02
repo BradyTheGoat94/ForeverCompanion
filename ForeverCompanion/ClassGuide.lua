@@ -164,7 +164,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local classColor=type(RAID_CLASS_COLORS)=="table" and RAID_CLASS_COLORS[classToken]
   if values.heroArt.SetVertexColor then
     if type(classColor)=="table" then
-      values.heroArt:SetVertexColor(classColor.r or 1,classColor.g or 1,classColor.b or 1)
+      values.heroArt:SetVertexColor(type(classColor.r)=="number" and classColor.r or 1,type(classColor.g)=="number" and classColor.g or 1,type(classColor.b)=="number" and classColor.b or 1)
     else
       values.heroArt:SetVertexColor(0.95,0.72,0.36)
     end
