@@ -410,6 +410,7 @@ local function render()
         end
         if ForeverCompanionRecipePlans then
           lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
+          lines[#lines+1]=ForeverCompanionRecipePlans.FormatForecast(guide.name)
         end
         if ForeverCompanionCraftingBridge then
           lines[#lines+1]=ForeverCompanionCraftingBridge.Preview(guide.name)
