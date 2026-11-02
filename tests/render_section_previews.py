@@ -31,6 +31,9 @@ def draw_base(section):
     # Original FC crest exists as native textures/fontstrings on every page.
     d.rounded_rectangle((x+20,y+29,x+93,y+103),radius=4,fill=(18,24,34),outline=GOLD,width=3)
     d.rounded_rectangle((x+26,y+35,x+87,y+97),radius=3,outline=(113,81,38),width=2)
+    d.line((x+38,y+88,x+80,y+88),fill=(119,90,46),width=2)
+    d.line((x+43,y+94,x+75,y+94),fill=GOLD,width=2)
+    d.rectangle((x+57,y+37,x+62,y+42),fill=(102,196,213))
     d.text((x+35,y+53),"FC",font=F28,fill=GOLD)
     d.text((x+119,y+35),"FOREVER COMPANION",font=F35,fill=GOLD)
     d.text((x+121,y+84),"Leveling   /   Quest Journal   /   Professions   /   Builds",font=F17,fill=MUTED)
