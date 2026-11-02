@@ -67,3 +67,27 @@ function S.FormatNextActions(classToken,level)
  for i,line in ipairs(S.NextActions(classToken,level,5)) do lines[#lines+1]=i..". "..line end
  return table.concat(lines,"\n")
 end
+
+-- Spellbook-only practice plan. Avoids pretending to know combat performance.
+function S.PracticePlan(classToken,level)
+ local entries=ForeverCompanionVerifiedAbilities and ForeverCompanionVerifiedAbilities.entries[classToken]
+ local lines={"SKILL PRACTICE PLAN (READ-ONLY)"}
+ if not entries then
+  lines[#lines+1]="No audited class skill list yet; use your in-game spellbook and talent window."
+  return table.concat(lines,"\n")
+ end
+ local known={}
+ for _,entry in ipairs(entries) do
+  if ForeverCompanionAbilityState(classToken,entry.id,level)=="KNOWN" then known[#known+1]=entry.name end
+ end
+ table.sort(known)
+ if #known==0 then
+  lines[#lines+1]="No known skills confirmed by the client API; do not assume this character lacks abilities."
+ else
+  lines[#lines+1]="Confirm the following audited abilities on your action bars:"
+  for i=1,math.min(6,#known) do lines[#lines+1]=i..". "..known[i] end
+  lines[#lines+1]="Practice the appropriate opener, resource management, and defensive response on a safe target."
+ end
+ lines[#lines+1]="No DPS ranking or optimal rotation is asserted by this checklist."
+ return table.concat(lines,"\n")
+end
