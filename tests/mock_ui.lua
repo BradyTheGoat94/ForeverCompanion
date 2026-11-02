@@ -511,6 +511,14 @@ for _,w in ipairs(frames) do
  if w.text:find("Layout: ",1,true) and w.text:find(ForeverCompanionDB.compact and "Compact" or "Expanded",1,true) then layoutTextFound=true end
 end
 assert(layoutTextFound,"Settings layout summary did not refresh")
+local originalBuildInfo=GetBuildInfo
+GetBuildInfo=nil
+assert(pcall(ForeverCompanionRefresh),"Settings must survive absent client build API")
+local missingBuild=false
+for _,w in ipairs(frames) do if w.text=="Client: Unknown  |  Interface: ?" then missingBuild=true end end
+assert(missingBuild,"Settings must not invent a missing client Interface number")
+GetBuildInfo=originalBuildInfo
+ForeverCompanionRefresh()
 exportSnapshot("ui_settings_snapshot.txt")
 overviewButton.OnClick(overviewButton)
 assert(not frames[frames[settingsHeading.parent].parent].visible,"Settings cards must hide on dashboard")
