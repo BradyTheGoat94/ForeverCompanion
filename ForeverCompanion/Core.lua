@@ -265,6 +265,13 @@ local function render()
         lines[#lines+1]="IF SOMETHING GOES WRONG: "..coach.recover
         lines[#lines+1]="VERIFY IN CLIENT: "..coach.check
       end
+      -- Specialization-aware practice guidance uses the player's selected
+      -- planning spec and never assumes that an untrained spell is available.
+      if type(ForeverCompanionSpecCoachLines)=="function" then
+        for _,note in ipairs(ForeverCompanionSpecCoachLines(classToken())) do
+          lines[#lines+1]=note
+        end
+      end
       -- Sourced Forever mechanics are displayed separately from generic leveling
       -- priorities; they remain conditional on trained spells and chosen talents.
       local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
