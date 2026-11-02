@@ -32,6 +32,24 @@ function D.Collect()
  add("Modern quest log",available(C_QuestLog,"GetNumQuestLogEntries"))
  add("Quest objective API",available(C_QuestLog,"GetQuestObjectives"))
  add("XP read",type(UnitXP)=="function" and type(UnitXPMax)=="function")
+ if type(ForeverCompanionSpellbook)=="table" and type(ForeverCompanionSpellbook.Scan)=="function" then
+  local ok,scan=pcall(ForeverCompanionSpellbook.Scan)
+  if ok and type(scan)=="table" then
+   rows[#rows+1]="Spellbook scan: "..(scan.supported and (scan.complete and "complete" or "partial") or "unsupported")
+   rows[#rows+1]="Spellbook named entries: "..tostring(scan.inspected or 0)
+  else
+   rows[#rows+1]="Spellbook scan: error (inspect Lua errors)"
+  end
+ end
+ if type(ForeverCompanionAbilityAudit)=="function" then
+  local ok,audit=pcall(ForeverCompanionAbilityAudit)
+  if ok and type(audit)=="table" then
+   rows[#rows+1]="Curated ability records: "..tostring(audit.total or 0)
+   rows[#rows+1]="Curated ability issues: "..tostring(type(audit.issues)=="table" and #audit.issues or "?")
+  else
+   rows[#rows+1]="Curated ability audit: error"
+  end
+ end
  rows[#rows+1]="These checks show API presence only; they do not prove safe or correct behavior."
  return table.concat(rows,"\n")
 end
