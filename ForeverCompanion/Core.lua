@@ -167,8 +167,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -72 or -5))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 96 or 24)))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -72 or (currentTab=="Leveling" and -48 or -5)))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 96 or (currentTab=="Leveling" and 70 or 24))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -284,8 +284,8 @@ local function createUI()
   end
   for i=1,5 do
     local row=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-    row:SetSize(118,21)
-    row:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20+(i-1)*137,112)
+    row:SetSize(118,30)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-8)
     row:Hide()
     rotationRows[i]=row
   end
