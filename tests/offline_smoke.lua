@@ -82,6 +82,14 @@ C_QuestLog={
  GetQuestObjectives=function() return {{text="Collect 3 samples",finished=true}} end,
 }
 dofile("ForeverCompanion/QuestPlanner.lua")
+-- Malformed SavedVariables must not crash manual quest tracking.
+ForeverCompanionDB.quests={{name="Valid Quest",zone="Westfall",done=false},{name=false,zone=12}}
+assertEqual(ForeverCompanionQuestPlanner.Add("Another Quest","Westfall"),true,"add with malformed saved row")
+assertEqual(ForeverCompanionQuestPlanner.Toggle(2),false,"reject invalid saved quest toggle")
+assert(ForeverCompanionQuestPlanner.Format():find("invalid saved quest entry",1,true),"show invalid saved row")
+assertEqual(ForeverCompanionQuestPlanner.Remove(2),true,"remove malformed saved quest")
+assertEqual(ForeverCompanionQuestPlanner.Summary(),0,"valid entries remain unfinished")
+ForeverCompanionDB.quests={}
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"quest scan")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"quest count")
 assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"quest completion")
