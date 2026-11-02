@@ -75,6 +75,8 @@ local function render()
         local row=rotationRows[i]
         if row then
           row:SetText((rotationDetail==i and "> " or "")..i..". "..ability)
+          local iconList=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
+          if row.icon and iconList then row.icon:SetTexture(iconList[((i-1)%#iconList)+1]) end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
           row:Show()
         end
@@ -300,6 +302,9 @@ local function createUI()
     local row=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
     row:SetSize(118,30)
     row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-8)
+    row.icon=row:CreateTexture(nil,"ARTWORK")
+    row.icon:SetSize(19,19)
+    row.icon:SetPoint("RIGHT",row,"LEFT",-1,0)
     row:Hide()
     rotationRows[i]=row
   end
