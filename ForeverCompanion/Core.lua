@@ -1,6 +1,7 @@
 local addonName = ...
 local addon = CreateFrame("Frame")
 local DATA = ForeverCompanionData
+local ADVANCED = ForeverCompanionAdvanced
 local DB, window, titleText, content, currentTab
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -58,6 +59,14 @@ local function render()
       if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
     end
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
+    local deep=ADVANCED and ADVANCED.classes[classToken()]
+    if deep then
+      lines[#lines+1]="SPECIALIZATION OVERVIEW (GENERAL REFERENCE)"
+      lines[#lines+1]=table.concat(deep.specializations," / ")
+      lines[#lines+1]="Core: "..deep.core
+      lines[#lines+1]="Party: "..deep.party
+      for _,tip in ipairs(deep.sections) do lines[#lines+1]="- "..tip end
+    end
     if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
       lines[#lines+1]="YOUR ROLE: "..string.upper(DB.role)
       for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
@@ -117,6 +126,12 @@ local function render()
         lines[#lines+1]="Pairs with: "..guide.pair
         lines[#lines+1]=guide.summary
         for i,step in ipairs(guide.steps) do lines[#lines+1]=i..". "..step end
+        local deep=ADVANCED and ADVANCED.crafting[guide.name]
+        if deep then
+          lines[#lines+1]="CRAFTING PROGRESSION (GENERAL REFERENCE)"
+          lines[#lines+1]="Materials: "..deep.materials.."  |  Output: "..deep.output
+          for i,step in ipairs(deep.stages) do lines[#lines+1]=i..". "..step end
+        end
         if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
         for i,button in ipairs(handbookButtons) do
           local entry=DATA.professionHandbook[i]
@@ -317,7 +332,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v0.9.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.0.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
