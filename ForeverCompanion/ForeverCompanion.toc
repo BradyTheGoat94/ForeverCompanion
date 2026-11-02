@@ -20,6 +20,7 @@ Diagnostics.lua
 QuestBriefing.lua
 ProfessionBriefing.lua
 AdventureBriefing.lua
+Heraldry.lua
 Dashboard.lua
 ClassGuide.lua
 Core.lua
