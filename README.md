@@ -149,3 +149,7 @@ Run `lua5.1 tests/offline_smoke.lua` from the repository root. The CI pipeline r
 ## Guarded quest log compatibility (3.7 beta)
 
 The quest planner now uses the modern `C_QuestLog` APIs through protected calls. Header sections are used as zone fallback when quest-specific metadata is absent. If the client API throws an error or is temporarily unavailable, the addon retains the last successfully scanned quest snapshot instead of erasing it. This snapshot may be stale; it is not evidence that quests remain active. The change is covered by mocked-client regression tests and still requires live Forever verification.
+
+## Settings dashboard (3.13 beta)
+
+The Settings page now has native black-and-gold preference and client-API cards. Use **Auto-Detect Class** to clear the addon-only class preview, **Center Window** to reset its saved position, or **Toggle Compact** to change the addon layout. The actual class, talents and gameplay are not changed. The cards display the client version when exposed by `GetBuildInfo` and distinguish API visibility from confirmed functionality; an exposed quest, profession, spellbook or XP API does **not** establish compatibility. A mocked Settings preview is generated as `ui_settings_preview.png` in the offline CI artifact. Real client testing and Interface version verification remain mandatory before CurseForge publication.
