@@ -1,3 +1,14 @@
+## 3.11.0-beta (development branch, November 2, 2026; not client-verified)
+- Replaced generic quest-list buttons with native dark fantasy journal rows, including quest title, zone, ready/active status, focus highlight, and optional read-only objective tooltip.
+- Added persistent quest sorting (log, zone, ready) with UI selector and `/fcq sort`; preserved the underlying quest-log indices and addon-only focus selection.
+- Preserved known objective completion flags from modern and Classic quest APIs, displaying completion counts only when the client actually reports them.
+- Fixed a sparse-slot bug in modern profession scanning and added a guarded Classic skill-line fallback for standard English trade skills.
+- Styled profession handbook navigation with gold-accented icon tabs.
+- Made dashboard recommendations real clickable guide shortcuts, added native ornamental trim and framed crest, and reset Today's Focus on confirmed day changes.
+- Added live level-band information to the class hero and dynamic scaling for display/UI-scale changes.
+- Expanded Lua smoke/UI tests and mock-derived preview validation. Fixed a Lua multiple-return-value bug discovered by CI.
+- No game-client or CurseForge approval claims: Interface number, artwork, compatibility, licensing and final submission remain pending verification.
+
 ## 3.10.0-beta (development branch, not client-verified)
 - Added native black-and-gold Quest Journal briefing cards: live quest totals, ready count, top zone, focused objective, and explicit stale/unavailable states.
 - Added native Profession Skills and Material Goals cards with detected skill/cap bars, aggregate manual material progress, and selected-guide shortage advice.
