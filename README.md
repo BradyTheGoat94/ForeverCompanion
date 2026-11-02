@@ -101,3 +101,7 @@ Other legacy API modules still require audit and live-client tests. Spec preview
 ## Safe client diagnostics (3.5 beta)
 
 Use `/fcdiag` to print the detected client build and the availability of key spellbook, talent, quest, profession and XP APIs. The same compatibility summary appears in Overview. These are passive presence checks only: they do not run combat actions, inspect process memory, access network packets, or prove that an API behaves correctly. Record the report and any Lua errors during a future official test window; do not treat a successful report as Blizzard approval.
+
+## Offline regression tests (3.6 beta)
+
+Run `lua5.1 tests/offline_smoke.lua` from the repository root. The CI pipeline runs these mocked-client tests before packaging. They verify spellbook API fallback and name matching, multi-recipe ingredient demand, owned-count preservation during manual sync, and diagnostics when client APIs are absent. These tests do not connect to the game and cannot certify compatibility or account safety; live client verification remains mandatory before public release.
