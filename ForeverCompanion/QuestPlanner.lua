@@ -85,16 +85,29 @@ local function questRows()
             local done,value=pcall(modern.IsComplete,id)
             if done and type(value)=="boolean" then completed=value end
           end
-          local objectives={}
+          local objectives,objectiveStates={},{}
           if type(id)=="number" and type(modern.GetQuestObjectives)=="function" then
             local got,items=pcall(modern.GetQuestObjectives,id)
             if got and type(items)=="table" then
               for _,obj in ipairs(items) do
-                if type(obj)=="table" and type(obj.text)=="string" then objectives[#objectives+1]=clean(obj.text,140) end
+                if type(obj)=="table" and type(obj.text)=="string" then
+                  objectives[#objectives+1]=clean(obj.text,140)
+                  local known,done=false,false
+                  local stateOK,stateKnown,stateDone=pcall(function()
+                    if type(obj.finished)=="boolean" then return true,obj.finished end
+                    if type(obj.isComplete)=="boolean" then return true,obj.isComplete end
+                    local current=tonumber(obj.numFulfilled)
+                    local required=tonumber(obj.numRequired)
+                    if current and required and required>0 then return true,current>=required end
+                    return false,false
+                  end)
+                  if stateOK then known,done=stateKnown,stateDone end
+                  objectiveStates[#objectiveStates+1]={known=known,done=done}
+                end
               end
             end
           end
-          rows[#rows+1]={id=id,title=clean(info.title,100),zone=clean(info.zoneName or info.zone or header,70),complete=completed,objectives=objectives}
+          rows[#rows+1]={id=id,title=clean(info.title,100),zone=clean(info.zoneName or info.zone or header,70),complete=completed,objectives=objectives,objectiveStates=objectiveStates}
         end
       end
     end
@@ -112,14 +125,15 @@ local function questRows()
       if isHeader then
         header=clean(title or header,70)
       elseif type(title)=="string" and title~="" then
-        local objectives={}
+        local objectives,objectiveStates={},{}
         if type(GetNumQuestLeaderBoards)=="function" and type(GetQuestLogLeaderBoard)=="function" then
           local countOK,objectiveCount=pcall(GetNumQuestLeaderBoards,i)
           if countOK and type(objectiveCount)=="number" and objectiveCount>=0 and objectiveCount<=100 then
             for j=1,objectiveCount do
-              local itemOK,description=pcall(GetQuestLogLeaderBoard,j,i)
+              local itemOK,description,_,finished=pcall(GetQuestLogLeaderBoard,j,i)
               if itemOK and type(description)=="string" and description~="" then
                 objectives[#objectives+1]=clean(description,140)
+                objectiveStates[#objectiveStates+1]={known=type(finished)=="boolean",done=finished==true}
               end
             end
           end
@@ -128,7 +142,7 @@ local function questRows()
           id=type(questID)=="number" and questID or nil,
           title=clean(title,100),zone=header,
           complete=isComplete==true or isComplete==1,
-          objectives=objectives
+          objectives=objectives,objectiveStates=objectiveStates
         }
       end
     end
@@ -228,6 +242,20 @@ function Planner.ReadyCount()
   for _,q in ipairs(auto.entries) do if q.complete then count=count+1 end end
   return count
 end
+function Planner.ObjectiveProgress(quest)
+  local q=quest
+  if not q then q=auto.entries[auto.selected] end
+  if type(q)~="table" or type(q.objectiveStates)~="table" then return nil end
+  local known,done=0,0
+  for _,state in ipairs(q.objectiveStates) do
+    if type(state)=="table" and state.known then
+      known=known+1
+      if state.done then done=done+1 end
+    end
+  end
+  if known==0 then return nil end
+  return done,known
+end
 function Planner.GetLive() return auto.entries end
 function Planner.GetSelected()
   if #auto.entries==0 then return nil end
@@ -272,6 +300,8 @@ function Planner.FormatFocused()
   local lines={"FOCUSED QUEST "..index.."/"..#auto.entries, q.title, q.complete and "Ready for turn-in" or "In progress"}
   if not auto.supported then lines[#lines+1]="WARNING: cached quest data; verify in game." end
   if q.zone then lines[#lines+1]="Zone: "..q.zone end
+  local done,known=Planner.ObjectiveProgress(q)
+  if known then lines[#lines+1]="Known objectives complete: "..done.."/"..known end
   if #q.objectives==0 then lines[#lines+1]="No objective details available from this client." end
   for _,objective in ipairs(q.objectives) do lines[#lines+1]="  "..objective end
   return table.concat(lines,"\n")
