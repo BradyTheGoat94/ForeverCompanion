@@ -29,7 +29,11 @@ function S.Scan()
      if found and type(name)=="string" and name~="" then
       known[normalized(name)]=true
       inspected=inspected+1
-     elseif not found then complete=false end
+     else
+      -- A missing/secret/unnamed slot means this cannot be a definitive
+      -- absence scan, even when the API call itself did not throw.
+      complete=false
+     end
     end
    end
   end
