@@ -1,8 +1,9 @@
 -- Offline mock of the WoW widget API; tests construction and render, not pixels.
 local frames={}
 local snapshot={}
+local function clean(v) return tostring(v or ""):gsub("[\\r\\n|]"," ") end
 local function widget(kind)
- local w={kind=kind,visible=true,children={},text=""}
+ local w={kind=kind,visible=true,children={},text="",id=#frames+1}
  function w:SetText(v) self.text=tostring(v or "") end
  function w:GetText() return self.text end
  function w:GetStringHeight() return math.max(16,math.ceil(#self.text/75)*16) end
@@ -11,8 +12,8 @@ local function widget(kind)
  function w:IsShown() return self.visible end
  function w:SetScript(name,fn) self[name]=fn end
  function w:RegisterEvent(name) self.events=self.events or {};self.events[name]=true end
- function w:CreateTexture() return widget("Texture") end
- function w:CreateFontString() return widget("FontString") end
+ function w:CreateTexture() local child=widget("Texture");child.parent=self.id;return child end
+ function w:CreateFontString() local child=widget("FontString");child.parent=self.id;return child end
  function w:SetColorTexture(...) self.color={...} end
  function w:SetTexture(v) self.texture=v end
  function w:SetPoint(...) self.point={...} end
@@ -47,7 +48,7 @@ local function widget(kind)
  frames[#frames+1]=w
  return w
 end
-CreateFrame=function(kind) return widget(kind) end
+CreateFrame=function(kind,_,parent) local child=widget(kind);child.parent=parent and parent.id;return child end
 UIParent=widget("UIParent")
 SlashCmdList={}
 ForeverCompanionDB={welcomed=false}
@@ -86,9 +87,15 @@ for _,f in ipairs(frames) do
 end
 assert(foundTitle,"main window title not rendered")
 for _,f in ipairs(frames) do
- if f.text and f.text~="" then snapshot[#snapshot+1]=f.kind.." | "..f.text:gsub("[\\r\\n]"," ") end
+ local anchor=f.point and clean(f.point[1]) or ""
+ local x,y="",""
+ if f.point then
+  for _,v in ipairs(f.point) do if type(v)=="number" then if x=="" then x=v else y=v end end end
+ end
+ snapshot[#snapshot+1]=table.concat({f.id,f.kind,f.parent or "",f.visible and "1" or "0",f.width or "",f.height or "",anchor,x,y,clean(f.text),clean(f.texture)}, "|")
 end
 local out=assert(io.open("ui_snapshot.txt","w"))
+out:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture\\n")
 out:write(table.concat(snapshot,"\\n"))
 out:close()
 io.write("PASS: actual addon manifest loaded and core UI rendered in offline mock ("..#frames.." widgets)\n")
