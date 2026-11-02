@@ -21,9 +21,9 @@ lessons = (root / "ForeverLessons.lua").read_text(encoding="utf-8")
 core = (root / "Core.lua").read_text(encoding="utf-8")
 classes = ("WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID")
 for cls in classes:
-    assert re.search(r"\\b" + cls + r"\\s*=\\s*\\{", specs), f"Missing planner class {cls}"
-    assert re.search(r"\\b" + cls + r"\\s*=\\s*\\{", playbooks), f"Missing playbook class {cls}"
-    assert re.search(r"\\b" + cls + r"\\s*=\\s*\\{", lessons), f"Missing sourced lesson class {cls}"
+    assert re.search(r"\b" + cls + r"\s*=\s*\{", specs), f"Missing planner class {cls}"
+    assert re.search(r"\b" + cls + r"\s*=\s*\{", playbooks), f"Missing playbook class {cls}"
+    assert re.search(r"\b" + cls + r"\s*=\s*\{", lessons), f"Missing sourced lesson class {cls}"
 
 for function in ("ForeverCompanionSpecPlaybookLines", "ForeverCompanionSpecPriorityNoteLines",
                  "ForeverCompanionForeverLessonLines", "ForeverCompanionNovemberTuningLines"):
