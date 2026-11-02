@@ -1,5 +1,6 @@
 -- Offline mock of the WoW widget API; tests construction and render, not pixels.
 local frames={}
+local snapshot={}
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text=""}
  function w:SetText(v) self.text=tostring(v or "") end
@@ -84,4 +85,10 @@ for _,f in ipairs(frames) do
  if f.text=="FOREVER COMPANION" then foundTitle=true end
 end
 assert(foundTitle,"main window title not rendered")
+for _,f in ipairs(frames) do
+ if f.text and f.text~="" then snapshot[#snapshot+1]=f.kind.." | "..f.text:gsub("[\\r\\n]"," ") end
+end
+local out=assert(io.open("ui_snapshot.txt","w"))
+out:write(table.concat(snapshot,"\\n"))
+out:close()
 io.write("PASS: actual addon manifest loaded and core UI rendered in offline mock ("..#frames.." widgets)\n")
