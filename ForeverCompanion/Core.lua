@@ -108,7 +108,7 @@ local function render()
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or -5)
-  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + (currentTab=="Quests" and 480 or 24))) end
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or 24))) end
   if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
