@@ -1,7 +1,7 @@
 -- Offline mock of the WoW widget API; tests construction and render, not pixels.
 local frames={}
 local snapshot={}
-local function clean(v) return tostring(v or ""):gsub("[\\r\\n|]"," ") end
+local function clean(v) return tostring(v or ""):gsub("[\r\n|]"," ") end
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
  function w:SetText(v) self.text=tostring(v or "") end
