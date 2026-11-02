@@ -33,6 +33,17 @@ ForeverCompanionVerifiedAbilities = {
 -- Optional character spellbook checks are independent of the level gate:
 -- level eligibility never implies the spell was trained or a talent was chosen.
 function ForeverCompanionKnownSpell(spellID)
+ if type(spellID)~="number" or spellID<=0 then return nil end
+ -- Prefer the modern namespaced spellbook on Forever. Never infer a
+ -- trained spell from level eligibility or a client-data entry.
+ if type(C_SpellBook)=="table" and type(C_SpellBook.IsSpellKnown)=="function" then
+  local ok,known=pcall(C_SpellBook.IsSpellKnown,spellID)
+  if ok and type(known)=="boolean" then return known end
+ end
+ if type(C_Spell)=="table" and type(C_Spell.IsSpellKnown)=="function" then
+  local ok,known=pcall(C_Spell.IsSpellKnown,spellID)
+  if ok and type(known)=="boolean" then return known end
+ end
  if type(IsSpellKnown)=="function" then
   local ok,known=pcall(IsSpellKnown,spellID)
   if ok and type(known)=="boolean" then return known end
