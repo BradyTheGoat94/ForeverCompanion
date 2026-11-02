@@ -838,3 +838,15 @@ for _,class in ipairs({"WARRIOR","ROGUE","SHAMAN","WARLOCK"}) do
  local lines=ForeverCompanionSourcedPriorityLines(class)
  assert(not table.concat(lines," "):find("unconfirmed in official notes",1,true),"unrelated hotfix warning: "..class)
 end
+
+-- Level readiness is informational and never uses secret combat data.
+local originalUnitLevel=UnitLevel
+UnitLevel=function() return 8 end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("talents are not unlocked",1,true),"pre-talent level readiness missing")
+UnitLevel=function() return 25 end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("dual specialization unlocks later",1,true),"mid-level readiness missing")
+UnitLevel=function() return 45 end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("active talent loadout",1,true),"dual-spec readiness missing")
+UnitLevel=nil
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"unknown level fallback missing")
+UnitLevel=originalUnitLevel
