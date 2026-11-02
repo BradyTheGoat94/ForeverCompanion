@@ -250,6 +250,7 @@ local function render()
           lines[#lines+1]=referenceLine
         end
       end
+      if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level()) end
       local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
       if specNotes then
         lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
