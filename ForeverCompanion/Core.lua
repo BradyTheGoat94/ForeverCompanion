@@ -239,6 +239,7 @@ local function render()
               GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
               GameTooltip:SetText("Priority "..i,1,0.8,0.3)
               GameTooltip:AddLine(self.detail or "",1,1,1,true)
+              GameTooltip:AddLine("Illustrative priority: verify this ability and its availability in your WoW Forever spellbook.",0.72,0.78,0.86,true)
               GameTooltip:Show()
             end
           end)
