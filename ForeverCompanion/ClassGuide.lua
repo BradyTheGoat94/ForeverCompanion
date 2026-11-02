@@ -173,6 +173,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.classSigil:SetText(({WARRIOR="I",PALADIN="II",HUNTER="III",ROGUE="IV",PRIEST="V",SHAMAN="VI",MAGE="VII",WARLOCK="VIII",DRUID="IX"})[classToken] or "*")
   values.role:SetText("Preferred role: "..short(role or "Not selected",23))
   local band,number=nil,tonumber(level)
+  if number and (number~=number or number<1 or number==math.huge) then number=nil end
   local zones=ForeverCompanionData and ForeverCompanionData.zones
   if number and type(zones)=="table" then
     for _,candidate in ipairs(zones) do
