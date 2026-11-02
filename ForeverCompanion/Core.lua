@@ -216,7 +216,9 @@ local function render()
       lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
       for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
     elseif currentTab == "Professions" then
-      if ForeverCompanionProfessionScanner then
+      if ForeverCompanionProfessionProgress and ForeverCompanionProfessionProgress.FormatOverview then
+        lines[#lines+1]=ForeverCompanionProfessionProgress.FormatOverview()
+      elseif ForeverCompanionProfessionScanner then
         lines[#lines+1]=ForeverCompanionProfessionScanner.Format()
       end
       local guide=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
