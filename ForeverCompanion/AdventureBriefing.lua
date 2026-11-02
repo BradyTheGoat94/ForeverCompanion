@@ -5,7 +5,8 @@ local Briefing={}
 ForeverCompanionAdventureBriefing=Briefing
 
 local root, context, navigate
-local labels={},{}
+local labels={}
+local taskRows={}
 local progressFill, section
 local GOLD={0.94,0.72,0.32,1}
 local PALE={0.93,0.89,0.81,1}
@@ -97,7 +98,7 @@ function Briefing.Create(parent,openPage,ctx)
   navigate=openPage
   context=ctx or {}
   root=CreateFrame("Frame",nil,parent)
-  root:SetSize(770,165)
+  root:SetSize(770,291)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
   local left=card(root,0,376)
   local right=card(root,389,381)
@@ -118,6 +119,42 @@ function Briefing.Create(parent,openPage,ctx)
   labels.roleTip=label(right,15,-100,346,"Verify mechanics in your game client","GameFontHighlightSmall",{0.91,0.73,0.43,1})
   navButton(right,15,"OPEN CLASS GUIDE","Leveling")
   navButton(right,203,"OPEN QUEST JOURNAL","Quests")
+  -- Four real, clickable checklist tiles below the briefing cards.
+  -- They only modify per-character SavedVariables; no game API is called.
+  for i=1,4 do
+    local index=i
+    local x=(i%2==1) and 0 or 389
+    local y=-179-math.floor((i-1)/2)*53
+    local button=CreateFrame("Button",nil,root)
+    button:SetSize(i%2==1 and 376 or 381,47)
+    button:SetPoint("TOPLEFT",root,"TOPLEFT",x,y)
+    button.bg=button:CreateTexture(nil,"BACKGROUND")
+    button.bg:SetAllPoints(button)
+    paint(button.bg,0.10,0.13,0.18,1)
+    button.rail=strip(button,0,0,4,47,{0.38,0.31,0.21,1})
+    strip(button,0,-46,button:GetWidth(),1,{0.34,0.28,0.19,1})
+    button.number=label(button,13,-12,31,tostring(i),"GameFontNormal",GOLD)
+    button.caption=label(button,43,-10,button:GetWidth()-121,"","GameFontHighlightSmall",PALE)
+    button.status=label(button,button:GetWidth()-70,-12,57,"TODO","GameFontHighlightSmall",MUTED)
+    button.status:SetJustifyH("RIGHT")
+    button:SetScript("OnClick",function()
+      if section~="Dungeons" and section~="PvP" then return end
+      local db=safe(context and context.db)
+      if type(db)~="table" then return end
+      if type(db.checks)~="table" then db.checks={} end
+      if type(db.checks[section])~="table" then db.checks[section]={} end
+      db.checks[section][index]=not (db.checks[section][index]==true)
+      if type(ForeverCompanionRefresh)=="function" then ForeverCompanionRefresh()
+      else Briefing.Render(section) end
+    end)
+    button:SetScript("OnEnter",function(self)
+      paint(self.bg,0.23,0.20,0.14,1)
+    end)
+    button:SetScript("OnLeave",function(self)
+      paint(self.bg,self.checked and 0.20 or 0.10,self.checked and 0.17 or 0.13,self.checked and 0.10 or 0.18,1)
+    end)
+    taskRows[i]=button
+  end
   root:Hide()
   return root
 end
@@ -137,6 +174,21 @@ function Briefing.Render(page)
   labels.next:SetText(short(summary.nextTask and ("Next: "..summary.nextTask) or (summary.total>0 and "All tasks checked - review again before play" or "No checklist available"),52))
   progressFill:SetWidth(summary.total>0 and math.max(1,math.floor(BAR_WIDTH*summary.done/summary.total)) or 1)
   labels.note:SetText("Manual checklist only  |  "..(page=="PvP" and "No automated PvP actions" or "No automatic group or dungeon actions"))
+  for i,button in ipairs(taskRows) do
+    local task=type(tasks)=="table" and tasks[i] or nil
+    if task then
+      local checked=type(checks)=="table" and checks[i]==true
+      button.checked=checked
+      button.caption:SetText(short(task,54))
+      button.status:SetText(checked and "DONE" or "TODO")
+      button.status:SetTextColor(checked and 0.51 or 0.70,checked and 0.89 or 0.73,checked and 0.57 or 0.76)
+      paint(button.bg,checked and 0.20 or 0.10,checked and 0.17 or 0.13,checked and 0.10 or 0.18,1)
+      paint(button.rail,checked and 0.95 or 0.38,checked and 0.72 or 0.31,checked and 0.29 or 0.21,1)
+      button:Show()
+    else
+      button:Hide()
+    end
+  end
   local token=safe(context and context.classToken)
   local className=safe(context and context.classLabel) or "Unknown class"
   local role=safe(context and context.role) or "Role not selected"
