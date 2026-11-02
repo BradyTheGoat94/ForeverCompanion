@@ -85,3 +85,9 @@ The Professions tab now compares the aggregated demand from your recipe goals wi
 - `/fcbridge sync Alchemy` **explicitly** copies recipe ingredient requirements into the existing material checklist, keeping manually entered owned counts and unrelated material goals.
 
 Synchronization is never automatic. Existing checklist targets matching recipe ingredients are replaced, so preview first. Sync validates checklist capacity and quantity limits before applying changes. Ingredient names are matched case-insensitively after trimming surrounding whitespace. Inventory is not scanned; counts remain manually supplied.
+
+## Read-only spellbook availability (3.2 beta)
+
+The Leveling rotation panel now attempts to inspect the player's spellbook using guarded legacy spellbook APIs and labels simple cooldown candidates **learned**, **not found in scanned spellbook**, or **unverified**. Compound alternatives and version/talent-qualified candidates remain explicitly unverified rather than being guessed. Unsupported clients display an unavailable notice. This does **not** verify rank, talents, cooldown duration, or server mechanics and does not cast spells.
+
+**Important:** Class preview may show a class different from the player's real character; spellbook results always reflect the actual player's known spells, not the preview class. This feature needs live testing on the Forever client before relying on its availability labels.
