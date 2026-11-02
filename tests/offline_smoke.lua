@@ -311,3 +311,13 @@ assertEqual(missing,nil,"failed profession read")
 assert(type(reason)=="string","missing API reason")
 assert(ForeverCompanionProfessionProgress.FormatOverview():find("unavailable",1,true),"profession API failure needs honest fallback")
 io.write("PASS: offline spellbook, crafting, diagnostics, quests, specs and professions\n")
+
+-- Client-data spell reference: level gates, talent and quest caveats, and
+-- explicit pending coverage for classes not yet individually audited.
+dofile("ForeverCompanion/VerifiedAbilities.lua")
+local warriorLow=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",10),"\n")
+local warriorHigh=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n")
+assert(warriorLow:find("Bloodthirst",1,true) and warriorLow:find("LOCKED BY LEVEL",1,true),"level-10 reference should gate late abilities")
+assert(warriorHigh:find("Talent investment required",1,true),"talent abilities must not be presented as automatically learned")
+assert(warriorHigh:find("Quest completion required",1,true),"quest abilities must retain quest requirement")
+assert(table.concat(ForeverCompanionAbilityReferenceLines("MAGE",40)," "):find("pending",1,true),"unaudited classes must not claim verification")
