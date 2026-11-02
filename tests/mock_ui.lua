@@ -494,7 +494,7 @@ for _,w in ipairs(frames) do
  if w.caption and w.caption.text=="TOGGLE COMPACT" then compactSettingsButton=w end
 end
 assert(settingsHeading and apiHeading and clientLabel,"native Settings cards or client metadata missing")
-assert(frames[settingsHeading.parent].visible,"Settings cards should be visible")
+assert(frames[frames[settingsHeading.parent].parent].visible,"Settings cards should be visible")
 assert(autoButton and centerButton and compactSettingsButton,"Settings preference actions missing")
 SlashCmdList.FOREVERCOMPANION("class mage")
 assert(ForeverCompanionDB.previewClass=="MAGE","fixture preview class selection failed")
@@ -513,7 +513,7 @@ end
 assert(layoutTextFound,"Settings layout summary did not refresh")
 exportSnapshot("ui_settings_snapshot.txt")
 overviewButton.OnClick(overviewButton)
-assert(not frames[settingsHeading.parent].visible,"Settings cards must hide on dashboard")
+assert(not frames[frames[settingsHeading.parent].parent].visible,"Settings cards must hide on dashboard")
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
