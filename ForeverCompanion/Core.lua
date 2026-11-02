@@ -271,7 +271,12 @@ local function render()
         local steps=coaching[string.lower(specName)]
         lines[#lines+1]="SPECIALIZATION DPS COACHING: "..(specName~="" and string.upper(specName) or "SELECT A SPEC")
         if type(steps)=="table" then
-          for step,tip in ipairs(steps) do lines[#lines+1]=step..". "..tip end
+          lines[#lines+1]="PRACTICE IN ORDER — then repeat the priority as conditions change:"
+          for step,tip in ipairs(steps) do
+            lines[#lines+1]="STEP "..step.."  |  "..tip
+          end
+          lines[#lines+1]="DPS CHECK: Keep attacking while mechanics allow; avoid wasted resources and unnecessary movement."
+          lines[#lines+1]="DPS CHECK: Revisit your spellbook after leveling or changing talents."
           lines[#lines+1]="These priorities are advisory; confirm talents and learned spells in the Forever client."
         else
           lines[#lines+1]="No Forever-specific DPS coaching has been verified for this selection yet."
