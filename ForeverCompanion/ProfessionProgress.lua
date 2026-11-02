@@ -65,3 +65,24 @@ function P.FormatOverview()
   lines[#lines+1]="Recipe availability, prices and trainer upgrades are not verified."
   return table.concat(lines,"\n")
 end
+
+-- Skill-up planning deliberately avoids claiming a particular recipe is orange/yellow.
+function P.NextSteps(skill,cap)
+ local s=validSkill(skill,true)
+ local maximum=validSkill(cap,false)
+ if not s then return {"Profession skill unavailable; open the profession window to verify it."} end
+ local lines={}
+ if maximum and s>=maximum then
+  lines[#lines+1]="Current trained skill cap reached. Check an appropriate profession trainer before crafting further."
+ else
+  lines[#lines+1]="Open the profession window and prefer available recipes with a favorable skill-up color."
+  lines[#lines+1]="Compare material cost per likely skill point before committing scarce reagents."
+  lines[#lines+1]="Check vendor-sold reagents and required tools before gathering."
+ end
+ lines[#lines+1]="Current skill "..s..(maximum and ("/"..maximum) or " (cap unknown)")
+ lines[#lines+1]="Recipe colors and skill-up probabilities must be verified in the live client."
+ return lines
+end
+function P.FormatNextSteps(skill,cap)
+ return table.concat(P.NextSteps(skill,cap),"\n")
+end
