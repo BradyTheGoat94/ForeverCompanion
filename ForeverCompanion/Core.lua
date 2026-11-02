@@ -164,7 +164,7 @@ local function render()
   content:ClearAllPoints()
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -72 or -5))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 96 or 24)))) end
-  if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
+  -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
   if nextQuestButton then if currentTab=="Quests" then nextQuestButton:Show() else nextQuestButton:Hide() end end
