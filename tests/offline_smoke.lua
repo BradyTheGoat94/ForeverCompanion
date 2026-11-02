@@ -691,3 +691,25 @@ assert(earlyMage:find("[LEVEL REACHED] Lv 4 Frostbolt",1,true),"Frostbolt milest
 assert(earlyMage:find("[UPCOMING] Lv 10 Frost Nova",1,true),"Frost Nova should be upcoming at level 4")
 local lateMage=table.concat(ForeverCompanionMageMilestoneLines(10),"\n")
 assert(lateMage:find("[LEVEL REACHED] Lv 10 Frost Nova",1,true),"Frost Nova milestone should unlock at level 10")
+
+-- Release gate: every advertised specialization must have actionable guidance.
+dofile("ForeverCompanion/SpecPlanner.lua")
+dofile("ForeverCompanion/SpecPlaybooks.lua")
+local specCount=0
+for class,choices in pairs(ForeverCompanionSpecs) do
+ local playbooks=ForeverCompanionSpecPlaybooks[class]
+ local priorities=ForeverCompanionSpecPriorityNotes[class]
+ assert(type(playbooks)=="table" and type(priorities)=="table","missing class playbooks: "..class)
+ for _,choice in ipairs(choices) do
+  local name=choice[1]
+  local steps=playbooks[name]
+  local notes=priorities[name]
+  assert(type(steps)=="table" and #steps>=5,"missing five-step playbook: "..class.." "..name)
+  assert(type(notes)=="table" and #notes>=2,"missing priority explanation: "..class.." "..name)
+  for _,step in ipairs(steps) do
+   assert(type(step)=="string" and #step>=24,"too-short step: "..class.." "..name)
+  end
+  specCount=specCount+1
+ end
+end
+assertEqual(specCount,28,"all published spec choices including Bear alternate")
