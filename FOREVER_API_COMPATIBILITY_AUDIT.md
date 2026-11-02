@@ -15,7 +15,7 @@ Reviewed 2026-11-02. **Status: conditional / not verified in a live client.** Th
 - Do not depend on legacy Classic globals (`GetSpellInfo`, `UnitAura`, `GetTalentInfo`, `CombatLogGetCurrentEventInfo`) merely because the content resembles Classic.
 - Do not infer Retail specializations from `GetSpecialization`. Forever's talent/legacy trees use `C_Traits` according to beta measurements; our spec previews are editorial recommendations, not a verified reading of active talent choices.
 - Unknown event registration may throw on this client. Core's `pcall(addon:RegisterEvent(...))` approach is appropriate; test whether each registered event actually fires.
-- SavedVariables loading was reported broken on early September beta builds. **Re-test persistence on the current client**, including cold start, reload, and relog. Do not promise saved plans/prices work until proven.
+- SavedVariables persistence had conflicting October beta reports: one tester reported loss after reload, another reported successful persistence. **Re-test persistence on the current client**, including cold start, reload, and relog. Do not promise saved plans/prices work until proven.
 - The addon uses `C_SpellBook` with runtime feature detection and `pcall`; spellbook scan status is only a confidence indicator, not evidence a skill is obtainable or the best rotation.
 - ProfessionScanner has modern `GetProfessions` / `GetProfessionInfo` detection and a legacy fallback. Confirm modern functions on the exact build; the fallback is not evidence Forever supports legacy skill-line globals.
 
