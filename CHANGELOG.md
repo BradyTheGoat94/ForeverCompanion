@@ -1,4 +1,12 @@
 ## 3.14.0-beta (develop, 2026-11-02; mocked-client verification only)
+### Dashboard mission-control improvements (develop, 2026-11-02)
+- The three progress metrics are now native, clickable navigation targets: XP opens Leveling, quest readiness opens Quests, and manual materials open Professions. Hover tooltips disclose data provenance and current values.
+- The welcome banner now summarizes actual available level, quest readiness, and manual material shortages. Missing/failed quest APIs are shown as unavailable or stale rather than treated as current progress.
+- Today's Focus displays an updating 0–4 completion counter and a thin gilded progress rail, driven by the existing per-character daily checklist and reset rules.
+- Quest recommendations expose observed zone/objective text in tooltips; profession shortcuts explicitly state that material counts are manual. All interactions remain addon-only and read-only with respect to the game.
+- Offline widget tests exercise progress navigation, tooltip fallbacks, source disclosures, and daily completion behavior. The illustrative offline dashboard PNG now checks and draws the new live widget strings.
+- These are mocked-client tests only, not proof of live Forever compatibility or final visual fidelity.
+
 - Added persistent, per-character quest priorities with a real Pin Focus / Unpin Focus control in the native Quest Journal.
 - Highlighted pinned rows with [PIN] badges, a pinned quest count in the journal summary, and a fourth sorting mode that puts pinned quests first.
 - Dashboard recommendations still prioritize ready-to-turn-in quests, then unfinished pinned quests. Clicking a recommendation focuses the corresponding quest in the addon before navigating.
