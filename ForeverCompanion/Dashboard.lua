@@ -244,12 +244,20 @@ function D.Render()
   setBar("Materials ready",stats and stats.materials>0 and stats.complete/stats.materials or nil,
     stats and stats.materials>0 and (stats.complete.."/"..stats.materials) or "N/A")
   local selected=planner and planner.GetSelected and planner.GetSelected()
-  if questSupported and selected and selected.title then
+  local firstReady
+  if questSupported and planner.GetLive then
+    for _,quest in ipairs(planner.GetLive()) do
+      if quest.complete then firstReady=quest; break end
+    end
+  end
+  if firstReady and firstReady.title then
+    values.step1:SetText("1. Ready to turn in: "..tostring(firstReady.title):sub(1,58))
+  elseif questSupported and selected and selected.title then
     values.step1:SetText("1. Quest focus: "..tostring(selected.title):sub(1,65))
   elseif questSupported then
     values.step1:SetText("1. Review your quest log for a new objective.")
   else
-    values.step1:SetText("1. Quest API not verified; use the manual quest planner.")
+    values.step1:SetText("1. Quest API unavailable; check the game log or manual notes.")
   end
   values.step2:SetText("2. Review "..tostring(class).." leveling and rotation priorities.")
   if stats and stats.missing>0 then
