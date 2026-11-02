@@ -41,6 +41,17 @@ function P.Done(prof,index,quantity)
   entry.done=math.floor(quantity)
   return true,"Updated crafted count for "..entry.name
 end
+function P.Move(prof,from,to)
+ local entries=list(prof)
+ from=tonumber(from); to=tonumber(to)
+ if not from or not to or from%1~=0 or to%1~=0 or not entries[from] or to<1 or to>#entries then
+  return false,"Invalid recipe position."
+ end
+ if from==to then return true,"Recipe already in that position." end
+ local entry=table.remove(entries,from)
+ table.insert(entries,to,entry)
+ return true,"Moved "..entry.name.." to priority "..to
+end
 function P.Remove(prof,index)
   local entries=list(prof); index=tonumber(index)
   if not index or not entries[index] then return false,"Recipe not found." end
@@ -124,6 +135,7 @@ SlashCmdList.FOREVERCOMPANIONRECIPES=function(msg)
   local ip,ii,ingredient,per=msg:match("^ingredient%s+([^|]+)%s*|%s*(%d+)%s*|%s*([^|]+)%s*|%s*(%d+)%s*$")
   local dp,di,dc=msg:match("^done%s+([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
   local rp,ri=msg:match("^remove%s+([^|]+)%s*|%s*(%d+)%s*$")
+  local mp,mfrom,mto=msg:match("^move%s+([^|]+)%s*|%s*(%d+)%s*|%s*(%d+)%s*$")
   local sp=msg:match("^show%s+(.+)$")
   local fp=msg:match("^forecast%s+(.+)$")
   local ok,result
@@ -131,8 +143,9 @@ SlashCmdList.FOREVERCOMPANIONRECIPES=function(msg)
   elseif ip then ok,result=P.Ingredient(ip,ii,ingredient,per)
   elseif dp then ok,result=P.Done(dp,di,dc)
   elseif rp then ok,result=P.Remove(rp,ri)
+  elseif mp then ok,result=P.Move(mp,mfrom,mto)
   elseif sp then result=P.Format(sp)
   elseif fp then result=P.FormatForecast(fp)
-  else result="Commands: /fcr add Profession | Recipe | Quantity; /fcr ingredient Profession | RecipeIndex | Material | PerCraft; /fcr done Profession | RecipeIndex | Crafted; /fcr remove Profession | RecipeIndex; /fcr show Profession; /fcr forecast Profession" end
+  else result="Commands: /fcr add Profession | Recipe | Quantity; /fcr ingredient Profession | RecipeIndex | Material | PerCraft; /fcr done Profession | RecipeIndex | Crafted; /fcr remove Profession | RecipeIndex; /fcr show Profession; /fcr forecast Profession; /fcr move Profession | FromIndex | ToIndex" end
   print("|cffffcc66Forever Companion Recipes:|r "..result)
 end
