@@ -139,6 +139,15 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local entry=handbook and handbook[classToken]
   values.icon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
   values.heroArt:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+  -- Tint the class motif with native class colors when exposed by the client.
+  local classColor=RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
+  if values.heroArt.SetVertexColor then
+    if classColor then
+      values.heroArt:SetVertexColor(classColor.r or 1,classColor.g or 1,classColor.b or 1)
+    else
+      values.heroArt:SetVertexColor(0.95,0.72,0.36)
+    end
+  end
   values.name:SetText(short(classLabel,25).."  |  Lv "..tostring(level or "?"))
   values.role:SetText("Preferred role: "..short(role or "Not selected",30))
   local band,number=nil,tonumber(level)
