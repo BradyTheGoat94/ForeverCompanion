@@ -16,9 +16,10 @@ def font(size,bold=False):
     except OSError:
         return ImageFont.load_default()
 F14,F17,F21,F28,F35=font(14),font(17),font(21,True),font(28,True),font(35,True)
+def read_rows(path):
+    return list(csv.DictReader(Path(path).open(encoding="utf-8"),delimiter="|"))
 def read(path):
-    rows=list(csv.DictReader(Path(path).open(encoding="utf-8"),delimiter="|"))
-    return [r["text"] for r in rows if r.get("text")]
+    return [r["text"] for r in read_rows(path) if r.get("text")]
 def find(strings,prefix,default="Unavailable"):
     return next((s for s in strings if s.startswith(prefix)),default)
 def draw_base(section):
@@ -54,7 +55,8 @@ def bar(d,x,y,width,fraction,color):
     if fraction is not None and fraction>0:
         d.rounded_rectangle((x,y,x+max(3,int(width*min(1,fraction))),y+12),radius=4,fill=color)
 def quest_preview():
-    strings=read("ui_quest_snapshot.txt")
+    rows=read_rows("ui_quest_snapshot.txt")
+    strings=[r["text"] for r in rows if r.get("text")]
     for heading in ("JOURNAL AT A GLANCE","FOCUSED OBJECTIVE"):
         if heading not in strings:
             raise SystemExit("Quest snapshot missing real UI heading: "+heading)
@@ -72,16 +74,32 @@ def quest_preview():
     frac=int(match.group(2))/int(match.group(1)) if match and int(match.group(1)) else None
     bar(d,cx+23,top+148,466,frac,(224,163,64))
     line(d,cx+552,top+78,find(strings,"Sample:","No focused quest"),53)
-    line(d,cx+552,top+118,find(strings,"In progress","No quest status"),52,MUTED)
+    line(d,cx+552,top+118,find(strings,"Ready to turn in",find(strings,"In progress","No quest status")),52,MUTED)
     line(d,cx+552,top+157,find(strings,"Illustrative objective","Objective unavailable"),50,GOLD)
     lower=top+225
     panel(d,cx,lower,1064,263,"ACTIVE QUEST JOURNAL")
     line(d,cx+23,lower+65,"Choose a quest to update the focus card; use filter and paging to explore.",100,MUTED)
-    quest_rows=[s for s in strings if "Sample: " in s and (s.startswith("  ") or s.startswith("> ") or s.startswith("[Ready]"))]
-    for i,value in enumerate(quest_rows[:6]):
+    # Use the actual native row widget hierarchy, not a fabricated list of
+    # hard-coded sample quests. Each visible row has title/zone/status children.
+    children={}
+    for widget in rows:
+        children.setdefault(widget.get("parent"),[]).append(widget)
+    quest_rows=[]
+    for widget in rows:
+        if widget.get("kind")!="Button" or widget.get("visible")!="1":
+            continue
+        labels=[item.get("text","") for item in children.get(widget["id"],[])
+                if item.get("kind")=="FontString"]
+        if len(labels)>=3 and labels[2] in ("READY","ACTIVE"):
+            quest_rows.append((labels[0],labels[1],labels[2]))
+    if not quest_rows:
+        raise SystemExit("Native quest journal rows missing from UI snapshot")
+    for i,(title,zone,status) in enumerate(quest_rows[:6]):
         yy=lower+103+i*35
         d.rounded_rectangle((cx+20,yy-4,cx+1042,yy+29),radius=3,fill=(34,43,55))
-        line(d,cx+36,yy,value,102)
+        line(d,cx+36,yy,title,59)
+        line(d,cx+650,yy,zone,22,MUTED)
+        line(d,cx+899,yy,status,12,GOLD if status=="READY" else MUTED)
     im.save("ui_quest_preview.png")
     print("Quest preview generated from",len(strings),"widget strings")
 def profession_preview():
