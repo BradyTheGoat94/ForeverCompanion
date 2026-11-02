@@ -39,11 +39,12 @@ d.rounded_rectangle((x,y,x+1360,y+804),radius=15,fill=(16,20,28),outline=goldDim
 d.rounded_rectangle((x+6,y+6,x+1354,y+798),radius=10,outline=(100,78,45),width=1)
 d.rectangle((x+12,y+12,x+1348,y+18),fill=(155,109,42))
 d.rectangle((x+14,y+22,x+1346,y+125),fill=(24,28,39))
-# Crest-shaped book/compass approximation; actual addon references a game icon.
+# Original native-UI FC heraldic monogram, approximated from actual widget labels.
 d.rounded_rectangle((x+29,y+42,x+103,y+116),radius=5,fill=(26,28,33),outline=gold,width=3)
 d.rounded_rectangle((x+35,y+48,x+97,y+110),radius=3,outline=goldDim,width=2)
-d.polygon([(x+65,y+55),(x+83,y+68),(x+79,y+94),(x+65,y+106),(x+51,y+94),(x+47,y+68)],outline=gold)
-d.line((x+65,y+60,x+65,y+100),fill=gold,width=2)
+if strings.count("FC")<2:
+    raise SystemExit("Native header/dashboard heraldic marks missing from mock widget tree")
+d.text((x+47,y+64),"FC",font=F27,fill=gold)
 d.text((x+121,y+37),find("Forever Companion","Forever Companion"),font=F37,fill=gold)
 d.text((x+123,y+88),find("Guides  -","Guides  -  Professions  -  Quests  -  Builds  -  More"),font=F16,fill=white)
 manifest=Path("ForeverCompanion/ForeverCompanion.toc").read_text(encoding="utf-8")
