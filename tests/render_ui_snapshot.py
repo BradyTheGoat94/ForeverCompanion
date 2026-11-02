@@ -13,6 +13,12 @@ required=["WELCOME TO FOREVER COMPANION","CHARACTER OVERVIEW","QUICK ACTIONS",
 missing=[s for s in required if s not in strings]
 if missing:
     raise SystemExit("Dashboard snapshot missing actual widgets: "+", ".join(missing))
+# Recommended steps must be actual buttons, not static decoration.
+button_ids={r["id"] for r in rows if r.get("kind")=="Button"}
+for prefix in ("1. ","2. ","3. "):
+    if not any(r.get("kind")=="FontString" and r.get("parent") in button_ids
+               and r.get("text","").startswith(prefix) for r in rows):
+        raise SystemExit("Recommended dashboard step is not a clickable widget: "+prefix)
 def find(prefix,default="Unavailable"):
     exact=next((s for s in strings if s==prefix),None)
     return exact if exact is not None else next((s for s in strings if s.startswith(prefix)),default)
@@ -34,7 +40,8 @@ d.rounded_rectangle((x+6,y+6,x+1354,y+798),radius=10,outline=(100,78,45),width=1
 d.rectangle((x+12,y+12,x+1348,y+18),fill=(155,109,42))
 d.rectangle((x+14,y+22,x+1346,y+125),fill=(24,28,39))
 # Crest-shaped book/compass approximation; actual addon references a game icon.
-d.ellipse((x+29,y+42,x+103,y+116),fill=(23,24,29),outline=gold,width=3)
+d.rounded_rectangle((x+29,y+42,x+103,y+116),radius=5,fill=(26,28,33),outline=gold,width=3)
+d.rounded_rectangle((x+35,y+48,x+97,y+110),radius=3,outline=goldDim,width=2)
 d.polygon([(x+65,y+55),(x+83,y+68),(x+79,y+94),(x+65,y+106),(x+51,y+94),(x+47,y+68)],outline=gold)
 d.line((x+65,y+60,x+65,y+100),fill=gold,width=2)
 d.text((x+121,y+37),find("Forever Companion","Forever Companion"),font=F37,fill=gold)
@@ -59,6 +66,11 @@ cw=1068
 def panel(px,py,pw,ph,title):
     d.rounded_rectangle((px,py,px+pw,py+ph),radius=8,fill=(22,28,37),outline=(110,87,51),width=2)
     d.rectangle((px+2,py+2,px+pw-2,py+6),fill=goldDim)
+    # Native addon panels now contain small gold corner inlays.
+    for dx in (8,pw-22):
+        d.rectangle((px+dx,py+9,px+dx+14,py+11),fill=goldDim)
+    d.rectangle((px+8,py+9,px+10,py+24),fill=goldDim)
+    d.rectangle((px+pw-10,py+9,px+pw-8,py+24),fill=goldDim)
     if title:
         d.text((px+20,py+17),title,font=F21,fill=gold)
 panel(cx,y+139,cw,115,"")
@@ -111,9 +123,11 @@ panel(cx,ly,524,214,"RECOMMENDED NEXT STEPS")
 panel(cx+536,ly,532,214,"TODAY'S FOCUS")
 for i,prefix in enumerate(("1. ","2. ","3. ")):
     val=find(prefix,"No recommendation available")
-    d.ellipse((cx+20,ly+61+i*46,cx+49,ly+90+i*46),outline=gold,width=2)
-    d.text((cx+29,ly+67+i*46),str(i+1),font=F13,fill=gold)
-    d.text((cx+62,ly+67+i*46),val[3:58],font=F16,fill=white)
+    by=ly+55+i*46
+    d.rounded_rectangle((cx+14,by,cx+510,by+41),radius=4,fill=(36,42,51),outline=goldDim,width=1)
+    d.ellipse((cx+24,by+9,cx+48,by+33),outline=gold,width=2)
+    d.text((cx+32,by+13),str(i+1),font=F13,fill=gold)
+    d.text((cx+61,by+11),val[3:58],font=F16,fill=white)
 focus=["Review active quests","Check leveling priorities","Review material goals","Check client diagnostics"]
 for i,name in enumerate(focus):
     label=next((v for v in strings if name in v),name)
