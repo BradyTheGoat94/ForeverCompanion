@@ -13,7 +13,7 @@ local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP"
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
-local classStripButtons={}
+ForeverCompanionClassStripButtons={}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local handbookIcon, handbookButtons={}, {}
@@ -94,7 +94,7 @@ local function toggleCheck(section, index)
 end
 -- Keep the large render function below Lua 5.1's 60-upvalue limit.
 function ForeverCompanionClassStripRender(tab,selectedToken)
-  for _,button in ipairs(classStripButtons) do
+  for _,button in ipairs(ForeverCompanionClassStripButtons) do
     if tab=="Leveling" then
       button:Show()
       local active=button.classToken==selectedToken
@@ -884,7 +884,7 @@ local function createUI()
       render()
     end)
     button:Hide()
-    classStripButtons[i]=button
+    ForeverCompanionClassStripButtons[i]=button
   end
   classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   classButton:SetSize(150, 26)
