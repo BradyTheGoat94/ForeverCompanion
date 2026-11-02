@@ -686,11 +686,11 @@ function ForeverCompanionQuickStartLines(classToken)
  local steps=type(class)=="table" and class[name]
  if type(steps)~="table" then return {} end
  local lines={"START HERE | "..name.." | 3 BEGINNER ACTIONS"}
- lines[#lines+1]="BEFORE PULL: check spellbook, equipped weapon, and active talents."
+ lines[#lines+1]="BEFORE PULL: check your spellbook, equipped weapon, and active talents; skip any ability you have not trained."
  for i=1,math.min(3,#steps) do
   lines[#lines+1]="PRACTICE "..i..": "..steps[i]
  end
- lines[#lines+1]="NEXT: use the sourced conditional priority below when your abilities are learned; this practice list is not a live DPS rotation."
+ lines[#lines+1]="NEXT: use the sourced conditional priority below when your abilities are learned; this practice list is not a live DPS rotation. If two instructions disagree, follow the sourced conditional priority."
  return lines
 end
 
