@@ -163,3 +163,12 @@ This addon is **not verified on the target client**. Use this checklist on the f
 114. Confirm checklist capacity and quantity overflow abort sync without partial modifications.
 115. Confirm preview never mutates material goals and no inventory or crafting API is invoked.
 116. Confirm profession switching shows correct recipe demand and owned quantities.
+
+## v3.2 spellbook availability
+117. Open Leveling with actual class and verify learned cooldown names match known spellbook entries.
+118. Confirm talent/version-qualified and compound candidate names remain unverified.
+119. Confirm unsupported spellbook APIs show an unavailable notice without Lua errors.
+120. Verify a previewed class does not falsely imply its spells are learned on the actual character.
+121. Verify spellbook scanning is read-only and never casts or activates abilities.
+122. Verify cooldown guidance remains usable when no spellbook entries are returned.
+123. Check long spellbook output scrolls in standard and compact layouts.
