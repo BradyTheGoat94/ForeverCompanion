@@ -19,6 +19,30 @@ ForeverCompanionData = {
     WARLOCK = {"Manage pet choice and damage-over-time spells.", "Coordinate Healthstones and crowd control."},
     DRUID = {"Choose gear and forms for your intended role.", "Prepare alternate equipment when switching roles."},
   },
+  roleAdvice = {
+    Tank = {
+      "Before a pull: confirm healer mana and mark a priority target.",
+      "Keep dangerous enemies facing away from the group; plan defensive cooldowns.",
+      "Explain unusual pulls briefly instead of assuming everyone knows the route."
+    },
+    Damage = {
+      "Focus the tank's target and avoid breaking crowd control.",
+      "Interrupt dangerous casts when your class can; save burst for priority enemies.",
+      "Manage threat, positioning and resources instead of chasing damage numbers."
+    },
+    Healer = {
+      "Tell the group when you need mana or a pause.",
+      "Prioritize survival and dispels; avoid standing in dangerous ground effects.",
+      "Agree on emergency cooldowns before difficult pulls."
+    }
+  },
+  beginnerTips = {
+    "Quest log: use the Quests tab to see active objectives and turn-in status.",
+    "Travel: group objectives by nearby zones when possible; no verified route optimization is available yet.",
+    "Inventory: repair and clear bags before long dungeon or quest sessions.",
+    "Group play: tell teammates your role and confirm who handles interrupts and crowd control.",
+    "Progress: check your class trainer and profession trainer when returning to town."
+  },
   dungeons = {
     {"Deadmines", "Plan patrols, interrupts, and crowd control."},
     {"Shadowfang Keep", "Manage caster pulls and line of sight."},
