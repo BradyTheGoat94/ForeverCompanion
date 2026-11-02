@@ -107,6 +107,9 @@ local function render()
       if priorities[rotationDetail] then
         lines[#lines+1]="FOCUSED PRIORITY: "..priorities[rotationDetail]
       end
+      if ForeverCompanionFormatCooldowns then
+        lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
+      end
       lines[#lines+1]="General reference only; verify abilities and talents on Forever."
     end
     local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
@@ -476,7 +479,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v2.1.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v2.2.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
