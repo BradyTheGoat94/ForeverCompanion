@@ -119,6 +119,15 @@ end
 local function focusState()
   local db=getDB()
   if type(db.dashboardFocus)~="table" then db.dashboardFocus={} end
+  -- The focus list represents a day, not a permanent achievement checklist.
+  -- If the client does not expose a usable date, preserve existing choices.
+  if type(date)=="function" then
+    local ok,key=pcall(date,"%Y-%m-%d")
+    if ok and type(key)=="string" and key:match("^%d%d%d%d%-%d%d%-%d%d$") then
+      if db.dashboardFocusDay and db.dashboardFocusDay~=key then db.dashboardFocus={} end
+      db.dashboardFocusDay=key
+    end
+  end
   return db.dashboardFocus
 end
 local function setCompact(isCompact)
