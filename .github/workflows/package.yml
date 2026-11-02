@@ -42,6 +42,10 @@ jobs:
             ui_profession_snapshot.txt
             ui_quest_preview.png
             ui_profession_preview.png
+            ui_dungeon_snapshot.txt
+            ui_pvp_snapshot.txt
+            ui_dungeon_preview.png
+            ui_pvp_preview.png
           if-no-files-found: ignore
       - name: Validate manifest
         run: |
