@@ -262,6 +262,13 @@ assertEqual(guarded[1].name,"Broken","valid profession names preserved")
 ForeverCompanionProfessionScanner.Read=function() return {{skill=20,maxSkill=75}} end
 local unnamed=ForeverCompanionProfessionProgress.Overview()
 assertEqual(unnamed[1].name,"Unknown profession","missing profession name uses safe label")
+ForeverCompanionProfessionScanner.Read=function() error("Client API exception") end
+local failed,why=ForeverCompanionProfessionProgress.Overview()
+assertEqual(failed,nil,"exceptional profession API must not crash overview")
+assert(type(why)=="string","exceptional profession API must explain unavailable state")
+assert(ForeverCompanionProfessionProgress.ForProfession("Alchemy"):find("unavailable",1,true),"profession guide handles API exception")
+ForeverCompanionProfessionScanner.Read=function() return {{name="Alchemy",skill=0/0,maxSkill=225}} end
+assert(ForeverCompanionProfessionProgress.ForProfession("Alchemy"):find("skill level unavailable",1,true),"invalid skill should not be shown as valid")
 ForeverCompanionProfessionScanner.Read=originalRead
 -- Sparse modern profession slots must not disappear after the first nil.
 GetProfessions=function() return 1,nil,3,nil,5 end
