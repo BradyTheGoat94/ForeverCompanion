@@ -47,3 +47,12 @@ This addon is **not verified on the target client**. Use this checklist on the f
 26. Choose Tank, Damage and Healer where supported; verify role-specific guide notes.
 27. Verify focus text does not overlap Previous/Next buttons at compact and expanded heights.
 28. Verify no quest data is modified by filter changes or tab switches.
+
+## v1.0 handbook regression gates
+29. Open Leveling for each of the nine classes; confirm specialization overview and icon load without Lua errors.
+30. Open Professions and switch through all nine professions; verify title, icon, pairing and five-stage progression text.
+31. Confirm the AdvancedGuides.lua file loads before Core.lua in the manifest.
+32. Test a class preview and Auto Class restore while on the Leveling tab.
+33. Confirm generic guidance is not presented as verified Forever-specific talent, skill, recipe or material data.
+34. Inspect the long Leveling and Professions pages for scrolling, clipping, and button overlap in compact mode.
+35. Confirm the profession handbook and manual profession preference remain separate.
