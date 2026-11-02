@@ -221,6 +221,7 @@ local function render()
     lines = {"LOOT ATLAS"}
     if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
       lines[#lines+1]=ForeverCompanionLoot.Format()
+      lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
     else
       lines[#lines+1]="Loot reference is unavailable."
     end
@@ -1315,7 +1316,27 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
-  if msg == "help" then say("/fc, /fc open <section>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  local wish=msg:match("^wish%s+(.+)$")
+  if wish then
+    if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end
+    local record=ForeverCompanionLoot.Find(wish)
+    if not record then say("Item not found in the sourced loot catalog."); return end
+    local added=ForeverCompanionLoot.ToggleWish(DB,record.item)
+    say((added and "Wishlisted: " or "Removed from wishlist: ")..record.item)
+    currentTab="Loot"; render(); window:Show(); return
+  end
+  local lootQuery=msg:match("^loot%s+(.+)$")
+  if lootQuery then
+    if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end
+    local matches=ForeverCompanionLoot.Search(lootQuery)
+    say("Loot search: "..#matches.." match(es).")
+    for i=1,math.min(#matches,8) do
+      local item=matches[i]
+      say(item.item.." — "..item.boss.." / "..item.dungeon.." ["..item.status.."]")
+    end
+    currentTab="Loot"; render(); window:Show(); return
+  end
   local requested=msg:match("^open%s+(.+)$") or msg
   if openSection(requested) then window:Show(); return end
   if msg=="status" then
