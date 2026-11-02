@@ -18,12 +18,13 @@ local function safeNumber(value)
 end
 local function readModern()
   if type(GetProfessions)~="function" or type(GetProfessionInfo)~="function" then return nil end
-  local ok,a,b,c,d,e=pcall(GetProfessions)
+  local ok,a,b,c,d,e,f=pcall(GetProfessions)
   if not ok then return nil end
-  local slots={a,b,c,d,e}
+  local slots={a,b,c,d,e,f}
   local results,seen={},{}
-  -- Numeric iteration is intentional: ipairs stops at the first missing slot.
-  for i=1,5 do
+  -- Modern clients expose up to six slots (two primaries, archaeology,
+  -- fishing, cooking, first aid); nil holes must not truncate iteration.
+  for i=1,6 do
     local index=slots[i]
     if type(index)=="number" and index>=1 and index<=100 and not seen[index] then
       seen[index]=true
