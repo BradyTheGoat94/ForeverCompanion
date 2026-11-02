@@ -2,8 +2,9 @@
 ## Title: Forever Companion
 ## Notes: Class-aware leveling and dungeon reference (prelaunch, client API unverified)
 ## Author: Forever Companion Contributors
-## Version: 0.9.0-beta
+## Version: 1.0.0-beta
 ## SavedVariablesPerCharacter: ForeverCompanionDB
 GuideData.lua
+AdvancedGuides.lua
 QuestPlanner.lua
 Core.lua
