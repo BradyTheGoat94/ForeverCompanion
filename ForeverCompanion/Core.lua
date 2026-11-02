@@ -579,8 +579,19 @@ local function render()
       lines[#lines+1] = "Healer: plan mana, dispels and recovery after unavoidable damage."
       lines[#lines+1] = "Damage: respect threat, interrupt assigned casts and avoid hazards."
       lines[#lines+1] = "FOREVER BOSS DATABASE: Pending verified encounter names and mechanics."
-      lines[#lines+1] = "GENERAL CLASSIC DUNGEON NOTES (NOT VERIFIED FOREVER LOOT DATA)"
-      for _, entry in ipairs(DATA.dungeons) do lines[#lines+1] = entry[1]..": "..entry[2] end
+      lines[#lines+1] = "DUNGEON REFERENCE / GENERAL CLASSIC EXAMPLES"
+      lines[#lines+1] = "These dungeon names and tips are historical examples; availability in Forever is unconfirmed."
+      for _,entry in ipairs(DATA.dungeons or {}) do
+        if type(entry)=="table" and type(entry[1])=="string" then
+          lines[#lines+1] = "DUNGEON: "..entry[1].." / UNVERIFIED FOR FOREVER"
+          lines[#lines+1] = "ENTRY / LEVEL / LOOT: Pending official or live-client confirmation."
+          lines[#lines+1] = "BOSSES: Names, abilities and encounter phases pending verification."
+          if type(entry[2])=="string" then lines[#lines+1] = "General preparation: "..entry[2] end
+          lines[#lines+1] = "ROLE CHECK: Tank manages threat; healer plans dispels; DPS coordinates interrupts."
+        end
+      end
+      lines[#lines+1] = "No boss-specific mechanic, loot table or dungeon unlock is claimed as verified."
+
     elseif currentTab == "Professions" then
       if ForeverCompanionProfessionProgress and ForeverCompanionProfessionProgress.FormatOverview then
         lines[#lines+1]=ForeverCompanionProfessionProgress.FormatOverview()
