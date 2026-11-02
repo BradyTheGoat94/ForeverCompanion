@@ -74,6 +74,44 @@ function P.Stats()
   end
   return {lists=lists,materials=materials,missing=missing,complete=complete}
 end
+-- Ranked manual shopping needs. These are not bag scans or market prices;
+-- each profession's goals are kept separate to avoid false deduplication.
+function P.TopShortages(limit)
+  local results={}
+  for profession,entries in pairs(db()) do
+    if type(profession)=="string" and type(entries)=="table" then
+      for _,item in ipairs(entries) do
+        if type(item)=="table" and type(item.name)=="string" then
+          local needed=tonumber(item.needed)
+          local owned=tonumber(item.owned)
+          if needed and owned and needed>=0 and owned>=0 and needed<=999999 and owned<=999999 then
+            local missing=math.max(0,math.floor(needed)-math.floor(owned))
+            if missing>0 then
+              results[#results+1]={profession=profession,name=item.name,missing=missing}
+            end
+          end
+        end
+      end
+    end
+  end
+  table.sort(results,function(a,b)
+    if a.missing~=b.missing then return a.missing>b.missing end
+    if a.profession~=b.profession then return a.profession<b.profession end
+    return a.name<b.name
+  end)
+  limit=math.max(1,math.min(10,math.floor(tonumber(limit) or 5)))
+  while #results>limit do table.remove(results) end
+  return results
+end
+function P.ShoppingSummary(limit)
+  local entries=P.TopShortages(limit)
+  if #entries==0 then return "No outstanding manual material shortages." end
+  local lines={"MANUAL SHOPPING PRIORITIES (not a bag scan)"}
+  for i,item in ipairs(entries) do
+    lines[#lines+1]=i..". "..item.profession..": "..item.name.." x"..item.missing
+  end
+  return table.concat(lines,"\n")
+end
 function P.Summary()
   local stats=P.Stats()
   return "CRAFTING GOALS: "..stats.lists.." profession lists | "..stats.complete.."/"..stats.materials.." materials ready | "..stats.missing.." units remaining"
@@ -129,7 +167,8 @@ SlashCmdList.FOREVERCOMPANIONMATERIALS=function(msg)
   elseif np then ok,answer=P.SetNeeded(np,ni,nn)
   elseif cp then ok,answer=P.ClearCompleted(cp)
   elseif msg=="summary" then answer=P.Summary()
-  else answer="Commands: /fcm add Profession | Material | Needed | Owned; /fcm owned Profession | Index | Count; /fcm needed Profession | Index | Count; /fcm remove Profession | Index; /fcm clear Profession; /fcm summary" end
+  elseif msg=="shopping" then answer=P.ShoppingSummary(5)
+  else answer="Commands: /fcm add Profession | Material | Needed | Owned; /fcm owned Profession | Index | Count; /fcm needed Profession | Index | Count; /fcm remove Profession | Index; /fcm clear Profession; /fcm summary; /fcm shopping" end
   print("|cffffcc66Forever Companion Materials:|r "..answer)
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
