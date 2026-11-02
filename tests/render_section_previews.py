@@ -223,7 +223,7 @@ def settings_preview():
     panel(d,cx,top,517,240,"PREFERENCES & CHARACTER")
     panel(d,cx+529,top,535,240,"CLIENT API VISIBILITY")
     left=("Detected:","Preferred role:","Layout:","Settings are stored","Preview does not")
-    right=("Client:","Quest log:","Professions:","Spellbook:","Experience:")
+    right=("Client:","Quest log:","Professions: API","Spellbook:","Experience:")
     for i,prefix in enumerate(left):
         line(d,cx+23,top+73+i*33,find(strings,prefix,"Not available"),53,
              GOLD if prefix=="Layout:" else PALE)
