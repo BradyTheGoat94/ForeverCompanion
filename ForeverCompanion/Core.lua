@@ -5,7 +5,7 @@ local ADVANCED = ForeverCompanionAdvanced
 local ROTATIONS = ForeverCompanionRotations
 local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
-local rotationButton, rotationIcon, rotationDescription
+local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab
@@ -110,6 +110,7 @@ local function render()
       if ForeverCompanionFormatCooldowns then
         lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
       end
+      if ForeverCompanionSpecPlanner then lines[#lines+1]=ForeverCompanionSpecPlanner.Format(classToken(),mode) end
       lines[#lines+1]="General reference only; verify abilities and talents on Forever."
     end
     local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
