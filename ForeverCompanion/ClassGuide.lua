@@ -298,11 +298,19 @@ function Guide.Render(classToken,classLabel,level,role,mode)
       local ok,result=pcall(ForeverCompanionQuickStartLines,classToken)
       if ok and type(result)=="table" then quick=result end
     end
-    local first=type(quick)=="table" and quick[3]
-    if type(first)=="string" and first:find("PRACTICE 1:",1,true)==1 then
+    local first
+    if type(quick)=="table" then
+      for _,line in ipairs(quick) do
+        if type(line)=="string" and line:find("PRACTICE 1:",1,true)==1 then
+          first=line
+          break
+        end
+      end
+    end
+    if first then
       values.practiceHint:SetText(short(first,51))
     else
-      values.practiceHint:SetText("HOVER FOR 3 PRACTICE STEPS")
+      values.practiceHint:SetText("HOVER FOR PRACTICE STEPS")
     end
   end
   local fraction=safeXP()
