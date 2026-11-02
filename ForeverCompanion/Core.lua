@@ -243,7 +243,10 @@ local function render()
         end
       end
       if priorities[rotationDetail] then
-        lines[#lines+1]="FOCUSED PRIORITY: "..priorities[rotationDetail]
+        lines[#lines+1]="FOCUSED PRIORITY "..rotationDetail.." / "..#priorities..": "..priorities[rotationDetail]
+        lines[#lines+1]="WHY THIS MATTERS: This is a decision reminder, not a fixed cast sequence. Check your talents, resources, target count, threat, and the live encounter before acting."
+        lines[#lines+1]="WHEN TO ADJUST: If the listed ability is unavailable, unsafe, or inappropriate for your role, skip it and continue with the next relevant priority."
+        lines[#lines+1]="ROTATION STATUS: Illustrative Classic-era guidance; not yet validated against live WoW Forever combat mechanics."
       end
       if ForeverCompanionFormatCooldowns then
         lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
