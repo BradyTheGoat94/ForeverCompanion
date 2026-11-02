@@ -279,6 +279,19 @@ ForeverCompanionSourcedPriorities={
   },
  },
  PRIEST={
+  Discipline={
+   source="https://www.wowhead.com/forever/guide/classes/priest/discipline/rotation-cooldowns-pve-healer",
+   reviewed="Wowhead Oct 30, 2026",
+   rules={
+    "1. Shield the active tank before expected damage if Weakened Soul allows it.",
+    "2. Use Penance on an injured ally when trained and ready.",
+    "3. Maintain Renew where sustained damage warrants it.",
+    "4. Use Heal for remaining damage, Greater Heal for bigger deficits; cancel casts that would overheal.",
+    "5. For multiple injured party members use Prayer of Healing; shield someone facing imminent death.",
+    "6. Pair Inner Focus with a costly Prayer of Healing or Greater Heal when appropriate.",
+    "7. Downrank thoughtfully; spells learned over 18 levels ago suffer a penalty.",
+   },
+  },
   Shadow={
    source="https://www.wowhead.com/forever/guide/classes/shadow/priest/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/shadow-priest-ranged-dps-pve-guide/",
@@ -337,6 +350,20 @@ ForeverCompanionSourcedPriorities={
   },
  },
  SHAMAN={
+  Restoration={
+   source="https://www.wowhead.com/forever/guide/classes/shaman/restoration/rotation-cooldowns-pve-healer",
+   corroboration="https://www.icy-veins.com/wow-forever/restoration-shaman-healer-pve-guide",
+   reviewed="Wowhead Nov 1; Icy Veins Oct 28, 2026",
+   rules={
+    "1. Maintain assigned party buff totems and place Searing Totem before safe pulls.",
+    "2. For one injured ally, apply talented Riptide and cast efficient Healing Wave.",
+    "3. For several injured allies, use Chain Heal on a Riptide target for its bonus.",
+    "4. Downrank heals when safe to preserve Mana.",
+    "5. Pair Nature's Swiftness with Healing Wave to rescue someone in immediate danger.",
+    "6. Use Mana Tide Totem before group Mana is depleted, without wasting its restoration.",
+    "7. Only add Magma Totem and Fire Nova damage if the group is safe and Mana permits.",
+   },
+  },
   Elemental={
    source="https://www.wowhead.com/forever/guide/classes/shaman/elemental/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 29, 2026; single-target and AoE priorities",
@@ -394,6 +421,20 @@ ForeverCompanionSourcedPriorities={
   },
  },
  PALADIN={
+  Holy={
+   source="https://www.wowhead.com/forever/guide/classes/paladin/holy/rotation-cooldowns-pve-healer",
+   corroboration="https://www.icy-veins.com/wow-forever/holy-paladin-healer-pve-guide/",
+   reviewed="Wowhead Oct 29; Icy Veins Oct 20, 2026",
+   rules={
+    "1. Maintain assigned Blessing and Aura before pulls.",
+    "2. Use Flash of Light for moderate, urgent spot healing.",
+    "3. Use Holy Light for large missing health when the target can survive its cast.",
+    "4. Downrank Holy Light when efficient healing will suffice.",
+    "5. Use talented Holy Shock for an emergency instant heal; Light's Vigil is not expected at level 30.",
+    "6. Cleanse dangerous effects and use Blessing of Protection to prevent deaths.",
+    "7. Only contribute damage if allies are safe and Mana is sufficient.",
+   },
+  },
   Retribution={
    source="https://www.icy-veins.com/wow-forever/retribution-paladin-melee-dps-pve-guide",
    corroboration="https://www.wowhead.com/forever/guide/classes/paladin/retribution/level-30-dps-overview",
