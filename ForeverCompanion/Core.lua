@@ -961,12 +961,8 @@ local function createUI()
     row.label:SetWidth(112)
     row.label:SetJustifyH("CENTER")
     row.label:SetTextColor(0.95,0.88,0.72)
-    row:SetScript("OnEnter",function(self)
-      if self.bg then colorTexture(self.bg,0.19,0.17,0.13,1) end
-    end)
-    row:SetScript("OnLeave",function(self)
-      if self.bg then colorTexture(self.bg,0.105,0.13,0.18,1) end
-    end)
+    -- Render() owns the selected tile palette; do not override it with
+    -- competing hover scripts. The tooltip is installed during Render().
     row:Hide()
     rotationRows[i]=row
   end
