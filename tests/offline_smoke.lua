@@ -571,3 +571,15 @@ assert(diagnostic:find("These checks show API presence only",1,true),"diagnostic
 GetBuildInfo=function() return "1.60.1","12345","",99999 end
 assert(ForeverCompanionDiagnostics.Collect():find("Interface match: NO",1,true),"interface mismatch warning")
 GetBuildInfo=previousBuildInfo
+
+-- Every beginner class guide must name concrete actions, not only generic advice.
+local beginnerActions={
+ WARRIOR="Heroic Strike",PALADIN="Judgement",HUNTER="Serpent Sting",
+ ROGUE="Sinister Strike",PRIEST="Shadow Word: Pain",SHAMAN="Lightning Bolt",
+ MAGE="Frostbolt",WARLOCK="Corruption",DRUID="Claw"
+}
+for class,spell in pairs(beginnerActions) do
+ local steps=ForeverCompanionRotations[class] and ForeverCompanionRotations[class].leveling
+ assert(type(steps)=="table" and #steps>=4,"missing beginner steps: "..class)
+ assert(table.concat(steps," "):find(spell,1,true),"missing concrete spell priority: "..class)
+end
