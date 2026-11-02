@@ -78,6 +78,18 @@ assertEqual(ForeverCompanionQuestPlanner.Overview().remaining,0,"quest summary r
 assertEqual(ForeverCompanionQuestPlanner.Overview().zones[1].zone,"Test Zone","quest zone summary")
 assert(ForeverCompanionQuestPlanner.FormatOverview():find("1 active",1,true),"quest overview should show live totals")
 assertEqual(ForeverCompanionQuestPlanner.GetSort(),"zone","default quest sort")
+local planner=ForeverCompanionQuestPlanner
+assertEqual(planner.PinnedCount(),0,"initial pinned count")
+local pinnedOK=planner.TogglePin(1)
+assertEqual(pinnedOK,true,"pin first live quest")
+assertEqual(planner.IsPinned(planner.GetLive()[1]),true,"pin saved by quest ID")
+assertEqual(planner.PinnedCount(),1,"active pin count")
+assertEqual(planner.Overview().pinned,1,"overview pin count")
+assertEqual(planner.Sync(),true,"rescan while pinned")
+assertEqual(planner.IsPinned(planner.GetLive()[1]),true,"pin survives rescan")
+assertEqual(planner.TogglePin(0),false,"invalid pin index")
+assertEqual(planner.TogglePin(1),true,"unpin first quest")
+assertEqual(planner.PinnedCount(),0,"unpin clears active priority")
 SlashCmdList.FOREVERCOMPANIONQUEST("sort")
 assertEqual(ForeverCompanionQuestPlanner.GetSort(),"ready","slash quest sort")
 C_QuestLog.GetNumQuestLogEntries=function() error("simulated temporary failure") end
@@ -129,6 +141,13 @@ C_QuestLog={
 GetZoneText=function() return "Westfall" end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"mixed-zone quest scan")
 assertEqual(ForeverCompanionQuestPlanner.HasZoneMetadata(),true,"mixed zone metadata")
+local pinnedOK2=ForeverCompanionQuestPlanner.TogglePin(2)
+assertEqual(pinnedOK2,true,"pin second quest in mixed-zone fixture")
+ForeverCompanionDB.questSort="pinned"
+assertEqual(ForeverCompanionQuestPlanner.GetVisible()[1].index,2,"pinned sort must prioritize pinned quest")
+assert(ForeverCompanionQuestPlanner.Recommend():find("Pinned priority:",1,true),"pinned quest should be recommended when nothing ready")
+assertEqual(ForeverCompanionQuestPlanner.TogglePin(2),true,"unpin mixed-zone fixture")
+ForeverCompanionDB.questSort="zone"
 assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].zone,"Unspecified zone","missing zone must not be fabricated")
 ForeverCompanionQuestPlanner.CycleFilter() -- all -> ready
 ForeverCompanionQuestPlanner.CycleFilter() -- ready -> zone
