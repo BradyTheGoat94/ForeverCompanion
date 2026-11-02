@@ -122,7 +122,7 @@ function Planner.Sync()
 end
 function Planner.AutoCount() return auto.lastCount end
 function Planner.FormatAuto()
-  local result={"LIVE QUEST LOG (read-only)", "Automatically refreshes from supported quest-log APIs.", "Quests are detected from the game; no manual entry required."}
+  local result={"ACTIVE QUESTS", "Automatically detected from your quest log."}
   if not auto.scanned then
     result[#result+1]="Waiting for the first quest-log scan."
   elseif not auto.supported then
@@ -130,9 +130,24 @@ function Planner.FormatAuto()
   elseif #auto.entries==0 then
     result[#result+1]="No active quests in the quest log."
   else
-    for i,q in ipairs(auto.entries) do
-      result[#result+1]=(q.complete and "[Ready] " or "[Active] ")..q.title..(q.zone and " ("..q.zone..")" or "")
-      for j=1,math.min(#q.objectives,5) do result[#result+1]="    "..q.objectives[j] end
+    local groups={}
+    local names={}
+    local ready=0
+    for _,q in ipairs(auto.entries) do
+      local zone=q.zone or "Other quests"
+      if not groups[zone] then groups[zone]={}; names[#names+1]=zone end
+      groups[zone][#groups[zone]+1]=q
+      if q.complete then ready=ready+1 end
+    end
+    table.sort(names)
+    result[#result+1]=#auto.entries.." active  |  "..ready.." ready to turn in"
+    for _,zone in ipairs(names) do
+      result[#result+1]="\n"..string.upper(zone)
+      table.sort(groups[zone],function(a,b) return a.title<b.title end)
+      for _,q in ipairs(groups[zone]) do
+        result[#result+1]=(q.complete and "[Ready] " or "[ ] ")..q.title
+        for j=1,math.min(#q.objectives,4) do result[#result+1]="  - "..q.objectives[j] end
+      end
     end
   end
   return table.concat(result,"\n")
