@@ -108,6 +108,17 @@ GetZoneText=nil
 GetNumQuestLogEntries=function() error("simulated legacy API outage") end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"legacy scan outage")
 assertEqual(ForeverCompanionQuestPlanner.IsSnapshotStale(),true,"legacy cached snapshot stale")
+-- Class planning references should be substantial and distinct, not duplicated filler.
+dofile("ForeverCompanion/AdvancedGuides.lua")
+local distinct={}
+local classCount=0
+for class,guide in pairs(ForeverCompanionAdvanced.classes) do
+  classCount=classCount+1
+  assert(#guide.sections>=7,"class guide needs actionable reference details: "..class)
+  assert(not distinct[guide.sections[1]],"duplicated first class guide tip")
+  distinct[guide.sections[1]]=true
+end
+assertEqual(classCount,9,"original class guide coverage")
 -- Spec selection remains a manual preview; it must never query or change talents.
 dofile("ForeverCompanion/SpecPlanner.lua")
 local first=ForeverCompanionSpecPlanner.Get("WARRIOR")
