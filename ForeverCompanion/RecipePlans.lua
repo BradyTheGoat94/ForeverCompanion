@@ -48,6 +48,49 @@ function P.Remove(prof,index)
   table.remove(entries,index)
   return true,"Removed "..name
 end
+-- Summarize recipe demand against manually tracked material inventory.
+-- This never reads bags or infers recipes from a server database.
+function P.MaterialForecast(prof)
+ local aggregate={}
+ local entries=list(prof)
+ for _,recipe in ipairs(entries) do
+  local remaining=math.max(0,(tonumber(recipe.quantity) or 0)-(tonumber(recipe.done) or 0))
+  for _,ingredient in ipairs(recipe.ingredients or {}) do
+   local name=trim(ingredient.name)
+   local key=name:lower()
+   if name~="" then
+    local row=aggregate[key]
+    if not row then row={name=name,required=0,owned=0,shortage=0}; aggregate[key]=row end
+    row.required=row.required+remaining*math.max(0,tonumber(ingredient.count) or 0)
+   end
+  end
+ end
+ local materials=ForeverCompanionCraftingPlanner
+ local tracked=materials and materials.GetEntries and materials.GetEntries(prof) or {}
+ for _,item in ipairs(tracked) do
+  local row=aggregate[trim(item.name):lower()]
+  if row then row.owned=math.max(0,tonumber(item.owned) or 0) end
+ end
+ local rows={}
+ for _,row in pairs(aggregate) do
+  row.shortage=math.max(0,row.required-row.owned)
+  rows[#rows+1]=row
+ end
+ table.sort(rows,function(a,b) if a.shortage==b.shortage then return a.name<b.name end return a.shortage>b.shortage end)
+ return rows
+end
+
+function P.FormatForecast(prof)
+ local rows=P.MaterialForecast(prof)
+ local lines={"CRAFTING MATERIAL FORECAST (MANUAL INVENTORY)"}
+ if #rows==0 then lines[#lines+1]="No ingredient demand; add recipe goals and per-craft materials with /fcr." end
+ for _,row in ipairs(rows) do
+  lines[#lines+1]=row.name..": need "..row.required..", tracked owned "..row.owned..", shortage "..row.shortage
+ end
+ lines[#lines+1]="Owned quantities are manually entered, not live bag counts. Recipe ingredient lists are user-supplied."
+ return table.concat(lines,"\\n")
+end
+
 function P.Format(prof)
   local entries=list(prof)
   local lines={"RECIPE GOALS (MANUALLY ENTERED)"}
