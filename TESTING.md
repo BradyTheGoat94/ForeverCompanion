@@ -280,3 +280,9 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Try `/fcq pin selected`, `/fcq pin 1`, `/fcq pins` and `/fcq clearpins`. Check that an invalid index fails safely, and that the 100-pin limit can be cleared without deleting manual notes.
 - Make the quest API temporarily unavailable or test with no recognized quest API; confirm the addon marks cached data as stale rather than claiming live quest tracking. Pins must never accept, abandon, complete, share or set game quest tracking.
 - Compare the mock-derived `ui_quest_preview.png` with an **actual in-game screenshot** for toolbar alignment, text clipping, compact layout, and gold row highlights. The preview itself does not establish compatibility.
+
+### Manual shopping priorities (v3.14 beta)
+
+- Track two or more materials with different required/owned quantities under different professions. Run `/fcm shopping` and confirm the five largest shortages are listed with correct profession names, stable ordering and no invented prices.
+- Confirm the Dashboard's third recommendation names the largest shortage, then update the owned quantity with `/fcm owned` and verify the recommendation changes or disappears when the goal is complete.
+- Confirm the Professions handbook's shopping summary is consistent with the manual tracker and remains readable in compact mode. It must not imply live bag, recipe or auction-house data.
