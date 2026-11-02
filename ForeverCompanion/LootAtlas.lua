@@ -42,6 +42,39 @@ for _,entry in ipairs(betaDrops) do
     itemLevel=entry[5],status="Community beta report; unverified in live client",
     source="https://60forever.com/"})
 end
+function Loot.Find(itemName)
+  if type(itemName)~="string" then return nil end
+  for _,record in ipairs(Loot.records) do
+    if record.item:lower()==itemName:lower() then return record end
+  end
+  return nil
+end
+function Loot.Wishlist(db)
+  if type(db)~="table" then return {} end
+  if type(db.lootWishlist)~="table" then db.lootWishlist={} end
+  return db.lootWishlist
+end
+function Loot.ToggleWish(db,itemName)
+  local record=Loot.Find(itemName)
+  if not record then return false,"unknown loot item" end
+  local wishes=Loot.Wishlist(db)
+  local key=record.item
+  wishes[key]=not wishes[key] or nil
+  return wishes[key]==true
+end
+function Loot.WishlistSummary(db)
+  local wishes=Loot.Wishlist(db)
+  local lines={"LOOT WISHLIST / PER CHARACTER"}
+  local count=0
+  for _,record in ipairs(Loot.records) do
+    if wishes[record.item] then
+      count=count+1
+      lines[#lines+1]=record.item.." — "..record.boss.." ("..record.dungeon..")"
+    end
+  end
+  if count==0 then lines[#lines+1]="No saved targets. Add a sourced item with /fc wish <item name>." end
+  return table.concat(lines,"\\n")
+end
 function Loot.Search(query)
   local results={}
   local term=type(query)=="string" and query:lower() or ""
