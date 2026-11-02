@@ -9,8 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-local lootSearchBox, lootWishButton, lootPrevButton, lootNextButton
-local lootSearchQuery, lootSelectedIndex = "", 1
+local lootUI = {query="", selectedIndex=1}
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -113,24 +112,24 @@ function ForeverCompanionClassStripRender(tab,selectedToken)
 end
 local function render()
   if not window or not DB then return end
-  if lootSearchBox then
+  if lootUI.searchBox then
     if currentTab=="Loot" then
-      lootSearchBox:Show()
-      lootWishButton:Show()
-      local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootSearchQuery) or {}
-      if lootSelectedIndex>#matches then lootSelectedIndex=math.max(1,#matches) end
-      local selected=matches[lootSelectedIndex]
-      lootWishButton:SetText(selected and ("Wishlist: "..selected.item) or "Wishlist: no match")
-      lootWishButton:SetEnabled(selected~=nil)
-      lootPrevButton:SetText("Previous ("..lootSelectedIndex.."/"..#matches..")")
-      lootNextButton:SetText("Next")
-      lootPrevButton:SetEnabled(lootSelectedIndex>1)
-      lootNextButton:SetEnabled(lootSelectedIndex<#matches)
-      lootPrevButton:Show(); lootNextButton:Show()
+      lootUI.searchBox:Show()
+      lootUI.wishButton:Show()
+      local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootUI.query) or {}
+      if lootUI.selectedIndex>#matches then lootUI.selectedIndex=math.max(1,#matches) end
+      local selected=matches[lootUI.selectedIndex]
+      lootUI.wishButton:SetText(selected and ("Wishlist: "..selected.item) or "Wishlist: no match")
+      lootUI.wishButton:SetEnabled(selected~=nil)
+      lootUI.prevButton:SetText("Previous ("..lootUI.selectedIndex.."/"..#matches..")")
+      lootUI.nextButton:SetText("Next")
+      lootUI.prevButton:SetEnabled(lootUI.selectedIndex>1)
+      lootUI.nextButton:SetEnabled(lootUI.selectedIndex<#matches)
+      lootUI.prevButton:Show(); lootUI.nextButton:Show()
     else
-      lootSearchBox:Hide()
-      lootWishButton:Hide()
-      lootPrevButton:Hide(); lootNextButton:Hide()
+      lootUI.searchBox:Hide()
+      lootUI.wishButton:Hide()
+      lootUI.prevButton:Hide(); lootUI.nextButton:Hide()
     end
   end
   titleText:SetText("Forever Companion")
@@ -242,10 +241,10 @@ local function render()
   elseif currentTab == "Loot" then
     lines = {"LOOT ATLAS"}
     if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
-      local matches=ForeverCompanionLoot.Search(lootSearchQuery)
-      local selected=matches[lootSelectedIndex]
+      local matches=ForeverCompanionLoot.Search(lootUI.query)
+      local selected=matches[lootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
-      lines[#lines+1]=ForeverCompanionLoot.Format(lootSearchQuery)
+      lines[#lines+1]=ForeverCompanionLoot.Format(lootUI.query)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
       lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
     else
@@ -1182,48 +1181,48 @@ local function createUI()
     row:Hide()
     rotationRows[i]=row
   end
-  lootSearchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
-  lootSearchBox:SetSize(270,24)
-  lootSearchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
-  lootSearchBox:SetAutoFocus(false)
-  lootSearchBox:SetMaxLetters(80)
-  lootSearchBox:SetScript("OnEnterPressed",function(self)
-    lootSearchQuery=self:GetText() or ""
-    lootSelectedIndex=1
+  lootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
+  lootUI.searchBox:SetSize(270,24)
+  lootUI.searchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
+  lootUI.searchBox:SetAutoFocus(false)
+  lootUI.searchBox:SetMaxLetters(80)
+  lootUI.searchBox:SetScript("OnEnterPressed",function(self)
+    lootUI.query=self:GetText() or ""
+    lootUI.selectedIndex=1
     self:ClearFocus()
     render()
   end)
-  lootSearchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
-  lootSearchBox:Hide()
-  lootWishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootWishButton:SetSize(245,24)
-  lootWishButton:SetPoint("LEFT",lootSearchBox,"RIGHT",15,0)
-  lootWishButton:SetScript("OnClick",function()
+  lootUI.searchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
+  lootUI.searchBox:Hide()
+  lootUI.wishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.wishButton:SetSize(245,24)
+  lootUI.wishButton:SetPoint("LEFT",lootUI.searchBox,"RIGHT",15,0)
+  lootUI.wishButton:SetScript("OnClick",function()
     if not ForeverCompanionLoot then return end
-    local selected=ForeverCompanionLoot.Search(lootSearchQuery)[lootSelectedIndex]
+    local selected=ForeverCompanionLoot.Search(lootUI.query)[lootUI.selectedIndex]
     if selected then
       ForeverCompanionLoot.ToggleWish(DB,selected.item)
       render()
     end
   end)
-  lootWishButton:Hide()
-  lootPrevButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootPrevButton:SetSize(150,22)
-  lootPrevButton:SetPoint("TOPLEFT",lootSearchBox,"BOTTOMLEFT",0,-8)
-  lootPrevButton:SetScript("OnClick",function()
-    lootSelectedIndex=math.max(1,lootSelectedIndex-1)
+  lootUI.wishButton:Hide()
+  lootUI.prevButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.prevButton:SetSize(150,22)
+  lootUI.prevButton:SetPoint("TOPLEFT",lootUI.searchBox,"BOTTOMLEFT",0,-8)
+  lootUI.prevButton:SetScript("OnClick",function()
+    lootUI.selectedIndex=math.max(1,lootUI.selectedIndex-1)
     render()
   end)
-  lootPrevButton:Hide()
-  lootNextButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootNextButton:SetSize(110,22)
-  lootNextButton:SetPoint("LEFT",lootPrevButton,"RIGHT",8,0)
-  lootNextButton:SetScript("OnClick",function()
-    local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootSearchQuery) or {}
-    lootSelectedIndex=math.min(#matches,lootSelectedIndex+1)
+  lootUI.prevButton:Hide()
+  lootUI.nextButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.nextButton:SetSize(110,22)
+  lootUI.nextButton:SetPoint("LEFT",lootUI.prevButton,"RIGHT",8,0)
+  lootUI.nextButton:SetScript("OnClick",function()
+    local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootUI.query) or {}
+    lootUI.selectedIndex=math.min(#matches,lootUI.selectedIndex+1)
     render()
   end)
-  lootNextButton:Hide()
+  lootUI.nextButton:Hide()
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
