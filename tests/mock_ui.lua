@@ -20,6 +20,10 @@ local function widget(kind)
  function w:SetSize(width,height) self.width=width;self.height=height end
  function w:SetHeight(height) self.height=height end
  function w:SetWidth(width) self.width=width end
+ function w:GetWidth() return self.width end
+ function w:GetHeight() return self.height end
+ function w:SetScale(value) self.scale=value end
+ function w:SetEnabled(value) self.enabled=value end
  function w:LockHighlight() end
  function w:UnlockHighlight() end
  function w:SetScrollChild(child) self.child=child end
@@ -50,6 +54,7 @@ local function widget(kind)
 end
 CreateFrame=function(kind,_,parent) local child=widget(kind);child.parent=parent and parent.id;return child end
 UIParent=widget("UIParent")
+UIParent:SetSize(1000,700)
 SlashCmdList={}
 ForeverCompanionDB={welcomed=false}
 UnitClass=function() return "Warrior","WARRIOR" end
@@ -121,6 +126,17 @@ for _,w in ipairs(frames) do if w.section=="Overview" then overviewButton=w end 
 assert(overviewButton and overviewButton.OnClick,"sidebar overview navigation missing")
 overviewButton.OnClick(overviewButton)
 assert(ForeverCompanionDB.tab=="Overview","overview navigation failed")
+local compactButton,mainWindow
+for _,w in ipairs(frames) do
+ if w.text=="Compact" then compactButton=w end
+ if w.width==1080 and w.height==720 then mainWindow=w end
+end
+assert(mainWindow and mainWindow.scale and mainWindow.scale<1,"responsive scale not applied")
+assert(compactButton and compactButton.OnClick,"compact toggle missing")
+compactButton.OnClick(compactButton)
+assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
+compactButton.OnClick(compactButton)
+assert(mainWindow.height==720 and not ForeverCompanionDB.compact,"expand layout failed")
 SlashCmdList.FOREVERCOMPANION("")
 SlashCmdList.FOREVERCOMPANION("")
 local foundTitle=false
