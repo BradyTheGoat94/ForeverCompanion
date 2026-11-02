@@ -83,66 +83,75 @@ ForeverCompanionAdvanced = {classes={
   }},
 },crafting={
   ["Alchemy"]={partner="Herbalism",materials="Herbs",output="Potions and elixirs",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Start with available herb-based recipes; track your current trainer and learned formulas.",
+  "Before crafting in bulk, compare recipe color and expected skill gains in the live UI.",
+  "Plan herbs and vendor components together so a missing reagent does not halt progress.",
+  "Keep separate material goals for personal consumables and items intended for trade.",
+  "Check whether stronger potions, elixirs or flasks are supported before planning around them.",
+  "Verify recipes, ingredient counts and profession caps on the actual client."
   }},
   ["Blacksmithing"]={partner="Mining",materials="Ore and bars",output="Metal gear and utility",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Track ore, smelted bars and any vendor materials as separate manual goals.",
+  "Before crafting equipment, compare metal cost with the expected benefit or sale value.",
+  "Choose repeatable recipes based on your current skill range, not a guessed fixed route.",
+  "Coordinate ore supply with Mining or another gathering source.",
+  "Check for trainer upgrades and any specialization requirements in game.",
+  "Verify all recipes and bar conversions before buying expensive materials."
   }},
   ["Enchanting"]={partner="Tailoring",materials="Disenchanting materials",output="Gear enchants",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Disenchant only items you intend to sacrifice; the addon never selects items for you.",
+  "Track dust, essences, shards and any required rods as manual material goals.",
+  "Compare the value of an item with the expected materials before disenchanting.",
+  "Keep a short list of useful enchants for your own gear and party roles.",
+  "Confirm recipe availability and reagent counts from the live enchanting interface.",
+  "Do not assume an expansion's enchanting rules apply to this client."
   }},
   ["Engineering"]={partner="Mining",materials="Bars and components",output="Gadgets",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Track metal bars, stone and intermediate components before planning finished gadgets.",
+  "Consider whether utility items justify their material cost for your playstyle.",
+  "Avoid crafting large batches until the current recipe skill color is verified.",
+  "Reserve shared ore for Mining, Engineering and other crafting plans deliberately.",
+  "Check device restrictions and skill requirements in the live client.",
+  "Use the manual recipe planner for multi-component items; no crafting is automated."
   }},
   ["Leatherworking"]={partner="Skinning",materials="Leather and hides",output="Leather gear",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Track leather, hides and any cured or treated intermediate materials separately.",
+  "If gathering yourself, coordinate Skinning with the creature types you already encounter.",
+  "Compare armor kits, gear and other utility recipes against your actual needs.",
+  "Check recipe skill colors and trainer availability before bulk production.",
+  "Keep rare materials out of speculative recipes until their use is verified.",
+  "Verify any specialization branches or expansion-specific patterns in game."
   }},
   ["Tailoring"]={partner="Enchanting",materials="Cloth",output="Cloth gear and bags",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Track cloth drops, thread and vendor components before starting a crafting session.",
+  "Consider bags and useful gear when deciding which recipes to prioritize.",
+  "Keep separate material goals for personal upgrades and sale inventory.",
+  "If pairing with Enchanting, decide which crafted items you truly want to disenchant.",
+  "Review recipe colors and skill requirements in the live profession window.",
+  "Verify bag sizes, pattern sources and cloth availability on the target client."
   }},
   ["Herbalism"]={partner="Alchemy",materials="Herb nodes",output="Gathering",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Gather only nodes your character can safely reach; avoid assuming a fixed route is optimal.",
+  "Use the live skill and node colors to judge when to seek a higher-level area.",
+  "Track herb types separately so you can plan Alchemy recipes or market sales.",
+  "Check inventory space before a long gathering session.",
+  "Combine herb collection with nearby quests when it does not create dangerous detours.",
+  "Verify node locations and skill thresholds in game; no map pathfinding is provided."
   }},
   ["Mining"]={partner="Blacksmithing / Engineering",materials="Ore nodes",output="Gathering and smelting",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Choose ore nodes appropriate to your current skill and combat safety.",
+  "Track ore and smelted bars separately when both matter to your crafting goals.",
+  "Compare demand from Blacksmithing and Engineering before selling or converting ore.",
+  "Use the live profession window to confirm smelting skill gains and trainer options.",
+  "Plan bag space and repair needs before extended gathering.",
+  "Verify node locations, smelting conversions and requirements on the actual client."
   }},
   ["Skinning"]={partner="Leatherworking",materials="Eligible creature corpses",output="Gathering",stages={
-  "Start: learn the profession and collect basic materials.",
-  "Early progression: prefer readily available recipes or gathering nodes that can increase skill.",
-  "Middle progression: check trainer unlocks, material supply and recipe colors.",
-  "Later progression: compare vendor, auction and self-gathered material costs.",
-  "Endgame: verify recipe sources, specialization choices and client-specific requirements."
+  "Check whether defeated creatures are eligible before planning a skinning session.",
+  "Combine gathering with relevant combat quests when practical and safe.",
+  "Track leather, hides and any special materials as distinct manual goals.",
+  "Coordinate supplies with Leatherworking or compare selling raw materials.",
+  "Review trainer and skill thresholds as your character progresses.",
+  "Do not assume every creature or dungeon mob can be skinned on Forever."
   }},
 }}
