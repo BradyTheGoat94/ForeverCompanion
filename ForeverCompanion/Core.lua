@@ -54,6 +54,10 @@ local function render()
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
   local isOverview=currentTab=="Overview"
   if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
+  if ForeverCompanionClassGuide then
+    ForeverCompanionClassGuide.Show(currentTab=="Leveling")
+    if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
+  end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.SetCompact(DB.compact)
     ForeverCompanionDashboard.Show(isOverview)
@@ -271,8 +275,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -260 or (currentTab=="Leveling" and -48 or (currentTab=="Overview" and -215 or -5))))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 284 or (currentTab=="Leveling" and 70 or 24))))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or (currentTab=="Professions" and -260 or (currentTab=="Leveling" and -278 or (currentTab=="Overview" and -215 or -5))))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 480 or (currentTab=="Professions" and 284 or (currentTab=="Leveling" and 302 or 24))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -412,6 +416,7 @@ local function createUI()
   child:SetSize(790, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.Create(window,function(section)
       currentTab=section; DB.tab=section
@@ -437,23 +442,23 @@ local function createUI()
   pageForward:SetScript("OnClick",function() questPage=math.min(math.max(1,math.ceil(#ForeverCompanionQuestPlanner.GetVisible() / #questRows)),questPage+1); render() end)
   pageLabel=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   pageLabel:SetPoint("LEFT",pageBack,"RIGHT",12,0)
-  rotationIcon=window:CreateTexture(nil,"OVERLAY")
+  rotationIcon=child:CreateTexture(nil,"OVERLAY")
   rotationIcon:SetSize(28,28)
-  rotationIcon:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",220,78)
+  rotationIcon:SetPoint("TOPLEFT",child,"TOPLEFT",410,-165)
   rotationIcon:Hide()
-  rotationButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  rotationButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   rotationButton:SetSize(155,23)
-  rotationButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",60,80)
+  rotationButton:SetPoint("TOPLEFT",child,"TOPLEFT",8,-166)
   rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; rotationDetail=1; render() end)
   rotationButton:Hide()
-  specButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  specButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   specButton:SetSize(195,23)
-  specButton:SetPoint("LEFT",rotationButton,"RIGHT",42,0)
+  specButton:SetPoint("LEFT",rotationButton,"RIGHT",14,0)
   specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); rotationDetail=1; render() end)
   specButton:Hide()
-  handbookIcon=window:CreateTexture(nil,"OVERLAY")
+  handbookIcon=child:CreateTexture(nil,"OVERLAY")
   handbookIcon:SetSize(30,30)
-  handbookIcon:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,82)
+  handbookIcon:SetPoint("TOPLEFT",child,"TOPLEFT",745,-165)
   handbookIcon:Hide()
   for i=1,9 do
     local b=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
@@ -497,7 +502,7 @@ local function createUI()
   for i=1,5 do
     local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
     row:SetSize(118,30)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-8)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-226)
     row.icon=row:CreateTexture(nil,"ARTWORK")
     row.icon:SetSize(19,19)
     row.icon:SetPoint("LEFT",row,"LEFT",3,0)
@@ -522,7 +527,7 @@ local function createUI()
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
   questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  questFocusText:SetPoint("BOTTOMLEFT",20,83)
+  questFocusText:SetPoint("BOTTOMLEFT",220,83)
   questFocusText:SetWidth(385)
   questFocusText:SetJustifyH("LEFT")
   nextQuestButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
@@ -540,7 +545,7 @@ local function createUI()
   for i=1,4 do
     local b=CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
     b:SetSize(90, 25)
-    b:SetPoint("BOTTOMLEFT", 20+(i-1)*96, 48)
+    b:SetPoint("BOTTOMLEFT", 220+(i-1)*96, 48)
     b:SetScript("OnClick", function() toggleCheck(currentTab,i); render() end)
     b:Hide()
     checkButtons[i]=b
