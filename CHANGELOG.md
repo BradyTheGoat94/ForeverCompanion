@@ -1,3 +1,9 @@
+## 3.2.0-beta
+- Added guarded read-only spellbook inspection for candidate cooldown availability.
+- Shows learned, not-found, or unverified states where spellbook API support permits.
+- Avoids assuming compound/version-dependent abilities are learned and never performs casting.
+- Added compatibility testing notes for actual-character spellbook versus previewed classes.
+
 ## 3.1.0-beta
 - Connected multi-recipe ingredient demand to the existing manually owned material checklist.
 - Added per-ingredient shortage calculations in the Professions tab.
