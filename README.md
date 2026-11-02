@@ -6,6 +6,12 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Quest priorities (3.14.0-beta, develop)
+
+The Quest Journal now has a **Pin Focus / Unpin Focus** button. Select a quest row, then pin it to keep that quest as a personal priority. Pinned quests receive a gold-accented **[PIN]** badge, survive quest-log rescans and UI reloads through per-character SavedVariables, and can be brought to the top with the **Sort: pinned** mode. The journal briefing shows how many *currently scanned* quests are pinned. Dashboard recommendations prioritize quests ready for turn-in first, then an unfinished pinned quest; clicking a recommendation focuses the relevant quest in the addon before opening the journal.
+
+Slash commands: `/fcq pin selected`, `/fcq pin 2` (live quest-log index, **not** the sorted row position), `/fcq pins`, `/fcq clearpins`, and `/fcq sort`. The addon limits saved pins to 100 and provides an explicit cleanup command for pins belonging to quests no longer present in the current log. Pinned priorities are **not** in-game quest tracking, map markers, automatic routing, or evidence of completion. If the quest API fails, cached quest information is clearly marked as outdated.
+
 ## Premium dashboard (develop beta)
 
 The Overview is now a native WoW UI with a gold-accented sidebar, welcome banner, character summary, four quick actions, read-only progress bars, recommended next steps, and a manually checked **Today's Focus** list. The checklist is saved per character; it never executes gameplay actions. The compact toggle hides the lower dashboard panels, and the window scales down when the game UI is smaller.
