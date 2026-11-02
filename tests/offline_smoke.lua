@@ -728,3 +728,23 @@ for class,choices in pairs(ForeverCompanionSpecs) do
  end
 end
 ForeverCompanionDB.specSelections={}
+
+-- Sourced rotation references must render for the correct selected build.
+for _,case in ipairs({
+ {"MAGE","Arcane","Heating Up"},
+ {"MAGE","Frost","Fingers of Frost"},
+ {"ROGUE","Combat","Slice and Dice"},
+ {"HUNTER","Beast Mastery","Serpent Sting"},
+}) do
+ local class,name,expected=case[1],case[2],case[3]
+ local found=false
+ for index,choice in ipairs(ForeverCompanionSpecs[class]) do
+  if choice[1]==name then ForeverCompanionDB.specSelections[class]=index found=true break end
+ end
+ assert(found,"missing sourced spec in planner: "..class.." "..name)
+ local lines=ForeverCompanionSourcedPriorityLines(class)
+ assert(type(lines)=="table" and #lines>=8,"missing sourced priority: "..class.." "..name)
+ assert(table.concat(lines," "):find(expected,1,true),"wrong sourced rotation: "..class.." "..name)
+ assert(table.concat(lines," "):find("https://",1,true),"missing source URL: "..class.." "..name)
+end
+ForeverCompanionDB.specSelections={}
