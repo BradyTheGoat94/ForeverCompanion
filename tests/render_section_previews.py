@@ -145,7 +145,7 @@ def adventure_preview(section,slug):
     for required in (heading,"CLASS & ROLE GUIDANCE","OPEN CLASS GUIDE","OPEN QUEST JOURNAL"):
         if required not in strings:
             raise SystemExit(slug+" preview missing real native widget: "+required)
-    progressText=next((v for v in strings if re.match(r"^\\d+/\\d+ preparation tasks marked complete$",v)),None)
+    progressText=next((v for v in strings if re.match(r"^\d+/\d+ preparation tasks marked complete$",v)),None)
     if not progressText:
         raise SystemExit(slug+" preview missing actual manual progress")
     children={}
@@ -167,11 +167,11 @@ def adventure_preview(section,slug):
     panel(d,cx+529,top,535,212,"CLASS & ROLE GUIDANCE")
     line(d,cx+23,top+75,progressText,51)
     line(d,cx+23,top+113,find(strings,"Next:","No next task"),54,MUTED)
-    m=re.match(r"(\\d+)/(\\d+)",progressText)
+    m=re.match(r"(\d+)/(\d+)",progressText)
     frac=int(m.group(1))/int(m.group(2)) if m and int(m.group(2)) else None
     bar(d,cx+23,top+147,466,frac,(230,174,75))
     line(d,cx+23,top+177,find(strings,"Manual checklist only","Manual planning"),52,GOLD)
-    role=next((v for v in strings if re.search(r"\\s\\|\\s",v) and "Warrior" in v),"Class and role unavailable")
+    role=next((v for v in strings if re.search(r"\s\|\s",v) and "Warrior" in v),"Class and role unavailable")
     line(d,cx+552,top+76,role,55)
     line(d,cx+552,top+112,"Read-only class guidance; verify game-specific abilities.",57,MUTED)
     for i,name in enumerate(("OPEN CLASS GUIDE","OPEN QUEST JOURNAL")):
