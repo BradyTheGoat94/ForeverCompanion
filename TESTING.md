@@ -56,3 +56,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 33. Confirm generic guidance is not presented as verified Forever-specific talent, skill, recipe or material data.
 34. Inspect the long Leveling and Professions pages for scrolling, clipping, and button overlap in compact mode.
 35. Confirm the profession handbook and manual profession preference remain separate.
+
+## v1.2 rotation visual checks
+36. Cycle all five rotation contexts for each of nine classes.
+37. Confirm the class-themed icon renders, and that text remains readable if a texture is missing.
+38. Confirm no overlap between the rotation selector, class icon, and compact-mode footer.
+39. Compare priority text with available in-game abilities; report unavailable spells or unsupported mechanics.
+40. Verify that switching tabs hides the rotation icon and selector.
