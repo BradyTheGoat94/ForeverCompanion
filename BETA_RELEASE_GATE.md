@@ -4,7 +4,7 @@
 
 ## Must pass before public upload
 
-- [ ] `develop` CI passes Lua 5.1 syntax, offline smoke tests, mocked UI, and package creation on the **same commit**.
+- [ ] `develop` CI passes Lua 5.1 syntax, offline smoke tests, mocked UI, ZIP integrity, and SHA256 provenance validation on the **same commit**.
 - [ ] Install the produced ZIP in the client's AddOns folder; check the folder layout and that the addon loads without Lua errors.
 - [ ] Confirm the client's current interface number; update `ForeverCompanion.toc` only after verifying it from the actual client. The current value is `16001` and is **not independently verified**.
 - [ ] Open each tab in-game: leveling, class, professions, quests, dungeons, PvP, and settings; verify navigation, scrolling, layout and text contrast.
@@ -38,3 +38,7 @@ Do not call the build CurseForge-ready if CI fails, the actual client rejects th
 4. Record the tested commit SHA, client build, screenshots, and observed issues.
 5. Publish a clearly marked beta only after the user approves release and the in-game gate passes.
 6. Keep `main` untouched until explicit approval to merge.
+
+## Artifact integrity check
+
+The GitHub Actions ZIP and `beta-build-manifest.json` must be downloaded from the **same successful run**. Compare the ZIP SHA256 with the manifest. The manifest intentionally records `in_game_tested: false` and `release_approved: false` because CI cannot perform actual client testing or approve publication. The verified build SHA must match the commit used for the final in-game test.
