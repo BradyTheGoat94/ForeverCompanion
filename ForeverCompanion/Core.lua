@@ -293,6 +293,11 @@ local function render()
           lines[#lines+1]=note
         end
       end
+      if type(ForeverCompanionNovemberTuningLines)=="function" then
+        for _,note in ipairs(ForeverCompanionNovemberTuningLines(classToken())) do
+          lines[#lines+1]=note
+        end
+      end
       if type(ForeverCompanionForeverLessonLines)=="function" then
         for _,note in ipairs(ForeverCompanionForeverLessonLines(classToken())) do
           lines[#lines+1]=note
