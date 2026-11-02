@@ -93,7 +93,7 @@ function Guide.Create(parent)
   values.heroArt=profile:CreateTexture(nil,"BORDER")
   values.heroArt:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-15,-37)
   values.heroArt:SetSize(122,110)
-  if values.heroArt.SetAlpha then values.heroArt:SetAlpha(0.12) end
+  if type(values.heroArt.SetAlpha)=="function" then values.heroArt:SetAlpha(0.12) end
   local heroVeil=profile:CreateTexture(nil,"ARTWORK")
   heroVeil:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-11,-36)
   heroVeil:SetSize(113,110)
