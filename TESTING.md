@@ -70,3 +70,12 @@ This addon is **not verified on the target client**. Use this checklist on the f
 43. Change class preview with a selected priority; verify no out-of-range errors.
 44. Switch away from Leveling and return; verify rotation tiles hide and reappear appropriately.
 45. Check text truncation on long priority descriptions and at compact window height.
+
+## v1.4.1 Forever API compatibility checks
+46. Verify the installed Forever client interface number with /dump select(4, GetBuildInfo()).
+47. Check that the modern C_QuestLog API returns active quests and objectives.
+48. Confirm that quest completion state updates after objectives are completed.
+49. If zone metadata is absent, the zone filter must not misleadingly hide all quests.
+50. If the quest API is unavailable, show an explicit compatibility warning instead of silently displaying zero quests.
+51. Verify the addon does not inspect secret combat values or automate gameplay.
+52. Enable /console scriptErrors 1 and test UI loading, class preview, profession selection, and quest updates.
