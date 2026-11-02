@@ -15,6 +15,7 @@ ProfessionScanner.lua
 ProfessionProgress.lua
 CraftingPlanner.lua
 RecipePlans.lua
+CraftingAdvice.lua
 CraftingBridge.lua
 QuestPlanner.lua
 Diagnostics.lua
