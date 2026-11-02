@@ -499,3 +499,11 @@ end
 assert(changes.Format("WARRIOR",13):find("Announced for level 14",1,true),"Warrior level 14 preview gate missing")
 assert(changes.Format("MAGE",39):find("Announced for level 40",1,true),"Mage level 40 preview gate missing")
 assert(changes.Format("PALADIN",6):find("Published level 6",1,true),"Paladin level 6 preview gate missing")
+
+dofile("ForeverCompanion/ForeverClassChanges.lua")
+dofile("ForeverCompanion/ClassChangeIndex.lua")
+local classRows=ForeverCompanionClassChangeIndex.Build("WARRIOR",10)
+assert(#classRows>=3 and classRows[1].status=="UPCOMING","warrior level 10 must show upcoming level 14 preview")
+assert(ForeverCompanionClassChangeIndex.Build("WARRIOR",20)[1].status=="LEVEL REACHED","level reached preview status")
+assert(ForeverCompanionClassChangeIndex.Build("MAGE",1)[1].source:find("blizzard.com",1,true),"class changes must retain source")
+assert(ForeverCompanionClassChangeIndex.Format("UNKNOWN",1):find("No sourced",1,true),"unknown class fallback")
