@@ -86,3 +86,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 55. Confirm missing or restricted XP values produce a readable unavailable message rather than Lua errors.
 56. Confirm the in-game footer version matches the TOC version.
 57. Recheck quest-log updates after safe event registration.
+
+## v1.6 profession detection
+58. Verify learned professions are listed using the live client profession APIs when supported.
+59. Confirm profession skill current/max numbers match the in-game profession panel.
+60. Verify missing profession APIs display a readable fallback.
+61. Verify a character with no learned professions produces no Lua error.
+62. Confirm the scanner never crafts items, spends materials, or changes character data.
