@@ -56,22 +56,27 @@ function P.Remove(profession,index)
   table.remove(entries,index)
   return true,"Removed "..name
 end
-function P.Summary()
-  local all=db()
+function P.Stats()
   local lists,materials,missing,complete=0,0,0,0
-  for _,entries in pairs(all) do
+  for _,entries in pairs(db()) do
     if type(entries)=="table" and #entries>0 then
       lists=lists+1
       for _,item in ipairs(entries) do
-        local need=math.max(0,tonumber(item.needed) or 0)
-        local owned=math.max(0,tonumber(item.owned) or 0)
-        materials=materials+1
-        missing=missing+math.max(0,need-owned)
-        if owned>=need then complete=complete+1 end
+        if type(item)=="table" then
+          local need=math.max(0,tonumber(item.needed) or 0)
+          local owned=math.max(0,tonumber(item.owned) or 0)
+          materials=materials+1
+          missing=missing+math.max(0,need-owned)
+          if need>0 and owned>=need then complete=complete+1 end
+        end
       end
     end
   end
-  return "CRAFTING GOALS: "..lists.." profession lists | "..complete.."/"..materials.." materials ready | "..missing.." units remaining"
+  return {lists=lists,materials=materials,missing=missing,complete=complete}
+end
+function P.Summary()
+  local stats=P.Stats()
+  return "CRAFTING GOALS: "..stats.lists.." profession lists | "..stats.complete.."/"..stats.materials.." materials ready | "..stats.missing.." units remaining"
 end
 function P.SetNeeded(profession,index,amount)
   local entries=db()[key(profession)]
