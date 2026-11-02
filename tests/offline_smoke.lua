@@ -890,6 +890,8 @@ for class,choices in pairs(ForeverCompanionSpecs) do
    assert(lines[4]:find("PRACTICE 2:",1,true),"second practice action missing")
    assert(lines[5]:find("PRACTICE 3:",1,true),"third practice action missing")
    assert(lines[6]:find("not a live DPS rotation",1,true),"quick start safety missing")
+   assert(lines[2]:find("skip any ability you have not trained",1,true),"untrained spell safety missing")
+   assert(lines[6]:find("follow the sourced conditional priority",1,true),"conflicting priority safety missing")
    quickCount=quickCount+1
   end
  end
