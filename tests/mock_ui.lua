@@ -384,6 +384,18 @@ for _,w in ipairs(frames) do
  if w.text=="Leveling phase: Endgame preparation (50-60)" then levelBandFound=true end
 end
 assert(levelBandFound,"leveling hero should show the current level band")
+local currentFocus=false
+for _,w in ipairs(frames) do
+ if w.text:find("FOCUS: At higher levels",1,true)==1 then currentFocus=true end
+end
+assert(currentFocus,"leveling hero must display class-specific current stage focus")
+local inlaySegments=0
+for _,w in ipairs(frames) do
+ if w.kind=="Texture" and w.width==19 and w.height==2 and w.color then
+  inlaySegments=inlaySegments+1
+ end
+end
+assert(inlaySegments>=16,"quest and profession cards must share original gilded corner inlays")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
 local levelingHeading
