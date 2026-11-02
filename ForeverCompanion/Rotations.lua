@@ -177,6 +177,9 @@ function ForeverCompanionBeginnerAvailability(class,scan)
   end
   if entry and entry.kind=="Talent" and label=="[CHECK TRAINER/TALENTS]" then label="[CHECK TALENTS]" end
   if entry and entry.kind=="Quest" and label=="[CHECK TRAINER/TALENTS]" then label="[CHECK QUEST]" end
+  if label=="[FOUND]" and entry and entry.kind=="Talent" then
+   requirement=requirement.." (spellbook found; talent build not independently audited)"
+  end
   result[#result+1]=label.." "..spell.." | "..status..requirement
  end
  return result
