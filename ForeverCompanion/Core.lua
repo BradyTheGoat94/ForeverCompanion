@@ -469,10 +469,14 @@ local function createUI()
   subtitleText:SetPoint("TOPLEFT",86,-51)
   subtitleText:SetText("Guides  -  Professions  -  Quests  -  Builds  -  More")
   subtitleText:SetTextColor(0.72,0.78,0.84)
-  local crest=window:CreateTexture(nil,"OVERLAY")
-  crest:SetPoint("TOPLEFT",window,"TOPLEFT",19,-17)
-  crest:SetSize(54,54)
-  crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+  if ForeverCompanionHeraldry then
+    ForeverCompanionHeraldry.Create(window,19,-17,54)
+  else
+    local crest=window:CreateTexture(nil,"OVERLAY")
+    crest:SetPoint("TOPLEFT",window,"TOPLEFT",19,-17)
+    crest:SetSize(54,54)
+    crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
+  end
   headerMeta=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   headerMeta:SetPoint("TOPRIGHT",window,"TOPRIGHT",-48,-22)
   headerMeta:SetTextColor(0.94,0.78,0.47)
