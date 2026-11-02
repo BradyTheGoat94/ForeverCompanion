@@ -90,12 +90,12 @@ function Guide.Create(parent)
   -- copyrighted screenshots or relying on external image downloads.
   values.heroArt=profile:CreateTexture(nil,"BORDER")
   values.heroArt:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-15,-37)
-  values.heroArt:SetSize(108,108)
-  if values.heroArt.SetAlpha then values.heroArt:SetAlpha(0.18) end
+  values.heroArt:SetSize(122,110)
+  if values.heroArt.SetAlpha then values.heroArt:SetAlpha(0.12) end
   local heroVeil=profile:CreateTexture(nil,"ARTWORK")
   heroVeil:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-11,-36)
   heroVeil:SetSize(113,110)
-  paint(heroVeil,0.025,0.035,0.055,0.13)
+  paint(heroVeil,0.025,0.035,0.055,0.19)
   label(profile,15,-13,300,"CLASS GUIDE  /  LEVELING","GameFontNormal",GOLD)
   local iconFrame=profile:CreateTexture(nil,"ARTWORK")
   iconFrame:SetPoint("TOPLEFT",profile,"TOPLEFT",13,-41)
