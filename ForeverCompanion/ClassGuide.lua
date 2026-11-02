@@ -185,8 +185,9 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
   values.currentTip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling) or "Review class-specific tips below."
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
-  local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
-  values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",24))
+  local planner=ForeverCompanionSpecPlanner
+  local spec=type(planner)=="table" and type(planner.Get)=="function" and planner.Get(classToken)
+  values.spec:SetText("Spec preview: "..short(type(spec)=="table" and spec[1] or "Not available",24))
   local contexts=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts
   local context=type(contexts)=="table" and contexts[mode]
   values.mode:SetText("Priority context: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
