@@ -128,7 +128,7 @@ end
 
 function P.Format(prof)
   local entries=list(prof)
-  local lines={"RECIPE GOALS (MANUALLY ENTERED)"}
+  local lines={"RECIPE GOALS (MANUALLY ENTERED)", "Edit: /fcr target Profession | RecipeIndex | Quantity", "Edit: /fcr setingredient Profession | RecipeIndex | IngredientIndex | PerCraft", "Remove: /fcr removeingredient Profession | RecipeIndex | IngredientIndex"}
   if #entries==0 then lines[#lines+1]="No recipes tracked. Use /fcr add Profession | Recipe | Quantity." end
   local aggregate={}
   for i,entry in ipairs(entries) do
