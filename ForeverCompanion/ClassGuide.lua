@@ -155,8 +155,27 @@ function Guide.Create(parent)
   buildRule:SetSize(354,1)
   paint(buildRule,0.65,0.47,0.24,0.56)
   label(build,339,-13,30,"II","GameFontNormal",GOLD)
+  -- Expose specialization-specific practice steps without obscuring the compact card.
+  build:EnableMouse(true)
+  build:SetScript("OnEnter",function(self)
+    if not GameTooltip then return end
+    GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+    GameTooltip:SetText("BEGINNER ROTATION PRACTICE",0.96,0.75,0.36)
+    local quick=type(ForeverCompanionQuickStartLines)=="function" and ForeverCompanionQuickStartLines(values.currentClass)
+    if type(quick)=="table" and #quick>0 then
+      for _,line in ipairs(quick) do
+        if type(line)=="string" then GameTooltip:AddLine(line,0.92,0.89,0.82,true) end
+      end
+    else
+      GameTooltip:AddLine("Select a specialization to see its practice steps.",0.92,0.89,0.82,true)
+    end
+    GameTooltip:AddLine("Practice advice only; check trained abilities and the sourced priority.",0.67,0.76,0.83,true)
+    GameTooltip:Show()
+  end)
+  build:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
   values.spec=label(build,16,-45,351,"","GameFontHighlight",PALE)
   values.mode=label(build,16,-70,351,"","GameFontHighlightSmall",MUTED)
+  values.practiceHint=label(build,16,-82,351,"HOVER FOR 3 PRACTICE STEPS","GameFontNormalSmall",GOLD)
   values.xp=label(build,16,-93,351,"","GameFontHighlightSmall",PALE)
   values.xpCaption=label(build,16,-108,351,"LEVEL PROGRESS","GameFontNormalSmall",GOLD)
   local trackShadow=build:CreateTexture(nil,"BORDER")
