@@ -59,7 +59,15 @@ local function render()
     ForeverCompanionDashboard.Show(isOverview)
   end
   for _, b in ipairs(tabButtons) do
-    if b.section == currentTab then b:LockHighlight() else b:UnlockHighlight() end
+    if b.section == currentTab then
+      colorTexture(b.navBackground,0.29,0.22,0.11,1)
+      colorTexture(b.navAccent,0.98,0.74,0.29,1)
+      b.navLabel:SetTextColor(1,0.83,0.43)
+    else
+      colorTexture(b.navBackground,0.10,0.13,0.17,1)
+      colorTexture(b.navAccent,0.29,0.25,0.18,1)
+      b.navLabel:SetTextColor(0.88,0.87,0.83)
+    end
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
   if handbookIcon then handbookIcon:Hide() end
@@ -326,14 +334,47 @@ local function createUI()
   navHeading:SetPoint("TOPLEFT",window,"TOPLEFT",28,-112)
   navHeading:SetText("NAVIGATION")
   navHeading:SetTextColor(0.95,0.72,0.32)
+  local navIcons={
+    "Interface\\Icons\\INV_Misc_Map_01",
+    "Interface\\Icons\\INV_Misc_Book_09",
+    "Interface\\Icons\\INV_Misc_Note_01",
+    "Interface\\Icons\\INV_Weapon_ShortBlade_01",
+    "Interface\\Icons\\Trade_BlackSmithing",
+    "Interface\\Icons\\Ability_DualWield",
+    "Interface\\Icons\\INV_Gizmo_02"
+  }
   for i, section in ipairs(tabs) do
-    local b = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-    b:SetSize(142, 36)
-    b:SetPoint("TOPLEFT", 23, -138-(i-1)*43)
-    b:SetText(section)
-    b.section = section
-    b:SetScript("OnClick", function() currentTab=section; DB.tab=section; if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end; render() end)
-    tabButtons[#tabButtons+1] = b
+    local b = CreateFrame("Button", nil, window)
+    b:SetSize(164, 37)
+    b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*43)
+    b.section=section
+    b.navBackground=b:CreateTexture(nil,"BACKGROUND")
+    b.navBackground:SetAllPoints(b)
+    colorTexture(b.navBackground,0.10,0.13,0.17,1)
+    b.navAccent=b:CreateTexture(nil,"ARTWORK")
+    b.navAccent:SetPoint("TOPLEFT",b,"TOPLEFT",0,0)
+    b.navAccent:SetSize(3,37)
+    colorTexture(b.navAccent,0.29,0.25,0.18,1)
+    local icon=b:CreateTexture(nil,"ARTWORK")
+    icon:SetPoint("LEFT",b,"LEFT",11,0)
+    icon:SetSize(21,21)
+    icon:SetTexture(navIcons[i])
+    b.navLabel=b:CreateFontString(nil,"OVERLAY","GameFontHighlight")
+    b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
+    b.navLabel:SetText(section)
+    b.navLabel:SetTextColor(0.88,0.87,0.83)
+    b:SetScript("OnEnter",function(self)
+      if currentTab~=self.section then colorTexture(self.navBackground,0.18,0.17,0.14,1) end
+    end)
+    b:SetScript("OnLeave",function(self)
+      if currentTab~=self.section then colorTexture(self.navBackground,0.10,0.13,0.17,1) end
+    end)
+    b:SetScript("OnClick", function()
+      currentTab=section; DB.tab=section
+      if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
+      render()
+    end)
+    tabButtons[#tabButtons+1]=b
   end
   local panel=CreateFrame("Frame",nil,window)
   panel:SetPoint("TOPLEFT",198,-98)
