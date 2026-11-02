@@ -60,6 +60,13 @@ local function render()
   if rotationIcon then rotationIcon:Hide() end
   for _,row in ipairs(rotationRows) do row:Hide() end
   if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
+  if specButton then
+    if currentTab=="Leveling" and ForeverCompanionSpecPlanner then
+      local selected=ForeverCompanionSpecPlanner.Get(classToken())
+      specButton:SetText("Spec: "..(selected and selected[1] or "N/A"))
+      specButton:Show()
+    else specButton:Hide() end
+  end
   for _,b in ipairs(handbookButtons) do b:Hide() end
   for _,entry in ipairs(materialRows) do entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide() end
   if materialPageLabel then materialPageLabel:Hide(); materialPrevious:Hide(); materialNext:Hide() end
@@ -485,7 +492,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v2.2.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v3.0.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
