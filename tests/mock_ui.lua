@@ -4,6 +4,7 @@ local function widget(kind)
  local w={kind=kind,visible=true,children={},text=""}
  function w:SetText(v) self.text=tostring(v or "") end
  function w:GetText() return self.text end
+ function w:GetStringHeight() return math.max(16,math.ceil(#self.text/75)*16) end
  function w:Show() self.visible=true end
  function w:Hide() self.visible=false end
  function w:IsShown() return self.visible end
