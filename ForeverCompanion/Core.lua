@@ -92,6 +92,17 @@ local function toggleCheck(section, index)
   DB.checks[section] = DB.checks[section] or {}
   DB.checks[section][index] = not DB.checks[section][index]
 end
+-- Keep the large render function below Lua 5.1's 60-upvalue limit.
+function ForeverCompanionClassStripRender(tab,selectedToken)
+  for _,button in ipairs(classStripButtons) do
+    if tab=="Leveling" then
+      button:Show()
+      local active=button.classToken==selectedToken
+      colorTexture(button.bg,active and 0.12 or 0.045,active and 0.23 or 0.07,active and 0.38 or 0.11,1)
+      colorTexture(button.trim,active and 0.98 or 0.44,active and 0.74 or 0.34,active and 0.31 or 0.18,1)
+    else button:Hide() end
+  end
+end
 local function render()
   if not window or not DB then return end
   titleText:SetText("Forever Companion")
@@ -142,14 +153,7 @@ local function render()
     ForeverCompanionDashboard.SetCompact(DB.compact)
     ForeverCompanionDashboard.Show(isOverview)
   end
-  for _,button in ipairs(classStripButtons) do
-    if currentTab=="Leveling" then
-      button:Show()
-      local active=button.classToken==classToken()
-      colorTexture(button.bg,active and 0.12 or 0.045,active and 0.23 or 0.07,active and 0.38 or 0.11,1)
-      colorTexture(button.trim,active and 0.98 or 0.44,active and 0.74 or 0.34,active and 0.31 or 0.18,1)
-    else button:Hide() end
-  end
+  ForeverCompanionClassStripRender(currentTab,classToken())
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then
       colorTexture(b.navBackground,0.045,0.16,0.37,1)
