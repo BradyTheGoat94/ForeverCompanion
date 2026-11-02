@@ -212,6 +212,13 @@ for _,w in ipairs(frames) do
 end
 assert(skillHeading and materialsHeading,"profession briefing panels missing")
 assert(frames[frames[skillHeading.parent].parent].visible,"profession briefing must be visible")
+local alchemyTab
+for _,w in ipairs(frames) do
+ if w.label and w.icon and w.bg and w.trim and w.label.text=="Alchemy" then alchemyTab=w end
+end
+assert(alchemyTab and alchemyTab.OnClick,"styled profession handbook selector missing")
+alchemyTab.OnClick(alchemyTab)
+assert(alchemyTab.selected,"selected profession handbook tab should highlight")
 local materialStatus=false
 for _,w in ipairs(frames) do if w.text=="0/1 material goals completed" then materialStatus=true end end
 assert(materialStatus,"manual material goal status incorrect")
