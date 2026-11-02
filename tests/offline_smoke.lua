@@ -453,3 +453,9 @@ for _,role in ipairs({"Tank","Healer","Damage"}) do
  local guidance=ForeverCompanionDungeonPreparation.Format(role)
  assert(guidance:find("DUNGEON READY CHECK",1,true) and guidance:find("not verified",1,true),"missing role readiness guidance")
 end
+
+dofile("ForeverCompanion/PvPPreparation.lua")
+for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}) do
+ local guide=ForeverCompanionPvPPreparation.Format(class)
+ assert(guide:find("PVP FIELD NOTES",1,true) and guide:find("General practice only",1,true),"missing class PvP guidance")
+end
