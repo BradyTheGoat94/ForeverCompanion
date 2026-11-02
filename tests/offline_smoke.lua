@@ -850,3 +850,17 @@ assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("active tale
 UnitLevel=nil
 assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"unknown level fallback missing")
 UnitLevel=originalUnitLevel
+
+-- Defensive client API behavior: a failed or secret level probe must not
+-- crash the guide or allow secret values into Lua comparisons.
+local savedUnitLevel=UnitLevel
+local savedIsSecret=issecretvalue
+UnitLevel=function() error("level API temporarily unavailable") end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"failed level API fallback missing")
+UnitLevel=function() return 30 end
+issecretvalue=function() return true end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"secret level fallback missing")
+issecretvalue=function() error("secret check unavailable") end
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"failed secret check fallback missing")
+UnitLevel=savedUnitLevel
+issecretvalue=savedIsSecret
