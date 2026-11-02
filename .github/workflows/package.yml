@@ -67,6 +67,8 @@ jobs:
           PY
       - name: Audit release compatibility
         run: python3 release_audit.py
+      - name: Validate beta release gate and required documentation
+        run: python3 tests/validate_beta_gate.py
       - name: Package addon
         run: zip -r ForeverCompanion.zip ForeverCompanion -x '*.DS_Store'
       - name: Verify packaged addon integrity and manifest completeness
