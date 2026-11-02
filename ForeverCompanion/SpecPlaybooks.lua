@@ -644,6 +644,8 @@ ForeverCompanionHotfixCautions={
 -- which spell a player should cast: Forever inherits Mainline secret-value rules.
 function ForeverCompanionGuideReadinessLines()
  local lines={}
+ -- The guide must remain readable even if the client API returns an
+ -- unexpected type, an out-of-range value, or an inaccessible secret.
  local level=nil
  -- UnitLevel is usually readable, but avoid comparing or formatting secret
  -- values if a future client marks it restricted. No combat-state reads.
@@ -655,7 +657,7 @@ function ForeverCompanionGuideReadinessLines()
     local check,secret=pcall(issecretvalue,value)
     accessible=check and not secret
    end
-   if accessible then level=value end
+   if accessible and value>=1 and value<=100 then level=value end
   end
  end
  if type(level)=="number" then
