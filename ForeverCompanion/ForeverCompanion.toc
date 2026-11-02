@@ -19,6 +19,7 @@ QuestPlanner.lua
 Diagnostics.lua
 QuestBriefing.lua
 ProfessionBriefing.lua
+AdventureBriefing.lua
 Dashboard.lua
 ClassGuide.lua
 Core.lua
