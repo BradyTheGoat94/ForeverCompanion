@@ -91,7 +91,7 @@ function B.Render()
     values.count:SetText("Waiting for first quest-log scan")
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
-    values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready to turn in")
+    values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
     values.status:SetText("Live quest-log snapshot")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
@@ -105,7 +105,7 @@ function B.Render()
   fill:SetWidth(valid and count>0 and math.max(1,math.floor(BAR_WIDTH*ready/count)) or 1)
   local selected=planner.GetSelected and planner.GetSelected() or nil
   if selected then
-    values.title:SetText(shorten(selected.title,46))
+    values.title:SetText((planner.IsPinned and planner.IsPinned(selected) and "[PINNED] " or "")..shorten(selected.title,38))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))
     values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "Objective details not supplied by client",48))
     local done,known
@@ -113,9 +113,9 @@ function B.Render()
     if stale then
       values.hint:SetText("Cached objective - verify in game")
     elseif known then
-      values.hint:SetText("Known objectives: "..done.."/"..known.." complete | addon focus only")
+      values.hint:SetText("Known objectives: "..done.."/"..known.." | addon focus only")
     else
-      values.hint:SetText("Select another quest below to change focus")
+      values.hint:SetText("Pin Focus to prioritize this quest in the guide")
     end
   else
     values.title:SetText("No focused quest")
