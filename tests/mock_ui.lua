@@ -143,7 +143,7 @@ for _,w in ipairs(frames) do
  if w.kind=="FontString" and w.text:find("Quest data: current snapshot",1,true) then sourceLabel=w end
 end
 assert(step1 and step1.caption.text=="1. Ready to turn in: Sample: Speak with trainer","recommended quest must use visible caption")
-assert(step3 and step3.caption.text=="3. Gather 6 units for tracked material goals.","material recommendation must be visible")
+assert(step3 and step3.caption.text=="3. Gather 6 Sample Ore for Blacksmithing (manual).","material recommendation must be visible")
 assert(sourceLabel and sourceLabel.text:find("Professions: detected",1,true),"data source disclosure missing")
 local originalCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() return 0 end
