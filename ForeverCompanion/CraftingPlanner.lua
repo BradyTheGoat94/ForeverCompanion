@@ -23,6 +23,9 @@ function P.Add(profession,name,needed,owned)
   end
   items[profession]=items[profession] or {}
   if #items[profession]>=40 then return false,"Material list limit reached (40)." end
+  for _,item in ipairs(items[profession]) do
+    if item.name:lower()==name:lower() then return false,"Material already tracked; use /fcm needed or /fcm owned." end
+  end
   items[profession][#items[profession]+1]={name=name,needed=needed,owned=owned}
   return true,"Tracked "..name.." for "..profession
 end
