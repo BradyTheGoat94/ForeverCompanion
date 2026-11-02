@@ -390,7 +390,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.2.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.5.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
@@ -398,9 +398,9 @@ local function createUI()
   window:Hide()
   render()
 end
-addon:RegisterEvent("ADDON_LOADED")
-addon:RegisterEvent("PLAYER_LEVEL_UP")
-addon:RegisterEvent("PLAYER_ENTERING_WORLD")
+for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD"}) do
+  pcall(function() addon:RegisterEvent(event) end)
+end
 addon:SetScript("OnEvent", function(_, event, arg)
   if event == "ADDON_LOADED" and arg == addonName then
     ForeverCompanionDB = ForeverCompanionDB or {}
