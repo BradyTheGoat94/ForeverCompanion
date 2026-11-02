@@ -260,3 +260,13 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Inspect the original geometric FC crest in the top header and welcome banner. Verify that both render at common UI scales, and note any client font or texture incompatibilities.
 - Verify long quest, class and profession pages still scroll and their controls do not overlap the new panels.
 - Capture **actual in-game screenshots** for a release review; mock-generated previews are not substitutes.
+
+### Settings dashboard (v3.13 beta)
+
+- Open Settings from the left navigation. Verify the two gilded native panels render without overlapping the diagnostic text below, including on a narrow monitor and in compact mode.
+- Confirm the detected class and preview class are distinct when using `/fc class Mage`. Click **Auto-Detect Class**; the addon preview should revert to the character's detected class without changing talents or game class.
+- Move the window, then click **Center Window**. Confirm it returns to the center and stays centered after `/reload`.
+- Click **Toggle Compact** twice. Confirm the window resizes, the button at the bottom updates, and existing checklist progress remains intact.
+- Check that the client version/Interface comes from the live `GetBuildInfo` result; do not assume the provisional .toc Interface is correct.
+- Verify quest/profession/spellbook/XP API presence indicators only say **API exposed; compatibility unverified**, never imply tested or complete support.
+- Confirm the mock-generated `ui_settings_preview.png` is clearly labeled an offline approximation, not a live-client screenshot.
