@@ -40,7 +40,7 @@ local function card(parent,x,w,heading)
   right:SetPoint("TOPRIGHT",frame,"TOPRIGHT",0,0)
   right:SetSize(1,151)
   paint(right,0.35,0.29,0.20,1)
-  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Inlay(frame,w,151) end
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Inlay(frame,w,151); ForeverCompanionOrnaments.Hero(frame,w,151) end
   label(frame,15,-14,w-30,heading,"GameFontNormal",{0.96,0.76,0.39})
   return frame
 end
