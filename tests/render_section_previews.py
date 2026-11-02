@@ -208,7 +208,43 @@ def adventure_preview(section,slug):
     im.save("ui_"+slug+"_preview.png")
     print(section,"preview generated from",len(strings),"widget strings and",len(taskRows),"real task buttons")
 
+def settings_preview():
+    rows=read_rows("ui_settings_snapshot.txt")
+    strings=[r["text"] for r in rows if r.get("text")]
+    required=("PREFERENCES & CHARACTER","CLIENT API VISIBILITY",
+              "AUTO-DETECT CLASS","CENTER WINDOW","TOGGLE COMPACT")
+    for heading in required:
+        if heading not in strings:
+            raise SystemExit("Settings snapshot missing native widget: "+heading)
+    if not any(s.startswith("Client: OfflineMock") for s in strings):
+        raise SystemExit("Settings client version must come from mocked GetBuildInfo")
+    im,d,x,y,cx=draw_base("Settings")
+    top=y+223
+    panel(d,cx,top,517,240,"PREFERENCES & CHARACTER")
+    panel(d,cx+529,top,535,240,"CLIENT API VISIBILITY")
+    left=("Detected:","Preferred role:","Layout:","Settings are stored","Preview does not")
+    right=("Client:","Quest log:","Professions:","Spellbook:","Experience:")
+    for i,prefix in enumerate(left):
+        line(d,cx+23,top+73+i*33,find(strings,prefix,"Not available"),53,
+             GOLD if prefix=="Layout:" else PALE)
+    for i,prefix in enumerate(right):
+        line(d,cx+551,top+70+i*34,find(strings,prefix,"Not available"),52,
+             GOLD if prefix=="Client:" else MUTED)
+    panel(d,cx,top+254,1064,234,"PREFERENCES & VERIFICATION")
+    line(d,cx+24,top+311,"These controls update only addon preferences; no game actions are automated.",102,MUTED)
+    for i,caption in enumerate(("AUTO-DETECT CLASS","CENTER WINDOW","TOGGLE COMPACT")):
+        bx=cx+23+i*345
+        by=top+348
+        d.rounded_rectangle((bx,by,bx+325,by+59),radius=5,fill=(67,54,37),outline=GOLD,width=2)
+        d.text((bx+20,by+18),caption,font=F17,fill=PALE)
+    line(d,cx+23,top+450,
+         find(strings,"API visibility is not","API visibility does not establish compatibility."),
+         100,GOLD)
+    im.save("ui_settings_preview.png")
+    print("Settings preview generated from",len(rows),"mocked UI widgets")
+
 quest_preview()
 profession_preview()
 adventure_preview("Dungeons","dungeon")
 adventure_preview("PvP","pvp")
+settings_preview()
