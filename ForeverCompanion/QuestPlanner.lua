@@ -73,11 +73,16 @@ local function questRows()
     local ok,count=pcall(modern.GetNumQuestLogEntries)
     if not ok or type(count)~="number" or count<0 or count>1000 then return rows,false end
     local header="Quest log"
+    local headerKnown=false
     for i=1,count do
       local good,info=pcall(modern.GetInfo,i)
       if not good then return {},false end
       if type(info)=="table" then
-        if info.isHeader then header=clean(info.title or header,70)
+        if info.isHeader then
+          if type(info.title)=="string" and info.title~="" then
+            header=clean(info.title,70)
+            headerKnown=true
+          end
         elseif type(info.title)=="string" and info.title~="" then
           local id=info.questID
           local completed=info.isComplete==true
@@ -107,7 +112,10 @@ local function questRows()
               end
             end
           end
-          rows[#rows+1]={id=id,title=clean(info.title,100),zone=clean(info.zoneName or info.zone or header,70),complete=completed,objectives=objectives,objectiveStates=objectiveStates}
+          local directZone=type(info.zoneName)=="string" and info.zoneName~="" and info.zoneName
+            or (type(info.zone)=="string" and info.zone~="" and info.zone)
+          local zoneKnown=not not (directZone or headerKnown)
+          rows[#rows+1]={id=id,title=clean(info.title,100),zone=zoneKnown and clean(directZone or header,70) or "Unspecified zone",zoneKnown=zoneKnown,complete=completed,objectives=objectives,objectiveStates=objectiveStates}
         end
       end
     end
@@ -119,11 +127,15 @@ local function questRows()
     local ok,count=pcall(GetNumQuestLogEntries)
     if not ok or type(count)~="number" or count<0 or count>1000 then return {},false end
     local header="Quest log"
+    local headerKnown=false
     for i=1,count do
       local good,title,questLevel,suggestedGroup,isHeader,isCollapsed,isComplete,frequency,questID=pcall(GetQuestLogTitle,i)
       if not good then return {},false end
       if isHeader then
-        header=clean(title or header,70)
+        if type(title)=="string" and title~="" then
+          header=clean(title,70)
+          headerKnown=true
+        end
       elseif type(title)=="string" and title~="" then
         local objectives,objectiveStates={},{}
         if type(GetNumQuestLeaderBoards)=="function" and type(GetQuestLogLeaderBoard)=="function" then
@@ -140,7 +152,7 @@ local function questRows()
         end
         rows[#rows+1]={
           id=type(questID)=="number" and questID or nil,
-          title=clean(title,100),zone=header,
+          title=clean(title,100),zone=headerKnown and header or "Unspecified zone",zoneKnown=headerKnown,
           complete=isComplete==true or isComplete==1,
           objectives=objectives,objectiveStates=objectiveStates
         }
@@ -178,7 +190,7 @@ function Planner.GetFilter() return auto.filter end
 function Planner.IsSupported() return auto.supported end
 function Planner.IsSnapshotStale() return auto.scanned and not auto.supported and #auto.entries>0 end
 function Planner.HasZoneMetadata()
-  for _,q in ipairs(auto.entries) do if type(q.zone)=="string" and q.zone~="" then return true end end
+  for _,q in ipairs(auto.entries) do if q.zoneKnown then return true end end
   return false
 end
 function Planner.CycleFilter()
@@ -217,9 +229,10 @@ function Planner.GetVisible()
     local ok,value=pcall(GetZoneText)
     if ok and type(value)=="string" then zone=value end
   end
+  local anyZoneKnown=Planner.HasZoneMetadata()
   for i,q in ipairs(auto.entries) do
     if auto.filter=="all" or (auto.filter=="ready" and q.complete)
-      or (auto.filter=="zone" and (not zone or zone=="" or not Planner.HasZoneMetadata() or not q.zone or q.zone==zone)) then
+      or (auto.filter=="zone" and (not zone or zone=="" or not anyZoneKnown or not q.zoneKnown or q.zone==zone)) then
       visible[#visible+1]={index=i,quest=q}
     end
   end
