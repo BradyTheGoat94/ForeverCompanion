@@ -771,3 +771,12 @@ for _,case in ipairs({
  assert(table.concat(lines," "):find("https://",1,true),"missing source URL: "..class.." "..name)
 end
 ForeverCompanionDB.specSelections={}
+
+-- November Forever hotfix: Feral Berserk was removed; guide must not recommend it.
+for index,choice in ipairs(ForeverCompanionSpecs.DRUID) do
+ if choice[1]=="Feral" then ForeverCompanionDB.specSelections.DRUID=index break end
+end
+local feralSourced=table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," ")
+assert(feralSourced:find("Berserk was removed",1,true),"Feral hotfix warning missing")
+assert(not feralSourced:find("during Berserk, prioritize",1,true),"obsolete Feral Berserk rotation")
+ForeverCompanionDB.specSelections={}
