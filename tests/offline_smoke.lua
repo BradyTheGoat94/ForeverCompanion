@@ -731,6 +731,12 @@ ForeverCompanionDB.specSelections={}
 
 -- Sourced rotation references must render for the correct selected build.
 for _,case in ipairs({
+ {"ROGUE","Assassination","Mutilate"},
+ {"ROGUE","Subtlety","Hemorrhage"},
+ {"WARRIOR","Fury","Bloodthirst"},
+ {"WARRIOR","Protection","Shield Block"},
+ {"DRUID","Feral","Shifting Power"},
+ {"MAGE","Fire","Heating Up"},
  {"HUNTER","Marksmanship","Sniper Shot"},
  {"SHAMAN","Elemental","Lava Burst"},
  {"DRUID","Balance","Eclipse"},
