@@ -121,6 +121,9 @@ for _,w in ipairs(frames) do if w.caption and w.caption.text=="Quests" then ques
 assert(questAction and questAction.OnClick,"quest shortcut missing")
 questAction.OnClick(questAction)
 assert(ForeverCompanionDB.tab=="Quests","quest shortcut failed")
+local bannerText
+for _,w in ipairs(frames) do if w.text=="WELCOME TO FOREVER COMPANION" then bannerText=w end end
+assert(bannerText and frames[frames[bannerText.parent].parent].visible==false,"dashboard should hide outside Overview")
 local overviewButton
 for _,w in ipairs(frames) do if w.section=="Overview" then overviewButton=w end end
 assert(overviewButton and overviewButton.OnClick,"sidebar overview navigation missing")
@@ -135,8 +138,12 @@ assert(mainWindow and mainWindow.scale and mainWindow.scale<1,"responsive scale 
 assert(compactButton and compactButton.OnClick,"compact toggle missing")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
+local focusTitle
+for _,w in ipairs(frames) do if w.text=="TODAY\'S FOCUS" then focusTitle=w end end
+assert(focusTitle and frames[focusTitle.parent].visible==false,"compact mode should hide lower focus panel")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==720 and not ForeverCompanionDB.compact,"expand layout failed")
+assert(frames[focusTitle.parent].visible==true,"expanded mode should restore lower focus panel")
 local savedXP=UnitXP
 UnitXP=function() error("simulated restricted XP API") end
 assert(pcall(ForeverCompanionDashboard.Render),"dashboard should tolerate restricted XP reads")
