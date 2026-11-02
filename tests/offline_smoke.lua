@@ -380,3 +380,14 @@ assert(skillLines:find("UPCOMING UNLOCKS",1,true),"skill guide must show upcomin
 assert(skillLines:find("CHECK TRAINER",1,true),"skill guide must show missing spells")
 assert(ForeverCompanionSkillStudy.Format("MAGE",20):find("No audited",1,true),"unaudited classes must not imply verified abilities")
 IsSpellKnown=priorKnown
+
+-- Shared material allocation is conservative across multiple recipes.
+local allocation=ForeverCompanionCraftingAdvice.Allocation("ForecastTest")
+assert(allocation[1].craftable==1 and allocation[2].craftable==0,"recipe queue must not double-spend Silverleaf")
+assert(ForeverCompanionCraftingAdvice.FormatAllocation("ForecastTest"):find("SHARED MATERIALS",1,true),"queue must explain reservation")
+local savedKnown=IsSpellKnown
+IsSpellKnown=function() return false end
+local nextSkills=ForeverCompanionSkillStudy.NextActions("WARRIOR",40,3)
+assert(#nextSkills<=3 and #nextSkills>0,"next skill checklist must be bounded")
+assert(ForeverCompanionSkillStudy.FormatNextActions("MAGE",40):find("pending class",1,true),"unverified classes need honest fallback")
+IsSpellKnown=savedKnown
