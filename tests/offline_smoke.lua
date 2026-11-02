@@ -667,3 +667,20 @@ local warriorCovered,warriorTotal=ForeverCompanionBeginnerCoverage("WARRIOR")
 assert(warriorTotal==4 and warriorCovered>=2 and warriorCovered<=warriorTotal,"unexpected Warrior curated coverage")
 local mageCovered,mageTotal=ForeverCompanionBeginnerCoverage("MAGE")
 assert(mageTotal==4 and mageCovered==0,"unaudited Mage hints must not claim curated unlock coverage")
+
+-- Mage curated entries must be sourced and counted without assuming spell ownership.
+local mageData=ForeverCompanionVerifiedAbilities
+assert(type(mageData.entries.MAGE)=="table" and #mageData.entries.MAGE>=2,"Mage curated entries missing")
+assert(mageData.sources.MAGE=="https://foreverdb.net/spells?cls=8","Mage source missing")
+local mageCount,mageHints=ForeverCompanionBeginnerCoverage("MAGE")
+assert(mageHints==4 and mageCount>=1,"Mage coverage must include Arcane Intellect")
+local mageLines=ForeverCompanionBeginnerAvailability("MAGE",{supported=false,inspected=0,complete=false,known={}})
+local foundIntellect=false
+for _,line in ipairs(mageLines) do
+ if line:find("Arcane Intellect",1,true) then
+  assert(line:find("curated client-data level 1",1,true),"Mage unlock level missing")
+  assert(line:find("[UNKNOWN]",1,true),"offline spellbook status must remain unknown")
+  foundIntellect=true
+ end
+end
+assert(foundIntellect,"Arcane Intellect missing from Mage hints")
