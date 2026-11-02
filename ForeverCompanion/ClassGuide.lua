@@ -106,6 +106,7 @@ function Guide.Create(parent)
   values.icon:SetPoint("TOPLEFT",profile,"TOPLEFT",16,-44)
   values.icon:SetSize(48,48)
   values.name=label(profile,80,-45,282,"","GameFontNormalLarge",PALE)
+  values.classSigil=label(profile,330,-106,36,"","GameFontNormalLarge",GOLD)
   values.role=label(profile,80,-73,282,"","GameFontHighlightSmall",MUTED)
   values.band=label(profile,16,-101,352,"","GameFontHighlightSmall",GOLD)
   values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
@@ -165,6 +166,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
     end
   end
   values.name:SetText(short(classLabel,25).."  |  Lv "..tostring(level or "?"))
+  values.classSigil:SetText(({WARRIOR="I",PALADIN="II",HUNTER="III",ROGUE="IV",PRIEST="V",SHAMAN="VI",MAGE="VII",WARLOCK="VIII",DRUID="IX"})[classToken] or "*")
   values.role:SetText("Preferred role: "..short(role or "Not selected",30))
   local band,number=nil,tonumber(level)
   local zones=ForeverCompanionData and ForeverCompanionData.zones
