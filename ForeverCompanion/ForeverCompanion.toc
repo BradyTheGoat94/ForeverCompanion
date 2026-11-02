@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: Forever Companion
+## Notes: Class-aware leveling and dungeon reference (prelaunch, client API unverified)
+## Author: Forever Companion Contributors
+## Version: 0.4.0-beta
+## SavedVariablesPerCharacter: ForeverCompanionDB
+GuideData.lua
+Core.lua
