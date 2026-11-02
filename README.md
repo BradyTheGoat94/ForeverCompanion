@@ -105,3 +105,7 @@ Use `/fcdiag` to print the detected client build and the availability of key spe
 ## Offline regression tests (3.6 beta)
 
 Run `lua5.1 tests/offline_smoke.lua` from the repository root. The CI pipeline runs these mocked-client tests before packaging. They verify spellbook API fallback and name matching, multi-recipe ingredient demand, owned-count preservation during manual sync, and diagnostics when client APIs are absent. These tests do not connect to the game and cannot certify compatibility or account safety; live client verification remains mandatory before public release.
+
+## Guarded quest log compatibility (3.7 beta)
+
+The quest planner now uses the modern `C_QuestLog` APIs through protected calls. Header sections are used as zone fallback when quest-specific metadata is absent. If the client API throws an error or is temporarily unavailable, the addon retains the last successfully scanned quest snapshot instead of erasing it. This snapshot may be stale; it is not evidence that quests remain active. The change is covered by mocked-client regression tests and still requires live Forever verification.
