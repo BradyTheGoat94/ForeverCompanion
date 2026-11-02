@@ -12,6 +12,10 @@ The Quest Journal now has a **Pin Focus / Unpin Focus** button. Select a quest r
 
 Slash commands: `/fcq pin selected`, `/fcq pin 2` (live quest-log index, **not** the sorted row position), `/fcq pins`, `/fcq clearpins`, and `/fcq sort`. The addon limits saved pins to 100 and provides an explicit cleanup command for pins belonging to quests no longer present in the current log. Pinned priorities are **not** in-game quest tracking, map markers, automatic routing, or evidence of completion. If the quest API fails, cached quest information is clearly marked as outdated.
 
+## Manual shopping priorities (3.14.0-beta, develop)
+
+Use `/fcm shopping` to see the five largest outstanding quantities across your manually tracked profession material lists. The Professions handbook displays the same ranked needs, and the dashboard suggests the single largest shortage by material and profession. Results are sorted by remaining quantity and then alphabetically for reproducibility. Each profession list remains separate; the addon does not scan bags, inspect the auction house, purchase items, or assume two recipes share the same stock. Update quantities with the existing `/fcm owned` and `/fcm needed` commands.
+
 ## Premium dashboard (develop beta)
 
 The Overview is now a native WoW UI with a gold-accented sidebar, welcome banner, character summary, four quick actions, read-only progress bars, recommended next steps, and a manually checked **Today's Focus** list. The checklist is saved per character; it never executes gameplay actions. The compact toggle hides the lower dashboard panels, and the window scales down when the game UI is smaller.
