@@ -53,6 +53,16 @@ local function panel(x,y,w,h,label,icon)
   strip(p,w-6,-h+19,2,15,corner)
   -- A restrained illuminated title rail reinforces hierarchy on every card.
   strip(p,12,-37,w-24,1,{0.48,0.36,0.21,0.48})
+  -- Match the class hero's nested metallic frame and quiet velvet title rail.
+  strip(p,9,-9,w-18,1,{0.27,0.23,0.18,0.42})
+  strip(p,9,-h+10,w-18,1,{0.72,0.50,0.24,0.30})
+  strip(p,9,-12,1,h-24,{0.48,0.35,0.20,0.26})
+  strip(p,w-10,-12,1,h-24,{0.48,0.35,0.20,0.26})
+  strip(p,24,-12,12,1,{0.94,0.71,0.33,0.70})
+  strip(p,w-36,-12,12,1,{0.94,0.71,0.33,0.70})
+  strip(p,24,-h+13,12,1,{0.75,0.53,0.25,0.54})
+  strip(p,w-36,-h+13,12,1,{0.75,0.53,0.25,0.54})
+
   local start=15
   if icon then
     local image=p:CreateTexture(nil,"OVERLAY")
