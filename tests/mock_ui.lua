@@ -144,6 +144,22 @@ for _,w in ipairs(frames) do
 end
 assert(step1 and step1.caption.text=="1. Ready to turn in: Sample: Speak with trainer","recommended quest must use visible caption")
 assert(step3 and step3.caption.text=="3. Gather 6 Sample Ore for Blacksmithing (manual).","material recommendation must be visible")
+assert(step1.extraDetail and step1.extraDetail:find("Training Camp",1,true),"quest action should expose observed zone")
+assert(step1.extraDetail:find("Illustrative objective for test 102",1,true),"quest action should expose observed objective")
+assert(step3.extraDetail and step3.extraDetail:find("manual",1,true),"material action should disclose manual data")
+local oldTooltip=GameTooltip
+local tooltip={lines={}}
+function tooltip:SetOwner() end
+function tooltip:SetText(value) self.title=value end
+function tooltip:AddLine(value) self.lines[#self.lines+1]=value end
+function tooltip:Show() self.visible=true end
+function tooltip:Hide() self.visible=false end
+GameTooltip=tooltip
+step1.OnEnter(step1)
+assert(tooltip.title:find("Ready to turn in",1,true),"quest tooltip should describe action")
+assert(tooltip.lines[1]:find("Training Camp",1,true),"quest tooltip should include zone and objective")
+step1.OnLeave(step1)
+GameTooltip=oldTooltip
 assert(sourceLabel and sourceLabel.text:find("Professions: detected",1,true),"data source disclosure missing")
 -- Every dashboard progress metric must navigate to the matching read-only guide.
 local metricButtons={}
