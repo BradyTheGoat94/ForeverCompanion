@@ -402,3 +402,12 @@ assert(not ForeverCompanionRecipePlans.Move("ForecastTest",1,99),"out-of-range r
 local gather=ForeverCompanionCraftingAdvice.GatherList("ForecastTest")
 assert(#gather>0 and gather[1].shortage>0,"gather list must include shortages")
 assert(ForeverCompanionCraftingAdvice.FormatGatherList("ForecastTest",1):find("GATHER NEXT",1,true),"gather summary missing")
+
+local professionAdvice=ForeverCompanionProfessionProgress
+assert(professionAdvice.FormatNextSteps(75,75):find("cap reached",1,true),"profession cap should trigger trainer check")
+assert(professionAdvice.FormatNextSteps(50,75):find("skill-up color",1,true),"profession progression should require live recipe color")
+local previousSpellKnown=IsSpellKnown
+IsSpellKnown=function(id) return id==23881 end
+assert(ForeverCompanionSkillStudy.PracticePlan("WARRIOR",40):find("Bloodthirst",1,true),"practice plan must include known audited spells")
+assert(ForeverCompanionSkillStudy.PracticePlan("MAGE",40):find("No audited",1,true),"unaudited class must be disclosed")
+IsSpellKnown=previousSpellKnown
