@@ -9,7 +9,7 @@ ForeverCompanionForeverLessons={
  SHAMAN={source="https://worldofwarcraft.blizzard.com/en-us/news/24302097",steps={"Place totems to support the pull, then avoid leaving their useful range.","Check the level-20 Totemic Recall and Call of the Elements utility.","Use shocks deliberately so mana remains available for emergencies.","Enhancement and Elemental priorities differ; choose the role and trained talents first."}},
  MAGE={source="https://worldofwarcraft.blizzard.com/en-us/news/24302097",steps={"Keep a safe casting distance and manage mana between pulls.","Arcane Blast is a Forever talent, not evidence that retail Arcane Charges exist.","Use Frost control to survive when enemies close distance.","Frostfire Bolt is described as a level-40 spell; check trainer and patch."}},
  WARLOCK={source="https://www.wowhead.com/news/rogue-and-warlock-class-deep-dive-in-world-of-warcraft-forever-383299",steps={"Choose and command a pet suited to the pull; pet stats scale with yours.","Use damage-over-time effects on enemies that will live long enough.","Forever Banes and utility Curses have distinct roles; check your spellbook.","Life Tap only when health is safe; avoid sacrificing survival for mana."}},
- DRUID={source="https://www.wowhead.com/news/druid-and-hunter-class-deep-dives-in-world-of-warcraft-forever-383190",steps={"Match Cat, Bear, or caster form to your role and current resource.","Omen of Clarity becomes baseline at level 20; Nature's Grasp at level 10.","Lacerate is a baseline Bear ability at level 42; use it for sustained threat if trained.","Weapon effects and many consumables now work while shapeshifted.","Revive is an out-of-combat resurrection spell available from level 12."}}
+ DRUID={source="https://www.wowhead.com/news/druid-and-hunter-class-deep-dives-in-world-of-warcraft-forever-383190",steps={"Match Cat, Bear, or caster form to your role and current resource.","Omen of Clarity becomes baseline at level 20; Nature's Grasp at level 10.","Lacerate moved to a Feral talent in the latest reported tuning; check your talents and current patch before planning around it.","Weapon effects and many consumables now work while shapeshifted.","Revive is an out-of-combat resurrection spell described for level 12."}}
 }
 function ForeverCompanionForeverLessonLines(classToken)
  local data=ForeverCompanionForeverLessons[classToken]
@@ -17,6 +17,6 @@ function ForeverCompanionForeverLessonLines(classToken)
  local lines={"FOREVER-SPECIFIC MECHANICS | PUBLISHED BETA"}
  for i,step in ipairs(data.steps) do lines[#lines+1]=i..". "..step end
  lines[#lines+1]="SOURCE: "..data.source
- lines[#lines+1]="Published design; verify unlocks, talents, ranks and current patch in game."
+ lines[#lines+1]="Published design; November tuning may supersede earlier notes. Verify unlocks, talents, ranks and current patch in game."
  return lines
 end
