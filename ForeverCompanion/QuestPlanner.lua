@@ -248,7 +248,7 @@ function Planner.FormatOverview()
     end
     if #report.zones>4 then lines[#lines+1]="+"..(#report.zones-4).." more zones in quest log" end
   end
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Planner.FormatAuto()
   local result={"ACTIVE QUESTS", "Automatically detected from your quest log.", "NEXT STEP: "..Planner.Recommend()}
