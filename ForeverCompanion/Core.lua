@@ -228,7 +228,10 @@ local function render()
         lines[#lines+1]=i..". "..ability
         local row=rotationRows[i]
         if row then
-          local short=tostring(ability)
+          -- Use a concise action heading on the tile; retain the full
+          -- instructional sentence in the tooltip and guide detail.
+          local short=tostring(ability):gsub("^[Bb]efore pull:%s*","Prep: "):gsub("^[Bb]efore combat:%s*","Prep: ")
+          short=short:match("^([^;%.]+)") or short
           if #short>38 then short=short:sub(1,35).."..." end
           row.label:SetText(short)
           colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
