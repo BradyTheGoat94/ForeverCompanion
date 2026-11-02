@@ -157,9 +157,9 @@ end
 function Guide.Render(classToken,classLabel,level,role,mode)
   if not root then return end
   local handbook=ForeverCompanionData and ForeverCompanionData.classHandbook
-  local entry=handbook and handbook[classToken]
-  values.icon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
-  values.heroArt:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+  local entry=type(handbook)=="table" and handbook[classToken]
+  values.icon:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+  values.heroArt:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
   -- Tint the class motif with native class colors when exposed by the client.
   local classColor=RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
   if values.heroArt.SetVertexColor then
@@ -183,7 +183,7 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   local curriculum=ForeverCompanionLevelingCurriculum
   local stage=curriculum and type(curriculum.Stage)=="function" and curriculum.Stage(number or 1)
   local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
-  values.currentTip=notes and notes[stage] or (entry and entry.leveling or "Review class-specific tips below.")
+  values.currentTip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling) or "Review class-specific tips below."
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
   values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",24))
