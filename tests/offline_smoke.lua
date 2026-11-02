@@ -684,3 +684,10 @@ for _,line in ipairs(mageLines) do
  end
 end
 assert(foundIntellect,"Arcane Intellect missing from Mage hints")
+
+-- Mage milestones are level-aware coaching, not audited spell-ID entries.
+local earlyMage=table.concat(ForeverCompanionMageMilestoneLines(4),"\n")
+assert(earlyMage:find("[LEVEL REACHED] Lv 4 Frostbolt",1,true),"Frostbolt milestone missing")
+assert(earlyMage:find("[UPCOMING] Lv 10 Frost Nova",1,true),"Frost Nova should be upcoming at level 4")
+local lateMage=table.concat(ForeverCompanionMageMilestoneLines(10),"\n")
+assert(lateMage:find("[LEVEL REACHED] Lv 10 Frost Nova",1,true),"Frost Nova milestone should unlock at level 10")
