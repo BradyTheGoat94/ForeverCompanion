@@ -1,47 +1,54 @@
-"""Render a visual approximation from actual offline widget snapshot geometry.
-Not an in-game screenshot; WoW textures/fonts are approximated.
+"""Illustrative mock-client dashboard preview using actual exported widget text.
+Not a live WoW screenshot; native fonts, textures and anchors are approximated.
 """
 import csv
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-SOURCE=Path("ui_snapshot.txt")
-if not SOURCE.exists():
-    raise SystemExit("UI snapshot not found")
-rows=list(csv.DictReader(SOURCE.open(encoding="utf-8"),delimiter="|"))
-W,H=1000,760
-im=Image.new("RGB",(W,H),(17,21,30))
+rows=list(csv.DictReader(Path("ui_snapshot.txt").open(encoding="utf-8"),delimiter="|"))
+def actual(phrase, fallback):
+    for row in rows:
+        if row.get("kind")=="FontString" and phrase in row.get("text",""):
+            return row["text"][:100]
+    return fallback
+
+im=Image.new("RGB",(1180,800),(12,16,24))
 d=ImageDraw.Draw(im)
 try:
-    font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",14)
-    heading=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",22)
+    font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",16)
+    small=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",13)
+    title=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",28)
+    heading=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",18)
 except OSError:
-    font=ImageFont.load_default();heading=font
-x0,y0=140,95
-d.rounded_rectangle((x0,y0,x0+720,y0+560),radius=10,fill=(25,32,43),outline=(170,133,64),width=2)
-d.rectangle((x0+2,y0+2,x0+718,y0+96),fill=(31,38,49))
-d.text((x0+20,y0+18),"FOREVER COMPANION",font=heading,fill=(242,198,106))
-d.text((x0+20,y0+47),"Offline UI snapshot  |  simulated WoW client",font=font,fill=(174,184,198))
-tabs=["Overview","Leveling","Quests","Dungeons","Professions","PvP","Settings"]
-for i,name in enumerate(tabs):
-    x=x0+20+i*97
-    d.rounded_rectangle((x,y0+60,x+94,y0+88),radius=3,fill=(87,67,39) if i==0 else (44,52,65),outline=(122,104,74))
-    d.text((x+6,y0+67),name,font=font,fill=(240,226,200))
-d.rounded_rectangle((x0+16,y0+100,x0+704,y0+470),radius=4,fill=(20,27,37),outline=(60,70,82))
-content=next((r["text"] for r in rows if r["kind"]=="FontString" and "WELCOME, ADVENTURER" in r["text"]),None)
-if content:
-    text=content.replace("  "," ")
-    # Original UI is one large multiline fontstring, exported as a single line.
-    phrases=["WELCOME, ADVENTURER","Start here:","Use Next Quest","Open Leveling","Detected class:","Displayed class:","Role preference:","Tip:","All gameplay","CRAFTING GOALS:","Client:","Modern spellbook","Modern talents:","Legacy professions:","Modern quest log:","Quest objective API:","XP read:","These checks"]
-    for phrase in phrases[1:]:
-        text=text.replace(phrase,"\\n"+phrase)
-    lines=text.split("\\n")
-    y=y0+120
-    for line in lines:
-        if y>y0+445: break
-        d.text((x0+30,y),line[:94],font=font,fill=(230,197,131) if line.startswith(("WELCOME","CRAFTING","Client:")) else (214,218,225))
-        y+=24
-d.text((x0+20,y0+517),"v3.9 beta  |  Read-only guidance  |  Mock-client rendering",font=font,fill=(180,190,205))
-d.text((x0,y0+583),"NOT A LIVE WOW SCREENSHOT — reconstructed from addon widget output",font=font,fill=(222,172,100))
+    font=small=title=heading=ImageFont.load_default()
+gold=(226,176,83); pale=(222,224,229); muted=(150,163,182)
+x,y=140,78
+d.rounded_rectangle((x,y,x+900,y+620),radius=12,fill=(23,29,41),outline=(164,124,60),width=3)
+d.rectangle((x+8,y+8,x+892,y+88),fill=(30,36,49))
+d.rectangle((x+14,y+12,x+886,y+15),fill=gold)
+d.text((x+26,y+29),actual("FOREVER COMPANION","FOREVER COMPANION"),font=title,fill=gold)
+d.text((x+27,y+64),actual("Level ","Class | Level | Role"),font=small,fill=muted)
+d.rounded_rectangle((x+12,y+98,x+178,y+527),radius=5,fill=(30,39,55))
+d.text((x+27,y+115),"NAVIGATION",font=heading,fill=gold)
+for i,name in enumerate(["Overview","Leveling","Quests","Dungeons","Professions","PvP","Settings"]):
+    yy=y+153+i*43
+    d.rounded_rectangle((x+23,yy,x+165,yy+35),radius=5,fill=(102,76,42) if i==0 else (44,54,70),outline=(155,120,66) if i==0 else (60,70,86))
+    d.text((x+37,yy+9),name,font=small,fill=pale)
+def panel(left,top,width,height,label,value):
+    d.rounded_rectangle((x+left,y+top,x+left+width,y+top+height),radius=6,fill=(37,47,63),outline=(77,79,83),width=1)
+    d.rectangle((x+left,y+top,x+left+width,y+top+3),fill=gold)
+    d.text((x+left+17,y+top+14),label,font=heading,fill=gold)
+    d.text((x+left+17,y+top+49),value[:55],font=small,fill=pale)
+panel(208,116,666,92,"CHARACTER PROFILE",actual(" | Level ","Character data pending"))
+panel(208,220,323,102,"QUEST JOURNAL",actual("Active quests:","Quest count pending"))
+panel(543,220,331,102,"LEVELING PROGRESS",actual("XP:","XP data pending"))
+d.rounded_rectangle((x+558,y+293,x+848,y+302),radius=3,fill=(73,82,93))
+panel(208,334,666,118,"QUICK ACCESS","Choose a section to open your guide")
+for i,label in enumerate(["QUESTS","BUILDS","CRAFTING","PVP"]):
+    bx=x+225+i*157
+    d.rounded_rectangle((bx,y+396,bx+143,y+428),radius=4,fill=(87,69,44),outline=gold)
+    d.text((bx+14,y+404),label,font=small,fill=pale)
+d.text((x+25,y+565),"READ-ONLY ADVISOR   /fc  |  v3.9 beta",font=small,fill=muted)
+d.text((140,733),"OFFLINE MOCK-CLIENT PREVIEW — NOT A LIVE WOW SCREENSHOT",font=font,fill=gold)
 im.save("ui_preview.png")
-print("Saved ui_preview.png")
+print("Rendered illustrative preview from",len(rows),"exported widgets")
