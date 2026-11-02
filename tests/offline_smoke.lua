@@ -472,3 +472,12 @@ for _,name in ipairs({"Alchemy","Blacksmithing","Enchanting","Engineering","Herb
 end
 assert(camp.features.Mining==nil and camp.Format("Mining"):find("no specific camp feature listed",1,true),"mining must not receive an invented camp item")
 assert(camp.Format("Alchemy"):find("Blessing of Wisdom",1,true),"published stacking restriction missing")
+
+dofile("ForeverCompanion/ForeverWorldGuide.lua")
+local world=ForeverCompanionWorldGuide
+assert(world.Format(1):find("Zephras Isle",1,true),"official Skyborne starter-zone context missing")
+assert(world.Format(35):find("Riverglades",1,true),"official mid-level Riverglades context missing")
+assert(not world.Format(15):find("Riverglades",1,true),"Riverglades must not be misrepresented as a low-level route")
+assert(world.Format(39):find("level 40",1,true),"dual spec upcoming milestone missing")
+assert(world.Format(40):find("starting at level 40",1,true),"dual spec milestone missing")
+assert(world.Format(60):find("level cap",1,true),"official level cap missing")
