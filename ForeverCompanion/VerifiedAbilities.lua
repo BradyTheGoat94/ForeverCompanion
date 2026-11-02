@@ -55,6 +55,14 @@ function ForeverCompanionKnownSpell(spellID)
  return nil
 end
 
+-- Returns a safe UI label without treating unknown availability as learned.
+function ForeverCompanionSpellAvailability(spellID)
+ local known=ForeverCompanionKnownSpell(spellID)
+ if known==true then return "Spellbook checked: known" end
+ if known==false then return "Spellbook checked: not known" end
+ return "Spellbook status unavailable: verify in client"
+end
+
 -- Read-only audit helpers for patch updates and data quality checks.
 function ForeverCompanionAbilityAudit()
  local data=ForeverCompanionVerifiedAbilities
