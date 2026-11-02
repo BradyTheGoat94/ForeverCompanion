@@ -1,3 +1,10 @@
+## 0.7.0-beta (source committed; live-client verification pending)
+- Added up to 15 clickable quest rows per page, with previous/next page navigation.
+- Selecting a quest displays its focused details and objective text.
+- Retains quest-log auto-detection and manual personal notes.
+- Added detailed quest/UI regression tests for launch-day verification.
+- Client API compatibility, layout behavior and actual quest-log accuracy remain unverified.
+
 # Changelog
 
 ## 0.6.1-beta (prelaunch, client testing pending)
