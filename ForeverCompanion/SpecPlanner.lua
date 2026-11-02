@@ -29,6 +29,16 @@ function P.Next(class)
  if total==0 then return end
  db()[class]=(index%total)+1
 end
+-- Some planner alternatives are illustrative rather than confirmed client specs.
+-- Keep them visible for reference, but never silently present them as verified.
+function P.Evidence(class)
+ local choice=P.Get(class)
+ local name=type(choice)=="table" and choice[1]
+ if class=="DRUID" and name=="Guardian / Bear" then
+  return "UNCONFIRMED: Guardian / Bear is a planner alternative; check the Forever talent tree."
+ end
+ return "ADVISORY: spec availability, talent ranks and rotations require live-client checks."
+end
 local plans={
  Damage={
   leveling={"Keep enemies controlled and sustain damage without exhausting resources.","Use burst only when a difficult pull warrants it.","Save an escape or defensive ability for mistakes."},
