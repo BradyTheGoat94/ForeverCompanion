@@ -675,6 +675,25 @@ function ForeverCompanionGuideReadinessLines()
  return lines
 end
 
+-- Human-readable quick start, deliberately static and beginner-friendly.
+-- No secure combat APIs, auto-casting, or recommendation engine.
+function ForeverCompanionQuickStartLines(classToken)
+ local planner=ForeverCompanionSpecPlanner
+ if type(planner)~="table" or type(planner.Get)~="function" then return {} end
+ local selected=planner.Get(classToken)
+ local name=type(selected)=="table" and selected[1]
+ local class=ForeverCompanionSpecPlaybooks[classToken]
+ local steps=type(class)=="table" and class[name]
+ if type(steps)~="table" then return {} end
+ local lines={"START HERE | "..name.." | 3 BEGINNER ACTIONS"}
+ lines[#lines+1]="BEFORE PULL: check spellbook, equipped weapon, and active talents."
+ for i=1,math.min(3,#steps) do
+  lines[#lines+1]="PRACTICE "..i..": "..steps[i]
+ end
+ lines[#lines+1]="NEXT: use the sourced conditional priority below when your abilities are learned; this practice list is not a live DPS rotation."
+ return lines
+end
+
 function ForeverCompanionSourcedPriorityLines(classToken)
  local planner=ForeverCompanionSpecPlanner
  if type(planner)~="table" or type(planner.Get)~="function" then return {} end
