@@ -15,3 +15,30 @@ function ForeverCompanionGetBeginnerCoach(classToken)
   if type(classToken) ~= "string" then return nil end
   return ForeverCompanionBeginnerCoach[classToken]
 end
+
+-- Specialization-specific beginner decision prompts. These are coaching cues,
+-- not verified spell rotations, talent builds, or one-button macros.
+ForeverCompanionSpecCoach = {
+ WARRIOR={Arms={"Keep weapon attacks connected and spend rage deliberately.","Check whether your target is in execute range."},Fury={"Maintain melee uptime without wasting rage.","Keep an interrupt or defensive available for danger."},Protection={"Face enemies away from allies and maintain threat.","Use mitigation before predictable heavy damage."}},
+ PALADIN={Holy={"Prioritize injured allies over personal damage.","Avoid draining all mana on unnecessary healing."},Protection={"Establish threat before the group begins area damage.","Keep a defensive response ready for large pulls."},Retribution={"Maintain an appropriate trained Seal.","Check Judgement interactions and mana before repeating."}},
+ HUNTER={["Beast Mastery"]={"Keep the pet alive and attacking the intended target.","Avoid accidental pet pulls."},Marksmanship={"Maintain safe ranged positioning.","Avoid interrupting valuable ranged attacks with movement."},Survival={"Plan traps and control before a difficult pull.","Use distance and pet control to survive."}},
+ ROGUE={Assassination={"Maintain appropriate poisons and position safely.","Spend combo points before switching targets."},Combat={"Keep consistent melee uptime.","Pool energy when an important ability is nearly ready."},Subtlety={"Plan your opening and control window.","Save energy for a critical interrupt or escape."}},
+ PRIEST={Discipline={"Prevent dangerous damage when your trained tools permit.","Keep mana for emergency healing."},Holy={"Heal the most threatened ally first.","Avoid overhealing when mana is scarce."},Shadow={"Apply damage-over-time spells to durable targets.","Watch mana and threat during longer fights."}},
+ SHAMAN={Elemental={"Keep casting safely while maintaining useful totems.","Reserve mana for control or emergency healing."},Enhancement={"Keep melee uptime and an appropriate weapon imbue.","Use shocks without exhausting emergency mana."},Restoration={"Keep allies stable and position to avoid interrupts.","Choose useful totems without neglecting healing."}},
+ MAGE={Arcane={"Check the actual Forever spellbook before planning burst.","Manage mana and avoid assuming retail-era Arcane Charges."},Fire={"Keep a safe casting position.","Avoid committing long casts when movement is required."},Frost={"Use slows and roots to create safe casting windows.","Control dangerous enemies before resuming damage."}},
+ WARLOCK={Affliction={"Keep damage-over-time effects on durable targets.","Do not overapply effects to enemies that will die immediately."},Demonology={"Keep your pet alive and correctly controlled.","Check pet abilities before relying on their utility."},Destruction={"Plan direct casts around safe uptime.","Watch threat and reserve defensive tools."}},
+ DRUID={Balance={"Stay in the correct form for your spells.","Manage mana during sustained casting."},Feral={"Check whether Cat or Bear form matches your role.","Build and spend resources without losing positioning."},Restoration={"Prioritize threatened allies and mana efficiency.","Use trained healing-over-time spells when appropriate."},["Guardian / Bear"]={"Check whether this spec is actually supported in Forever.","If tanking in Bear Form, prioritize threat and survival."}}
+}
+function ForeverCompanionSpecCoachLines(classToken)
+ local result={}
+ local planner=ForeverCompanionSpecPlanner
+ local selected=type(planner)=="table" and type(planner.Get)=="function" and planner.Get(classToken)
+ local name=type(selected)=="table" and selected[1]
+ local class=ForeverCompanionSpecCoach[classToken]
+ local notes=type(class)=="table" and class[name]
+ if not notes then return result end
+ result[#result+1]="SPEC PRACTICE: "..name.." (ILLUSTRATIVE)"
+ for i,note in ipairs(notes) do result[#result+1]=i..". "..note end
+ result[#result+1]="Always check trained spells, role, and actual Forever talents."
+ return result
+end
