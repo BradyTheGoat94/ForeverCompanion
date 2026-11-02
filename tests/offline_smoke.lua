@@ -429,3 +429,9 @@ assert(found[1].state=="IN SPELLBOOK" and found[3].state=="NOT IN SCANNED SPELLB
 local partial=discovery.Find({"Blink"},{supported=true,complete=false,inspected=1,known={}})
 assert(partial[1].state=="UNCONFIRMED","partial scan cannot prove absence")
 assert(discovery.Find({"Blink"},{supported=false,complete=false,inspected=0,known={}})[1].state=="UNCONFIRMED","unsupported scan cannot prove absence")
+
+local ready=ForeverCompanionSkillDiscovery.Summary("WARRIOR",{supported=false,complete=false,inspected=0,known={}})
+assert(ready.known==0 and ready.notScanned==0,"unsupported spellbook must not imply missing skills")
+local checklist=ForeverCompanionSkillDiscovery.Checklist("WARRIOR",{supported=false,complete=false,inspected=0,known={}})
+assert(table.concat(checklist," "):find("unavailable",1,true),"unsupported skill checklist must be cautious")
+assert(ForeverCompanionSkillDiscovery.FormatSummary("MAGE"):find("Not a class-completion score",1,true),"readiness must not imply full class coverage")
