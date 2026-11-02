@@ -234,8 +234,14 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   end
   local handbook=type(ForeverCompanionData)=="table" and ForeverCompanionData.classHandbook
   local entry=type(handbook)=="table" and handbook[classToken]
-  values.icon:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
-  values.heroArt:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+  -- Use only Blizzard textures already present in the client. A missing
+  -- class icon falls back to the native book symbol; class names stay visible.
+  local nativeIcon=type(entry)=="table" and entry.icon or nil
+  if type(nativeIcon)~="string" or not nativeIcon:find("^Interface") then
+    nativeIcon="Interface\\Icons\\INV_Misc_Book_09"
+  end
+  values.icon:SetTexture(nativeIcon)
+  values.heroArt:SetTexture(nativeIcon)
   -- Tint the class motif with native class colors when exposed by the client.
   local classColor=type(RAID_CLASS_COLORS)=="table" and RAID_CLASS_COLORS[classToken]
   if type(values.heroArt.SetVertexColor)=="function" then
