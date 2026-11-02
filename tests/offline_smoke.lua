@@ -526,3 +526,10 @@ assert(ForeverCompanionCraftCosts.Set("CostTest","Herb",nil)==false,"nil unit pr
 assert(ForeverCompanionRecipePlans.Ingredient("CostTest",1,"Vial",1))
 budget=ForeverCompanionShoppingBudget.Build("CostTest")
 assert(not budget.complete and budget.unknown==1 and budget.knownCopper==500,"unknown prices must remain incomplete")
+
+dofile("ForeverCompanion/Readiness.lua")
+local readiness=ForeverCompanionReadiness.Build("WARRIOR",20,"CostTest")
+assert(#readiness==5 and readiness[1].state=="PUBLISHED","readiness should include sourced class preview")
+assert(readiness[4].state=="PARTIAL","missing material price should remain partial")
+assert(readiness[5].state=="UNTESTED","offline build must not claim in-game verification")
+assert(ForeverCompanionReadiness.Format("WARRIOR",20,"CostTest"):find("No gameplay automation",1,true))
