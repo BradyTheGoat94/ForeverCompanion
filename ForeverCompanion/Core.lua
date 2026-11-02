@@ -840,6 +840,7 @@ local function createUI()
     local row=CreateFrame("Button",nil,child)
     row:SetSize(122,78)
     row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*127,-222)
+    row:EnableMouse(true)
     row.bg=row:CreateTexture(nil,"BACKGROUND")
     row.bg:SetAllPoints(row)
     colorTexture(row.bg,0.105,0.13,0.18,1)
@@ -879,6 +880,12 @@ local function createUI()
     row.label:SetWidth(116)
     row.label:SetJustifyH("CENTER")
     row.label:SetTextColor(0.95,0.88,0.72)
+    row:SetScript("OnEnter",function(self)
+      if self.bg then colorTexture(self.bg,0.19,0.17,0.13,1) end
+    end)
+    row:SetScript("OnLeave",function(self)
+      if self.bg then colorTexture(self.bg,0.105,0.13,0.18,1) end
+    end)
     row:Hide()
     rotationRows[i]=row
   end
