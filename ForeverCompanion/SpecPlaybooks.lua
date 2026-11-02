@@ -627,6 +627,15 @@ ForeverCompanionSourcedPriorities={
   },
  },
 }
+-- October 30 live-server hotfix data, not confirmed in official development notes.
+-- This warning applies to talent-sensitive guides even if the cited guide is older.
+ForeverCompanionHotfixCautions={
+ DRUID="HOTFIX DATA (unconfirmed in official notes): Druid talent positions and Berserk access changed. Re-check your live talent tree before copying a build.",
+ PALADIN="HOTFIX DATA (unconfirmed in official notes): all three Paladin talent trees were reworked. Re-check talents, ranks and spellbook.",
+ MAGE="HOTFIX DATA (unconfirmed in official notes): Mage talents were moved or replaced. Confirm your selected talents and spell behavior.",
+ HUNTER="HOTFIX DATA (unconfirmed in official notes): Hunter talents and damage tuning changed. Confirm current trained spells and priority.",
+ PRIEST="HOTFIX DATA (unconfirmed in official notes): Priest talent tuning and Shadow Word: Death backlash changed. Confirm live tooltip.",
+}
 function ForeverCompanionSourcedPriorityLines(classToken)
  local planner=ForeverCompanionSpecPlanner
  if type(planner)~="table" or type(planner.Get)~="function" then return {} end
@@ -636,6 +645,7 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  entry=type(entry)=="table" and entry[name]
  if type(entry)~="table" then return {} end
  local lines={"SOURCE-REVIEWED CONDITIONAL PRIORITY | "..name,entry.reviewed}
+ if ForeverCompanionHotfixCautions[classToken] then lines[#lines+1]=ForeverCompanionHotfixCautions[classToken] end
  for _,rule in ipairs(entry.rules) do lines[#lines+1]=rule end
  lines[#lines+1]="Re-check after each action; skip unavailable or untalented abilities."
  lines[#lines+1]="Reference: "..entry.source
