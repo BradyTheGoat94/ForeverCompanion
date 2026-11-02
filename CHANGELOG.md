@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.2-beta (visual polish; live-client testing pending)
+- Dark, higher-contrast panel with gold accent and improved status header.
+- Compact and expanded guide window modes, saved per character.
+- Active quest counter in the header.
+- Quest-log display grouped by available zone metadata and sorted alphabetically.
+- Ready-to-turn-in quest summary and shorter objective lists.
+- Interface remains a prototype pending screenshot-based QA and client testing.
+
 ## 0.5.1-beta (prelaunch, API compatibility unverified)
 - Added automatic read-only detection of active quests from the in-game quest log.
 - Refreshes on world entry and quest-related events.
