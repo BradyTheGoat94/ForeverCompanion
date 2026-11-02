@@ -247,11 +247,9 @@ function Planner.FormatAuto()
   return table.concat(result,"\n")
 end
 local events=CreateFrame("Frame")
-events:RegisterEvent("PLAYER_ENTERING_WORLD")
-events:RegisterEvent("QUEST_LOG_UPDATE")
-events:RegisterEvent("QUEST_ACCEPTED")
-events:RegisterEvent("QUEST_REMOVED")
-events:RegisterEvent("QUEST_TURNED_IN")
+for _,event in ipairs({"PLAYER_ENTERING_WORLD","QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN"}) do
+  pcall(function() events:RegisterEvent(event) end)
+end
 events:SetScript("OnEvent",function() Planner.Sync() end)
 
 SLASH_FOREVERCOMPANIONQUEST1="/fcq"
