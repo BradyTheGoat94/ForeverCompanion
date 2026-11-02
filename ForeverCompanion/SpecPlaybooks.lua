@@ -644,7 +644,20 @@ ForeverCompanionHotfixCautions={
 -- which spell a player should cast: Forever inherits Mainline secret-value rules.
 function ForeverCompanionGuideReadinessLines()
  local lines={}
- local level=type(UnitLevel)=="function" and UnitLevel("player") or nil
+ local level=nil
+ -- UnitLevel is usually readable, but avoid comparing or formatting secret
+ -- values if a future client marks it restricted. No combat-state reads.
+ if type(UnitLevel)=="function" then
+  local ok,value=pcall(UnitLevel,"player")
+  if ok and type(value)=="number" then
+   local accessible=true
+   if type(issecretvalue)=="function" then
+    local check,secret=pcall(issecretvalue,value)
+    accessible=check and not secret
+   end
+   if accessible then level=value end
+  end
+ end
  if type(level)=="number" then
   if level<10 then
    lines[#lines+1]="CURRENT LEVEL "..level..": talents are not unlocked yet. Practice your trained basic spells first."
