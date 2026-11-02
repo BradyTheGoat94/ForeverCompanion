@@ -584,6 +584,22 @@ ForeverCompanionSourcedPriorities={
   },
  },
  HUNTER={
+  Survival={
+   source="https://www.wowhead.com/forever/guide/classes/hunter/survival/rotation-cooldowns-pve",
+   corroboration="https://www.icy-veins.com/wow-forever/survival-hunter-melee-dps-pve-guide/",
+   reviewed="Wowhead Oct 30; Icy Veins level-30 beta, 2026",
+   rules={
+    "1. Before the pull, apply Hunter's Mark and send the pet in first to establish threat.",
+    "2. Before a full melee Survival talent build comes online, use Auto Shot, Serpent Sting and trained Aimed Shot at range.",
+    "3. For full melee Survival, keep Raptor Strike queued during melee attacks.",
+    "4. Use Mongoose Bite when available; with Expose Prey, marked-target attacks can enable it without dodging.",
+    "5. Use talented Strider Kick on cooldown; it does not interrupt enemy spells.",
+    "6. Use Immolation Trap when safe and affordable; use talented Summon Hawk when appropriate.",
+    "7. Against up to four enemies use Multi-Shot; for larger packs channel Volley, with Explosive Trap only if safe.",
+    "8. Use Rapid Fire during planned damage windows; use Tranquilizing Shot only when assigned an enrage dispel.",
+    "9. The Wowhead ranged/melee weaving priority is marked work in progress: do not present an invented weave as optimal.",
+   },
+  },
   Marksmanship={
    source="https://www.wowhead.com/forever/guide/classes/hunter/marksmanship/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; PvE priority, not measured against all gear sets",
