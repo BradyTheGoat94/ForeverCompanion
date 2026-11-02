@@ -257,8 +257,8 @@ ForeverCompanionSourcedPriorities={
    rules={
     "1. Before predictable damage, put Rejuvenation on allies likely to be hit.",
     "2. For a moderate single-target hit, use Regrowth; use Rejuvenation for light sustained damage.",
-    "3. For three or more damaged players in one party, use Wild Growth after the damage lands.",
-    "4. If an ally may die before a cast completes, use Swiftmend on an active HoT.",
+    "3. For three or more damaged players in one party, use Wild Growth after the damage lands; recent client diffs report a three-second cast, so plan for cast time.",
+    "4. If an ally may die before a cast completes, use Swiftmend on an active HoT; the latest hotfix consumes the HoT, so reapply it afterward if needed.",
     "5. If Swiftmend is unavailable, pair Nature's Swiftness with Healing Touch when talented.",
     "6. During raid damage, heal your assigned party first, then blanket Rejuvenation as resources permit.",
     "7. Use Innervate on a healer who needs Mana; save Rebirth for a recoverable combat death.",
@@ -267,7 +267,7 @@ ForeverCompanionSourcedPriorities={
   },
   Feral={
    source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-dps",
-   reviewed="Wowhead Oct 29 guide; Nov 2026 hotfix: Berserk removed, Lacerate talent added",
+   reviewed="Wowhead Oct 29 guide; Oct 30 hotfix: Berserk removed from talents (not the game), Lacerate talent added",
    corroboration="https://www.wowhead.com/news/massive-talent-tree-changes-to-druids-and-paladins-class-tuning-for-wow-forever-383670",
    rules={
     "1. Apply Rake when a target will survive at least six seconds; do not clip early.",
@@ -276,7 +276,7 @@ ForeverCompanionSourcedPriorities={
     "4. On Clearcasting, use Shred or Claw to avoid wasting the free action.",
     "5. Cast Shifting Power only when its Energy gain will not overflow your bar.",
     "6. Pool Energy ahead of Rake or Rip refreshes; Ferocious Bite is a finisher when the target is about to die.",
-    "7. On packs, spread Rake while maintaining bleeds; Berserk was removed in the November talent hotfix.",
+    "7. On packs, spread Rake while maintaining bleeds; Berserk is no longer a Feral talent, but may be available baseline to all Druid specs. Verify the spellbook.",
    },
   },
   Balance={
@@ -300,7 +300,7 @@ ForeverCompanionSourcedPriorities={
    rules={
     "1. Maintain Renew on a tank receiving steady damage.",
     "2. Use Heal for efficient tank healing; choose Flash Heal if the tank may die before Heal lands.",
-    "3. When you and the tank are injured, cast Binding Heal if learned.",
+    "3. If talented for Holy Binding, Flash Heal on another ally also heals you; Binding Heal is a separate trained spell in the updated client.",
     "4. When trained, put Prayer of Mending on a damaged target to bounce between injured allies.",
     "5. When most of one party is low, cast Prayer of Healing on a member of that party; it is costly.",
     "6. Use Holy Nova when nearby allies are stacked and need a quick threat-free heal.",
@@ -329,7 +329,7 @@ ForeverCompanionSourcedPriorities={
     "1. For durable enemies, open with Mind Blast, then apply Shadow Word: Pain and Devouring Plague.",
     "2. Keep Shadow Word: Pain active, refreshing as it expires rather than clipping early.",
     "3. Maintain Devouring Plague on your primary target when trained and worthwhile.",
-    "4. Cast Mind Blast on cooldown; use Shadow Word: Death when available and safe.",
+    "4. Cast Mind Blast on cooldown; use Shadow Word: Death at level 32+ mainly as a killing blow: if the target survives, recent client data indicates backlash of 30% of your maximum health.",
     "5. Use Vampiric Embrace when the party needs its healing; it is optional for pure single-target damage.",
     "6. Fully channel Mind Flay as filler instead of repeatedly clipping its channel.",
     "7. For several durable enemies, spread Shadow Word: Pain selectively; Mana cost can outweigh the benefit.",
