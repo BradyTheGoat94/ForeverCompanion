@@ -533,3 +533,7 @@ assert(#readiness==5 and readiness[1].state=="PUBLISHED","readiness should inclu
 assert(readiness[4].state=="PARTIAL","missing material price should remain partial")
 assert(readiness[5].state=="UNTESTED","offline build must not claim in-game verification")
 assert(ForeverCompanionReadiness.Format("WARRIOR",20,"CostTest"):find("No gameplay automation",1,true))
+
+assert(type(ForeverCompanionOrnaments.Hero)=="function","hero filigree must load")
+assert(type(ForeverCompanionOrnaments.Corners)=="function","corner filigree must load")
+assert(type(ForeverCompanionOrnaments.Ribbon)=="function","ribbon separator must load")
