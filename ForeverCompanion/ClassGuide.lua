@@ -71,7 +71,8 @@ function Guide.Create(parent)
   values.icon:SetSize(43,43)
   values.name=label(profile,71,-45,292,"","GameFontNormalLarge",PALE)
   values.role=label(profile,71,-73,292,"","GameFontHighlightSmall",MUTED)
-  values.tip=label(profile,16,-103,352,"","GameFontHighlightSmall",PALE)
+  values.band=label(profile,16,-101,352,"","GameFontHighlightSmall",GOLD)
+  values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
   local build=plate(root,394,0,386,151)
   label(build,15,-13,345,"BUILD & ROTATION REFERENCE","GameFontNormal",GOLD)
   values.spec=label(build,16,-46,351,"","GameFontHighlight",PALE)
@@ -95,7 +96,15 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.icon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
   values.name:SetText(short(classLabel,25).."  |  Lv "..tostring(level or "?"))
   values.role:SetText("Preferred role: "..short(role or "Not selected",30))
-  values.tip:SetText(short(entry and entry.leveling or "Review your class-specific leveling guide below.",85))
+  local band,number=nil,tonumber(level)
+  local zones=ForeverCompanionData and ForeverCompanionData.zones
+  if number and type(zones)=="table" then
+    for _,candidate in ipairs(zones) do
+      if number>=candidate[1] and number<=candidate[2] then band=candidate;break end
+    end
+  end
+  values.band:SetText(band and ("Leveling phase: "..short(band[3],27).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
+  values.tip:SetText(short(entry and entry.leveling or "Review class-specific tips below.",53))
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
   values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",30))
   local contexts=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts
