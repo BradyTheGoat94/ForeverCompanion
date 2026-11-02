@@ -248,6 +248,22 @@ end
 -- Source-checked priority addenda. These are build-specific, not universal
 -- damage rankings; rules are re-evaluated whenever the next cast is chosen.
 ForeverCompanionSourcedPriorities={
+ PALADIN={
+  Retribution={
+   source="https://www.icy-veins.com/wow-forever/retribution-paladin-melee-dps-pve-guide",
+   corroboration="https://www.wowhead.com/forever/guide/classes/paladin/retribution/level-30-dps-overview",
+   reviewed="Icy Veins level-30 beta guide Oct 27; Wowhead level-30 beta guide Oct 10",
+   rules={
+    "1. Maintain Blessing and Aura; always keep a suitable Seal active.",
+    "2. For a slow weapon with low Spell Power, consider talented Seal of Command; with fast weapons and Spell Power, compare Seal of Righteousness.",
+    "3. Judge Seal of the Crusader first on durable enemies if the Holy-damage amplification will pay off; then switch back to your damage Seal.",
+    "4. Use Holy Strike and Judgement when trained and affordable; Judgement does not consume the active Seal in Forever.",
+    "5. With talented Holy Shock (Shockadin build), cast it when useful; use Exorcism against Undead or Demons.",
+    "6. For AoE at level 20+, use Consecration when Mana permits; avoid assuming it is available before level 20.",
+   },
+  },
+ },
+
  MAGE={
   Arcane={
    source="https://www.wowhead.com/forever/guide/classes/mage/arcane/rotation-cooldowns-pve-dps",
