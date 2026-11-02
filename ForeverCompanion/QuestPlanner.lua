@@ -128,6 +128,7 @@ end
 function Planner.AutoCount() return auto.lastCount end
 function Planner.GetFilter() return auto.filter end
 function Planner.IsSupported() return auto.supported end
+function Planner.IsSnapshotStale() return auto.scanned and not auto.supported and #auto.entries>0 end
 function Planner.HasZoneMetadata()
   for _,q in ipairs(auto.entries) do if type(q.zone)=="string" and q.zone~="" then return true end end
   return false
@@ -182,6 +183,7 @@ function Planner.Previous()
   return true
 end
 function Planner.Recommend()
+  if not auto.supported then return "Quest data unavailable; last known quests may be outdated. Check the in-game quest log." end
   if #auto.entries==0 then return "No active quests detected yet." end
   local ready={}
   local unfinished={}
@@ -197,6 +199,7 @@ function Planner.FormatFocused()
   local q,index=Planner.GetSelected()
   if not q then return "No quest selected. Your active quest log will appear here." end
   local lines={"FOCUSED QUEST "..index.."/"..#auto.entries, q.title, q.complete and "Ready for turn-in" or "In progress"}
+  if not auto.supported then lines[#lines+1]="WARNING: cached quest data; verify in game." end
   if q.zone then lines[#lines+1]="Zone: "..q.zone end
   if #q.objectives==0 then lines[#lines+1]="No objective details available from this client." end
   for _,objective in ipairs(q.objectives) do lines[#lines+1]="  "..objective end
@@ -207,7 +210,7 @@ function Planner.FormatAuto()
   if not auto.scanned then
     result[#result+1]="Waiting for the first quest-log scan."
   elseif not auto.supported then
-    result[#result+1]="This client does not expose a recognized quest-log API. Report your client version."
+    result[#result+1]="Quest API unavailable or scan failed. Any quests shown below are from the last successful scan and may be stale."
   elseif #auto.entries==0 then
     result[#result+1]="No active quests in the quest log."
   else
