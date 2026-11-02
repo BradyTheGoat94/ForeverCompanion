@@ -592,7 +592,7 @@ local function createUI()
   window:Hide()
   render()
 end
-for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD"}) do
+for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD","PLAYER_XP_UPDATE","SKILL_LINES_CHANGED","CHAT_MSG_SKILL"}) do
   pcall(function() addon:RegisterEvent(event) end)
 end
 addon:SetScript("OnEvent", function(_, event, arg)
@@ -603,7 +603,7 @@ addon:SetScript("OnEvent", function(_, event, arg)
     if type(DB.tab)~="string" then DB.tab="Overview" end
     createUI()
     if not DB.welcomed then DB.welcomed=true; window:Show() end
-  elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD") then
+  elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_XP_UPDATE" or event == "SKILL_LINES_CHANGED" or event == "CHAT_MSG_SKILL") then
     render()
   end
 end)
