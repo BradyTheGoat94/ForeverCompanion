@@ -13,6 +13,7 @@ local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP"
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
+local classStripButtons={}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local handbookIcon, handbookButtons={}, {}
@@ -135,6 +136,14 @@ local function render()
   if ForeverCompanionDashboard then
     ForeverCompanionDashboard.SetCompact(DB.compact)
     ForeverCompanionDashboard.Show(isOverview)
+  end
+  for _,button in ipairs(classStripButtons) do
+    if currentTab=="Leveling" then
+      button:Show()
+      local active=button.classToken==classToken()
+      colorTexture(button.bg,active and 0.12 or 0.045,active and 0.23 or 0.07,active and 0.38 or 0.11,1)
+      colorTexture(button.trim,active and 0.98 or 0.44,active and 0.74 or 0.34,active and 0.31 or 0.18,1)
+    else button:Hide() end
   end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then
@@ -837,6 +846,32 @@ local function createUI()
     b:SetScript("OnClick", function() toggleCheck(currentTab,i); render() end)
     b:Hide()
     checkButtons[i]=b
+  end
+  -- Class selection is a genuine preview control, never a character/class change.
+  -- Placed above footer controls, and visible only on the leveling page.
+  for i,token in ipairs(classOrder) do
+    local button=CreateFrame("Button",nil,window)
+    button:SetSize(89,30)
+    button:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",214+(i-1)*92,89)
+    button.classToken=token
+    button.bg=button:CreateTexture(nil,"BACKGROUND")
+    button.bg:SetAllPoints(button)
+    colorTexture(button.bg,0.045,0.07,0.11,1)
+    button.trim=button:CreateTexture(nil,"ARTWORK")
+    button.trim:SetPoint("BOTTOMLEFT",button,"BOTTOMLEFT",0,0)
+    button.trim:SetSize(89,2)
+    colorTexture(button.trim,0.44,0.34,0.18,1)
+    local name=button:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    name:SetPoint("CENTER",button,"CENTER",0,0)
+    name:SetText(classNames[token])
+    name:SetTextColor(0.95,0.83,0.60)
+    button:SetScript("OnClick",function()
+      DB.previewClass=token
+      DB.role=nil
+      render()
+    end)
+    button:Hide()
+    classStripButtons[i]=button
   end
   classButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
   classButton:SetSize(150, 26)
