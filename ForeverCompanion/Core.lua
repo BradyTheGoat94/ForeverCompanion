@@ -82,7 +82,17 @@ local function render()
         lines[#lines+1]=i..". "..ability
         local row=rotationRows[i]
         if row then
-          row:SetText((rotationDetail==i and "> " or "")..i..". "..ability)
+          row:SetText((rotationDetail==i and "> " or "").."Priority "..i)
+          row.detail=ability
+          row:SetScript("OnEnter",function(self)
+            if GameTooltip then
+              GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+              GameTooltip:SetText("Priority "..i,1,0.8,0.3)
+              GameTooltip:AddLine(self.detail or "",1,1,1,true)
+              GameTooltip:Show()
+            end
+          end)
+          row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
           local iconList=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
           if row.icon and iconList then row.icon:SetTexture(iconList[((i-1)%#iconList)+1]) end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
@@ -320,12 +330,12 @@ local function createUI()
     handbookButtons[i]=b
   end
   for i=1,5 do
-    local row=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+    local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
     row:SetSize(118,30)
     row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-8)
     row.icon=row:CreateTexture(nil,"ARTWORK")
     row.icon:SetSize(19,19)
-    row.icon:SetPoint("RIGHT",row,"LEFT",-1,0)
+    row.icon:SetPoint("LEFT",row,"LEFT",3,0)
     row:Hide()
     rotationRows[i]=row
   end
