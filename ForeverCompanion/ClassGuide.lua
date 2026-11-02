@@ -108,6 +108,21 @@ function Guide.Create(parent)
   values.role=label(profile,80,-73,282,"","GameFontHighlightSmall",MUTED)
   values.band=label(profile,16,-101,352,"","GameFontHighlightSmall",GOLD)
   values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
+  -- The compact card shows a short actionable focus. Hover for the complete,
+  -- class-specific practice note; this tooltip never changes game state.
+  profile:EnableMouse(true)
+  profile:SetScript("OnEnter",function(self)
+    if GameTooltip and values.currentTip then
+      GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+      GameTooltip:SetText("CURRENT LEVELING FOCUS",0.96,0.75,0.36)
+      GameTooltip:AddLine(values.currentTip,0.92,0.89,0.82,true)
+      GameTooltip:AddLine("General guidance: verify skills and unlocks in the live Forever client.",0.67,0.76,0.83,true)
+      GameTooltip:Show()
+    end
+  end)
+  profile:SetScript("OnLeave",function()
+    if GameTooltip then GameTooltip:Hide() end
+  end)
   local build=plate(root,394,0,386,151)
   local buildGlow=build:CreateTexture(nil,"BORDER")
   buildGlow:SetPoint("TOPLEFT",build,"TOPLEFT",7,-39)
@@ -158,7 +173,11 @@ function Guide.Render(classToken,classLabel,level,role,mode)
     end
   end
   values.band:SetText(band and ("Leveling phase: "..short(band[3],27).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
-  values.tip:SetText(short(entry and entry.leveling or "Review class-specific tips below.",53))
+  local curriculum=ForeverCompanionLevelingCurriculum
+  local stage=curriculum and curriculum.Stage and curriculum.Stage(level)
+  local notes=curriculum and curriculum.classes and curriculum.classes[classToken]
+  values.currentTip=notes and notes[stage] or (entry and entry.leveling or "Review class-specific tips below.")
+  values.tip:SetText("FOCUS: "..short(values.currentTip,46))
   local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get and ForeverCompanionSpecPlanner.Get(classToken)
   values.spec:SetText("Spec preview: "..short(spec and spec[1] or "Not available",30))
   local contexts=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts
