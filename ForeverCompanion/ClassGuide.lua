@@ -205,6 +205,12 @@ function Guide.Create(parent)
   values.spec=label(build,16,-45,351,"","GameFontHighlight",PALE)
   values.mode=label(build,16,-70,351,"","GameFontHighlightSmall",MUTED)
   values.practiceHint=label(build,16,-82,351,"HOVER FOR 3 PRACTICE STEPS","GameFontNormalSmall",GOLD)
+  -- A visible cue keeps the first practice action discoverable for players
+  -- who do not know that hovering opens the full rotation walkthrough.
+  local practiceAccent=build:CreateTexture(nil,"ARTWORK")
+  practiceAccent:SetPoint("TOPLEFT",build,"TOPLEFT",10,-82)
+  practiceAccent:SetSize(3,12)
+  paint(practiceAccent,0.96,0.72,0.30,0.95)
   values.xp=label(build,16,-93,351,"","GameFontHighlightSmall",PALE)
   values.xpCaption=label(build,16,-108,351,"LEVEL PROGRESS","GameFontNormalSmall",GOLD)
   local trackShadow=build:CreateTexture(nil,"BORDER")
