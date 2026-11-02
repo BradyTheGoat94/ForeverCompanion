@@ -41,4 +41,20 @@ for requirement in ("free","source","donation","advertis","screenshot",
                     "forever","manual","license"):
     assert requirement in review,f"Compliance review missing: {requirement}"
 print("PASS: static protected-action scan and CurseForge review present")
+# Native class icons must be referenced from the installed client, never
+# external URLs or shipped artwork. Require all nine class entries.
+guide=(root/"GuideData.lua").read_text(encoding="utf-8")
+import re
+section=guide.split("classHandbook = {",1)[1].split("professionHandbook = {",1)[0]
+for class_name in ("WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST",
+                   "SHAMAN","MAGE","WARLOCK","DRUID"):
+    entry=re.search(r"\\b"+class_name+r"\\s*=\\s*\\{icon=([^,]+),",section)
+    assert entry,f"Missing native class icon for {class_name}"
+    icon=entry.group(1)
+    assert icon.startswith('"Interface\\\\\\\\Icons\\\\\\\\'),(
+        f"Class icon for {class_name} must use a Blizzard client icon path"
+    )
+    assert "http" not in icon.lower(),f"External icon reference for {class_name}"
+print("PASS: nine class icons reference native Blizzard interface textures")
+
 print("PASS: beta metadata, required release docs and live-client gate present")
