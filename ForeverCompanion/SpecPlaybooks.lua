@@ -211,6 +211,33 @@ ForeverCompanionSpecPlaybooks={
   },
  },
 }
+-- A small set of ability references for conditional beginner explanations.
+-- Do not treat this table as a full spell database or a sim-validated APL.
+ForeverCompanionSpecPriorityNotes={
+ WARRIOR={Arms={"Overpower is reactive; do not wait idle for it.","Sweeping Strikes requires the talent and multiple targets."},Fury={"Bloodthirst is talent-gated.","Execute requires the appropriate target state."},Protection={"Revenge is reactive; Shield Slam is talent-gated.","Taunt is for recovering threat, not a damage priority."}},
+ PALADIN={Holy={"Holy Shock requires a talent.","Prefer efficient heals when incoming damage is predictable."},Protection={"Seal of Fury and its Judgement interaction must be learned.","Use Consecration on packs only when threat and mana permit."},Retribution={"Judgement no longer consumes your Seal in Forever.","Holy Strike availability depends on training."}},
+ HUNTER={["Beast Mastery"]={"Aimed Shot and Multi-Shot share a cooldown.","Pet survival and positioning are part of your damage."},Marksmanship={"Choose Aimed Shot or Multi-Shot based on targets; shared cooldown.","Arcane Shot is independent of that shared cooldown."},Survival={"Traps can be placed during combat in Forever.","Use a melee ability only when in range; avoid idle movement."}},
+ ROGUE={Assassination={"Mutilate requires its talent and two daggers.","Venom requires its talent; do not assume it is baseline."},Combat={"Riposte requires its talent and a parry opportunity.","Blade Flurry requires its talent and suitable extra targets."},Subtlety={"Avoid overcapping combo points.","Save enough Energy for interrupts or control."}},
+ PRIEST={Discipline={"Shields are preventive; watch mana.","Dispels can matter more than filler damage."},Holy={"Use direct healing for urgent damage.","Avoid inefficient group healing on one injured ally."},Shadow={"Shadow Word: Death backlash can be dangerous.","Shadowform requires its talent."}},
+ SHAMAN={Elemental={"Totem setup should match the pull.","Save mana for emergency healing and utility."},Enhancement={"Stormstrike requires its talent.","Weapon enhancement and totem uptime matter."},Restoration={"Chain Heal requires training.","Choose efficient single-target healing when only one ally is injured."}},
+ MAGE={Arcane={"Arcane Blast requires the Forever Arcane talent.","Missile Barrage and Heating Up priorities depend on the acquired build."},Fire={"Pyroblast and Hot Streak are talent-dependent.","Maintain safe cast uptime instead of forcing a long cast while moving."},Frost={"Frozen-target interactions depend on trained abilities.","Use Frost Nova for space, not automatically on cooldown."}},
+ WARLOCK={Affliction={"Banes and utility Curses serve different purposes.","Life Tap is unsafe at low health."},Demonology={"Pet uptime and its learned abilities matter.","Do not assume every demon talent is unlocked."},Destruction={"Conflagrate requires the relevant talent.","Watch threat when casting large direct spells."}},
+ DRUID={Balance={"Eclipse interactions require the corresponding talents.","Use periodic effects only when targets survive long enough."},Feral={"Lacerate is reported talent-gated after November tuning.","Cat combo points and Bear threat are different roles."},Restoration={"Revive is out-of-combat utility.","Use efficient healing over time when its ticks will matter."}}
+}
+function ForeverCompanionSpecPriorityNoteLines(classToken)
+ local planner=ForeverCompanionSpecPlanner
+ if type(planner)~="table" or type(planner.Get)~="function" then return {} end
+ local selected=planner.Get(classToken)
+ local name=type(selected)=="table" and selected[1]
+ local class=ForeverCompanionSpecPriorityNotes[classToken]
+ local notes=type(class)=="table" and class[name]
+ if not notes then return {} end
+ local lines={"WHY THIS PRIORITY? | "..name}
+ for i,note in ipairs(notes) do lines[#lines+1]=i..". "..note end
+ lines[#lines+1]="Talent and spellbook checks take precedence over any example sequence."
+ return lines
+end
+
 function ForeverCompanionSpecPlaybookLines(classToken)
  local planner=ForeverCompanionSpecPlanner
  if type(planner)~="table" or type(planner.Get)~="function" then return {} end
