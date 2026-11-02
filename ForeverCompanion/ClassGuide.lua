@@ -115,6 +115,10 @@ function Guide.Create(parent)
   values.role=label(profile,80,-73,255,"","GameFontHighlightSmall",MUTED)
   values.band=label(profile,16,-101,350,"","GameFontHighlightSmall",GOLD)
   values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
+  local focusMarker=profile:CreateTexture(nil,"OVERLAY")
+  focusMarker:SetPoint("TOPLEFT",profile,"TOPLEFT",9,-123)
+  focusMarker:SetSize(3,11)
+  paint(focusMarker,0.94,0.70,0.29,0.92)
   -- The compact card shows a short actionable focus. Hover for the complete,
   -- class-specific practice note; this tooltip never changes game state.
   profile:EnableMouse(true)
