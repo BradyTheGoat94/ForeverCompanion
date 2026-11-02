@@ -251,6 +251,12 @@ for _,w in ipairs(frames) do
  if w.width==1080 and w.height==720 then mainWindow=w end
 end
 assert(mainWindow and mainWindow.scale and mainWindow.scale<1,"responsive scale not applied")
+UIParent:SetSize(680,480)
+addonFrame.OnEvent(addonFrame,"DISPLAY_SIZE_CHANGED")
+assert(mainWindow.scale<0.61,"window should shrink when display becomes smaller")
+UIParent:SetSize(1000,700)
+addonFrame.OnEvent(addonFrame,"UI_SCALE_CHANGED")
+assert(mainWindow.scale>0.8,"window should recover scale after display restores")
 assert(compactButton and compactButton.OnClick,"compact toggle missing")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
