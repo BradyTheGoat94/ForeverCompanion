@@ -1,3 +1,10 @@
+## 2.0.0-beta
+- Added in-window crafting material rows with current/needed/remaining quantities.
+- Added plus/minus buttons for quick manual quantity updates and five-row pagination.
+- Kept profession material lists separate and reset page on profession changes.
+- Added test cases for quantity bounds, pagination, tab visibility, persistence, and layout.
+- Recipe and inventory automation remain out of scope pending live-client verification.
+
 ## 1.7.0-beta
 - Introduced persistent per-profession material planning with needed, owned and remaining quantities.
 - Added /fcm commands to add, update and remove material entries.
