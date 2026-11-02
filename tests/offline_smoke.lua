@@ -551,3 +551,15 @@ assert(type(ForeverCompanionOrnaments.Hero)=="function","hero filigree must load
 assert(type(ForeverCompanionOrnaments.Corners)=="function","corner filigree must load")
 assert(type(ForeverCompanionOrnaments.Ribbon)=="function","ribbon separator must load")
 assert(type(ForeverCompanionOrnaments.Panel)=="function","secondary panel ornament must load")
+
+-- Compatibility diagnostics must distinguish API presence from actual client proof.
+local previousBuildInfo=GetBuildInfo
+GetBuildInfo=function() return "1.60.1","12345","",16001 end
+dofile("ForeverCompanion/Diagnostics.lua")
+local diagnostic=ForeverCompanionDiagnostics.Collect()
+assert(diagnostic:find("Interface match: yes",1,true),"matching interface diagnostics")
+assert(diagnostic:find("Curated ability records:",1,true),"ability audit diagnostics")
+assert(diagnostic:find("These checks show API presence only",1,true),"diagnostics verification disclaimer")
+GetBuildInfo=function() return "1.60.1","12345","",99999 end
+assert(ForeverCompanionDiagnostics.Collect():find("Interface match: NO",1,true),"interface mismatch warning")
+GetBuildInfo=previousBuildInfo
