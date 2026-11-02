@@ -237,6 +237,8 @@ local function render()
           colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
           colorTexture(row.trim,rotationDetail==i and 0.99 or 0.45,rotationDetail==i and 0.76 or 0.36,rotationDetail==i and 0.32 or 0.20,1)
           row.detail=ability
+          -- Avoid suggesting a repeating icon represents a verified spell.
+          -- The full action remains available in the tooltip.
           row:SetScript("OnEnter",function(self)
             if GameTooltip then
               GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
@@ -254,7 +256,15 @@ local function render()
           end)
           row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
           local iconList=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
-          if row.icon and iconList and #iconList>0 then row.icon:SetTexture(iconList[((i-1)%#iconList)+1]) end
+          if row.icon then
+            if iconList and iconList[i] then
+              row.icon:SetTexture(iconList[i])
+              row.icon:Show()
+            else
+              row.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+              row.icon:Show()
+            end
+          end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
           row:Show()
         end
