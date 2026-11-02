@@ -409,7 +409,7 @@ local savedKnown=IsSpellKnown
 IsSpellKnown=function() return false end
 local nextSkills=ForeverCompanionSkillStudy.NextActions("WARRIOR",40,3)
 assert(#nextSkills<=3 and #nextSkills>0,"next skill checklist must be bounded")
-assert(ForeverCompanionSkillStudy.FormatNextActions("MAGE",40):find("pending class",1,true),"unverified classes need honest fallback")
+assert(ForeverCompanionSkillStudy.FormatNextActions("PRIEST",40):find("pending class",1,true),"unverified classes need honest fallback")
 IsSpellKnown=savedKnown
 
 -- Recipe ordering changes how scarce shared materials are allocated.
@@ -430,7 +430,7 @@ assert(professionAdvice.FormatNextSteps(50,75):find("skill-up color",1,true),"pr
 local previousSpellKnown=IsSpellKnown
 IsSpellKnown=function(id) return id==23881 end
 assert(ForeverCompanionSkillStudy.PracticePlan("WARRIOR",40):find("Bloodthirst",1,true),"practice plan must include known audited spells")
-assert(ForeverCompanionSkillStudy.PracticePlan("MAGE",40):find("No audited",1,true),"unaudited class must be disclosed")
+assert(ForeverCompanionSkillStudy.PracticePlan("PRIEST",40):find("No audited",1,true),"unaudited class must be disclosed")
 IsSpellKnown=previousSpellKnown
 
 -- Editing goals must immediately propagate to material forecasts.
