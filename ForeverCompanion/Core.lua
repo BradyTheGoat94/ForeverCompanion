@@ -310,7 +310,10 @@ local function render()
     for i, item in ipairs(entries) do
       local done = DB.checks and DB.checks[currentTab] and DB.checks[currentTab][i]
       lines[#lines+1] = (done and "[x] " or "[ ] ")..item
-      if checkButtons[i] then checkButtons[i]:SetText(done and "Undo "..i or "Done "..i); checkButtons[i]:Show() end
+      if checkButtons[i] then
+        checkButtons[i]:SetText(done and "Undo "..i or "Done "..i)
+        if currentTab=="Dungeons" or currentTab=="PvP" then checkButtons[i]:Hide() else checkButtons[i]:Show() end
+      end
     end
     if currentTab == "Dungeons" then
       if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
@@ -392,8 +395,8 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -278 or ((currentTab=="Dungeons" or currentTab=="PvP") and -205 or (currentTab=="Overview" and -215 or -5)))))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 302 or ((currentTab=="Dungeons" or currentTab=="PvP") and 225 or 24)))))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -278 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or -5)))))
+  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 302 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or 24)))))) end
   -- Keep the player's current scroll position during refresh.
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
