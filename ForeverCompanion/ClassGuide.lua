@@ -113,6 +113,7 @@ function Guide.Create(parent)
   values.name=label(profile,80,-45,265,"","GameFontNormalLarge",PALE)
   values.classSigil=label(profile,330,-13,36,"","GameFontNormal",GOLD)
   values.role=label(profile,80,-73,255,"","GameFontHighlightSmall",MUTED)
+  values.coachHint=label(profile,80,-87,270,"HOVER FOR COMBAT STEPS","GameFontNormalSmall",GOLD)
   values.band=label(profile,16,-101,350,"","GameFontHighlightSmall",GOLD)
   values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
   local focusMarker=profile:CreateTexture(nil,"OVERLAY")
@@ -180,6 +181,9 @@ end
 function Guide.Render(classToken,classLabel,level,role,mode)
   if not root then return end
   values.currentClass=classToken
+  if values.coachHint then
+    values.coachHint:SetText(type(ForeverCompanionBeginnerChecklist)=="function" and "HOVER FOR COMBAT STEPS" or "CLASS PRACTICE NOTES")
+  end
   local handbook=type(ForeverCompanionData)=="table" and ForeverCompanionData.classHandbook
   local entry=type(handbook)=="table" and handbook[classToken]
   values.icon:SetTexture(type(entry)=="table" and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
