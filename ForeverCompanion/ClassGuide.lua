@@ -154,8 +154,8 @@ function Guide.Create(parent)
       GameTooltip:SetText("CURRENT LEVELING FOCUS",0.96,0.75,0.36)
       GameTooltip:AddLine(values.currentTip,0.92,0.89,0.82,true)
       if type(ForeverCompanionBeginnerChecklist)=="function" then
-        local checklist=ForeverCompanionBeginnerChecklist(values.currentClass)
-        if type(checklist)=="table" then
+        local ok,checklist=pcall(ForeverCompanionBeginnerChecklist,values.currentClass)
+        if ok and type(checklist)=="table" then
           GameTooltip:AddLine(" ",1,1,1)
           for _,step in ipairs(checklist) do
             GameTooltip:AddLine(step,0.88,0.83,0.70,true)
