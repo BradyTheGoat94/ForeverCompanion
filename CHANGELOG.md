@@ -2,6 +2,7 @@
 - Added native dark-gold Dungeon and PvP preparation cards showing the current class, manually chosen role, general class guidance, and the next unchecked preparation task.
 - Replaced duplicate stock checklist controls on those pages with four real interactive preparation tiles. Each tile persists its checked state per character; the gold progress bar represents **manual checklist completion only**, not actual dungeon/PvP readiness.
 - Added working shortcuts from both preparation pages to Leveling and Quests, without casting spells, queueing, targeting, or modifying game quests.
+- Corrected a content mismatch where PvP role notes could display dungeon-specific tank-target advice; PvP now has separate general role guidance.
 - Introduced an original geometric **FC heraldic monogram** drawn with built-in WoW textures and fonts, shared by the main header and dashboard banner. This is not yet the full illustrated fantasy crest from the reference concept.
 - Extended mocked-client tests for independent Dungeon/PvP progress, undo, navigation, hidden panels, and crest presence. Added separate mock-derived Dungeon/PvP PNG previews and snapshots to the CI workflow.
 - Reflowed the long-form guide text below the new native tiles and retained slash-command checklist access.
