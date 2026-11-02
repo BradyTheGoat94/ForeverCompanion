@@ -661,3 +661,9 @@ end
 assert(matched,"Execute missing from live check")
 UnitLevel=oldLevel
 ForeverCompanionSpellbook=oldBook
+
+-- Coverage counts only cross-referenced curated records, not guessed unlocks.
+local warriorCovered,warriorTotal=ForeverCompanionBeginnerCoverage("WARRIOR")
+assert(warriorTotal==4 and warriorCovered>=2 and warriorCovered<=warriorTotal,"unexpected Warrior curated coverage")
+local mageCovered,mageTotal=ForeverCompanionBeginnerCoverage("MAGE")
+assert(mageTotal==4 and mageCovered==0,"unaudited Mage hints must not claim curated unlock coverage")
