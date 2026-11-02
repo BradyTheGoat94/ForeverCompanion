@@ -14,6 +14,16 @@ for path in root.glob("*.lua"):
 source="\n".join(path.read_text() for path in root.glob("*.lua"))
 for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellByName(", "RunMacroText(", "CastSpell(", "TargetUnit(", "UseAction(", "SendChatMessage(", "C_Timer.After(", "loadstring(", "load(", "HttpRequest(", "C_HTTP.", "C_Network.", "AcceptQuest(", "CompleteQuest(", "AbandonQuest(", "SelectQuestLogEntry(", "SetQuestLogSelection(", "C_QuestLog.SetSelectedQuest(", "C_QuestLog.SetAbandonQuest("]:
  if pattern in source: issues.append("Review legacy or automated API: "+pattern)
+# The ZIP must contain source and client-native references, not extracted
+# Blizzard artwork or executable payloads. Keep any future assets explicitly
+# reviewed instead of silently expanding the allowed package surface.
+allowed_extensions={".lua",".toc"}
+for path in root.rglob("*"):
+ if path.is_file() and path.suffix.lower() not in allowed_extensions:
+  issues.append("Unexpected packaged asset (manual license review required): "+str(path))
+for entry in entries:
+ if "/" in entry or "\\\\" in entry or entry.startswith(".") or ".." in entry:
+  issues.append("Unsafe manifest path: "+entry)
 if "C_SpellBook" not in source: issues.append("Missing modern spellbook API")
 for issue in issues: print("FAIL",issue)
 if issues: sys.exit(1)
