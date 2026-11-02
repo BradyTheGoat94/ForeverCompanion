@@ -422,10 +422,13 @@ assert(dungeonHeading and progressLabel,"native Dungeon briefing missing or misc
 local dungeonRoot=frames[dungeonHeading.parent].parent
 assert(frames[dungeonRoot].visible,"Dungeon cards must be visible on Dungeon page")
 local manualDone
-for _,w in ipairs(frames) do if w.text=="Done 1" and w.OnClick then manualDone=w end end
-assert(manualDone,"manual Dungeon checklist button missing")
+for _,w in ipairs(frames) do
+ if w.caption and w.caption.text=="Collect dungeon quests" and w.OnClick then manualDone=w end
+end
+assert(manualDone and manualDone.visible,"native Dungeon checklist tile missing")
 manualDone.OnClick(manualDone)
 assert(ForeverCompanionDB.checks.Dungeons[1]==true,"manual Dungeon task was not saved")
+assert(manualDone.checked and manualDone.status.text=="DONE","Dungeon tile did not show completion")
 assert(progressLabel.text=="1/4 preparation tasks marked complete","Dungeon card did not refresh manual progress")
 exportSnapshot("ui_dungeon_snapshot.txt")
 manualDone.OnClick(manualDone)
@@ -445,9 +448,13 @@ assert(pvpHeading,"PvP preparation title did not update")
 assert(frames[dungeonRoot].visible,"PvP must reuse the same native briefing cards")
 assert(progressLabel.text=="0/4 preparation tasks marked complete","PvP must have separate manual checklist progress")
 local pvpDone
-for _,w in ipairs(frames) do if w.text=="Done 1" and w.OnClick then pvpDone=w end end
+for _,w in ipairs(frames) do
+ if w.caption and w.caption.text=="Check equipment" and w.OnClick then pvpDone=w end
+end
+assert(pvpDone and pvpDone.visible,"native PvP checklist tile missing")
 pvpDone.OnClick(pvpDone)
 assert(ForeverCompanionDB.checks.PvP[1]==true,"PvP task state was not saved")
+assert(pvpDone.checked and pvpDone.status.text=="DONE","PvP tile did not show completion")
 assert(progressLabel.text=="1/4 preparation tasks marked complete","PvP manual progress did not update")
 assert(ForeverCompanionDB.checks.Dungeons[1]==false,"PvP state must not change Dungeon tasks")
 exportSnapshot("ui_pvp_snapshot.txt")
