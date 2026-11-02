@@ -94,7 +94,7 @@ local function render()
           end)
           row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
           local iconList=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
-          if row.icon and iconList then row.icon:SetTexture(iconList[((i-1)%#iconList)+1]) end
+          if row.icon and iconList and #iconList>0 then row.icon:SetTexture(iconList[((i-1)%#iconList)+1]) end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
           row:Show()
         end
