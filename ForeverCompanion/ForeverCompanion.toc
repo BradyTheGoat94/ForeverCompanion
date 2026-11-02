@@ -20,6 +20,7 @@ ForeverWorldGuide.lua
 ForeverClassChanges.lua
 ClassChangeIndex.lua
 DungeonPreparation.lua
+LootAtlas.lua
 PvPPreparation.lua
 SpecPlanner.lua
 SpecPlaybooks.lua
