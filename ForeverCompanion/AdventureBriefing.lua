@@ -60,6 +60,7 @@ local function card(parent,x,w)
   strip(frame,w-7,-5,2,14,GOLD)
   strip(frame,5,-150,2,14,GOLD)
   strip(frame,w-7,-150,2,14,GOLD)
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Hero(frame,w,165) end
   return frame
 end
 local function navButton(parent,x,title,target)
