@@ -42,7 +42,7 @@ local function render()
       end
     end
   elseif currentTab == "Quests" then
-    lines = {ForeverCompanionQuestPlanner.Format()}
+    lines = {ForeverCompanionQuestPlanner.FormatAuto(), "", ForeverCompanionQuestPlanner.Format()}
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
