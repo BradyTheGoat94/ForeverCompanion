@@ -202,6 +202,13 @@ ForeverCompanionSpecPlaybooks={
    "In Bear Form, use Maul and Swipe to establish threat",
    "Lacerate is currently reported as a Feral talent; verify it before use",
   },
+  ["Guardian / Bear"]={
+   "Check whether this separate Bear specialization is available in your current Forever client",
+   "Enter Bear Form and maintain defensive buffs before pulling",
+   "Use Maul and Swipe to build threat while watching your Rage",
+   "Use Taunt or other trained threat tools to recover loose enemies",
+   "Prioritize survivability and positioning over maximizing personal damage",
+  },
   ["Restoration"]={
    "Maintain Mark of the Wild and position within healing range",
    "Use Rejuvenation for predictable healing that will tick",
@@ -222,7 +229,7 @@ ForeverCompanionSpecPriorityNotes={
  SHAMAN={Elemental={"Totem setup should match the pull.","Save mana for emergency healing and utility."},Enhancement={"Stormstrike requires its talent.","Weapon enhancement and totem uptime matter."},Restoration={"Chain Heal requires training.","Choose efficient single-target healing when only one ally is injured."}},
  MAGE={Arcane={"Arcane Blast requires the Forever Arcane talent.","Missile Barrage and Heating Up priorities depend on the acquired build."},Fire={"Pyroblast and Hot Streak are talent-dependent.","Maintain safe cast uptime instead of forcing a long cast while moving."},Frost={"Frozen-target interactions depend on trained abilities.","Use Frost Nova for space, not automatically on cooldown."}},
  WARLOCK={Affliction={"Banes and utility Curses serve different purposes.","Life Tap is unsafe at low health."},Demonology={"Pet uptime and its learned abilities matter.","Do not assume every demon talent is unlocked."},Destruction={"Conflagrate requires the relevant talent.","Watch threat when casting large direct spells."}},
- DRUID={Balance={"Eclipse interactions require the corresponding talents.","Use periodic effects only when targets survive long enough."},Feral={"Lacerate is reported talent-gated after November tuning.","Cat combo points and Bear threat are different roles."},Restoration={"Revive is out-of-combat utility.","Use efficient healing over time when its ticks will matter."}}
+ DRUID={["Guardian / Bear"]={"This alternate spec may not exist in the current Forever talent system.","Verify Bear Form and threat tools in the live spellbook."},Balance={"Eclipse interactions require the corresponding talents.","Use periodic effects only when targets survive long enough."},Feral={"Lacerate is reported talent-gated after November tuning.","Cat combo points and Bear threat are different roles."},Restoration={"Revive is out-of-combat utility.","Use efficient healing over time when its ticks will matter."}}
 }
 function ForeverCompanionSpecPriorityNoteLines(classToken)
  local planner=ForeverCompanionSpecPlanner
