@@ -138,6 +138,30 @@ for _,w in ipairs(frames) do if w.caption and w.caption.text=="Quests" then ques
 assert(questAction and questAction.OnClick,"quest shortcut missing")
 questAction.OnClick(questAction)
 assert(ForeverCompanionDB.tab=="Quests","quest shortcut failed")
+local questHeading,questFocusHeading,questBriefingRoot
+for _,w in ipairs(frames) do
+ if w.text=="JOURNAL AT A GLANCE" then questHeading=w end
+ if w.text=="FOCUSED OBJECTIVE" then questFocusHeading=w end
+end
+assert(questHeading and questFocusHeading,"quest briefing panels missing")
+questBriefingRoot=frames[questHeading.parent].parent
+assert(frames[questBriefingRoot].visible,"quest briefing must be visible on quest page")
+local questCountCard=false
+for _,w in ipairs(frames) do
+ if w.text=="3 active  |  1 ready to turn in" then questCountCard=true end
+end
+assert(questCountCard,"live quest briefing count incorrect")
+exportSnapshot("ui_quest_snapshot.txt")
+local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
+C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
+assert(ForeverCompanionQuestPlanner.Sync()==false,"failed quest scan must not be reported successful")
+local staleWarning=false
+for _,w in ipairs(frames) do
+ if w.text=="STALE DATA - verify in the game quest log" then staleWarning=true end
+end
+assert(staleWarning,"quest briefing must warn about cached data")
+C_QuestLog.GetNumQuestLogEntries=originalQuestCount
+assert(ForeverCompanionQuestPlanner.Sync(),"quest scanner should recover after transient error")
 local bannerText
 for _,w in ipairs(frames) do if w.text=="WELCOME TO FOREVER COMPANION" then bannerText=w end end
 assert(bannerText and frames[frames[bannerText.parent].parent].visible==false,"dashboard should hide outside Overview")
@@ -146,6 +170,37 @@ for _,w in ipairs(frames) do if w.section=="Overview" then overviewButton=w end 
 assert(overviewButton and overviewButton.OnClick,"sidebar overview navigation missing")
 overviewButton.OnClick(overviewButton)
 assert(ForeverCompanionDB.tab=="Overview","overview navigation failed")
+assert(not frames[questBriefingRoot].visible,"quest briefing must hide on overview")
+local professionButton
+for _,w in ipairs(frames) do if w.section=="Professions" then professionButton=w end end
+assert(professionButton and professionButton.OnClick,"profession sidebar navigation missing")
+professionButton.OnClick(professionButton)
+local skillHeading,materialsHeading
+for _,w in ipairs(frames) do
+ if w.text=="PROFESSION SKILLS" then skillHeading=w end
+ if w.text=="MATERIAL GOALS" then materialsHeading=w end
+end
+assert(skillHeading and materialsHeading,"profession briefing panels missing")
+assert(frames[frames[skillHeading.parent].parent].visible,"profession briefing must be visible")
+local materialStatus=false
+for _,w in ipairs(frames) do if w.text=="0/1 material goals completed" then materialStatus=true end end
+assert(materialStatus,"manual material goal status incorrect")
+exportSnapshot("ui_profession_snapshot.txt")
+assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,10),"material goal should update")
+ForeverCompanionProfessionBriefing.Render("Blacksmithing")
+local completedStatus=false
+for _,w in ipairs(frames) do if w.text=="1/1 material goals completed" then completedStatus=true end end
+assert(completedStatus,"material briefing must refresh after manual update")
+assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,4))
+local originalGetProfessions=GetProfessions
+GetProfessions=nil
+ForeverCompanionProfessionBriefing.Render("Blacksmithing")
+local unavailableStatus=false
+for _,w in ipairs(frames) do if w.text=="Profession API unavailable on this client." then unavailableStatus=true end end
+assert(unavailableStatus,"profession briefing must show unavailable API")
+GetProfessions=originalGetProfessions
+ForeverCompanionProfessionBriefing.Render("Blacksmithing")
+overviewButton.OnClick(overviewButton)
 local compactButton,mainWindow
 for _,w in ipairs(frames) do
  if w.text=="Compact" then compactButton=w end
