@@ -33,9 +33,13 @@ function P.Overview()
   if not entries then return nil,reason or "Profession API unavailable." end
   local result={}
   for _,entry in ipairs(entries) do
+    -- Partial client records must not be mistaken for valid progress.
+    if type(entry)~="table" then entry={} end
     local skill=tonumber(entry.skill)
     local maximum=tonumber(entry.maxSkill)
-    local missing=(skill and maximum and maximum>0) and math.max(0,maximum-skill) or nil
+    if skill and (skill<0 or skill~=skill) then skill=nil end
+    if maximum and (maximum<=0 or maximum~=maximum) then maximum=nil end
+    local missing=(skill and maximum) and math.max(0,maximum-skill) or nil
     result[#result+1]={name=entry.name,skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
   end
   return result,reason
