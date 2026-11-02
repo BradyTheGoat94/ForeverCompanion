@@ -248,6 +248,23 @@ end
 -- Source-checked priority addenda. These are build-specific, not universal
 -- damage rankings; rules are re-evaluated whenever the next cast is chosen.
 ForeverCompanionSourcedPriorities={
+ PRIEST={
+  Shadow={
+   source="https://www.wowhead.com/forever/guide/classes/shadow/priest/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/shadow-priest-ranged-dps-pve-guide/",
+   reviewed="Wowhead updated Oct 30, 2026; Icy Veins level-30 beta guide",
+   rules={
+    "1. For durable enemies, open with Mind Blast, then apply Shadow Word: Pain and Devouring Plague.",
+    "2. Keep Shadow Word: Pain active, refreshing as it expires rather than clipping early.",
+    "3. Maintain Devouring Plague on your primary target when trained and worthwhile.",
+    "4. Cast Mind Blast on cooldown; use Shadow Word: Death when available and safe.",
+    "5. Use Vampiric Embrace when the party needs its healing; it is optional for pure single-target damage.",
+    "6. Fully channel Mind Flay as filler instead of repeatedly clipping its channel.",
+    "7. For several durable enemies, spread Shadow Word: Pain selectively; Mana cost can outweigh the benefit.",
+    "8. While leveling at low levels, conserve Mana with wand finishing attacks; do not assume the endgame priority is efficient.",
+   },
+  },
+ },
  WARRIOR={
   Arms={
    source="https://www.icy-veins.com/wow-forever/arms-warrior-melee-dps-pve-guide",
