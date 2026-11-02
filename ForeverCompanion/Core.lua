@@ -144,10 +144,6 @@ local function render()
     else
       colorTexture(b.navBackground,0.050,0.067,0.100,1)
       colorTexture(b.navAccent,0.52,0.39,0.19,1)
-    local underline=b:CreateTexture(nil,"ARTWORK")
-    underline:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",4,0)
-    underline:SetSize(156,1)
-    colorTexture(underline,0.42,0.35,0.24,0.7)
       b.navLabel:SetTextColor(0.88,0.87,0.83)
     end
   end
