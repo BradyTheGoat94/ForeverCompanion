@@ -58,3 +58,15 @@ These example materials are not a verified Forever recipe or leveling route. Ski
 ### Crafting goal dashboard (1.8 beta)
 
 The Overview and Professions pages now show an aggregate count of material goals, completed goals, and outstanding material units. Additional commands: `/fcm summary` displays the totals; `/fcm needed Alchemy | 1 | 30` changes a target; `/fcm clear Alchemy` removes only completed goals. All quantities remain manually entered; there is no live bag scan.
+
+## Multi-recipe planner (2.1 beta)
+
+Track multiple manual recipe goals per profession and see **aggregate material demand** for the crafts still outstanding. This is a planning tool, not a verified WoW Forever recipe database. It does not scan bags or craft items.
+
+- `/fcr add Alchemy | Sample Potion | 10` adds a goal to craft 10.
+- `/fcr ingredient Alchemy | 1 | Sample Herb | 2` records two herbs per craft.
+- `/fcr done Alchemy | 1 | 4` records four crafted, reducing remaining ingredient demand to 12 herbs.
+- `/fcr show Alchemy` prints the recipe list and total ingredient demand.
+- `/fcr remove Alchemy | 1` deletes a recipe goal.
+
+Sample names above are illustrative placeholders, not validated game recipes. Ingredient demand is separate from the manual owned-material checklist; no automatic reconciliation is claimed.
