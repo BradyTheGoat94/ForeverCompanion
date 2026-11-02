@@ -46,7 +46,7 @@ d.polygon([(x+65,y+55),(x+83,y+68),(x+79,y+94),(x+65,y+106),(x+51,y+94),(x+47,y+
 d.line((x+65,y+60,x+65,y+100),fill=gold,width=2)
 d.text((x+121,y+37),find("Forever Companion","Forever Companion"),font=F37,fill=gold)
 d.text((x+123,y+88),find("Guides  -","Guides  -  Professions  -  Quests  -  Builds  -  More"),font=F16,fill=white)
-d.text((x+1080,y+48),"v3.10 BETA",font=F16,fill=gold)
+d.text((x+1080,y+48),"v3.11 BETA",font=F16,fill=gold)
 # Left navigation.
 sx,sy=x+14,y+139
 d.rounded_rectangle((sx,sy,sx+246,sy+589),radius=8,fill=(20,26,34),outline=(75,61,43))
