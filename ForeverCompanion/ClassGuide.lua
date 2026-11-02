@@ -174,10 +174,10 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.role:SetText("Preferred role: "..short(role or "Not selected",23))
   local band,number=nil,tonumber(level)
   if number and (number~=number or number<1 or number==math.huge) then number=nil end
-  local zones=ForeverCompanionData and ForeverCompanionData.zones
+  local zones=type(ForeverCompanionData)=="table" and ForeverCompanionData.zones
   if number and type(zones)=="table" then
     for _,candidate in ipairs(zones) do
-      if number>=candidate[1] and number<=candidate[2] then band=candidate;break end
+      if type(candidate)=="table" and type(candidate[1])=="number" and type(candidate[2])=="number" and number>=candidate[1] and number<=candidate[2] then band=candidate;break end
     end
   end
   values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
