@@ -804,3 +804,23 @@ assert(table.concat(ForeverCompanionSourcedPriorityLines("PALADIN")," "):find("r
 selectSpec("DRUID","Restoration")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," "):find("your own Regrowth or Rejuvenation",1,true),"Swiftmend HoT requirement missing")
 ForeverCompanionDB.specSelections={}
+
+-- Every standard spec must retain a source URL, decision rules and a
+-- specialization-matched addendum after future class tuning edits.
+local standardSpecs=0
+for class,choices in pairs(ForeverCompanionSpecs) do
+ for index,choice in ipairs(choices) do
+  if choice[1]~="Guardian / Bear" then
+   ForeverCompanionDB.specSelections[class]=index
+   local lines=ForeverCompanionSourcedPriorityLines(class)
+   local joined=table.concat(lines," ")
+   assert(#lines>=7,"source-reviewed guide too short: "..class.." "..choice[1])
+   assert(lines[1]:find(choice[1],1,true),"source-reviewed spec mismatch: "..class.." "..choice[1])
+   assert(joined:find("https://",1,true),"source-reviewed URL missing: "..class.." "..choice[1])
+   assert(joined:find("Re-check after each action",1,true),"decision safety reminder missing: "..class.." "..choice[1])
+   standardSpecs=standardSpecs+1
+  end
+ end
+end
+assertEqual(standardSpecs,27,"all standard specs must have source-reviewed guidance")
+ForeverCompanionDB.specSelections={}
