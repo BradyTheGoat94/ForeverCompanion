@@ -403,6 +403,64 @@ end
 assert(unknownClass,"missing class API must not impersonate Warrior")
 UnitClass,UnitLevel=savedClass,savedLevel
 ForeverCompanionRefresh()
+-- The native Dungeon and PvP cards must be real widgets, reflect only manual
+-- checklist state, and provide functional guide navigation without game actions.
+local dungeonButton,pvpButton
+for _,w in ipairs(frames) do
+ if w.section=="Dungeons" then dungeonButton=w end
+ if w.section=="PvP" then pvpButton=w end
+end
+assert(dungeonButton and pvpButton,"Dungeon/PvP sidebar entries missing")
+dungeonButton.OnClick(dungeonButton)
+assert(ForeverCompanionDB.tab=="Dungeons","Dungeon navigation failed")
+local dungeonHeading,progressLabel
+for _,w in ipairs(frames) do
+ if w.text=="DUNGEON PREPARATION" then dungeonHeading=w end
+ if w.text=="0/4 preparation tasks marked complete" then progressLabel=w end
+end
+assert(dungeonHeading and progressLabel,"native Dungeon briefing missing or miscounted")
+local dungeonRoot=frames[dungeonHeading.parent].parent
+assert(frames[dungeonRoot].visible,"Dungeon cards must be visible on Dungeon page")
+local manualDone
+for _,w in ipairs(frames) do if w.text=="Done 1" and w.OnClick then manualDone=w end end
+assert(manualDone,"manual Dungeon checklist button missing")
+manualDone.OnClick(manualDone)
+assert(ForeverCompanionDB.checks.Dungeons[1]==true,"manual Dungeon task was not saved")
+assert(progressLabel.text=="1/4 preparation tasks marked complete","Dungeon card did not refresh manual progress")
+exportSnapshot("ui_dungeon_snapshot.txt")
+manualDone.OnClick(manualDone)
+assert(ForeverCompanionDB.checks.Dungeons[1]==false,"Dungeon task undo failed")
+local guideLink
+for _,w in ipairs(frames) do
+ if w.text=="OPEN CLASS GUIDE" and w.parent then guideLink=frames[w.parent] end
+end
+assert(guideLink and guideLink.OnClick,"native class-guide shortcut missing")
+guideLink.OnClick(guideLink)
+assert(ForeverCompanionDB.tab=="Leveling","native class-guide shortcut did not navigate")
+pvpButton.OnClick(pvpButton)
+assert(ForeverCompanionDB.tab=="PvP","PvP navigation failed")
+local pvpHeading
+for _,w in ipairs(frames) do if w.text=="PVP PREPARATION" then pvpHeading=w end end
+assert(pvpHeading,"PvP preparation title did not update")
+assert(frames[dungeonRoot].visible,"PvP must reuse the same native briefing cards")
+assert(progressLabel.text=="0/4 preparation tasks marked complete","PvP must have separate manual checklist progress")
+local pvpDone
+for _,w in ipairs(frames) do if w.text=="Done 1" and w.OnClick then pvpDone=w end end
+pvpDone.OnClick(pvpDone)
+assert(ForeverCompanionDB.checks.PvP[1]==true,"PvP task state was not saved")
+assert(progressLabel.text=="1/4 preparation tasks marked complete","PvP manual progress did not update")
+assert(ForeverCompanionDB.checks.Dungeons[1]==false,"PvP state must not change Dungeon tasks")
+exportSnapshot("ui_pvp_snapshot.txt")
+pvpDone.OnClick(pvpDone)
+local questLink
+for _,w in ipairs(frames) do
+ if w.text=="OPEN QUEST JOURNAL" and w.parent then questLink=frames[w.parent] end
+end
+assert(questLink and questLink.OnClick,"native quest-journal shortcut missing")
+questLink.OnClick(questLink)
+assert(ForeverCompanionDB.tab=="Quests","native quest-journal shortcut failed")
+assert(not frames[dungeonRoot].visible,"Adventure cards must hide on Quest page")
+overviewButton.OnClick(overviewButton)
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
