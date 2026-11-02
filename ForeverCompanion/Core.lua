@@ -22,7 +22,7 @@ local materialPageLabel, materialPrevious, materialNext
 local professionIndex=1
 local questRows = {}
 local questPage=1
-local pageBack, pageForward, pageLabel, filterButton, sortButton, pinQuestButton, resetClassButton
+local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
 local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
@@ -165,13 +165,13 @@ local function render()
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
-  if pinQuestButton then
+  if questRows.pinControl then
     if currentTab=="Quests" then
       local focused=ForeverCompanionQuestPlanner.GetSelected()
-      pinQuestButton:SetText(focused and (ForeverCompanionQuestPlanner.IsPinned(focused) and "Unpin Focus" or "Pin Focus") or "No Focus")
-      pinQuestButton:SetEnabled(focused~=nil)
-      pinQuestButton:Show()
-    else pinQuestButton:Hide() end
+      questRows.pinControl:SetText(focused and (ForeverCompanionQuestPlanner.IsPinned(focused) and "Unpin Focus" or "Pin Focus") or "No Focus")
+      questRows.pinControl:SetEnabled(focused~=nil)
+      questRows.pinControl:Show()
+    else questRows.pinControl:Hide() end
   end
   if sortButton then
     if currentTab=="Quests" then
@@ -627,15 +627,15 @@ local function createUI()
     ForeverCompanionQuestPlanner.CycleSort()
   end)
   sortButton:Hide()
-  pinQuestButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  pinQuestButton:SetSize(140,23)
-  pinQuestButton:SetPoint("TOPLEFT",child,"TOPLEFT",8,-182)
-  pinQuestButton:SetText("Pin Focus")
-  pinQuestButton:SetScript("OnClick",function()
+  questRows.pinControl=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  questRows.pinControl:SetSize(140,23)
+  questRows.pinControl:SetPoint("TOPLEFT",child,"TOPLEFT",8,-182)
+  questRows.pinControl:SetText("Pin Focus")
+  questRows.pinControl:SetScript("OnClick",function()
     local _,index=ForeverCompanionQuestPlanner.GetSelected()
     if index then ForeverCompanionQuestPlanner.TogglePin(index) end
   end)
-  pinQuestButton:Hide()
+  questRows.pinControl:Hide()
   pageBack=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   pageBack:SetSize(90,24)
   pageBack:SetPoint("TOPLEFT",child,"TOPLEFT",8,-600)
