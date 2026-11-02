@@ -1,9 +1,11 @@
-name: Package addon
+name: Validate and package addon
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    branches: [develop, main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
 jobs:
@@ -11,20 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate addon manifest and files
+      - name: Install Lua syntax checker
+        run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - name: Check Lua syntax
         run: |
-          test -f ForeverCompanion/ForeverCompanion.toc
-          test -f ForeverCompanion/GuideData.lua
-          test -f ForeverCompanion/Core.lua
-          grep -q '^## Interface:' ForeverCompanion/ForeverCompanion.toc
+          find ForeverCompanion -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
+      - name: Validate manifest
+        run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           root = Path("ForeverCompanion")
-          toc = (root / "ForeverCompanion.toc").read_text()
-          for name in re.findall(r"(?m)^(?!#)([^\\r\\n]+\\.lua)\\s*$", toc):
+          toc = root / "ForeverCompanion.toc"
+          assert toc.is_file(), "Missing .toc"
+          lines = toc.read_text(encoding="utf-8").splitlines()
+          assert any(line.startswith("## Interface:") for line in lines), "Missing Interface field"
+          lua_files = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+          assert lua_files, "No files in manifest"
+          for name in lua_files:
+              assert name.endswith(".lua"), f"Unexpected manifest entry: {name}"
               assert (root / name).is_file(), f"Missing Lua file: {name}"
-          print("Manifest references present")
+          print("Validated", len(lua_files), "manifest files")
           PY
       - name: Package addon
         run: zip -r ForeverCompanion.zip ForeverCompanion -x '*.DS_Store'
