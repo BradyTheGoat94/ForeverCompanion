@@ -129,6 +129,27 @@ for _,w in ipairs(frames) do
  if w.text=="1. Ready to turn in: Sample: Speak with trainer" then readyRecommendation=true end
 end
 assert(readyRecommendation,"dashboard should prioritize confirmed ready-to-turn-in quests")
+local step1,step3,sourceLabel
+for _,w in ipairs(frames) do
+ if w.caption and w.caption.text:find("1. Ready to turn in:",1,true) then step1=w end
+ if w.caption and w.caption.text:find("3. Gather",1,true) then step3=w end
+ if w.kind=="FontString" and w.text:find("Quest data: current snapshot",1,true) then sourceLabel=w end
+end
+assert(step1 and step1.caption.text=="1. Ready to turn in: Sample: Speak with trainer","recommended quest must use visible caption")
+assert(step3 and step3.caption.text=="3. Gather 6 units for tracked material goals.","material recommendation must be visible")
+assert(sourceLabel and sourceLabel.text:find("Professions: detected",1,true),"data source disclosure missing")
+local originalCount=C_QuestLog.GetNumQuestLogEntries
+C_QuestLog.GetNumQuestLogEntries=function() return 0 end
+assert(ForeverCompanionQuestPlanner.Sync(),"empty quest log scan should succeed")
+ForeverCompanionDashboard.Render()
+assert(step1.caption.text=="1. Review your quest log for a new objective.","empty-log recommendation should replace prior caption")
+C_QuestLog.GetNumQuestLogEntries=originalCount
+assert(ForeverCompanionQuestPlanner.Sync(),"quest log should recover after empty scan")
+assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,10),"finish manual material goal")
+ForeverCompanionDashboard.Render()
+assert(step3.caption.text=="3. Add or review your manual profession goals.","completed goals should replace shortage caption")
+assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,4),"restore shortage fixture")
+ForeverCompanionDashboard.Render()
 local focusButton
 for _,w in ipairs(frames) do
  if w.caption and w.caption.text and w.caption.text:find("Review active quests",1,true) then focusButton=w end
@@ -205,6 +226,8 @@ for _,w in ipairs(frames) do
  if w.text=="STALE DATA - verify in the game quest log" then staleWarning=true end
 end
 assert(staleWarning,"quest briefing must warn about cached data")
+ForeverCompanionDashboard.Render()
+assert(sourceLabel.text:find("CACHED - VERIFY IN GAME",1,true),"dashboard must disclose stale quest data")
 C_QuestLog.GetNumQuestLogEntries=originalQuestCount
 assert(ForeverCompanionQuestPlanner.Sync(),"quest scanner should recover after transient error")
 local bannerText
