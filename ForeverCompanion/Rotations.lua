@@ -143,6 +143,19 @@ ForeverCompanionBeginnerSpellHints={
 }
 -- Spellbook names are exact, not categories such as "Blessing" or "Curse".
 -- Conditional spells may be talent-only, trainer-gated, or absent in a given build.
+-- Count curated coverage without mistaking general spell hints for verified records.
+function ForeverCompanionBeginnerCoverage(class)
+ local hints=ForeverCompanionBeginnerSpellHints[class] or {}
+ local verified=type(ForeverCompanionVerifiedAbilities)=="table" and ForeverCompanionVerifiedAbilities.entries
+ local entries=type(verified)=="table" and verified[class] or nil
+ local names={}
+ for _,entry in ipairs(type(entries)=="table" and entries or {}) do
+  if type(entry.name)=="string" then names[entry.name:lower()]=true end
+ end
+ local covered=0
+ for _,spell in ipairs(hints) do if names[spell:lower()] then covered=covered+1 end end
+ return covered,#hints
+end
 function ForeverCompanionBeginnerAvailability(class,scan)
  local hints=ForeverCompanionBeginnerSpellHints[class] or {}
  local result={}
