@@ -138,11 +138,13 @@ local function render()
   end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then
-      colorTexture(b.navBackground,0.29,0.22,0.11,1)
+      colorTexture(b.navBackground,0.045,0.16,0.37,1)
+      if b.navGlow then colorTexture(b.navGlow,0.10,0.29,0.68,0.65) end
       colorTexture(b.navAccent,0.98,0.74,0.29,1)
       b.navLabel:SetTextColor(1,0.83,0.43)
     else
       colorTexture(b.navBackground,0.050,0.067,0.100,1)
+      if b.navGlow then colorTexture(b.navGlow,0.08,0.18,0.36,0) end
       colorTexture(b.navAccent,0.52,0.39,0.19,1)
       b.navLabel:SetTextColor(0.88,0.87,0.83)
     end
@@ -544,6 +546,13 @@ local function createUI()
     icon:SetPoint("LEFT",b,"LEFT",11,0)
     icon:SetSize(21,21)
     icon:SetTexture(navIcons[i])
+    local underline=b:CreateTexture(nil,"ARTWORK")
+    underline:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",4,0)
+    underline:SetSize(156,1)
+    colorTexture(underline,0.42,0.35,0.24,0.7)
+    b.navGlow=b:CreateTexture(nil,"BORDER")
+    b.navGlow:SetAllPoints(b)
+    colorTexture(b.navGlow,0.08,0.18,0.36,0)
     b.navLabel=b:CreateFontString(nil,"OVERLAY","GameFontHighlight")
     b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
     b.navLabel:SetText(section)
