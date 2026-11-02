@@ -57,6 +57,7 @@ local function plate(parent,x,y,w,h)
   ornament(4,-h+19,2,15,0.68,0.49,0.23,0.95)
   ornament(w-6,-h+19,2,15,0.68,0.49,0.23,0.95)
   ornament(13,-34,w-26,1,0.57,0.42,0.23,0.55)
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Hero(f,w,h) end
   return f
 end
 local function safeXP()
