@@ -234,6 +234,16 @@ for _,w in ipairs(frames) do
  if w.text=="Known objectives: 1/1 | addon focus only" then knownObjective=true end
 end
 assert(knownObjective,"quest focus card should show verified objective progress")
+local originalComplete=C_QuestLog.IsComplete
+C_QuestLog.IsComplete=function() return false end
+assert(ForeverCompanionQuestPlanner.Sync(),"non-ready quest fixture should sync")
+ForeverCompanionQuestPlanner.Select(1)
+ForeverCompanionDashboard.Render()
+assert(step1.detail:find("Pinned priority: Sample: Speak with trainer",1,true),"dashboard must prefer unfinished pinned quest")
+step1.OnClick(step1)
+assert(ForeverCompanionQuestPlanner.GetSelected().title=="Sample: Speak with trainer","dashboard pin recommendation must focus selected priority")
+C_QuestLog.IsComplete=originalComplete
+assert(ForeverCompanionQuestPlanner.Sync(),"ready quest fixture should recover")
 exportSnapshot("ui_quest_snapshot.txt")
 local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
