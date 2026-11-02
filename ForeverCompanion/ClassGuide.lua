@@ -192,9 +192,11 @@ function Guide.Render(classToken,classLabel,level,role,mode)
   values.mode:SetText("Priority context: "..short(context and context.title or mode or "Leveling",24))
   local fraction=safeXP()
   if fraction then
+    values.xpCaption:SetText("LEVEL PROGRESS")
     values.xp:SetText("Experience progress: "..math.floor(fraction*100+0.5).."%")
     xpFill:SetWidth(math.max(1,math.floor(350*fraction)))
   else
+    values.xpCaption:SetText("LEVEL PROGRESS  /  UNAVAILABLE")
     values.xp:SetText("Experience: unavailable on this client/level")
     xpFill:SetWidth(1)
   end
