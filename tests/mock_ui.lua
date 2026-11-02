@@ -452,7 +452,7 @@ for _,w in ipairs(frames) do if w.text=="LEVELING GUIDE" then levelingHeading=w 
 assert(levelingHeading and frames[levelingHeading.parent].visible,"section header should appear on Leveling")
 local priorityTile, priorityNumber
 for _,w in ipairs(frames) do
- if w.kind=="Button" and w.width==122 and w.height==78 and w.label and w.label.text~="" then
+ if w.kind=="Button" and w.width==122 and (w.height==78 or w.height==88) and w.label and w.label.text~="" then
    priorityTile=w
    if w.number and w.number.text=="1" then priorityNumber=w.number end
  end
