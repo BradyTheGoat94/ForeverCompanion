@@ -407,6 +407,9 @@ for i,token in ipairs(classTokens) do
  assert(ForeverCompanionDB.previewClass==token,"class selector did not update addon preview")
 end
 ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
+-- Clear preview before testing unavailable live class APIs.
+ForeverCompanionDB.previewClass=nil
+ForeverCompanionRefresh()
 
 local classSnapshot={}
 for _,f in ipairs(frames) do
