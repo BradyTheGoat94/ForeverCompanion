@@ -240,9 +240,15 @@ local function render()
           row:SetScript("OnEnter",function(self)
             if GameTooltip then
               GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-              GameTooltip:SetText("Priority "..i,1,0.8,0.3)
+              GameTooltip:SetText("Priority "..i.." | "..string.upper(mode),1,0.8,0.3)
               GameTooltip:AddLine(self.detail or "",1,1,1,true)
-              GameTooltip:AddLine("Illustrative priority: verify this ability and its availability in your WoW Forever spellbook.",0.72,0.78,0.86,true)
+              local coach=type(ForeverCompanionGetBeginnerCoach)=="function"
+                and ForeverCompanionGetBeginnerCoach(classToken())
+              if type(coach)=="table" then
+                GameTooltip:AddLine("RESOURCE: "..coach.resource,0.95,0.75,0.38,true)
+                GameTooltip:AddLine("IF STUCK: "..coach.recover,0.84,0.86,0.81,true)
+              end
+              GameTooltip:AddLine("Reference only; verify trained abilities in your Forever spellbook.",0.72,0.78,0.86,true)
               GameTooltip:Show()
             end
           end)
