@@ -19,6 +19,12 @@ assertEqual(scan.supported,true,"spellbook supported")
 assertEqual(scan.inspected,2,"spell count")
 assertEqual(ForeverCompanionSpellbook.Status("Shield Wall",scan),"found in spellbook","known spell")
 assertEqual(ForeverCompanionSpellbook.Status("Unknown",scan),"not found in scanned spellbook (not proof of unavailable)","unknown spell")
+C_SpellBook.GetSpellBookItemName=function(i) if i==1 then return "Shield Wall" end error("simulated API failure") end
+local partial=ForeverCompanionSpellbook.Scan()
+assertEqual(partial.complete,false,"partial spellbook scan")
+assertEqual(ForeverCompanionSpellbook.Status("Unknown",partial),"unverified (partial scan)","unknown in partial scan")
+C_SpellBook.GetNumSpellBookSkillLines=function() return 100000 end
+assertEqual(ForeverCompanionSpellbook.Scan().supported,false,"reject invalid spellbook tab count")
 C_SpellBook=nil
 assertEqual(ForeverCompanionSpellbook.Scan().supported,false,"missing API")
 dofile("ForeverCompanion/CraftingPlanner.lua")
