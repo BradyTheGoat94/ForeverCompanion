@@ -713,3 +713,18 @@ for class,choices in pairs(ForeverCompanionSpecs) do
  end
 end
 assertEqual(specCount,28,"all published spec choices including Bear alternate")
+
+-- The UI helper must follow the selected spec, including the optional Bear entry.
+for class,choices in pairs(ForeverCompanionSpecs) do
+ for index,choice in ipairs(choices) do
+  ForeverCompanionDB.specSelections[class]=index
+  local name=choice[1]
+  local lines=ForeverCompanionSpecPlaybookLines(class)
+  local notes=ForeverCompanionSpecPriorityNoteLines(class)
+  assert(type(lines)=="table" and #lines>=7,"rendered playbook missing: "..class.." "..name)
+  assert(lines[1]:find(name,1,true),"rendered playbook selected wrong spec: "..class.." "..name)
+  assert(type(notes)=="table" and #notes>=4,"rendered priority notes missing: "..class.." "..name)
+  assert(notes[1]:find(name,1,true),"rendered notes selected wrong spec: "..class.." "..name)
+ end
+end
+ForeverCompanionDB.specSelections={}
