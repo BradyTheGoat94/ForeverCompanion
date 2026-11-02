@@ -18,3 +18,24 @@ This addon is **not verified on the target client**. Use this checklist on the f
 - Don't publish speculative dungeon loot or boss mechanics as verified facts.
 - Do not claim CurseForge approval until the listing is accepted.
 - Do not tag a stable release until the smoke test passes.
+
+## v0.7 quest and UI regression checklist
+11. Accept a quest, confirm it appears automatically in Quests without using `/fcq add`.
+12. Advance an objective, confirm its text updates after `QUEST_LOG_UPDATE`.
+13. Verify ready-to-turn-in state when all objectives are complete.
+14. Click a quest row, verify the focused quest title and objective details match.
+15. Test Previous/Next Quest and list pagination with more than 15 active quests.
+16. Abandon or turn in a quest; verify the live list updates and selection remains valid.
+17. Test with an empty quest log and with no recognized quest-log API.
+18. Verify all seven tabs fit at 720px width and no buttons overlap at 470px and 560px height.
+19. Drag the window, reload, confirm position persists; use `/fc position reset`.
+20. Check compact mode, character switching, different UI scales, and the initial welcome page.
+21. Confirm manual quest notes are not erased when automatic quest-log state changes.
+22. Confirm the addon does not accept, turn in, abandon, track, or route quests on its own.
+
+### Acceptance gates
+- No Lua errors during login, quest changes, tab switching or logout.
+- No overlapping UI controls at supported scales.
+- Quest counts and objective states match the native quest log.
+- Accurate quest detection for the actual Forever client API; if unsupported, ship with an explicit compatibility notice instead of claiming it works.
+- Save screenshots for CurseForge listing and issue reports.
