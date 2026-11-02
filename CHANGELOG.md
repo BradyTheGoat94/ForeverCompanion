@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0-beta (prelaunch source, not in-client tested)
+- Added Quests tab and persistent manual quest planner (up to 100 entries).
+- Track quest name, zone, and completion; list, complete, reopen and remove entries with `/fcq`.
+- Added seven-tab layout with compact navigation.
+- No copied Questie data, unverified quest locations, automatic tracking, or prohibited automation.
+
 ## 0.4.1-beta (prelaunch source, not in-client tested)
 - Added in-window class preview and role cycling buttons.
 - Persist window position per character and provide `/fc position reset`.
