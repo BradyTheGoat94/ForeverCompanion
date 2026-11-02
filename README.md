@@ -41,6 +41,12 @@ All guide routes, class ability priorities, recipe recommendations and game-vers
 - Per-character saved checklists, preferences, focus goals and movable window position
 - Offline mocked UI tests and clearly labeled illustrative PNG previews; Lua syntax, manifest audit and ZIP packaging in GitHub Actions
 
+## Dashboard data and navigation
+
+The black-and-gold Overview displays read-only quest snapshots, detected profession skills, and manually entered material goals. Quest data is labeled current, cached/outdated, or unavailable. Unknown quest zones remain visible under the current-zone filter and are marked **Unspecified zone**. Recommendations only navigate addon pages, never automate gameplay; full recommendation text appears on hover where supported.
+
+Use `/fc open Quests` (or `/fc quests`) to navigate and `/fc status` for a concise snapshot/material-goal report. No game quests, spells, or inventory are changed.
+
 ## Commands
 
 - `/fc` — toggle window
