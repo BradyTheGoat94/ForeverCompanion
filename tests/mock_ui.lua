@@ -194,7 +194,7 @@ questBriefingRoot=frames[questHeading.parent].parent
 assert(frames[questBriefingRoot].visible,"quest briefing must be visible on quest page")
 local questCountCard=false
 for _,w in ipairs(frames) do
- if w.text=="3 active  |  1 ready to turn in" then questCountCard=true end
+ if w.text=="3 active  |  1 ready  |  0 pinned" then questCountCard=true end
 end
 assert(questCountCard,"live quest briefing count incorrect")
 local sortControl
@@ -203,6 +203,8 @@ assert(sortControl and sortControl.OnClick,"quest sort selector missing")
 sortControl.OnClick(sortControl) -- ready
 assert(ForeverCompanionQuestPlanner.GetSort()=="ready","quest sort should persist readiness")
 assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.complete,"ready quests must sort first")
+sortControl.OnClick(sortControl) -- pinned
+assert(ForeverCompanionQuestPlanner.GetSort()=="pinned","pinned sort mode should be available")
 sortControl.OnClick(sortControl) -- log
 assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.title=="Sample: Gather supplies","log order must be preserved")
 sortControl.OnClick(sortControl) -- zone
@@ -219,9 +221,17 @@ assert(readyRow.status.text=="READY","quest row completion badge incorrect")
 readyRow.OnClick(readyRow)
 assert(ForeverCompanionQuestPlanner.GetSelected().title=="Sample: Speak with trainer","journal row focus failed")
 assert(readyRow.selected,"selected quest row must be highlighted")
+local pinControl
+for _,w in ipairs(frames) do if w.text=="Pin Focus" and w.OnClick then pinControl=w end end
+assert(pinControl and pinControl.visible,"quest pin button must be visible")
+pinControl.OnClick(pinControl)
+assert(ForeverCompanionQuestPlanner.PinnedCount()==1,"pin button must persist quest priority")
+assert(pinControl.text=="Unpin Focus","pin control must reflect focused quest state")
+assert(readyRow.title.text:find("[PIN]",1,true),"journal row should show pinned badge")
+assert(ForeverCompanionQuestPlanner.Overview().pinned==1,"journal overview must count pinned quests")
 local knownObjective=false
 for _,w in ipairs(frames) do
- if w.text=="Known objectives: 1/1 complete | addon focus only" then knownObjective=true end
+ if w.text=="Known objectives: 1/1 | addon focus only" then knownObjective=true end
 end
 assert(knownObjective,"quest focus card should show verified objective progress")
 exportSnapshot("ui_quest_snapshot.txt")
