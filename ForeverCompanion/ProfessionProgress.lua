@@ -45,7 +45,8 @@ function P.Overview()
     local skill=validSkill(entry.skill,true)
     local maximum=validSkill(entry.maxSkill,false)
     local missing=(skill and maximum) and math.max(0,maximum-skill) or nil
-    result[#result+1]={name=type(entry.name)=="string" and entry.name or "Unknown profession",skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
+    local percent=(skill and maximum) and math.floor(math.min(100,skill*100/maximum)+0.5) or nil
+    result[#result+1]={name=type(entry.name)=="string" and entry.name or "Unknown profession",skill=skill,maximum=maximum,remaining=missing,percent=percent,stage=skill and tier(skill) or "Unknown"}
   end
   return result,reason
 end
@@ -58,6 +59,7 @@ function P.FormatOverview()
     local progress=entry.skill and (entry.skill..(entry.maximum and "/"..entry.maximum or "")) or "Skill unavailable"
     local note=entry.remaining and (entry.remaining==0 and "At current cap" or (entry.remaining.." skill to current cap")) or "Cap unavailable"
     lines[#lines+1]=entry.name.." | "..progress.." | "..note
+    if entry.percent then lines[#lines+1]="  Progress to current cap: "..entry.percent.."%" end
     lines[#lines+1]="  General stage: "..entry.stage
   end
   lines[#lines+1]="Recipe availability, prices and trainer upgrades are not verified."
