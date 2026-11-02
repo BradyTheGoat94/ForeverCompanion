@@ -477,7 +477,43 @@ assert(questLink and questLink.OnClick,"native quest-journal shortcut missing")
 questLink.OnClick(questLink)
 assert(ForeverCompanionDB.tab=="Quests","native quest-journal shortcut failed")
 assert(not frames[dungeonRoot].visible,"Adventure cards must hide on Quest page")
+-- Settings is a real native interface, not merely a text-only command list.
+local settingsNav
+for _,w in ipairs(frames) do if w.section=="Settings" then settingsNav=w end end
+assert(settingsNav and settingsNav.OnClick,"Settings navigation missing")
+settingsNav.OnClick(settingsNav)
+assert(ForeverCompanionDB.tab=="Settings","Settings navigation failed")
+local settingsHeading,apiHeading,clientLabel
+local autoButton,centerButton,compactSettingsButton
+for _,w in ipairs(frames) do
+ if w.text=="PREFERENCES & CHARACTER" then settingsHeading=w end
+ if w.text=="CLIENT API VISIBILITY" then apiHeading=w end
+ if w.text:find("Client: OfflineMock",1,true) then clientLabel=w end
+ if w.caption and w.caption.text=="AUTO-DETECT CLASS" then autoButton=w end
+ if w.caption and w.caption.text=="CENTER WINDOW" then centerButton=w end
+ if w.caption and w.caption.text=="TOGGLE COMPACT" then compactSettingsButton=w end
+end
+assert(settingsHeading and apiHeading and clientLabel,"native Settings cards or client metadata missing")
+assert(frames[settingsHeading.parent].visible,"Settings cards should be visible")
+assert(autoButton and centerButton and compactSettingsButton,"Settings preference actions missing")
+SlashCmdList.FOREVERCOMPANION("class mage")
+assert(ForeverCompanionDB.previewClass=="MAGE","fixture preview class selection failed")
+autoButton.OnClick(autoButton)
+assert(ForeverCompanionDB.previewClass==nil,"Settings auto class must reset only addon preview")
+ForeverCompanionDB.position={x=20,y=30}
+centerButton.OnClick(centerButton)
+assert(ForeverCompanionDB.position==nil,"Settings center button should clear saved position")
+local wasCompact=ForeverCompanionDB.compact
+compactSettingsButton.OnClick(compactSettingsButton)
+assert(ForeverCompanionDB.compact~=wasCompact,"Settings compact toggle did not persist")
+local layoutTextFound=false
+for _,w in ipairs(frames) do
+ if w.text:find("Layout: ",1,true) and w.text:find(ForeverCompanionDB.compact and "Compact" or "Expanded",1,true) then layoutTextFound=true end
+end
+assert(layoutTextFound,"Settings layout summary did not refresh")
+exportSnapshot("ui_settings_snapshot.txt")
 overviewButton.OnClick(overviewButton)
+assert(not frames[settingsHeading.parent].visible,"Settings cards must hide on dashboard")
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""
