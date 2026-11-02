@@ -1,3 +1,10 @@
+## 1.7.0-beta
+- Introduced persistent per-profession material planning with needed, owned and remaining quantities.
+- Added /fcm commands to add, update and remove material entries.
+- Added detected profession skill-stage guidance, with explicit verification limits.
+- Connected progress and material checklists to profession handbook pages.
+- Updated README and regression checklist; no recipe database or inventory automation is claimed.
+
 ## 1.1.0-beta (development; rotations not yet client-verified)
 - Added Rotations.lua with beginner-friendly priority sequences for all nine original classes.
 - Five selectable contexts per class: leveling, dungeon, boss, AoE and PvP.
