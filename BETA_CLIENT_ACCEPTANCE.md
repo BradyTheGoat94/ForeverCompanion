@@ -1,6 +1,6 @@
 # Forever Companion beta acceptance checklist
 
-This form is completed only after running the exact GitHub Actions ZIP in the real WoW Forever client. Offline CI and preview PNGs cannot satisfy it.
+This form is completed only after running the exact GitHub Actions ZIP in the real WoW Forever client. Offline CI and preview PNGs cannot satisfy it. See `FOREVER_API_COMPATIBILITY_AUDIT.md` for sourced API assumptions, restrictions and confidence levels.
 
 ## Build identification
 
@@ -40,11 +40,13 @@ Mark each item PASS / FAIL / NOT TESTED, and record the first Lua error.
 | Navigation, selected tabs, scrolling and window resizing | NOT TESTED | |
 | Leveling guidance for all nine classes | NOT TESTED | |
 | Spellbook and missing-API behavior | NOT TESTED | |
+| Client interface is confirmed using `select(4, GetBuildInfo())` | NOT TESTED | Do not infer from TOC alone |
 | Quest guidance and non-automated quest tracking | NOT TESTED | |
 | Dungeon role preparation and PvP notes | NOT TESTED | |
 | Profession scanner and sourced Camping preview | NOT TESTED | |
 | Manual recipe, material, price and purchase budget workflows | NOT TESTED | |
 | Save and reload settings, plans and prices | NOT TESTED | |
+| Full game exit and relaunch restores saved settings, plans and prices | NOT TESTED | Early beta builds reported SavedVariables loading issues; verify current build |
 | No protected gameplay automation | NOT TESTED | |
 
 ## Decision
