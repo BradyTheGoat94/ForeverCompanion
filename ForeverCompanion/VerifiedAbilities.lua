@@ -52,7 +52,7 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
  local ordered={}
  for i,entry in ipairs(entries) do ordered[i]=entry end
  table.sort(ordered,function(a,b) if a.level==b.level then return a.name<b.name end return a.level<b.level end)
- for _,entry in ipairs(ordered) do in ipairs(entries) do
+ for _,entry in ipairs(ordered) do
   local gate=not n and "LEVEL UNKNOWN" or (n>=entry.level and "LEVEL MET" or "LOCKED BY LEVEL")
   local known=ForeverCompanionKnownSpell(entry.id)
   local ownership=known==true and "KNOWN IN SPELLBOOK" or (known==false and "NOT KNOWN" or "SPELLBOOK STATUS UNKNOWN")
