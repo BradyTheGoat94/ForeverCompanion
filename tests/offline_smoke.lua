@@ -864,3 +864,14 @@ issecretvalue=function() error("secret check unavailable") end
 assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"failed secret check fallback missing")
 UnitLevel=savedUnitLevel
 issecretvalue=savedIsSecret
+
+-- Invalid level results should degrade to a safe static guide, not crash.
+local previousLevel=UnitLevel
+local previousSecretCheck=issecretvalue
+issecretvalue=nil
+for _,bad in ipairs({0,-5,101,999,"forty",{},false}) do
+ UnitLevel=function() return bad end
+ assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("CURRENT LEVEL UNKNOWN",1,true),"invalid level not rejected")
+end
+UnitLevel=previousLevel
+issecretvalue=previousSecretCheck
