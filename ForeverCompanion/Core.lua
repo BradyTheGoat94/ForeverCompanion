@@ -249,6 +249,28 @@ local function render()
           row:Show()
         end
       end
+      -- Sourced Forever mechanics are displayed separately from generic leveling
+      -- priorities; they remain conditional on trained spells and chosen talents.
+      local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
+      if type(foreverNotes)=="table" then
+        lines[#lines+1]="FOREVER CLASS CHANGES (CHECK YOUR SPELLBOOK)"
+        for _,note in ipairs(foreverNotes) do lines[#lines+1]="- "..note end
+        local sources=ForeverCompanionForeverMechanicsSources
+        if type(sources)=="table" and type(sources[classToken()])=="string" then
+          lines[#lines+1]="Source: "..sources[classToken()]
+        end
+      end
+      local coaching=type(ForeverCompanionForeverDpsCoaching)=="table" and ForeverCompanionForeverDpsCoaching[classToken()]
+      if type(coaching)=="table" then
+        lines[#lines+1]="SPECIALIZATION DPS COACHING (CHOOSE YOUR SPEC)"
+        local ordered={}
+        for spec in pairs(coaching) do ordered[#ordered+1]=spec end
+        table.sort(ordered)
+        for _,spec in ipairs(ordered) do
+          lines[#lines+1]=string.upper(spec)
+          for step,tip in ipairs(coaching[spec]) do lines[#lines+1]=step..". "..tip end
+        end
+      end
       if ForeverCompanionAvailableAbilitySummary then
         lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
       end
