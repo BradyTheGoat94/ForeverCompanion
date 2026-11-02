@@ -24,3 +24,16 @@ ForeverCompanionRotationIcons = {
  WARLOCK={"Interface\\Icons\\Spell_Shadow_CurseOfSargeras","Interface\\Icons\\Spell_Shadow_DeathCoil"},
  DRUID={"Interface\\Icons\\Ability_Druid_Maul","Interface\\Icons\\Spell_Nature_Rejuvenation"}
 }
+
+-- A guide presentation contract for a future clickable ability-card interface.
+-- Data is explanatory, not a recommendation to automate gameplay.
+ForeverCompanionRotationPresentation = {
+  contexts = {
+    leveling={title="Solo leveling",description="Safe, resource-conscious priority while questing."},
+    dungeon={title="Dungeon party",description="Threat, control and assigned group role come first."},
+    boss={title="Single-target boss",description="Sustained damage or role-specific survival priorities."},
+    aoe={title="Multiple enemies",description="Use multi-target tools only when the pull is controlled."},
+    pvp={title="Player versus player",description="React to opponents; there is no guaranteed fixed sequence."}
+  },
+  notice="Illustrative Classic-era guidance. Confirm abilities, talents and mechanics in the WoW Forever client."
+}
