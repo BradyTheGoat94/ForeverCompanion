@@ -217,6 +217,12 @@ function Planner.TogglePin(index)
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
   return true,(db.questPins[key] and "Pinned: " or "Unpinned: ")..quest.title
 end
+function Planner.ClearPins()
+  ensure()
+  db.questPins={}
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true,"Cleared all addon-only quest pins."
+end
 function Planner.PinnedCount()
   local count=0
   for _,quest in ipairs(auto.entries) do if Planner.IsPinned(quest) then count=count+1 end end
@@ -480,6 +486,8 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
     ok,answer=Planner.TogglePin(auto.selected)
   elseif msg:match("^pin%s+%d+$") then
     ok,answer=Planner.TogglePin(msg:match("%d+"))
+  elseif msg=="clearpins" then
+    ok,answer=Planner.ClearPins()
   elseif msg=="pins" then
     say(Planner.PinnedCount().." pinned active quests (addon-only priorities).")
     for i,q in ipairs(auto.entries) do if Planner.IsPinned(q) then say(i..". "..q.title) end end
