@@ -12,7 +12,7 @@ if not source.exists():
     raise SystemExit("Missing leveling widget snapshot")
 rows=list(csv.DictReader(source.open(encoding="utf-8"),delimiter="|"))
 strings=[r["text"] for r in rows if r.get("kind")=="FontString" and r.get("text")]
-required=["CHARACTER & LEVELING","BUILD & ROTATION REFERENCE"]
+required=["CLASS GUIDE  /  LEVELING","TALENTS  /  ROTATIONS  /  GEAR"]
 missing=[item for item in required if item not in strings]
 if missing:
     raise SystemExit("Class guide snapshot missing real widgets: "+", ".join(missing))
@@ -62,12 +62,12 @@ def card(px,py,w,h,label):
     d.rectangle((px+2,py+2,px+w-2,py+6),fill=dim)
     d.text((px+20,py+18),label,font=heading,fill=gold)
 cy=y+140
-card(cx,cy,520,197,"CHARACTER & LEVELING")
-card(cx+534,cy,520,197,"BUILD & ROTATION REFERENCE")
-d.text((cx+22,cy+70),panel_value("CHARACTER & LEVELING",-45,"Class preview unavailable"),font=heading,fill=cream)
-d.text((cx+22,cy+111),panel_value("CHARACTER & LEVELING",-73,"Role not selected"),font=body,fill=muted)
-band=panel_value("CHARACTER & LEVELING",-101,"Leveling phase unavailable")
-tip=panel_value("CHARACTER & LEVELING",-123,"Class-specific leveling reference")
+card(cx,cy,520,197,"CLASS GUIDE  /  LEVELING")
+card(cx+534,cy,520,197,"TALENTS  /  ROTATIONS  /  GEAR")
+d.text((cx+22,cy+70),panel_value("CLASS GUIDE  /  LEVELING",-45,"Class preview unavailable"),font=heading,fill=cream)
+d.text((cx+22,cy+111),panel_value("CLASS GUIDE  /  LEVELING",-73,"Role not selected"),font=body,fill=muted)
+band=panel_value("CLASS GUIDE  /  LEVELING",-101,"Leveling phase unavailable")
+tip=panel_value("CLASS GUIDE  /  LEVELING",-123,"Class-specific leveling reference")
 if not band.startswith("Leveling phase:"):
     raise SystemExit("Leveling phase is missing from native class hero")
 d.text((cx+22,cy+144),band[:57],font=small,fill=gold)
