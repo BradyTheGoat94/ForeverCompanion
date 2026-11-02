@@ -65,12 +65,15 @@ C_QuestLog={
   return {questID=42,title="Sample Quest",isComplete=false}
  end,
  IsComplete=function() return true end,
- GetQuestObjectives=function() return {{text="Collect 3 samples"}} end,
+ GetQuestObjectives=function() return {{text="Collect 3 samples",finished=true}} end,
 }
 dofile("ForeverCompanion/QuestPlanner.lua")
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"quest scan")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"quest count")
 assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"quest completion")
+local objectiveDone,objectiveKnown=ForeverCompanionQuestPlanner.ObjectiveProgress()
+assertEqual(objectiveDone,1,"modern objective completion")
+assertEqual(objectiveKnown,1,"modern objective known count")
 assertEqual(ForeverCompanionQuestPlanner.Overview().remaining,0,"quest summary remaining")
 assertEqual(ForeverCompanionQuestPlanner.Overview().zones[1].zone,"Test Zone","quest zone summary")
 assert(ForeverCompanionQuestPlanner.FormatOverview():find("1 active",1,true),"quest overview should show live totals")
@@ -95,6 +98,9 @@ assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"legacy quest count")
 assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"legacy ready status")
 assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].zone,"Westfall","legacy zone heading")
 assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].objectives[1],"Apples: 5/5","legacy objectives")
+local classicDone,classicKnown=ForeverCompanionQuestPlanner.ObjectiveProgress()
+assertEqual(classicDone,1,"legacy objective completion")
+assertEqual(classicKnown,1,"legacy objective known count")
 GetRealZoneText=function() error("restricted zone API") end
 GetZoneText=function() return "Westfall" end
 ForeverCompanionQuestPlanner.CycleFilter() -- ready
