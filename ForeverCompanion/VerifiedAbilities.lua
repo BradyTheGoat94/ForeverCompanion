@@ -9,6 +9,10 @@ ForeverCompanionVerifiedAbilities = {
  source="https://foreverdb.net/spells?cls=1",
  status="Client-data reference only; in-game trainer/talent availability unverified",
  entries={
+  MAGE={
+   {name="Arcane Intellect",level=1,id=10157,kind="Trainer",tree="Arcane",note="Intellect buff; check learned rank"},
+   {name="Arcane Explosion",level=14,id=10202,kind="Trainer",tree="Arcane",note="Close-range area damage; check learned rank"}
+  },
   WARRIOR={
    {name="Battle Shout",level=1,id=25289,kind="Trainer",tree="Fury",note="Maintain the appropriate group attack-power buff"},
    {name="Battle Stance",level=1,id=2457,kind="Trainer",tree="Arms",note="Check your stance before using stance-restricted abilities"},
