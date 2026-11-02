@@ -210,3 +210,13 @@ This addon is **not verified on the target client**. Use this checklist on the f
 - Trigger quest-log changes, level-ups, profession changes and /reload; confirm no Lua errors or stale UI that misrepresents unsupported APIs.
 - Open Settings via Diagnostics and verify the API report identifies unavailable functions without claiming the game flavor is certified.
 - Record real screenshots, the client build and TOC Interface value before publishing. The GitHub mock PNG is not acceptable as a real CurseForge gameplay screenshot.
+
+## Additional class-guide and journal acceptance checks (November 2)
+
+- Open Leveling and verify both native hero cards appear with the correct class, role preference, selected spec preview, rotation context and XP state. Change class preview, then return to automatic class detection.
+- Cycle all five rotation contexts; each priority tile must update, remain clickable and show its complete advisory text in the tooltip. Verify the stock game client has the icon paths used by the selected class.
+- Check that rotation controls, the class hero, priority tiles and long-form guide text do not overlap at expanded and compact sizes. The Leveling page must scroll to the bottom.
+- Open each non-Overview section and verify the new section title and description; return to Overview and confirm the section header and class hero disappear.
+- On Quests, compare active, in-progress, ready and zone totals against the live client. Temporarily unavailable quest APIs must show stale warnings, not imply a successful scan.
+- On Professions, compare detected skills, current caps and remaining points to the live profession UI. Missing APIs must show an explicit unavailable state.
+- Test the new class preview artifact as an *offline illustration only*; obtain separate screenshots inside the real Forever client before a CurseForge listing.
