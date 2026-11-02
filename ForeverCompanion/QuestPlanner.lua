@@ -173,6 +173,25 @@ function Planner.CycleFilter()
   else auto.filter="all" end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
+local sortModes={"log","zone","ready"}
+function Planner.GetSort()
+  ensure()
+  if db.questSort~="log" and db.questSort~="zone" and db.questSort~="ready" then
+    db.questSort="log"
+  end
+  return db.questSort
+end
+function Planner.CycleSort()
+  local mode=Planner.GetSort()
+  for i,name in ipairs(sortModes) do
+    if mode==name then
+      db.questSort=sortModes[(i % #sortModes)+1]
+      break
+    end
+  end
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return db.questSort
+end
 function Planner.GetVisible()
   local visible={}
   local zone
@@ -189,6 +208,18 @@ function Planner.GetVisible()
       or (auto.filter=="zone" and (not zone or zone=="" or not Planner.HasZoneMetadata() or not q.zone or q.zone==zone)) then
       visible[#visible+1]={index=i,quest=q}
     end
+  end
+  local mode=Planner.GetSort()
+  if mode~="log" then
+    table.sort(visible,function(a,b)
+      local aq,bq=a.quest,b.quest
+      if mode=="ready" and aq.complete~=bq.complete then return aq.complete==true end
+      local az,bz=(aq.zone or ""):lower(),(bq.zone or ""):lower()
+      if az~=bz then return az<bz end
+      local at,bt=(aq.title or ""):lower(),(bq.title or ""):lower()
+      if at~=bt then return at<bt end
+      return a.index<b.index
+    end)
   end
   return visible
 end
