@@ -75,6 +75,37 @@ function Loot.WishlistSummary(db)
   if count==0 then lines[#lines+1]="No saved targets. Add a sourced item with /fc wish <item name>." end
   return table.concat(lines,"\\n")
 end
+function Loot.Recommendations(classToken,role)
+  -- Never infer class eligibility or best-in-slot from an unverified item name.
+  -- Only explicit, sourced recommendation metadata may appear here.
+  local results={}
+  for _,record in ipairs(Loot.records) do
+    if type(record.recommendedFor)=="table" and type(record.recommendationSource)=="string" then
+      for _,entry in ipairs(record.recommendedFor) do
+        if type(entry)=="table" and entry.class==classToken
+          and (entry.role==nil or entry.role==role) then
+          results[#results+1]=record
+          break
+        end
+      end
+    end
+  end
+  return results
+end
+function Loot.RecommendationSummary(classToken,role)
+  local matches=Loot.Recommendations(classToken,role)
+  local lines={"CLASS / ROLE GEAR SOURCES"}
+  if #matches==0 then
+    lines[#lines+1]="No source-backed upgrade recommendations for this class and role yet."
+    lines[#lines+1]="Item drops below are not automatically best-in-slot or usable by your class."
+  else
+    for _,record in ipairs(matches) do
+      lines[#lines+1]=record.item.." — "..record.boss.." / "..record.dungeon
+      lines[#lines+1]="Recommendation source: "..record.recommendationSource
+    end
+  end
+  return table.concat(lines,"\\n")
+end
 function Loot.Search(query)
   local results={}
   local term=type(query)=="string" and query:lower() or ""
