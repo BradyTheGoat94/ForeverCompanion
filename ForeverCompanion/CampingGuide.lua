@@ -15,7 +15,7 @@ C.features={
  Skinning={item="Camp Chair",skill=20,effect="Grants 2% spell and attack critical chance; conflicts with Moonkin Aura."},
  Tailoring={item="Faction Banner",skill=20,effect="Grants 14-32 Spirit by level to your faction; conflicts with Divine Spirit."},
  Cooking={item="Basic Campfire",skill=1,effect="Allows cooking and up to three other campsite features."},
- First Aid={item="First Aid Kit",skill=20,effect="Grants 3-56 Stamina by level; conflicts with Power Word: Fortitude."},
+ ["First Aid"]={item="First Aid Kit",skill=20,effect="Grants 3-56 Stamina by level; conflicts with Power Word: Fortitude."},
  Fishing={item="Fishing Bowl",skill=20,effect="Grants 8% to attributes; conflicts with Blessing of Kings."},
 }
 function C.Format(name)
