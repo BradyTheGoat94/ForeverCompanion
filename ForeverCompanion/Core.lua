@@ -120,6 +120,9 @@ local function render()
     local visible=ForeverCompanionQuestPlanner.GetVisible()
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
     lines = {ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
+    if not ForeverCompanionQuestPlanner.IsSupported() then
+      table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
+    end
     if questSectionLabel then
       questSectionLabel:SetText("QUEST LOG  |  "..#live.." active  |  "..ForeverCompanionQuestPlanner.ReadyCount().." ready")
       questSectionLabel:Show()
