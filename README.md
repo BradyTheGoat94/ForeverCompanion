@@ -20,12 +20,13 @@ The GitHub Actions `offline-ui-snapshot` artifact includes a source-validated PN
 
 ## Beta features
 
-- Seven-tab guide window: Overview, Leveling, Quests, Dungeons, Professions, PvP and Settings
-- Automatic detection of the nine original classes, plus class preview and role preference
-- General class guidance, leveling bands, dungeon preparation and manual checklists
-- Per-character saved checklist progress, preferences and movable window position
-- Manual quest planner with name, zone and completion state (up to 100 entries)
-- GitHub Actions Lua syntax checking, manifest validation and ZIP packaging
+- Premium black-and-gold seven-section UI with native sidebar, responsive scaling, dashboard and class-guide panels
+- Character/class/role overview, guarded XP display, quest readiness and manual material-goal progress
+- Quest Journal with read-only modern/legacy quest-log scanning, focus controls, filters, pagination, zone summary and stale-data warnings
+- Profession Skills and Material Goals cards, detected skill/cap information, manual material adjustments and recipe-planning references
+- Nine Classic-era class references with role and rotation priorities; nine profession handbooks with detailed general planning advice
+- Per-character saved checklists, preferences, focus goals and movable window position
+- Offline mocked UI tests and clearly labeled illustrative PNG previews; Lua syntax, manifest audit and ZIP packaging in GitHub Actions
 
 ## Commands
 
