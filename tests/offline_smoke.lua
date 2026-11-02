@@ -795,3 +795,12 @@ assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("Ho
 selectSpec("DRUID","Restoration")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," "):find("consumes the HoT",1,true),"Swiftmend HoT-consumption missing")
 ForeverCompanionDB.specSelections={}
+
+-- Prelaunch talent-diff advisory checks (not claims of live verification).
+selectSpec("MAGE","Frost")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("MAGE")," "):find("8-second cooldown",1,true),"Frost Ice Lance hotfix cooldown missing")
+selectSpec("PALADIN","Protection")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PALADIN")," "):find("reduces Holy Shield damage",1,true),"Holy Shield tuning note missing")
+selectSpec("DRUID","Restoration")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," "):find("your own Regrowth or Rejuvenation",1,true),"Swiftmend HoT requirement missing")
+ForeverCompanionDB.specSelections={}
