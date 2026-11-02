@@ -293,6 +293,11 @@ local function render()
           lines[#lines+1]=note
         end
       end
+      if type(ForeverCompanionForeverLessonLines)=="function" then
+        for _,note in ipairs(ForeverCompanionForeverLessonLines(classToken())) do
+          lines[#lines+1]=note
+        end
+      end
       -- Sourced Forever mechanics are displayed separately from generic leveling
       -- priorities; they remain conditional on trained spells and chosen talents.
       local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
