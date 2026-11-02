@@ -76,3 +76,12 @@ Sample names above are illustrative placeholders, not validated game recipes. In
 The Leveling guide now has a clickable **Spec** selector beside the rotation-mode selector. It remembers the selected specialization per class and displays role-based planning priorities for leveling, dungeons, bosses, AoE, and PvP, including when to reserve offensive, defensive, and utility cooldowns. There are 28 preview profiles across the nine original classes; the Guardian/Bear entry is explicitly version-dependent.
 
 Use `/fcspec WARRIOR` (replace WARRIOR with a class token) to cycle its preview. The spec profiles are **educational planning frameworks, not validated spell-by-spell rotations, talent builds, or measured DPS rankings**. WoW Forever's actual spell/talent data must be verified before claiming optimization.
+
+## Recipe-to-material bridge (3.1 beta)
+
+The Professions tab now compares the aggregated demand from your recipe goals with manually entered owned quantities, displaying the remaining shortage for each ingredient.
+
+- `/fcbridge preview Alchemy` shows a read-only demand and shortage breakdown.
+- `/fcbridge sync Alchemy` **explicitly** copies recipe ingredient requirements into the existing material checklist, keeping manually entered owned counts and unrelated material goals.
+
+Synchronization is never automatic. Existing checklist targets matching recipe ingredients are replaced, so preview first. Sync validates checklist capacity and quantity limits before applying changes. Ingredient names are matched case-insensitively after trimming surrounding whitespace. Inventory is not scanned; counts remain manually supplied.
