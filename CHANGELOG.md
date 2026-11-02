@@ -1,3 +1,11 @@
+## 0.9.0-beta (source committed; live-client validation pending)
+- Introduced class handbook sections for nine original classes, with icon references, leveling, dungeon, PvP and profession notes.
+- Added selectable icon-backed profession handbook pages for nine gathering and crafting professions.
+- Profession pages include beginner-friendly purpose, pairing suggestions and basic progression checklists.
+- Existing role-specific tips remain in the leveling and dungeon sections.
+- Exact talent builds, recipe IDs, material quantities, skill thresholds and Forever-specific changes are not yet verified or included.
+- Icon availability and UI layout require testing on the target client.
+
 ## 0.8.0-beta (source only; target client unverified)
 - Added one-click quest filters: all, ready for turn-in, and current zone (where zone metadata is exposed).
 - Live quest header shows active and ready counts; filters preserve the underlying quest log.
