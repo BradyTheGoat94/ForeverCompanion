@@ -20,7 +20,7 @@ function scanner.Read()
       end
     end
   end
-  if #results==0 then return {},"No learned professions detected." end
+  if #results==0 then return {},"No learned professions detected (or profession data not yet loaded)." end
   return results,nil
 end
 function scanner.Format()
