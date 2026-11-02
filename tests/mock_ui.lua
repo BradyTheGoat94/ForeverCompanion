@@ -275,6 +275,10 @@ assert(mainWindow.scale<0.61,"window should shrink when display becomes smaller"
 UIParent:SetSize(1000,700)
 addonFrame.OnEvent(addonFrame,"UI_SCALE_CHANGED")
 assert(mainWindow.scale>0.8,"window should recover scale after display restores")
+local originalWidth=UIParent.GetWidth
+UIParent.GetWidth=function() error("restricted parent geometry") end
+assert(pcall(addonFrame.OnEvent,addonFrame,"UI_SCALE_CHANGED"),"restricted geometry must not crash resize")
+UIParent.GetWidth=originalWidth
 assert(compactButton and compactButton.OnClick,"compact toggle missing")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
