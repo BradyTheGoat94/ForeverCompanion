@@ -111,6 +111,29 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
  return result
 end
 
+-- Defensive runtime probe: reports capability presence without executing
+-- protected actions or assuming a particular Forever client patch.
+function ForeverCompanionCompatibilityReport()
+ local report={}
+ local function add(name,available)
+  report[#report+1]=name..": "..(available and "available" or "unavailable")
+ end
+ add("C_SpellBook.IsSpellKnown",type(C_SpellBook)=="table" and type(C_SpellBook.IsSpellKnown)=="function")
+ add("C_Spell.IsSpellKnown",type(C_Spell)=="table" and type(C_Spell.IsSpellKnown)=="function")
+ add("IsSpellKnown",type(IsSpellKnown)=="function")
+ add("IsPlayerSpell",type(IsPlayerSpell)=="function")
+ add("GetBuildInfo",type(GetBuildInfo)=="function")
+ add("InCombatLockdown",type(InCombatLockdown)=="function")
+ if type(GetBuildInfo)=="function" then
+  local ok,version,build,date,interface=pcall(GetBuildInfo)
+  if ok then
+   report[#report+1]="Client: "..tostring(version).." build "..tostring(build).." interface "..tostring(interface)
+  end
+ end
+ report[#report+1]="API availability does not prove live-guide accuracy."
+ return report
+end
+
 -- Resolve an ability reference without guessing that a spell is learned.
 function ForeverCompanionAbilityState(classToken,spellID,level)
  local data=ForeverCompanionVerifiedAbilities
