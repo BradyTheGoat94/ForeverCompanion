@@ -77,5 +77,5 @@ function C.Format(class,level)
  if not notes then return "LEVELING PRACTICE: Class guide not yet available." end
  local stage,band=C.Stage(level)
  local lines={"LEVELING PRACTICE - "..band[3].." (Lv "..band[1].."-"..band[2]..")",notes[stage],"NEXT STAGE: "..(stage<5 and notes[stage+1] or "Review actual character skills and endgame role requirements."),"REFERENCE: General practice advice; confirm unlocks and class changes in the live Forever client."}
- return table.concat(lines,"\\n")
+ return table.concat(lines,"\n")
 end
