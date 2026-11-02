@@ -153,7 +153,8 @@ function ForeverCompanionBeginnerAvailability(class,scan)
    local ok,value=pcall(book.Status,spell,scan)
    if ok and type(value)=="string" then status=value end
   end
-  result[#result+1]=spell.." | "..status
+  local label=status=="found in spellbook" and "[FOUND]" or (status:find("unverified",1,true) and "[UNKNOWN]" or "[CHECK TRAINER/TALENTS]")
+  result[#result+1]=label.." "..spell.." | "..status
  end
  return result
 end
