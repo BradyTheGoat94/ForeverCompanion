@@ -49,6 +49,7 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
   return result
  end
  local n=tonumber(level)
+ table.sort(entries,function(a,b) if a.level==b.level then return a.name<b.name end return a.level<b.level end)
  for _,entry in ipairs(entries) do
   local gate=not n and "LEVEL UNKNOWN" or (n>=entry.level and "LEVEL MET" or "LOCKED BY LEVEL")
   local known=ForeverCompanionKnownSpell(entry.id)
