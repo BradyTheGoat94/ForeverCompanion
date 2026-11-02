@@ -7,6 +7,7 @@ local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription
 local rotationRows={}
+local rotationDetail=1
 local DB, window, titleText, content, currentTab
 local tabs = {"Overview", "Leveling", "Quests", "Dungeons", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -269,7 +270,7 @@ local function createUI()
   rotationButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   rotationButton:SetSize(155,23)
   rotationButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",60,80)
-  rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; render() end)
+  rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; rotationDetail=1; render() end)
   rotationButton:Hide()
   handbookIcon=window:CreateTexture(nil,"OVERLAY")
   handbookIcon:SetSize(30,30)
