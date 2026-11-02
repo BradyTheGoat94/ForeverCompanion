@@ -131,11 +131,15 @@ local function render()
     ForeverCompanionLootUI.savedButton:SetText(ForeverCompanionLootUI.savedOnly and "Wishlist: Only" or "Wishlist: All")
     ForeverCompanionLootUI.dungeonButton:Show()
     ForeverCompanionLootUI.savedButton:Show()
+    ForeverCompanionLootUI.itemTitle:SetText(selected and selected.item or "No matching loot")
+    ForeverCompanionLootUI.itemSubtitle:SetText(selected and (selected.boss.." / "..selected.dungeon.." | "..(selected.slot or "Slot unknown").." | Beta reference") or "Change your search or filters")
+    ForeverCompanionLootUI.itemCard:Show()
     else
       ForeverCompanionLootUI.searchBox:Hide()
       ForeverCompanionLootUI.wishButton:Hide()
       ForeverCompanionLootUI.prevButton:Hide(); ForeverCompanionLootUI.nextButton:Hide()
     ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.savedButton:Hide()
+    ForeverCompanionLootUI.itemCard:Hide()
     end
   end
   titleText:SetText("Forever Companion")
@@ -727,7 +731,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -120 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -190 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 346 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
   -- Keep the player's current scroll position during refresh.
   if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
@@ -833,6 +837,18 @@ local function setupLootControls(child)
     render()
   end)
   ForeverCompanionLootUI.savedButton:Hide()
+  ForeverCompanionLootUI.itemCard=CreateFrame("Frame",nil,child)
+  ForeverCompanionLootUI.itemCard:SetSize(655,64)
+  ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.dungeonButton,"BOTTOMLEFT",0,-8)
+  ForeverCompanionLootUI.itemIcon=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"ARTWORK")
+  ForeverCompanionLootUI.itemIcon:SetSize(42,42)
+  ForeverCompanionLootUI.itemIcon:SetPoint("LEFT",ForeverCompanionLootUI.itemCard,"LEFT",8,0)
+  ForeverCompanionLootUI.itemIcon:SetTexture("Interface\\\\Icons\\\\INV_Misc_QuestionMark")
+  ForeverCompanionLootUI.itemTitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+  ForeverCompanionLootUI.itemTitle:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemIcon,"TOPRIGHT",12,-2)
+  ForeverCompanionLootUI.itemSubtitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  ForeverCompanionLootUI.itemSubtitle:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemTitle,"BOTTOMLEFT",0,-5)
+  ForeverCompanionLootUI.itemCard:Hide()
 end
 local function cyclePreviewClass()
   local token=classToken()
