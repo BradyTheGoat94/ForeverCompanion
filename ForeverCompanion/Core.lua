@@ -374,6 +374,7 @@ local function render()
       end
     end
     if currentTab == "Dungeons" then
+      if ForeverCompanionDungeonPreparation then lines[#lines+1]=ForeverCompanionDungeonPreparation.Format(DB.role) end
       if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
         lines[#lines+1]="YOUR ROLE PREPARATION"
         for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
