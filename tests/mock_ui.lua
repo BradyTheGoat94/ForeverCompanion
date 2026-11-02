@@ -389,9 +389,14 @@ assert(rotationControl and rotationControl.point and rotationControl.point[1]=="
 local levelingHeading
 for _,w in ipairs(frames) do if w.text=="LEVELING GUIDE" then levelingHeading=w end end
 assert(levelingHeading and frames[levelingHeading.parent].visible,"section header should appear on Leveling")
-local priorityTile
-for _,w in ipairs(frames) do if w.text:find("^1%. ",1) and w.parent then priorityTile=w end end
-assert(priorityTile,"priority tile should display ability text")
+local priorityTile, priorityNumber
+for _,w in ipairs(frames) do
+ if w.kind=="Button" and w.width==122 and w.height==78 and w.label and w.label.text~="" then
+   priorityTile=w
+   if w.number and w.number.text=="1" then priorityNumber=w.number end
+ end
+end
+assert(priorityTile and priorityNumber,"six-slot rotation strip should display numbered ability tiles")
 local classSnapshot={}
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
