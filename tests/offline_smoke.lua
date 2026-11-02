@@ -95,6 +95,16 @@ assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"legacy quest count")
 assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"legacy ready status")
 assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].zone,"Westfall","legacy zone heading")
 assertEqual(ForeverCompanionQuestPlanner.GetLive()[1].objectives[1],"Apples: 5/5","legacy objectives")
+GetRealZoneText=function() error("restricted zone API") end
+GetZoneText=function() return "Westfall" end
+ForeverCompanionQuestPlanner.CycleFilter() -- ready
+ForeverCompanionQuestPlanner.CycleFilter() -- current zone
+assertEqual(ForeverCompanionQuestPlanner.GetFilter(),"zone","zone filter selected")
+local zoneOk,visible=pcall(ForeverCompanionQuestPlanner.GetVisible)
+assert(zoneOk and #visible==1,"zone filter must survive restricted primary zone API")
+ForeverCompanionQuestPlanner.CycleFilter() -- all
+GetRealZoneText=nil
+GetZoneText=nil
 GetNumQuestLogEntries=function() error("simulated legacy API outage") end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"legacy scan outage")
 assertEqual(ForeverCompanionQuestPlanner.IsSnapshotStale(),true,"legacy cached snapshot stale")
