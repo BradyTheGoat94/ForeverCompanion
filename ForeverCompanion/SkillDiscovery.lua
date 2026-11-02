@@ -47,3 +47,32 @@ function D.Format(classToken)
  lines[#lines+1]="Spellbook presence does not verify best rotation, rank, talents or trainer requirements."
  return table.concat(lines,"\n")
 end
+
+-- Compact skill readiness overview for any class with curated candidates.
+function D.Summary(classToken,snapshot)
+ snapshot=snapshot or D.Snapshot()
+ local guide=ForeverCompanionCooldownGuides and ForeverCompanionCooldownGuides[classToken]
+ local result={known=0,unconfirmed=0,notScanned=0,candidates=0,supported=snapshot.supported and true or false}
+ if not guide then return result end
+ local seen={}
+ for _,group in ipairs({"offense","defense","utility"}) do
+  for _,name in ipairs(guide[group] or {}) do
+   if type(name)=="string" and name:match("^[%a%s':%-]+$") then
+    local key=normalize(name)
+    if not seen[key] then
+     seen[key]=true
+     result.candidates=result.candidates+1
+     local state=D.Find({name},snapshot)[1].state
+     if state=="IN SPELLBOOK" then result.known=result.known+1
+     elseif state=="NOT IN SCANNED SPELLBOOK" then result.notScanned=result.notScanned+1
+     else result.unconfirmed=result.unconfirmed+1 end
+    end
+   end
+  end
+ end
+ return result
+end
+function D.FormatSummary(classToken)
+ local s=D.Summary(classToken)
+ return "SKILL READINESS: "..s.known.."/"..s.candidates.." curated candidates found; "..s.notScanned.." not found in scan; "..s.unconfirmed.." unconfirmed. Not a class-completion score."
+end
