@@ -212,7 +212,13 @@ local function render()
     if ForeverCompanionReadiness then lines[#lines+1]=ForeverCompanionReadiness.Format(classToken(),level(),(DB and DB.professions or "")) end
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
   elseif currentTab == "Leveling" then
-    lines = {"CLASS GUIDANCE",experienceText()}
+    lines = {"CLASS GUIDANCE",experienceText(),
+      "ALT LEVELING / PRE-LAUNCH CHECKLIST",
+      "1. Check whether Legacy progression or unlocks are account-wide; not verified for Forever.",
+      "2. Compare questing and dungeon leveling after the client unlocks and XP rules are confirmed.",
+      "3. Prepare class training, equipment and consumables; verify alt-specific restrictions.",
+      "LEGACY SYSTEM / STATUS: Awaiting official Forever mechanics and client verification.",
+      "Do not assume Legacy rewards, reset rules or shared benefits match another WoW version."}
     -- Put the immediately actionable, spec-specific steps first in the
     -- scrollable guide, before long reference material and rotation notes.
     if type(ForeverCompanionQuickStartLines)=="function" then
