@@ -248,6 +248,67 @@ end
 -- Source-checked priority addenda. These are build-specific, not universal
 -- damage rankings; rules are re-evaluated whenever the next cast is chosen.
 ForeverCompanionSourcedPriorities={
+ HUNTER={
+  Marksmanship={
+   source="https://www.wowhead.com/forever/guide/classes/hunter/marksmanship/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026; PvE priority, not measured against all gear sets",
+   rules={
+    "1. Keep Trueshot Aura active if trained, and apply Hunter's Mark to the priority target.",
+    "2. Use Aimed Shot when trained and ready, without disrupting Auto Shot more than necessary.",
+    "3. Maintain Serpent Sting only if the enemy will live long enough for its ticks.",
+    "4. Cast Sniper Shot when talented and a safe four-second cast window exists; evaluate whether it delays better shots.",
+    "5. Use Arcane Shot as the remaining instant shot priority; keep ranged Auto Shot running.",
+    "6. For up to four targets, use Multi-Shot; for larger packs, channel Volley when safe.",
+    "7. Use Rapid Fire on appropriate burn windows, ideally with offensive trinkets.",
+   },
+  },
+ },
+ SHAMAN={
+  Elemental={
+   source="https://www.wowhead.com/forever/guide/classes/shaman/elemental/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 29, 2026; single-target and AoE priorities",
+   rules={
+    "1. Maintain group-support totems and Searing Totem on a boss.",
+    "2. Keep Flame Shock on the main target and refresh only after it expires.",
+    "3. Activate Elemental Mastery for a planned burst window once totems and Flame Shock are ready.",
+    "4. Use Lava Burst if Flame Shock will remain on the target through its cast.",
+    "5. Use Lightning Bolt as filler; downrank if Mana is a limiting factor.",
+    "6. For AoE, maintain Magma Totem, use Fire Nova, then Chain Lightning when trained and affordable.",
+    "7. On large packs, reduce expensive spells or DoT spreading to avoid running dry.",
+   },
+  },
+ },
+ DRUID={
+  Balance={
+   source="https://www.wowhead.com/forever/guide/classes/druid/balance/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026; Eclipse-cycle and Mana priority",
+   rules={
+    "1. Coordinate Faerie Fire with the group; do not duplicate another Druid's debuff.",
+    "2. Pull with Wrath; apply Insect Swarm and Moonfire to a durable enemy.",
+    "3. After Wrath lands and grants Eclipse charges, cast two faster Starfire spells.",
+    "4. If Wrath misses, cast another Wrath before the Starfire pair; no charges were generated.",
+    "5. Refresh Insect Swarm and Moonfire as they expire, then resume the Wrath and Starfire cycle.",
+    "6. When Mana is low, cast Wrath repeatedly and consider dropping costly Moonfire refreshes.",
+    "7. Against several durable targets, spread DoTs; with five or more clustered enemies use Hurricane when safe.",
+   },
+  },
+ },
+ WARLOCK={
+  Demonology={
+   source="https://www.wowhead.com/forever/guide/classes/warlock/demonology/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/demonology-warlock-ranged-dps-pve-guide",
+   reviewed="Wowhead Oct 26, 2026; build-dependent Fire and Shadow raid priorities",
+   rules={
+    "1. Summon the demon appropriate to your talent build and maintain Soul Link when talented.",
+    "2. In Fire builds, keep Demonic Brand on the boss using Searing Pain; in Shadow builds, reapply only when it falls off.",
+    "3. Keep your assigned Curse, Immolate, Corruption and a suitable Bane on durable enemies.",
+    "4. Choose Bane of Doom only if roughly a minute remains; otherwise choose Bane of Agony.",
+    "5. Use Soul Fire only during Decimation in the Fire build; Shadow builds prefer Shadow Bolt.",
+    "6. Fill with Searing Pain for Fire or Shadow Bolt for Shadow; Life Tap safely when Mana or pet Mana runs low.",
+    "7. On large clustered packs use Hellfire only if health and threat permit; otherwise Rain of Fire from range.",
+   },
+  },
+ },
  PRIEST={
   Shadow={
    source="https://www.wowhead.com/forever/guide/classes/shadow/priest/rotation-cooldowns-pve-dps",
