@@ -398,6 +398,7 @@ for _,w in ipairs(frames) do
 end
 assert(priorityTile and priorityNumber,"six-slot rotation strip should display numbered ability tiles")
 -- All nine class-preview buttons must be interactive, and must not mutate the player.
+local savedPreviewRole=ForeverCompanionDB.role
 local classTokens={"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 assert(ForeverCompanionClassStripButtons and #ForeverCompanionClassStripButtons==9,"class strip must offer all nine classes")
 for i,token in ipairs(classTokens) do
@@ -409,6 +410,7 @@ end
 ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
 -- Clear preview before testing unavailable live class APIs.
 ForeverCompanionDB.previewClass=nil
+ForeverCompanionDB.role=savedPreviewRole
 ForeverCompanionRefresh()
 
 local classSnapshot={}
