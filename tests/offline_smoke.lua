@@ -629,3 +629,17 @@ for _,line in ipairs(warriorHints) do
  end
 end
 assert(sawHeroic,"warrior curated spell not displayed")
+
+-- Level-gated curated spells should be distinguished from unknown scan results.
+local originalUnitLevel=UnitLevel
+UnitLevel=function() return 10 end
+local gated=ForeverCompanionBeginnerAvailability("WARRIOR",{supported=false,inspected=0,complete=false,known={}})
+local foundExecute=false
+for _,line in ipairs(gated) do
+ if line:find("Execute",1,true) then
+  assert(line:find("[LEVEL 24+]",1,true),"Execute should show its curated level gate")
+  foundExecute=true
+ end
+end
+assert(foundExecute,"missing Execute beginner hint")
+UnitLevel=originalUnitLevel
