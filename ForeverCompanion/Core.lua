@@ -9,7 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1}
+ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", savedOnly=false}
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -117,7 +117,7 @@ local function render()
     if currentTab=="Loot" then
       ForeverCompanionLootUI.searchBox:Show()
       ForeverCompanionLootUI.wishButton:Show()
-      local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(ForeverCompanionLootUI.query) or {}
+      local matches=ForeverCompanionLoot and lootMatches() or {}
       if ForeverCompanionLootUI.selectedIndex>#matches then ForeverCompanionLootUI.selectedIndex=math.max(1,#matches) end
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       ForeverCompanionLootUI.wishButton:SetText(selected and ("Wishlist: "..selected.item) or "Wishlist: no match")
@@ -127,10 +127,15 @@ local function render()
       if ForeverCompanionLootUI.prevButton.SetEnabled then ForeverCompanionLootUI.prevButton:SetEnabled(ForeverCompanionLootUI.selectedIndex>1) end
       if ForeverCompanionLootUI.nextButton.SetEnabled then ForeverCompanionLootUI.nextButton:SetEnabled(ForeverCompanionLootUI.selectedIndex<#matches) end
       ForeverCompanionLootUI.prevButton:Show(); ForeverCompanionLootUI.nextButton:Show()
+    ForeverCompanionLootUI.dungeonButton:SetText("Dungeon: "..(ForeverCompanionLootUI.dungeon~="" and ForeverCompanionLootUI.dungeon or "All"))
+    ForeverCompanionLootUI.savedButton:SetText(ForeverCompanionLootUI.savedOnly and "Wishlist: Only" or "Wishlist: All")
+    ForeverCompanionLootUI.dungeonButton:Show()
+    ForeverCompanionLootUI.savedButton:Show()
     else
       ForeverCompanionLootUI.searchBox:Hide()
       ForeverCompanionLootUI.wishButton:Hide()
       ForeverCompanionLootUI.prevButton:Hide(); ForeverCompanionLootUI.nextButton:Hide()
+    ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.savedButton:Hide()
     end
   end
   titleText:SetText("Forever Companion")
@@ -242,12 +247,12 @@ local function render()
   elseif currentTab == "Loot" then
     lines = {"LOOT ATLAS"}
     if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
-      local matches=ForeverCompanionLoot.Search(ForeverCompanionLootUI.query)
+      local matches=lootMatches()
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
       lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
       lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
-      lines[#lines+1]=ForeverCompanionLoot.Format(ForeverCompanionLootUI.query)
+      lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
       lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
     else
@@ -721,7 +726,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -85 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -120 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
   if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 346 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
   -- Keep the player's current scroll position during refresh.
   if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
@@ -756,6 +761,11 @@ local function fitWindow()
   local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
   if scale>0 then pcall(window.SetScale,window,math.max(0.1,scale)) end
 end
+local function lootMatches()
+  return ForeverCompanionLoot and ForeverCompanionLoot.Filter(
+    ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,
+    ForeverCompanionLootUI.savedOnly,DB) or {}
+end
 local function setupLootControls(child)
   ForeverCompanionLootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
   ForeverCompanionLootUI.searchBox:SetSize(270,24)
@@ -775,7 +785,7 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.wishButton:SetPoint("LEFT",ForeverCompanionLootUI.searchBox,"RIGHT",15,0)
   ForeverCompanionLootUI.wishButton:SetScript("OnClick",function()
     if not ForeverCompanionLoot then return end
-    local selected=ForeverCompanionLoot.Search(ForeverCompanionLootUI.query)[ForeverCompanionLootUI.selectedIndex]
+    local selected=lootMatches()[ForeverCompanionLootUI.selectedIndex]
     if selected then
       ForeverCompanionLoot.ToggleWish(DB,selected.item)
       render()
@@ -794,11 +804,34 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.nextButton:SetSize(110,22)
   ForeverCompanionLootUI.nextButton:SetPoint("LEFT",ForeverCompanionLootUI.prevButton,"RIGHT",8,0)
   ForeverCompanionLootUI.nextButton:SetScript("OnClick",function()
-    local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(ForeverCompanionLootUI.query) or {}
+    local matches=ForeverCompanionLoot and lootMatches() or {}
     ForeverCompanionLootUI.selectedIndex=math.min(#matches,ForeverCompanionLootUI.selectedIndex+1)
     render()
   end)
   ForeverCompanionLootUI.nextButton:Hide()
+  ForeverCompanionLootUI.dungeonButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  ForeverCompanionLootUI.dungeonButton:SetSize(245,22)
+  ForeverCompanionLootUI.dungeonButton:SetPoint("TOPLEFT",ForeverCompanionLootUI.prevButton,"BOTTOMLEFT",0,-8)
+  ForeverCompanionLootUI.dungeonButton:SetScript("OnClick",function()
+    local names=ForeverCompanionLoot.DungeonNames()
+    local nextIndex=1
+    for i,name in ipairs(names) do
+      if ForeverCompanionLootUI.dungeon==name then nextIndex=i+2 end
+    end
+    ForeverCompanionLootUI.dungeon=names[nextIndex-1] or ""
+    ForeverCompanionLootUI.selectedIndex=1
+    render()
+  end)
+  ForeverCompanionLootUI.dungeonButton:Hide()
+  ForeverCompanionLootUI.savedButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  ForeverCompanionLootUI.savedButton:SetSize(160,22)
+  ForeverCompanionLootUI.savedButton:SetPoint("LEFT",ForeverCompanionLootUI.dungeonButton,"RIGHT",8,0)
+  ForeverCompanionLootUI.savedButton:SetScript("OnClick",function()
+    ForeverCompanionLootUI.savedOnly=not ForeverCompanionLootUI.savedOnly
+    ForeverCompanionLootUI.selectedIndex=1
+    render()
+  end)
+  ForeverCompanionLootUI.savedButton:Hide()
 end
 local function cyclePreviewClass()
   local token=classToken()
