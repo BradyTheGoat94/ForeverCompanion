@@ -11,6 +11,24 @@ ForeverCompanionForeverLessons={
  WARLOCK={source="https://www.wowhead.com/news/rogue-and-warlock-class-deep-dive-in-world-of-warcraft-forever-383299",steps={"Choose and command a pet suited to the pull; pet stats scale with yours.","Use damage-over-time effects on enemies that will live long enough.","Forever Banes and utility Curses have distinct roles; check your spellbook.","Life Tap only when health is safe; avoid sacrificing survival for mana."}},
  DRUID={source="https://www.wowhead.com/news/druid-and-hunter-class-deep-dives-in-world-of-warcraft-forever-383190",steps={"Match Cat, Bear, or caster form to your role and current resource.","Omen of Clarity becomes baseline at level 20; Nature's Grasp at level 10.","Lacerate moved to a Feral talent in the latest reported tuning; check your talents and current patch before planning around it.","Weapon effects and many consumables now work while shapeshifted.","Revive is an out-of-combat resurrection spell described for level 12."}}
 }
+-- Patch-watch advisories from Wowhead's November 2026 live-server
+-- observations. These reports were not yet confirmed by official notes.
+ForeverCompanionNovemberTuning={
+ DRUID={"Feral Lacerate is now reported as a talent, not a baseline spell.","Feral Berserk is reported removed; recheck saved builds.","Balance Genesis periodic scaling and talent locations changed."},
+ PALADIN={"Protection talent placements and Shield specialization ranks changed.","Retribution Champion of the Light, Conviction, and Two-Handed Weapon Specialization changed.","Review Judgement and tank threat builds before following an older talent string."},
+ PRIEST={"Shadow Word: Death backlash was reported increased to 30%; check survivability."},
+ WARLOCK={"Improved Drains was retuned to affect Drain Mana rather than Wrack."},
+ WARRIOR={"Revenge attack-power scaling was updated across ranks."}
+}
+function ForeverCompanionNovemberTuningLines(classToken)
+ local notes=ForeverCompanionNovemberTuning[classToken]
+ if not notes then return {} end
+ local lines={"NOVEMBER 2026 TUNING WATCH | REPORTED, NOT OFFICIALLY CONFIRMED"}
+ for i,note in ipairs(notes) do lines[#lines+1]=i..". "..note end
+ lines[#lines+1]="SOURCE: https://www.wowhead.com/news/massive-talent-tree-changes-to-druids-and-paladins-class-tuning-for-wow-forever-383670"
+ return lines
+end
+
 function ForeverCompanionForeverLessonLines(classToken)
  local data=ForeverCompanionForeverLessons[classToken]
  if not data then return {} end
