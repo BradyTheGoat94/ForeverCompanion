@@ -1,0 +1,35 @@
+name: Package addon
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate addon manifest and files
+        run: |
+          test -f ForeverCompanion/ForeverCompanion.toc
+          test -f ForeverCompanion/GuideData.lua
+          test -f ForeverCompanion/Core.lua
+          grep -q '^## Interface:' ForeverCompanion/ForeverCompanion.toc
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("ForeverCompanion")
+          toc = (root / "ForeverCompanion.toc").read_text()
+          for name in re.findall(r"(?m)^(?!#)([^\\r\\n]+\\.lua)\\s*$", toc):
+              assert (root / name).is_file(), f"Missing Lua file: {name}"
+          print("Manifest references present")
+          PY
+      - name: Package addon
+        run: zip -r ForeverCompanion.zip ForeverCompanion -x '*.DS_Store'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ForeverCompanion
+          path: ForeverCompanion.zip
+          if-no-files-found: error
