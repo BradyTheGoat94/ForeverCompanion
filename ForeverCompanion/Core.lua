@@ -242,6 +242,16 @@ local function render()
           row:Show()
         end
       end
+      local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
+      if specNotes then
+        lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
+        for _,note in ipairs(specNotes) do
+          lines[#lines+1]=note.name.." | "..note.focus
+          lines[#lines+1]="Level / unlock check: "..note.levels
+          lines[#lines+1]="Solo: "..note.solo
+          lines[#lines+1]="Group: "..note.group
+        end
+      end
       if priorities[rotationDetail] then
         lines[#lines+1]="FOCUSED PRIORITY "..rotationDetail.." / "..#priorities..": "..priorities[rotationDetail]
         lines[#lines+1]="WHY THIS MATTERS: This is a decision reminder, not a fixed cast sequence. Check your talents, resources, target count, threat, and the live encounter before acting."
