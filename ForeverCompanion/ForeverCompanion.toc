@@ -28,6 +28,7 @@ CampingReadiness.lua
 CraftingPlanner.lua
 RecipePlans.lua
 CraftingAdvice.lua
+CraftCosts.lua
 CraftingBridge.lua
 QuestPlanner.lua
 Diagnostics.lua
