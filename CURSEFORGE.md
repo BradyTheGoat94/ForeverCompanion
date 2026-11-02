@@ -63,3 +63,7 @@ Official guidance:
 **Release type:** Beta until live client verification passes
 **Description accuracy:** Read-only leveling/quest/class/cooldown/profession/PvP planning; recipe and inventory quantities are manual; spellbook availability is experimental; specialization names are guide previews.
 **Version:** Match the TOC and changelog exactly.
+
+## Account-safety release gate
+
+Read [ACCOUNT_SAFETY.md](ACCOUNT_SAFETY.md) before submission. The addon must remain read-only, with no automation, external executable, injection, packet capture, dynamic code execution, or misleading safety assurances. CurseForge approval is not a guarantee against enforcement by Blizzard. Do not submit or distribute an untested Forever-specific build as verified.
