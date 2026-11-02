@@ -63,7 +63,7 @@ function B.Create(parent)
   values.materials=text(goals,15,-69,350,"No material goals tracked","GameFontHighlightSmall",{0.70,0.77,0.82})
   materialFill=progress(goals,15,-93,345,{0.91,0.66,0.28})
   values.missing=text(goals,15,-117,350,"Counts are entered manually","GameFontHighlightSmall",{0.92,0.77,0.49})
-  values.note=text(goals,15,-137,350,"No inventory scanning or auto-crafting","GameFontHighlightSmall",{0.66,0.71,0.77})
+  values.note=text(goals,15,-137,350,"All tracked lists; no inventory scanning","GameFontHighlightSmall",{0.66,0.71,0.77})
   root:Hide()
   return root
 end
