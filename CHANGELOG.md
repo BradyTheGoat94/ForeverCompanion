@@ -1,3 +1,11 @@
+## 3.13.0-beta (2026-11-02)
+- Replaced the Settings page's plain top section with two native, black-and-gold briefing cards for per-character preferences and exposed client APIs.
+- Added working Settings shortcuts to restore automatic class detection, center the addon window, and toggle compact layout. These change only addon preferences and never protected game state.
+- Exposed the actual client build/interface value when GetBuildInfo is available; otherwise the UI explicitly reports unknown rather than guessing.
+- Added read-only quest, profession, spellbook and XP API visibility indicators. These do **not** claim game compatibility or verify API results.
+- Expanded offline Lua and mocked-widget regression coverage for the Settings buttons and missing APIs, plus a new Settings screenshot approximation in the CI preview artifact.
+- Kept the Interface number provisional and live-client/CurseForge compatibility unverified.
+
 ## 3.12.0-beta (develop, November 2, 2026; offline mock testing only)
 - Added native dark-gold Dungeon and PvP preparation cards showing the current class, manually chosen role, general class guidance, and the next unchecked preparation task.
 - Replaced duplicate stock checklist controls on those pages with four real interactive preparation tiles. Each tile persists its checked state per character; the gold progress bar represents **manual checklist completion only**, not actual dungeon/PvP readiness.
