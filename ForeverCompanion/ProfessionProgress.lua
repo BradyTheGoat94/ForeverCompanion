@@ -1,6 +1,11 @@
 -- Profession progression helper: general planning prompts, not a verified recipe database.
 ForeverCompanionProfessionProgress={}
 local P=ForeverCompanionProfessionProgress
+local function validSkill(value, allowZero)
+  local n=tonumber(value)
+  if not n or n~=n or n==math.huge or n==-math.huge or n<0 or (not allowZero and n==0) or n>100000 then return nil end
+  return n
+end
 local function tier(skill)
   if skill<75 then return "Getting started"
   elseif skill<150 then return "Early progression"
@@ -10,12 +15,13 @@ local function tier(skill)
 end
 function P.ForProfession(name)
   if not ForeverCompanionProfessionScanner then return "Profession scan unavailable." end
-  local found,reason=ForeverCompanionProfessionScanner.Read()
-  if not found then return reason end
+  local ok,found,reason=pcall(ForeverCompanionProfessionScanner.Read)
+  if not ok then return "Profession API unavailable on this client." end
+  if type(found)~="table" then return reason or "Profession data unavailable." end
   for _,entry in ipairs(found) do
-    if entry.name and name and entry.name:lower()==name:lower() then
-      local skill=tonumber(entry.skill)
-      local maximum=tonumber(entry.maxSkill)
+    if type(entry)=="table" and type(entry.name)=="string" and type(name)=="string" and entry.name:lower()==name:lower() then
+      local skill=validSkill(entry.skill,true)
+      local maximum=validSkill(entry.maxSkill,false)
       if not skill then return "Detected "..entry.name.."; skill level unavailable." end
       local lines={"CURRENT PROGRESSION: "..entry.name, "Skill: "..skill..(maximum and ("/"..maximum) or ""), "Planning stage: "..tier(skill)}
       if maximum and skill>=maximum then lines[#lines+1]="Current trained skill cap reached; check trainer availability." end
@@ -29,16 +35,15 @@ end
 -- Current skill progress is observed from client APIs, never estimated from recipes.
 function P.Overview()
   if not ForeverCompanionProfessionScanner then return nil,"Profession API scanner unavailable." end
-  local entries,reason=ForeverCompanionProfessionScanner.Read()
-  if not entries then return nil,reason or "Profession API unavailable." end
+  local ok,entries,reason=pcall(ForeverCompanionProfessionScanner.Read)
+  if not ok then return nil,"Profession API unavailable on this client." end
+  if type(entries)~="table" then return nil,reason or "Profession API unavailable." end
   local result={}
   for _,entry in ipairs(entries) do
     -- Partial client records must not be mistaken for valid progress.
     if type(entry)~="table" then entry={} end
-    local skill=tonumber(entry.skill)
-    local maximum=tonumber(entry.maxSkill)
-    if skill and (skill<0 or skill~=skill) then skill=nil end
-    if maximum and (maximum<=0 or maximum~=maximum) then maximum=nil end
+    local skill=validSkill(entry.skill,true)
+    local maximum=validSkill(entry.maxSkill,false)
     local missing=(skill and maximum) and math.max(0,maximum-skill) or nil
     result[#result+1]={name=type(entry.name)=="string" and entry.name or "Unknown profession",skill=skill,maximum=maximum,remaining=missing,stage=skill and tier(skill) or "Unknown"}
   end
