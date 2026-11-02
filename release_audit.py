@@ -12,7 +12,7 @@ for name in entries:
 for path in root.glob("*.lua"):
  if path.name not in entries: issues.append("Unlisted: "+path.name)
 source="\n".join(path.read_text() for path in root.glob("*.lua"))
-for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellByName("]:
+for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellByName(", "RunMacroText(", "CastSpell(", "TargetUnit(", "UseAction(", "SendChatMessage(", "C_Timer.After(", "loadstring(", "load(", "HttpRequest(", "C_HTTP.", "C_Network."]:
  if pattern in source: issues.append("Review legacy or automated API: "+pattern)
 if "C_SpellBook" not in source: issues.append("Missing modern spellbook API")
 for issue in issues: print("FAIL",issue)
