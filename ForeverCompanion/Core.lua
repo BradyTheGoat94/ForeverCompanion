@@ -214,6 +214,9 @@ local function render()
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
         end
+        if ForeverCompanionRecipePlans then
+          lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
+        end
         lines[#lines+1]=guide.summary
         for i,step in ipairs(guide.steps) do lines[#lines+1]=i..". "..step end
         local deep=ADVANCED and ADVANCED.crafting[guide.name]
@@ -473,7 +476,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v2.0.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v2.1.0 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
