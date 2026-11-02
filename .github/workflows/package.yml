@@ -65,6 +65,8 @@ jobs:
               assert (root / name).is_file(), f"Missing Lua file: {name}"
           print("Validated", len(lua_files), "manifest files")
           PY
+      - name: Verify guide completeness and safety labeling
+        run: python3 tests/validate_guide_preflight.py
       - name: Audit release compatibility
         run: python3 release_audit.py
       - name: Validate beta release gate and required documentation
