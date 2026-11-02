@@ -9,6 +9,8 @@ local tabButtons = {}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local questRows = {}
+local questPage=1
+local pageBack, pageForward, pageLabel
 local questSectionLabel
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
@@ -59,13 +61,17 @@ local function render()
       questSectionLabel:SetText("QUEST LOG  |  "..#live.." detected  |  Click to focus")
       questSectionLabel:Show()
     end
-    for i=1,math.min(#live,#questRows) do
-      local q=live[i]
+    local pages=math.max(1,math.ceil(#live/#questRows))
+    if questPage>pages then questPage=pages end
+    for i=1,math.min(#questRows,math.max(0,#live-(questPage-1)*#questRows)) do
+      local absoluteIndex=(questPage-1)*#questRows+i
+      local q=live[absoluteIndex]
       local btn=questRows[i]
-      btn:SetText((selectedIndex==i and "> " or "  ")..(q.complete and "[Ready] " or "")..q.title)
-      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(i) end)
+      btn:SetText((selectedIndex==absoluteIndex and "> " or "  ")..(q.complete and "[Ready] " or "")..q.title)
+      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex) end)
       btn:Show()
     end
+    if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
   elseif currentTab == "Settings" then
     lines = {"Detected class: "..(classNames[actualClass()] or actualClass()), "Preview: "..classLabel(), "Role: "..(DB.role or "Not selected"), "Professions: "..(DB.professions or "Not selected"), "Commands:", "/fc class Warrior  |  /fc class auto", "/fc role Tank  |  /fc professions Mining + Blacksmithing", "/fc check Dungeons 1  |  /fc reset", "/fc position reset", "Class preview does not change your actual character class."}
   else
@@ -86,10 +92,11 @@ local function render()
       lines[#lines+1] = "Use game-supported tools and coordinate objectives with your group."
     end
   end
+  if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -420 or -5)
-  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + (currentTab=="Quests" and 445 or 24))) end
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Quests" and -455 or -5)
+  if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + (currentTab=="Quests" and 480 or 24))) end
   if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -165,6 +172,18 @@ local function createUI()
   child:SetSize(640, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  pageBack=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  pageBack:SetSize(90,24)
+  pageBack:SetPoint("TOPLEFT",child,"TOPLEFT",8,-415)
+  pageBack:SetText("Prev Page")
+  pageBack:SetScript("OnClick",function() questPage=math.max(1,questPage-1); render() end)
+  pageForward=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  pageForward:SetSize(90,24)
+  pageForward:SetPoint("LEFT",pageBack,"RIGHT",110,0)
+  pageForward:SetText("Next Page")
+  pageForward:SetScript("OnClick",function() questPage=questPage+1; render() end)
+  pageLabel=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  pageLabel:SetPoint("LEFT",pageBack,"RIGHT",12,0)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
