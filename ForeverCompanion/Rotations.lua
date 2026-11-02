@@ -37,3 +37,44 @@ ForeverCompanionRotationPresentation = {
   },
   notice="Illustrative Classic-era guidance. Confirm abilities, talents and mechanics in the WoW Forever client."
 }
+
+-- Specialization-aware study notes. These are editorial prompts, not live-verified
+-- WoW Forever spell availability or an automated combat sequence.
+ForeverCompanionSpecGuidance = {
+ WARRIOR={
+  {name="Arms",focus="Two-handed weapon pacing, rage budgeting and stance awareness",levels="Check trained abilities and talent unlocks before adopting a priority",solo="Use safe openers; keep enough rage for interrupts and defensive responses",group="Confirm whether you are assigned to damage or tank; avoid overtaking tank threat"},
+  {name="Fury",focus="Resource generation, weapon choices and sustained melee uptime",levels="Verify dual-wield access and current talent investment",solo="Avoid spending every resource when a dangerous pull is imminent",group="Watch threat and positioning during sustained damage"},
+  {name="Protection",focus="Threat, mitigation and pull control",levels="Prioritize available defensive and threat tools rather than assuming endgame talents",solo="Trade damage for safer multi-enemy pulls when needed",group="Establish threat, face enemies away and reserve emergency mitigation"}},
+ PALADIN={
+  {name="Holy",focus="Efficient healing, blessings and emergency utility",levels="Verify trained healing ranks and mana costs",solo="Use a conservative damage approach between healing needs",group="Prioritize survival, cleansing and mana reserves"},
+  {name="Protection",focus="Blessings, threat and mitigation",levels="Confirm available seals, judgements and defensive talents",solo="Choose controlled pulls and maintain mana",group="Coordinate tank role and avoid losing threat"},
+  {name="Retribution",focus="Weapon pacing, seals and judgements",levels="Check seal and judgement availability by level",solo="Balance damage with self-healing",group="Maintain assigned blessing and manage threat"}},
+ HUNTER={
+  {name="Beast Mastery",focus="Pet control, positioning and sustained damage",levels="Verify pet abilities and training status",solo="Keep pet healthy and avoid accidental extra pulls",group="Respect crowd control and pet positioning"},
+  {name="Marksmanship",focus="Ranged uptime and careful resource use",levels="Confirm trained shot ranks and ammunition requirements",solo="Maintain safe distance",group="Avoid threat spikes and coordinate target focus"},
+  {name="Survival",focus="Traps, control and defensive spacing",levels="Check trap and talent unlocks",solo="Use crowd control before dangerous engagements",group="Coordinate traps with party assignments"}},
+ ROGUE={
+  {name="Assassination",focus="Combo-point planning and finishers",levels="Verify poison and finisher availability",solo="Choose safe stealth openers",group="Save resources for interrupts"},
+  {name="Combat",focus="Sustained melee uptime and energy management",levels="Check weapon specialization and talent unlocks",solo="Avoid energy starvation during dangerous pulls",group="Stay behind targets when safe"},
+  {name="Subtlety",focus="Stealth, control and repositioning",levels="Confirm available openers and control abilities",solo="Use resets and escape options deliberately",group="Coordinate crowd control without breaking it"}},
+ PRIEST={
+  {name="Discipline",focus="Mana efficiency, protection and utility",levels="Verify shield and healing spell ranks",solo="Balance damage with recovery",group="Anticipate incoming damage and conserve mana"},
+  {name="Holy",focus="Healing throughput and efficient spell selection",levels="Check trained healing spells and talents",solo="Plan safe damage and recovery",group="Prioritize survival and dispels"},
+  {name="Shadow",focus="Damage-over-time maintenance and mana control",levels="Verify damage spell and form unlocks",solo="Avoid pulling excess enemies",group="Respect threat and support dispels when needed"}},
+ SHAMAN={
+  {name="Elemental",focus="Ranged spell pacing and mana",levels="Confirm available shocks and lightning ranks",solo="Use control to preserve distance",group="Maintain assigned totems and interrupts"},
+  {name="Enhancement",focus="Weapon buffs and melee resource management",levels="Verify weapon and talent availability",solo="Balance damage with emergency healing",group="Coordinate buffs and watch threat"},
+  {name="Restoration",focus="Healing, cleansing and group totems",levels="Check healing ranks and totem training",solo="Use efficient attacks between recovery",group="Preserve mana for high-risk damage"}},
+ MAGE={
+  {name="Arcane",focus="Mana planning and utility",levels="Verify talent-supported spells before choosing a sequence",solo="Use control and recovery between pulls",group="Coordinate crowd control and avoid threat spikes"},
+  {name="Fire",focus="Cast pacing, burst and target selection",levels="Check spell ranks and fire talent availability",solo="Keep an escape ready",group="Avoid breaking assigned control"},
+  {name="Frost",focus="Slows, roots and safe kiting",levels="Confirm control and defensive spell unlocks",solo="Control distance and avoid accidental extra pulls",group="Coordinate roots and crowd control"}},
+ WARLOCK={
+  {name="Affliction",focus="Damage-over-time upkeep and resource conversion",levels="Verify curse, drain and talent availability",solo="Manage health and mana safely",group="Coordinate curses and crowd control"},
+  {name="Demonology",focus="Pet survivability and utility",levels="Confirm pet summons and trained abilities",solo="Choose the right pet for the encounter",group="Prevent pet-initiated pulls"},
+  {name="Destruction",focus="Direct damage pacing and threat",levels="Check available casts and talent investment",solo="Preserve defensive options",group="Watch threat during burst windows"}},
+ DRUID={
+  {name="Balance",focus="Ranged spell efficiency and control",levels="Verify form, spell and talent availability",solo="Balance damage with healing and recovery",group="Support control and avoid excessive threat"},
+  {name="Feral",focus="Form-specific resources, positioning and finishers",levels="Check cat and bear form unlocks and trained skills",solo="Select forms for pull safety",group="Confirm tank or damage assignment"},
+  {name="Restoration",focus="Healing-over-time planning and mana efficiency",levels="Check healing ranks and talent unlocks",solo="Use safe damage between recovery",group="Maintain group survival and dispel coverage"}}
+}
