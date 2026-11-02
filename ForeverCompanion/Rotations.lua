@@ -175,6 +175,8 @@ function ForeverCompanionBeginnerAvailability(class,scan)
     label="[LEVEL "..entry.level.."+]"
    end
   end
+  if entry and entry.kind=="Talent" and label=="[CHECK TRAINER/TALENTS]" then label="[CHECK TALENTS]" end
+  if entry and entry.kind=="Quest" and label=="[CHECK TRAINER/TALENTS]" then label="[CHECK QUEST]" end
   result[#result+1]=label.." "..spell.." | "..status..requirement
  end
  return result
