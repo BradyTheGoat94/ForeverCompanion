@@ -22,7 +22,7 @@ local materialPageLabel, materialPrevious, materialNext
 local professionIndex=1
 local questRows = {}
 local questPage=1
-local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
+local pageBack, pageForward, pageLabel, filterButton, sortButton, pinQuestButton, resetClassButton
 local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
@@ -165,6 +165,14 @@ local function render()
   for _, b in ipairs(questRows) do b:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
+  if pinQuestButton then
+    if currentTab=="Quests" then
+      local focused=ForeverCompanionQuestPlanner.GetSelected()
+      pinQuestButton:SetText(focused and (ForeverCompanionQuestPlanner.IsPinned(focused) and "Unpin Focus" or "Pin Focus") or "No Focus")
+      pinQuestButton:SetEnabled(focused~=nil)
+      pinQuestButton:Show()
+    else pinQuestButton:Hide() end
+  end
   if sortButton then
     if currentTab=="Quests" then
       sortButton:SetText("Sort: "..ForeverCompanionQuestPlanner.GetSort())
@@ -262,7 +270,7 @@ local function render()
       table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
     end
     if questSectionLabel then
-      questSectionLabel:SetText("QUEST LOG  |  "..#live.." active  |  "..ForeverCompanionQuestPlanner.ReadyCount().." ready")
+      questSectionLabel:SetText("QUEST LOG  |  "..#live.." active  |  "..ForeverCompanionQuestPlanner.ReadyCount().." ready  |  "..ForeverCompanionQuestPlanner.PinnedCount().." pinned")
       questSectionLabel:Show()
     end
     if filterButton then filterButton:SetText("Show: "..ForeverCompanionQuestPlanner.GetFilter()) end
@@ -274,7 +282,7 @@ local function render()
       local q=item.quest
       local btn=questRows[i]
       local selected=selectedIndex==absoluteIndex
-      btn.title:SetText((selected and "> " or "  ")..clipText(q.title,52))
+      btn.title:SetText((selected and "> " or "  ")..(ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "")..clipText(q.title,47))
       btn.zone:SetText(clipText(q.zone or "Zone unavailable",23))
       btn.status:SetText(q.complete and "READY" or "ACTIVE")
       btn.status:SetTextColor(q.complete and 0.48 or 0.77,q.complete and 0.88 or 0.76,q.complete and 0.53 or 0.70)
@@ -405,7 +413,7 @@ local function render()
   if previousQuestButton then if currentTab=="Quests" then previousQuestButton:Show() else previousQuestButton:Hide() end end
   if questFocusText then
     local q=ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.GetSelected()
-    questFocusText:SetText(currentTab=="Quests" and (q and ("Focused: "..q.title) or "No quest selected") or "")
+    questFocusText:SetText(currentTab=="Quests" and (q and ((ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "").."Focused: "..clipText(q.title,37)) or "No quest selected") or "")
   end
 end
 -- One navigation path for the sidebar, dashboard shortcuts and slash commands.
@@ -606,19 +614,28 @@ local function createUI()
   end
   filterButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   filterButton:SetSize(140,23)
-  filterButton:SetPoint("TOPRIGHT",child,"TOPRIGHT",-42,-173)
+  filterButton:SetPoint("TOPLEFT",child,"TOPLEFT",306,-182)
   filterButton:SetText("Show: all")
   filterButton:SetScript("OnClick",function() questPage=1; ForeverCompanionQuestPlanner.CycleFilter() end)
   filterButton:Hide()
   sortButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   sortButton:SetSize(140,23)
-  sortButton:SetPoint("TOPRIGHT",child,"TOPRIGHT",-195,-173)
+  sortButton:SetPoint("TOPLEFT",child,"TOPLEFT",157,-182)
   sortButton:SetText("Sort: log")
   sortButton:SetScript("OnClick",function()
     questPage=1
     ForeverCompanionQuestPlanner.CycleSort()
   end)
   sortButton:Hide()
+  pinQuestButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  pinQuestButton:SetSize(140,23)
+  pinQuestButton:SetPoint("TOPLEFT",child,"TOPLEFT",8,-182)
+  pinQuestButton:SetText("Pin Focus")
+  pinQuestButton:SetScript("OnClick",function()
+    local _,index=ForeverCompanionQuestPlanner.GetSelected()
+    if index then ForeverCompanionQuestPlanner.TogglePin(index) end
+  end)
+  pinQuestButton:Hide()
   pageBack=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   pageBack:SetSize(90,24)
   pageBack:SetPoint("TOPLEFT",child,"TOPLEFT",8,-600)
@@ -733,7 +750,7 @@ local function createUI()
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
-  questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-177)
+  questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-160)
   questSectionLabel:SetTextColor(1,0.79,0.36)
   questSectionLabel:Hide()
   -- Native journal rows replace stock gray buttons; all selection is addon-local.
