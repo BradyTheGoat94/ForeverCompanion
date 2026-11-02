@@ -65,11 +65,11 @@ local function safeXP()
   local ok,a,b=pcall(function() return UnitXP("player"),UnitXPMax("player") end)
   if not ok then return nil end
   local success,ratio=pcall(function()
-    if type(a)=="number" and type(b)=="number" and b>0 then
+    if type(a)=="number" and type(b)=="number" and a==a and b==b and b>0 and b<math.huge then
       return math.max(0,math.min(1,a/b))
     end
   end)
-  if success then return ratio end
+  if success and type(ratio)=="number" and ratio==ratio then return ratio end
 end
 local function short(value,max)
   value=tostring(value or "Not available"):gsub("[\r\n]"," ")
