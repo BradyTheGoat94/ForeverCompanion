@@ -24,6 +24,23 @@ local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, resetClassButton
 local questSectionLabel
+local sectionHeader, sectionTitle, sectionMeta, sectionIcon
+local sectionDescriptions={
+  Leveling="Class priorities, specialization reference and leveling notes",
+  Quests="Read-only quest journal, objectives and personal notes",
+  Dungeons="Party preparation, role checklists and general guidance",
+  Professions="Skill progression, recipes and manual material goals",
+  PvP="Preparation, positioning and class reference",
+  Settings="Preferences, diagnostics and client compatibility"
+}
+local sectionIcons={
+  Leveling="Interface\\Icons\\INV_Misc_Book_09",
+  Quests="Interface\\Icons\\INV_Misc_Note_01",
+  Dungeons="Interface\\Icons\\INV_Weapon_ShortBlade_01",
+  Professions="Interface\\Icons\\Trade_BlackSmithing",
+  PvP="Interface\\Icons\\Ability_DualWield",
+  Settings="Interface\\Icons\\INV_Gizmo_02"
+}
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
 local function colorTexture(texture,r,g,b,a)
   if texture.SetColorTexture then texture:SetColorTexture(r,g,b,a)
@@ -53,6 +70,15 @@ local function render()
   if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..level().."  |  "..(DB.role or "Choose role")) end
   if questCountText and ForeverCompanionQuestPlanner then questCountText:SetText("Active quests: "..ForeverCompanionQuestPlanner.AutoCount()) end
   local isOverview=currentTab=="Overview"
+  if sectionHeader then
+    if isOverview then sectionHeader:Hide()
+    else
+      sectionTitle:SetText(string.upper(currentTab).." GUIDE")
+      sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
+      sectionIcon:SetTexture(sectionIcons[currentTab] or "Interface\\Icons\\INV_Misc_Book_09")
+      sectionHeader:Show()
+    end
+  end
   if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
   if ForeverCompanionClassGuide then
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
@@ -414,7 +440,29 @@ local function createUI()
   colorTexture(panelTexture,0.085,0.105,0.13,0.95)
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
-  scroll:SetPoint("TOPLEFT", 216, -108)
+  scroll:SetPoint("TOPLEFT", 216, -163)
+  sectionHeader=CreateFrame("Frame",nil,window)
+  sectionHeader:SetPoint("TOPLEFT",window,"TOPLEFT",210,-106)
+  sectionHeader:SetSize(846,48)
+  local sectionBg=sectionHeader:CreateTexture(nil,"BACKGROUND")
+  sectionBg:SetAllPoints(sectionHeader)
+  colorTexture(sectionBg,0.065,0.084,0.116,0.98)
+  local sectionTrim=sectionHeader:CreateTexture(nil,"ARTWORK")
+  sectionTrim:SetPoint("BOTTOMLEFT",sectionHeader,"BOTTOMLEFT",0,0)
+  sectionTrim:SetSize(846,2)
+  colorTexture(sectionTrim,0.82,0.60,0.25,1)
+  sectionIcon=sectionHeader:CreateTexture(nil,"ARTWORK")
+  sectionIcon:SetPoint("LEFT",sectionHeader,"LEFT",13,0)
+  sectionIcon:SetSize(29,29)
+  sectionTitle=sectionHeader:CreateFontString(nil,"OVERLAY","GameFontNormal")
+  sectionTitle:SetPoint("TOPLEFT",sectionHeader,"TOPLEFT",54,-6)
+  sectionTitle:SetTextColor(0.95,0.76,0.38)
+  sectionMeta=sectionHeader:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  sectionMeta:SetPoint("TOPLEFT",sectionHeader,"TOPLEFT",54,-27)
+  sectionMeta:SetWidth(755)
+  sectionMeta:SetJustifyH("LEFT")
+  sectionMeta:SetTextColor(0.72,0.76,0.81)
+  sectionHeader:Hide()
   scroll:SetPoint("BOTTOMRIGHT", -35, 92)
   local child = CreateFrame("Frame", nil, scroll)
   child:SetSize(790, 800)
