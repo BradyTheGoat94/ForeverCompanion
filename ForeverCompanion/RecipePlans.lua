@@ -41,6 +41,30 @@ function P.Done(prof,index,quantity)
   entry.done=math.floor(quantity)
   return true,"Updated crafted count for "..entry.name
 end
+function P.SetQuantity(prof,index,quantity)
+ local entry=list(prof)[tonumber(index) or 0]
+ quantity=tonumber(quantity)
+ if not entry or not quantity or quantity%1~=0 or quantity<1 or quantity>9999 then return false,"Invalid recipe target quantity." end
+ entry.quantity=quantity
+ entry.done=math.min(math.max(0,tonumber(entry.done) or 0),quantity)
+ return true,"Updated target for "..entry.name.." to "..quantity
+end
+function P.SetIngredient(prof,index,ingredientIndex,perCraft)
+ local entry=list(prof)[tonumber(index) or 0]
+ local ingredient=entry and entry.ingredients and entry.ingredients[tonumber(ingredientIndex) or 0]
+ perCraft=tonumber(perCraft)
+ if not ingredient or not perCraft or perCraft%1~=0 or perCraft<1 or perCraft>99999 then return false,"Invalid ingredient amount." end
+ ingredient.count=perCraft
+ return true,"Updated "..ingredient.name.." per craft to "..perCraft
+end
+function P.RemoveIngredient(prof,index,ingredientIndex)
+ local entry=list(prof)[tonumber(index) or 0]
+ local ingredient=entry and entry.ingredients and entry.ingredients[tonumber(ingredientIndex) or 0]
+ if not ingredient then return false,"Ingredient not found." end
+ local name=ingredient.name
+ table.remove(entry.ingredients,tonumber(ingredientIndex))
+ return true,"Removed ingredient "..name
+end
 function P.Move(prof,from,to)
  local entries=list(prof)
  from=tonumber(from); to=tonumber(to)
