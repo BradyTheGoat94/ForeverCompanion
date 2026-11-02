@@ -245,6 +245,77 @@ function ForeverCompanionSpecPriorityNoteLines(classToken)
  return lines
 end
 
+-- Source-checked priority addenda. These are build-specific, not universal
+-- damage rankings; rules are re-evaluated whenever the next cast is chosen.
+ForeverCompanionSourcedPriorities={
+ MAGE={
+  Arcane={
+   source="https://www.wowhead.com/forever/guide/classes/mage/arcane/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead reviewed Nov 1, 2026; Arcane/Fire talent build",
+   rules={
+    "1. At three Heating Up stacks, cast Pyroblast when talented.",
+    "2. Use Fire Blast to build Heating Up when that talent interaction is present.",
+    "3. On Missile Barrage, cast Arcane Missiles.",
+    "4. Otherwise cast Arcane Wrath when available.",
+    "5. Cast Arcane Blast as filler; its buff stacks and expires rather than being spent.",
+   },
+  },
+  Frost={
+   source="https://www.icy-veins.com/wow-forever/frost-mage-ranged-dps-pve-guide",
+   corroboration="https://www.wowhead.com/forever/guide/classes/mage/frost/rotation-cooldowns-pve-dps",
+   reviewed="Icy Veins Oct 30 leveling update; Wowhead priority reference",
+   rules={
+    "1. Maintain Frostbolt casting uptime when no higher-priority condition applies.",
+    "2. React to Fingers of Frost or a frozen target with Ice Lance, respecting the active proc.",
+    "3. With Frostbite, queue Ice Lance after the next Frostbolt rather than canceling an in-progress cast.",
+    "4. Use Missile Barrage Arcane Missiles when the talent procs and the cast is safe.",
+    "5. For controlled large packs, use Cone of Cold and Blizzard; do not use single-target priority blindly.",
+   },
+  },
+ },
+ ROGUE={
+  Combat={
+   source="https://mythicsim.com/wow-forever/difficulty",
+   reviewed="MythicSim Nov 2, 2026 preset; experimental, not benchmark-validated",
+   rules={
+    "1. Maintain Slice and Dice; MythicSim's Combat preset refreshes at five combo points.",
+    "2. Use Sinister Strike as the normal combo-point builder when trained.",
+    "3. Pool Energy rather than spending it immediately before a planned priority action.",
+    "4. Align Adrenaline Rush with Energy timing if talented; this is preset-specific.",
+    "5. Interrupt dangerous casts with Kick even when doing so costs some damage.",
+   },
+  },
+ },
+ HUNTER={
+  ["Beast Mastery"]={
+   source="https://mythicsim.com/wow-forever/difficulty",
+   reviewed="MythicSim Nov 2, 2026 ranged/turret preset; experimental",
+   rules={
+    "1. Keep the pet active and attacking; maintain ranged attack uptime.",
+    "2. Use Aimed Shot when available in the preset's trained build.",
+    "3. Maintain Serpent Sting only when its damage-over-time effect will run.",
+    "4. Use Summon Hawk when learned and appropriate; align Rapid Fire with Aimed Shot.",
+    "5. This is the turret preset, not a melee-weaving or leveling rotation.",
+   },
+  },
+ },
+}
+function ForeverCompanionSourcedPriorityLines(classToken)
+ local planner=ForeverCompanionSpecPlanner
+ if type(planner)~="table" or type(planner.Get)~="function" then return {} end
+ local selected=planner.Get(classToken)
+ local name=type(selected)=="table" and selected[1]
+ local entry=ForeverCompanionSourcedPriorities[classToken]
+ entry=type(entry)=="table" and entry[name]
+ if type(entry)~="table" then return {} end
+ local lines={"SOURCE-REVIEWED CONDITIONAL PRIORITY | "..name,entry.reviewed}
+ for _,rule in ipairs(entry.rules) do lines[#lines+1]=rule end
+ lines[#lines+1]="Re-check after each action; skip unavailable or untalented abilities."
+ lines[#lines+1]="Reference: "..entry.source
+ if entry.corroboration then lines[#lines+1]="Cross-check: "..entry.corroboration end
+ return lines
+end
+
 function ForeverCompanionSpecPlaybookLines(classToken)
  local planner=ForeverCompanionSpecPlanner
  if type(planner)~="table" or type(planner.Get)~="function" then return {} end
