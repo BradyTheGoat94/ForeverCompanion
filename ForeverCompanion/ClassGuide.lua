@@ -188,7 +188,8 @@ function Guide.Render(classToken,classLabel,level,role,mode)
     if ok and (type(result)=="number" or type(result)=="string") then stage=result end
   end
   local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
-  values.currentTip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling) or "Review class-specific tips below."
+  local tip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling)
+  values.currentTip=type(tip)=="string" and tip~="" and tip or "Review class-specific tips below."
   values.tip:SetText("FOCUS: "..short(values.currentTip,38))
   local planner=ForeverCompanionSpecPlanner
   local spec
