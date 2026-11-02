@@ -18,6 +18,19 @@ The Overview is now a native WoW UI with a gold-accented sidebar, welcome banner
 
 The GitHub Actions `offline-ui-snapshot` artifact includes a source-validated PNG illustration of the mocked interface. It is **not an in-game screenshot**, and the example character, quests, and materials are test fixtures. The real target-client Interface number and API behavior remain unverified.
 
+## What's new in 3.11.0-beta (develop, November 2, 2026)
+
+- **Quest Journal:** Native gold-accented quest rows show title, zone and ready/active status. Sorting can be switched between log, zone and ready order through the UI or `/fcq sort`; filtering and pagination remain available. Clicking a row changes only the addon's focus.
+- **Objective detail:** Modern and Classic quest APIs now provide *known* objective-completion counts when the client supplies completion flags. Missing flags remain unknown; no progress is guessed.
+- **Profession compatibility:** Modern profession slots are scanned even when some slots are empty. A read-only Classic skill-line fallback recognizes standard English profession names; custom or localized names may require manual notes.
+- **Profession selector:** The nine handbook categories use native black-and-gold icon tabs with a selected state.
+- **Dashboard:** Recommended steps are clickable navigation controls. The Today's Focus checklist resets on a confirmed client date change, and retains state if the date API is unavailable.
+- **Leveling:** The class hero shows the player's current general leveling band alongside class guidance and the existing XP indicator.
+- **Resilience:** The window responds to display/UI-scale changes and tolerates unavailable geometry reads. Mocked tests cover API failures, daily focus rollover, quest sorting, objective flags and navigation.
+- **Visuals:** Native gold corner ornaments and a framed crest were added. The offline previews are illustrative approximations generated from the mock widget tree, not real game screenshots.
+
+All guide routes, class ability priorities, recipe recommendations and game-version claims remain general references until tested in the target client. The addon does not cast spells, turn in quests, move the player, or perform crafting actions.
+
 ## Beta features
 
 - Premium black-and-gold seven-section UI with native sidebar, responsive scaling, dashboard and class-guide panels
