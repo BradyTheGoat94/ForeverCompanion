@@ -124,9 +124,11 @@ function Planner.Sync()
   auto.entries=rows
   auto.lastCount=#rows
   if old then
+    local matched=false
     for i,q in ipairs(rows) do
-      if (old.id and q.id==old.id) or (not old.id and q.title==old.title) then auto.selected=i; break end
+      if (old.id and q.id==old.id) or (not old.id and q.title==old.title) then auto.selected=i; matched=true; break end
     end
+    if not matched then auto.selected=1 end
   end
   if auto.selected>#rows then auto.selected=1 end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
