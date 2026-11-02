@@ -74,6 +74,7 @@ local function action(parent,x,y,w,label,icon,fn)
   caption:SetJustifyH("LEFT")
   caption:SetText(label)
   caption:SetTextColor(0.96,0.88,0.69)
+  b.caption=caption
   b:SetScript("OnClick",fn)
   b:SetScript("OnEnter",function() paint(bg,0.24,0.20,0.12,1) end)
   b:SetScript("OnLeave",function() paint(bg,0.12,0.15,0.20,1) end)
