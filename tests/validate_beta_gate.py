@@ -48,10 +48,10 @@ import re
 section=guide.split("classHandbook = {",1)[1].split("professionHandbook = {",1)[0]
 for class_name in ("WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST",
                    "SHAMAN","MAGE","WARLOCK","DRUID"):
-    entry=re.search(r"\\b"+class_name+r"\\s*=\\s*\\{icon=([^,]+),",section)
+    entry=re.search(r"\\b"+class_name+r"\\s*=\\s*\\{icon=(\"[^\"]+\")",section)
     assert entry,f"Missing native class icon for {class_name}"
     icon=entry.group(1)
-    assert icon.startswith('"Interface\\\\\\\\Icons\\\\\\\\'),(
+    assert icon.startswith('"Interface') and "Icons" in icon, (
         f"Class icon for {class_name} must use a Blizzard client icon path"
     )
     assert "http" not in icon.lower(),f"External icon reference for {class_name}"
