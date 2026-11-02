@@ -113,7 +113,9 @@ local function render()
         lines[#lines+1]=i..". "..ability
         local row=rotationRows[i]
         if row then
-          row:SetText((rotationDetail==i and "> " or "").."Priority "..i)
+          row.label:SetText(i..". "..tostring(ability):sub(1,20))
+          colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
+          colorTexture(row.trim,rotationDetail==i and 0.99 or 0.45,rotationDetail==i and 0.76 or 0.36,rotationDetail==i and 0.32 or 0.20,1)
           row.detail=ability
           row:SetScript("OnEnter",function(self)
             if GameTooltip then
@@ -500,12 +502,24 @@ local function createUI()
     materialRows[i]=entry
   end
   for i=1,5 do
-    local row=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-    row:SetSize(118,30)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*124,-226)
+    local row=CreateFrame("Button",nil,child)
+    row:SetSize(146,47)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*153,-222)
+    row.bg=row:CreateTexture(nil,"BACKGROUND")
+    row.bg:SetAllPoints(row)
+    colorTexture(row.bg,0.105,0.13,0.18,1)
+    row.trim=row:CreateTexture(nil,"ARTWORK")
+    row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
+    row.trim:SetSize(146,2)
+    colorTexture(row.trim,0.45,0.36,0.20,1)
     row.icon=row:CreateTexture(nil,"ARTWORK")
-    row.icon:SetSize(19,19)
-    row.icon:SetPoint("LEFT",row,"LEFT",3,0)
+    row.icon:SetSize(25,25)
+    row.icon:SetPoint("LEFT",row,"LEFT",7,0)
+    row.label=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    row.label:SetPoint("LEFT",row,"LEFT",38,0)
+    row.label:SetWidth(102)
+    row.label:SetJustifyH("LEFT")
+    row.label:SetTextColor(0.95,0.88,0.72)
     row:Hide()
     rotationRows[i]=row
   end
