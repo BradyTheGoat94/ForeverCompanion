@@ -39,6 +39,30 @@ function ForeverCompanionKnownSpell(spellID)
  return nil
 end
 
+-- Read-only audit helpers for patch updates and data quality checks.
+function ForeverCompanionAbilityAudit()
+ local data=ForeverCompanionVerifiedAbilities
+ local classes={"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
+ local report={build=data.build,checked=data.checked,classes={},total=0,issues={}}
+ local ids={}
+ for _,token in ipairs(classes) do
+  local entries=data.entries[token] or {}
+  report.classes[token]=#entries
+  report.total=report.total+#entries
+  for _,entry in ipairs(entries) do
+   if type(entry.id)~="number" or entry.id<=0 or type(entry.level)~="number" or entry.level<1 then
+    report.issues[#report.issues+1]=token..": invalid spell ID or level"
+   elseif ids[entry.id] then
+    report.issues[#report.issues+1]=token..": duplicate spell ID "..entry.id
+   else ids[entry.id]=true end
+   if entry.kind~="Trainer" and entry.kind~="Quest" and entry.kind~="Talent" then
+    report.issues[#report.issues+1]=token..": unsupported unlock kind"
+   end
+  end
+ end
+ return report
+end
+
 function ForeverCompanionAbilityReferenceLines(classToken,level)
  local data=ForeverCompanionVerifiedAbilities
  local result={"FOREVER CLIENT SPELL REFERENCE | "..data.build,
