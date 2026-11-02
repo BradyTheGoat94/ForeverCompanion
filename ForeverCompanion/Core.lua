@@ -755,6 +755,50 @@ local function fitWindow()
   local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
   if scale>0 then pcall(window.SetScale,window,math.max(0.1,scale)) end
 end
+local function setupLootControls(child)
+  lootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
+  lootUI.searchBox:SetSize(270,24)
+  lootUI.searchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
+  lootUI.searchBox:SetAutoFocus(false)
+  lootUI.searchBox:SetMaxLetters(80)
+  lootUI.searchBox:SetScript("OnEnterPressed",function(self)
+    lootUI.query=self:GetText() or ""
+    lootUI.selectedIndex=1
+    self:ClearFocus()
+    render()
+  end)
+  lootUI.searchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
+  lootUI.searchBox:Hide()
+  lootUI.wishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.wishButton:SetSize(245,24)
+  lootUI.wishButton:SetPoint("LEFT",lootUI.searchBox,"RIGHT",15,0)
+  lootUI.wishButton:SetScript("OnClick",function()
+    if not ForeverCompanionLoot then return end
+    local selected=ForeverCompanionLoot.Search(lootUI.query)[lootUI.selectedIndex]
+    if selected then
+      ForeverCompanionLoot.ToggleWish(DB,selected.item)
+      render()
+    end
+  end)
+  lootUI.wishButton:Hide()
+  lootUI.prevButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.prevButton:SetSize(150,22)
+  lootUI.prevButton:SetPoint("TOPLEFT",lootUI.searchBox,"BOTTOMLEFT",0,-8)
+  lootUI.prevButton:SetScript("OnClick",function()
+    lootUI.selectedIndex=math.max(1,lootUI.selectedIndex-1)
+    render()
+  end)
+  lootUI.prevButton:Hide()
+  lootUI.nextButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  lootUI.nextButton:SetSize(110,22)
+  lootUI.nextButton:SetPoint("LEFT",lootUI.prevButton,"RIGHT",8,0)
+  lootUI.nextButton:SetScript("OnClick",function()
+    local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootUI.query) or {}
+    lootUI.selectedIndex=math.min(#matches,lootUI.selectedIndex+1)
+    render()
+  end)
+  lootUI.nextButton:Hide()
+end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
@@ -1183,48 +1227,7 @@ local function createUI()
     row:Hide()
     rotationRows[i]=row
   end
-  lootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
-  lootUI.searchBox:SetSize(270,24)
-  lootUI.searchBox:SetPoint("TOPLEFT",child,"TOPLEFT",18,-12)
-  lootUI.searchBox:SetAutoFocus(false)
-  lootUI.searchBox:SetMaxLetters(80)
-  lootUI.searchBox:SetScript("OnEnterPressed",function(self)
-    lootUI.query=self:GetText() or ""
-    lootUI.selectedIndex=1
-    self:ClearFocus()
-    render()
-  end)
-  lootUI.searchBox:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
-  lootUI.searchBox:Hide()
-  lootUI.wishButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootUI.wishButton:SetSize(245,24)
-  lootUI.wishButton:SetPoint("LEFT",lootUI.searchBox,"RIGHT",15,0)
-  lootUI.wishButton:SetScript("OnClick",function()
-    if not ForeverCompanionLoot then return end
-    local selected=ForeverCompanionLoot.Search(lootUI.query)[lootUI.selectedIndex]
-    if selected then
-      ForeverCompanionLoot.ToggleWish(DB,selected.item)
-      render()
-    end
-  end)
-  lootUI.wishButton:Hide()
-  lootUI.prevButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootUI.prevButton:SetSize(150,22)
-  lootUI.prevButton:SetPoint("TOPLEFT",lootUI.searchBox,"BOTTOMLEFT",0,-8)
-  lootUI.prevButton:SetScript("OnClick",function()
-    lootUI.selectedIndex=math.max(1,lootUI.selectedIndex-1)
-    render()
-  end)
-  lootUI.prevButton:Hide()
-  lootUI.nextButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
-  lootUI.nextButton:SetSize(110,22)
-  lootUI.nextButton:SetPoint("LEFT",lootUI.prevButton,"RIGHT",8,0)
-  lootUI.nextButton:SetScript("OnClick",function()
-    local matches=ForeverCompanionLoot and ForeverCompanionLoot.Search(lootUI.query) or {}
-    lootUI.selectedIndex=math.min(#matches,lootUI.selectedIndex+1)
-    render()
-  end)
-  lootUI.nextButton:Hide()
+  setupLootControls(child)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
