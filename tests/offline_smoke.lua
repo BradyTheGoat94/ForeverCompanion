@@ -507,3 +507,14 @@ assert(#classRows>=3 and classRows[1].status=="UPCOMING","warrior level 10 must 
 assert(ForeverCompanionClassChangeIndex.Build("WARRIOR",20)[1].status=="LEVEL REACHED","level reached preview status")
 assert(ForeverCompanionClassChangeIndex.Build("MAGE",1)[1].source:find("blizzard.com",1,true),"class changes must retain source")
 assert(ForeverCompanionClassChangeIndex.Format("UNKNOWN",1):find("No sourced",1,true),"unknown class fallback")
+
+dofile("ForeverCompanion/CraftCosts.lua")
+assert(ForeverCompanionRecipePlans.Add("CostTest","Potion",3))
+assert(ForeverCompanionRecipePlans.Ingredient("CostTest",1,"Herb",2))
+assert(ForeverCompanionCraftCosts.Estimate("CostTest")[1].unknown==1)
+assert(ForeverCompanionCraftCosts.Set("CostTest","Herb",125))
+local estimate=ForeverCompanionCraftCosts.Estimate("CostTest")[1]
+assert(estimate.complete and estimate.copper==750,"3 crafts * 2 herbs * 125 copper")
+assert(ForeverCompanionRecipePlans.Done("CostTest",1,1))
+assert(ForeverCompanionCraftCosts.Estimate("CostTest")[1].copper==500,"completed crafts must reduce estimated cost")
+assert(not ForeverCompanionCraftCosts.Set("CostTest","Herb",-1),"negative prices must be rejected")
