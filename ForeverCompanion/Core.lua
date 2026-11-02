@@ -116,7 +116,12 @@ local function render()
       sectionHeader:Show()
     end
   end
-  if scrollFrame then if isOverview then scrollFrame:Hide() else scrollFrame:Show() end end
+  if scrollFrame then
+    if isOverview then scrollFrame:Hide() else scrollFrame:Show() end
+    scrollFrame:ClearAllPoints()
+    scrollFrame:SetPoint("TOPLEFT",216,-163)
+    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Leveling" and 125 or 92)
+  end
   if ForeverCompanionClassGuide then
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
     if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
