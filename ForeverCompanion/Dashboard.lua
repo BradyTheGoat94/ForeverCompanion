@@ -241,7 +241,16 @@ function D.Create(parent,openPage,ctx)
   progress(goals,15,-128,221,"Materials ready",{0.94,0.67,0.23,1})
   local steps=panel(0,-296,416,186,"RECOMMENDED NEXT STEPS","Interface\\Icons\\INV_Misc_Map_01")
   -- Recommended steps are genuine navigation actions, not decorative text.
-  values.step1=action(steps,12,-44,392,"",nil,function() navigate("Quests") end,39)
+  values.step1=action(steps,12,-44,392,"",nil,function()
+    local planner=ForeverCompanionQuestPlanner
+    if planner and planner.IsSupported and planner.IsSupported() and planner.GetLive then
+      local target
+      for i,quest in ipairs(planner.GetLive()) do if quest.complete then target=i;break end end
+      if not target and planner.GetPinned then local _,index=planner.GetPinned();target=index end
+      if target and planner.Select then planner.Select(target) end
+    end
+    navigate("Quests")
+  end,39)
   values.step2=action(steps,12,-89,392,"",nil,function() navigate("Leveling") end,39)
   values.step3=action(steps,12,-134,392,"",nil,function() navigate("Professions") end,39)
   local focus=panel(428,-296,418,186,"TODAY'S FOCUS","Interface\\Icons\\INV_Misc_Note_01")
@@ -310,8 +319,11 @@ function D.Render()
       if quest.complete then firstReady=quest; break end
     end
   end
+  local pinned=questSupported and planner.GetPinned and planner.GetPinned() or nil
   if firstReady and firstReady.title then
     updateAction(values.step1,"1. Ready to turn in: "..tostring(firstReady.title))
+  elseif questSupported and pinned and pinned.title and not pinned.complete then
+    updateAction(values.step1,"1. Pinned priority: "..tostring(pinned.title))
   elseif questSupported and selected and selected.title then
     updateAction(values.step1,"1. Quest focus: "..tostring(selected.title))
   elseif questSupported then
