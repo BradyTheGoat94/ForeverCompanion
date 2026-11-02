@@ -393,6 +393,7 @@ assert(ForeverCompanionSkillStudy.FormatNextActions("MAGE",40):find("pending cla
 IsSpellKnown=savedKnown
 
 -- Recipe ordering changes how scarce shared materials are allocated.
+assert(ForeverCompanionCraftingPlanner.Add("ForecastTest","Peacebloom",2,1),"add the second ingredient required by Elixir")
 local before=ForeverCompanionCraftingAdvice.Allocation("ForecastTest")
 assert(before[1].craftable==1 and before[2].craftable==0,"initial recipe priority incorrect")
 assert(ForeverCompanionRecipePlans.Move("ForecastTest",2,1),"recipe priority change should succeed")
