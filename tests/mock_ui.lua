@@ -178,6 +178,12 @@ end
 assert(classHeading and buildHeading,"native class-guide header cards missing")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
+local levelingHeading
+for _,w in ipairs(frames) do if w.text=="LEVELING GUIDE" then levelingHeading=w end end
+assert(levelingHeading and frames[levelingHeading.parent].visible,"section header should appear on Leveling")
+local priorityTile
+for _,w in ipairs(frames) do if w.text:find("^1%. ",1) and w.parent then priorityTile=w end end
+assert(priorityTile,"priority tile should display ability text")
 local classSnapshot={}
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
@@ -191,7 +197,10 @@ local classOut=assert(io.open("ui_leveling_snapshot.txt","w"))
 classOut:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",string.char(10))
 classOut:write(table.concat(classSnapshot,string.char(10)))
 classOut:close()
+rotationControl.OnClick(rotationControl)
+assert(rotationControl.text=="Rotation: dungeon","rotation context selector failed")
 overviewButton.OnClick(overviewButton)
+assert(not frames[levelingHeading.parent].visible,"section header should hide on dashboard")
 assert(not frames[frames[classHeading.parent].parent].visible,"class guide should hide outside Leveling")
 mockXP=2000
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
