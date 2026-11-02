@@ -618,3 +618,14 @@ for _,name in ipairs(categoryHints.WARLOCK) do
 end
 local unknownHints=ForeverCompanionBeginnerAvailability("MAGE",{supported=false,inspected=0,complete=false,known={}})
 assert(unknownHints[1]:find("[UNKNOWN]",1,true),"unknown spells need a visible status")
+
+-- Curated unlock metadata is additive; unknown classes remain conservative.
+local warriorHints=ForeverCompanionBeginnerAvailability("WARRIOR",{supported=false,inspected=0,complete=false,known={}})
+local sawHeroic=false
+for _,line in ipairs(warriorHints) do
+ if line:find("Heroic Strike",1,true) then
+  assert(line:find("curated client-data level",1,true),"curated spell level missing")
+  sawHeroic=true
+ end
+end
+assert(sawHeroic,"warrior curated spell not displayed")
