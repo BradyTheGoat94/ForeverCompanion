@@ -222,6 +222,7 @@ local function render()
     if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
       lines[#lines+1]=ForeverCompanionLoot.Format()
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
+      lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
     else
       lines[#lines+1]="Loot reference is unavailable."
     end
