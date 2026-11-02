@@ -87,6 +87,12 @@ local function action(parent,x,y,w,label,icon,fn,height)
   local rail=strip(b,0,0,3,h,{0.46,0.35,0.20,1})
   strip(b,w-11,-6,6,1,{0.67,0.51,0.26,0.9})
   strip(b,w-6,-6,1,6,{0.67,0.51,0.26,0.9})
+  -- Button bevel and inset footer: richer focus without overwhelming text.
+  strip(b,6,-4,w-12,1,{0.72,0.56,0.32,0.24})
+  strip(b,6,-h+5,w-12,1,{0.06,0.08,0.12,0.70})
+  strip(b,w-14,-h+12,8,1,{0.62,0.48,0.28,0.52})
+  strip(b,w-7,-h+12,1,7,{0.62,0.48,0.28,0.52})
+
   local offset=12
   if icon then
     local i=b:CreateTexture(nil,"ARTWORK")
