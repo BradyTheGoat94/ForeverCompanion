@@ -68,6 +68,7 @@ assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"quest completion")
 C_QuestLog.GetNumQuestLogEntries=function() error("simulated temporary failure") end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"failed quest scan")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"last successful snapshot retained")
+assertEqual(ForeverCompanionQuestPlanner.IsSnapshotStale(),true,"stale state")
 C_QuestLog=nil
 assertEqual(ForeverCompanionQuestPlanner.Sync(),false,"unsupported quest API")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"unsupported API snapshot retained")
