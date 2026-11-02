@@ -40,3 +40,43 @@ function A.Plan(profession)
  return result
 end
 function A.Format(profession) return table.concat(A.Plan(profession).lines,"\n") end
+
+-- Plan a conservative craft order. Reserve materials after each proposed craft
+-- so overlapping recipes cannot claim the same inventory twice.
+function A.Allocation(profession)
+ local recipes=ForeverCompanionRecipePlans
+ if not recipes or not recipes.Get then return {} end
+ local stock={}
+ local planner=ForeverCompanionCraftingPlanner
+ local tracked=planner and planner.GetEntries and planner.GetEntries(profession) or {}
+ for _,row in ipairs(tracked) do stock[clean(row.name):lower()]=math.max(0,tonumber(row.owned) or 0) end
+ local result={}
+ for index,recipe in ipairs(recipes.Get(profession)) do
+  local remaining=math.max(0,(tonumber(recipe.quantity) or 0)-(tonumber(recipe.done) or 0))
+  local craftable=remaining
+  local ingredients=recipe.ingredients or {}
+  if #ingredients==0 then craftable=0 end
+  for _,ingredient in ipairs(ingredients) do
+   local count=tonumber(ingredient.count) or 0
+   if count<=0 then craftable=0; break end
+   craftable=math.min(craftable,math.floor((stock[clean(ingredient.name):lower()] or 0)/count))
+  end
+  craftable=math.max(0,math.floor(craftable))
+  for _,ingredient in ipairs(ingredients) do
+   local key=clean(ingredient.name):lower()
+   stock[key]=math.max(0,(stock[key] or 0)-craftable*(tonumber(ingredient.count) or 0))
+  end
+  result[#result+1]={index=index,name=recipe.name,remaining=remaining,craftable=craftable,blocked=remaining-craftable}
+ end
+ return result
+end
+function A.FormatAllocation(profession)
+ local lines={"CRAFTING QUEUE (SHARED MATERIALS RESERVED IN RECIPE ORDER)"}
+ local entries=A.Allocation(profession)
+ if #entries==0 then lines[#lines+1]="No recipe goals recorded." end
+ for _,row in ipairs(entries) do
+  if row.remaining>0 then lines[#lines+1]=row.index..". "..clean(row.name).." | craft now "..row.craftable.." | still blocked "..row.blocked end
+ end
+ lines[#lines+1]="Planning only: no items are consumed, crafted or moved. Change recipe order to reprioritize."
+ return table.concat(lines,"\n")
+end
