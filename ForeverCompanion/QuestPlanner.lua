@@ -410,6 +410,9 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
     Planner.CycleFilter()
     say("Quest filter: "..Planner.GetFilter())
     return
+  elseif msg=="sort" then
+    say("Quest sort: "..Planner.CycleSort())
+    return
   elseif msg=="sync" then
     if Planner.Sync() then say("Quest log synchronized: "..Planner.AutoCount().." active quests.") else say("Quest log API not available.") end
     return
@@ -419,7 +422,7 @@ SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
     say(done.."/"..total.." complete")
     for i,e in ipairs(entries) do say(i..". "..(e.done and "[x] " or "[ ] ")..e.name.." ("..e.zone..")") end
     return
-  else say("Use /fcq sync, /fcq filter, /fcq next, /fcq previous, /fcq focus N, /fcq add Quest | Zone"); return end
+  else say("Use /fcq sync, /fcq filter, /fcq sort, /fcq next, /fcq previous, /fcq focus N, /fcq add Quest | Zone"); return end
   say(answer)
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
