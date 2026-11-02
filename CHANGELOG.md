@@ -1,3 +1,13 @@
+## 3.10.0-beta (development branch, not client-verified)
+- Added native black-and-gold Quest Journal briefing cards: live quest totals, ready count, top zone, focused objective, and explicit stale/unavailable states.
+- Added native Profession Skills and Material Goals cards with detected skill/cap bars, aggregate manual material progress, and selected-guide shortage advice.
+- Reflowed quest filtering, paging, handbook buttons and material +/- controls below the new cards.
+- Added 63 distinct class planning tips and 54 distinct profession planning tips. These are general Classic-era references, **not verified WoW Forever builds or recipes**.
+- Hardened class, level, XP, zone and profession API reads and expanded mocked-client tests for failures, navigation, material changes and read-only guidance.
+- Added grounded illustrative quest and profession PNG previews and snapshot artifacts to GitHub Actions.
+- No automated combat, targeting, quest turn-ins, inventory movement or crafting was introduced.
+- Still pending: real WoW Forever client testing, confirmed Interface number, original art, licensing decision, and CurseForge game flavor/moderation checks.
+
 ## 3.8.0-beta
 - Expanded offline Lua regression suite to cover modern quest scanning, transient API failures, specialization preview cycling, and profession read failures.
 - Clarified that empty profession reads may reflect unloaded data rather than an unlearned profession.
