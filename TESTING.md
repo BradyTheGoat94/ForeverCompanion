@@ -63,3 +63,10 @@ This addon is **not verified on the target client**. Use this checklist on the f
 38. Confirm no overlap between the rotation selector, class icon, and compact-mode footer.
 39. Compare priority text with available in-game abilities; report unavailable spells or unsupported mechanics.
 40. Verify that switching tabs hides the rotation icon and selector.
+
+## v1.3.1 rotation interactions
+41. Click each visible priority tile; verify the selected priority line updates.
+42. Change rotation mode after selecting a later priority; verify selection resets to the first item.
+43. Change class preview with a selected priority; verify no out-of-range errors.
+44. Switch away from Leveling and return; verify rotation tiles hide and reappear appropriately.
+45. Check text truncation on long priority descriptions and at compact window height.
