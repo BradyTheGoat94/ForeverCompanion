@@ -364,6 +364,7 @@ local function render()
             end
           end
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
+          lines[#lines+1]=ForeverCompanionCraftingPlanner.ShoppingSummary(5)
           lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
         end
         if ForeverCompanionRecipePlans then
