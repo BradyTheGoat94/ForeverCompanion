@@ -254,6 +254,7 @@ function ForeverCompanionSpecPlaybookLines(classToken)
  local steps=type(class)=="table" and class[name]
  if type(steps)~="table" then return {} end
  local lines={"BEGINNER BUTTON ORDER | "..name.." | ADVISORY"}
+ if type(planner.Evidence)=="function" then lines[#lines+1]=planner.Evidence(classToken) end
  for i,step in ipairs(steps) do lines[#lines+1]=i..". "..step end
  lines[#lines+1]="These are practice decisions, not an automated rotation. Skip untrained spells."
  lines[#lines+1]="Sources: Blizzard class deep dives; Mobalytics Forever class guides; Wowhead Forever rotations and tuning."
