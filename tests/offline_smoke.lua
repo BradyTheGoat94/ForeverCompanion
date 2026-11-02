@@ -258,6 +258,10 @@ assertEqual(guarded[2].maximum,nil,"zero cap should be unknown")
 assertEqual(guarded[2].remaining,nil,"missing cap cannot have remaining")
 assertEqual(guarded[3].skill,nil,"NaN skill should be unknown")
 assertEqual(guarded[4].remaining,50,"valid skill progress remains accurate")
+assertEqual(guarded[1].name,"Broken","valid profession names preserved")
+ForeverCompanionProfessionScanner.Read=function() return {{skill=20,maxSkill=75}} end
+local unnamed=ForeverCompanionProfessionProgress.Overview()
+assertEqual(unnamed[1].name,"Unknown profession","missing profession name uses safe label")
 ForeverCompanionProfessionScanner.Read=originalRead
 -- Sparse modern profession slots must not disappear after the first nil.
 GetProfessions=function() return 1,nil,3,nil,5 end
