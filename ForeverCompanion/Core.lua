@@ -9,6 +9,10 @@ local tabButtons = {}
 local checkButtons = {}
 local scrollFrame, scrollChild, classButton, roleButton, subtitleText, questCountText, compactButton, accentBar, background, nextQuestButton, previousQuestButton, questFocusText, welcomeTip
 local classOrder = {"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
+local function colorTexture(texture,r,g,b,a)
+  if texture.SetColorTexture then texture:SetColorTexture(r,g,b,a)
+  else texture:SetTexture(r,g,b,a) end
+end
 local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
 local function actualClass() local _, token = UnitClass("player"); return token or "WARRIOR" end
 local function classToken() return DB and DB.previewClass or actualClass() end
@@ -67,7 +71,7 @@ local function render()
   end
   content:SetText(table.concat(lines, "\n\n"))
   if scrollChild then scrollChild:SetHeight(math.max(420, content:GetStringHeight() + 24)) end
-  if scrollFrame then scrollFrame:SetVerticalScroll(0) end
+  if scrollFrame and scrollFrame.SetVerticalScroll then scrollFrame:SetVerticalScroll(0) end
   if classButton then classButton:SetText("Class: "..classLabel()) end
   if roleButton then roleButton:SetText("Role: "..(DB.role or "Choose")) end
   if nextQuestButton then if currentTab=="Quests" then nextQuestButton:Show() else nextQuestButton:Hide() end end
@@ -102,12 +106,12 @@ local function createUI()
   end
   background=window:CreateTexture(nil,"BACKGROUND")
   background:SetAllPoints(window)
-  background:SetColorTexture(0.055,0.065,0.085,0.94)
+  colorTexture(background,0.055,0.065,0.085,0.94)
   accentBar=window:CreateTexture(nil,"BORDER")
   accentBar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-8)
   accentBar:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-8)
   accentBar:SetHeight(3)
-  accentBar:SetColorTexture(0.94,0.65,0.22,1)
+  colorTexture(accentBar,0.94,0.65,0.22,1)
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   titleText:SetPoint("TOPLEFT", 20, -20)
   titleText:SetTextColor(1,0.79,0.36)
@@ -133,7 +137,7 @@ local function createUI()
   panel:SetPoint("BOTTOMRIGHT",-16,88)
   local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
   panelTexture:SetAllPoints(panel)
-  panelTexture:SetColorTexture(0.085,0.105,0.13,0.95)
+  colorTexture(panelTexture,0.085,0.105,0.13,0.95)
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
   scroll:SetPoint("TOPLEFT", 22, -104)
@@ -145,7 +149,7 @@ local function createUI()
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   content:SetWidth(610)
-  content:SetSpacing(4)
+  if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
   questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
