@@ -132,15 +132,17 @@ ForeverCompanionForeverMechanicsSources={
 -- not proof that a spell is trained, talented, or usable in combat.
 ForeverCompanionBeginnerSpellHints={
  WARRIOR={"Battle Shout","Charge","Heroic Strike","Execute"},
- PALADIN={"Blessing","Seal","Judgement","Crusader Strike"},
+ PALADIN={"Judgement","Crusader Strike","Consecration","Hammer of Wrath"},
  HUNTER={"Serpent Sting","Arcane Shot","Aimed Shot","Multi-Shot"},
  ROGUE={"Sinister Strike","Slice and Dice","Eviscerate","Ambush"},
  PRIEST={"Shadow Word: Pain","Mind Blast","Mind Flay","Smite"},
  SHAMAN={"Flame Shock","Lava Burst","Lightning Bolt","Earth Shock"},
  MAGE={"Frostbolt","Frost Nova","Fireball","Arcane Intellect"},
- WARLOCK={"Corruption","Shadow Bolt","Life Tap","Curse"},
+ WARLOCK={"Corruption","Shadow Bolt","Life Tap","Immolate"},
  DRUID={"Cat Form","Claw","Moonfire","Wrath"}
 }
+-- Spellbook names are exact, not categories such as "Blessing" or "Curse".
+-- Conditional spells may be talent-only, trainer-gated, or absent in a given build.
 function ForeverCompanionBeginnerAvailability(class,scan)
  local hints=ForeverCompanionBeginnerSpellHints[class] or {}
  local result={}
