@@ -403,11 +403,11 @@ local function render()
 end
 local function fitWindow()
   if not window or not window.SetScale or not UIParent or not UIParent.GetWidth or not UIParent.GetHeight then return end
-  local width,height=UIParent:GetWidth(),UIParent:GetHeight()
-  if type(width)~="number" or type(height)~="number" or width<=0 or height<=0 then return end
+  local ok,width,height=pcall(function() return UIParent:GetWidth(),UIParent:GetHeight() end)
+  if not ok or type(width)~="number" or type(height)~="number" or width<=0 or height<=0 then return end
   local wantedHeight=DB.compact and 620 or 720
   local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
-  if scale>0 then window:SetScale(math.max(0.1,scale)) end
+  if scale>0 then pcall(window.SetScale,window,math.max(0.1,scale)) end
 end
 local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
