@@ -104,10 +104,10 @@ function Guide.Create(parent)
   values.icon=profile:CreateTexture(nil,"OVERLAY")
   values.icon:SetPoint("TOPLEFT",profile,"TOPLEFT",16,-44)
   values.icon:SetSize(48,48)
-  values.name=label(profile,80,-45,282,"","GameFontNormalLarge",PALE)
+  values.name=label(profile,80,-45,265,"","GameFontNormalLarge",PALE)
   values.classSigil=label(profile,330,-13,36,"","GameFontNormal",GOLD)
-  values.role=label(profile,80,-73,282,"","GameFontHighlightSmall",MUTED)
-  values.band=label(profile,16,-101,352,"","GameFontHighlightSmall",GOLD)
+  values.role=label(profile,80,-73,255,"","GameFontHighlightSmall",MUTED)
+  values.band=label(profile,16,-101,350,"","GameFontHighlightSmall",GOLD)
   values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
   -- The compact card shows a short actionable focus. Hover for the complete,
   -- class-specific practice note; this tooltip never changes game state.
