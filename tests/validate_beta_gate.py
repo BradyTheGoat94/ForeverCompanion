@@ -31,7 +31,7 @@ for source in lua_files:
                       "UseInventoryItem","UseContainerItem","RunMacroText",
                       "TargetUnit","AttackTarget","StartAttack",
                       "AcceptQuest","CompleteQuest","BuyMerchantItem"):
-        assert not re.search(r"\\b"+forbidden+r"\\s*\\(",code), (
+        assert not re.search(r"\b"+forbidden+r"\s*\(",code), (
             f"Potential protected gameplay call {forbidden} in {source}"
         )
 policy=Path("CURSEFORGE_COMPLIANCE.md")
