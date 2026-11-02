@@ -27,7 +27,7 @@ function Planner.Add(name, zone)
   if name=="" then return false, "Provide a quest name." end
   if #entries>=100 then return false, "Quest planner limit (100) reached." end
   for _,e in ipairs(entries) do
-    if e.name:lower()==name:lower() then return false,"Already tracked." end
+    if type(e)=="table" and type(e.name)=="string" and e.name:lower()==name:lower() then return false,"Already tracked." end
   end
   entries[#entries+1]={name=name,zone=zone~="" and zone or "Unassigned",done=false}
   return true,"Added: "..name
@@ -36,6 +36,7 @@ function Planner.Toggle(index)
   local entries=ensure()
   index=tonumber(index)
   if not index or not entries[index] then return false,"Invalid quest number." end
+  if type(entries[index])~="table" or type(entries[index].name)~="string" then return false,"Invalid saved quest entry." end
   entries[index].done=not entries[index].done
   return true,(entries[index].done and "Completed: " or "Reopened: ")..entries[index].name
 end
@@ -43,14 +44,14 @@ function Planner.Remove(index)
   local entries=ensure()
   index=tonumber(index)
   if not index or not entries[index] then return false,"Invalid quest number." end
-  local name=entries[index].name
+  local name=type(entries[index])=="table" and entries[index].name or "Invalid entry"
   table.remove(entries,index)
   return true,"Removed: "..name
 end
 function Planner.Summary()
   local entries=ensure()
   local done=0
-  for _,e in ipairs(entries) do if e.done then done=done+1 end end
+  for _,e in ipairs(entries) do if type(e)=="table" and e.done==true then done=done+1 end end
   return done,#entries
 end
 function Planner.Format()
@@ -58,7 +59,11 @@ function Planner.Format()
   local result={"PERSONAL NOTES (optional)", "Custom goals separate from the automatically detected quest log.", "Commands: /fcq add Quest name | Zone", "/fcq done 1   /fcq remove 1   /fcq list"}
   if #entries==0 then result[#result+1]="No quests tracked yet." end
   for i,e in ipairs(entries) do
-    result[#result+1]=i..". "..(e.done and "[x] " or "[ ] ")..e.name.." — "..e.zone
+    if type(e)=="table" and type(e.name)=="string" then
+      result[#result+1]=i..". "..(e.done and "[x] " or "[ ] ")..clean(e.name,100).." — "..clean(e.zone or "Unassigned",70)
+    else
+      result[#result+1]=i..". [invalid saved quest entry — remove to repair]"
+    end
   end
   local done,total=Planner.Summary()
   result[#result+1]="Progress: "..done.."/"..total
