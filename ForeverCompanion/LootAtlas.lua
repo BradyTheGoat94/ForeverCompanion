@@ -138,7 +138,11 @@ function Loot.Detail(record,db)
       if type(stat)=="string" then lines[#lines+1]=stat end
     end
   end
-  lines[#lines+1]="Drop chance: not verified unless independently sourced."
+  if type(record.dropRate)=="number" then
+    lines[#lines+1]="Reported drop rate: "..record.dropRate.."% (source methodology must be checked)"
+  else
+    lines[#lines+1]="Drop chance: unknown / not verified"
+  end
   lines[#lines+1]="Class/spec suitability: not verified unless explicitly documented."
   return table.concat(lines,"\n")
 end
