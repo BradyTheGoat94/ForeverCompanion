@@ -73,3 +73,17 @@ function O.Ribbon(frame,w,y)
  strip(frame,w-19,y+2,7,7,0.90,0.65,0.29,0.95)
  return true
 end
+
+-- Unified low-contrast ornamental panel treatment for secondary surfaces.
+function O.Panel(frame,w,h)
+ if not frame or type(w)~="number" or type(h)~="number" or w<90 or h<35 then return false end
+ strip(frame,0,0,w,1,0.73,0.54,0.26,0.78)
+ strip(frame,0,-h+1,w,1,0.40,0.30,0.19,0.75)
+ strip(frame,0,0,1,h,0.40,0.30,0.19,0.75)
+ strip(frame,w-1,0,1,h,0.40,0.30,0.19,0.75)
+ strip(frame,5,-5,14,1,0.96,0.72,0.33,0.85)
+ strip(frame,5,-5,1,11,0.96,0.72,0.33,0.85)
+ strip(frame,w-19,-5,14,1,0.96,0.72,0.33,0.85)
+ strip(frame,w-6,-5,1,11,0.96,0.72,0.33,0.85)
+ return true
+end
