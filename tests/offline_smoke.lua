@@ -23,6 +23,10 @@ C_SpellBook.GetSpellBookItemName=function(i) if i==1 then return "Shield Wall" e
 local partial=ForeverCompanionSpellbook.Scan()
 assertEqual(partial.complete,false,"partial spellbook scan")
 assertEqual(ForeverCompanionSpellbook.Status("Unknown",partial),"unverified (partial scan)","unknown in partial scan")
+C_SpellBook.GetSpellBookItemName=function(i) if i==1 then return "Shield Wall" end return nil end
+local unnamed=ForeverCompanionSpellbook.Scan()
+assertEqual(unnamed.complete,false,"unnamed spellbook entry must make scan partial")
+assertEqual(ForeverCompanionSpellbook.Status("Unknown",unnamed),"unverified (partial scan)","unnamed slot cannot prove absence")
 C_SpellBook.GetNumSpellBookSkillLines=function() return 100000 end
 assertEqual(ForeverCompanionSpellbook.Scan().supported,false,"reject invalid spellbook tab count")
 C_SpellBook=nil
@@ -283,6 +287,14 @@ end
 local sparse=ForeverCompanionProfessionScanner.Read()
 assertEqual(#sparse,3,"sparse modern profession slots")
 assertEqual(sparse[3].name,"Cooking","fifth profession slot")
+-- Sixth profession slot must be retained, even when earlier slots are nil.
+GetProfessions=function() return nil,nil,nil,nil,nil,6 end
+GetProfessionInfo=function(index)
+ if index==6 then return "Fishing",nil,100,150 end
+end
+local sixth=ForeverCompanionProfessionScanner.Read()
+assertEqual(#sixth,1,"sixth modern profession slot")
+assertEqual(sixth[1].name,"Fishing","sixth profession slot name")
 -- Classic-era fallback reads the general skill lines without changing selection.
 GetProfessions=nil
 GetProfessionInfo=nil
