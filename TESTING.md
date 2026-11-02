@@ -239,3 +239,13 @@ The black-and-gold briefing cards are native addon widgets; CI's PNGs are illust
 12. Record the exact client build and Interface version before calling any feature compatible with WoW Forever.
 
 CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`, `ui_quest_preview.png`, and `ui_profession_preview.png` accompany the dashboard and Leveling previews.
+
+## Dashboard and quest-data integrity regression (v3.11 develop)
+
+- In the live client, verify each Recommended Next Step shows the updated text on the visible button, not merely in an internal Button label. Hover long quest names and confirm the complete advisory text appears when tooltips are supported.
+- Test no active quests, one ready quest, and a temporarily unavailable quest-log API. The dashboard must show current, cached/outdated, or unavailable status honestly, and must not keep a stale recommendation caption after state changes.
+- With manual material shortages, confirm the recommendation displays the missing unit count; after marking the goals complete, confirm it changes to the review/add-goals prompt.
+- Test a quest whose client API provides no zone or header. It must display **Unspecified zone** and remain visible in a current-zone-filtered list. Verify mixed known/unknown zones behave similarly.
+- Check `/fc open Quests`, `/fc leveling`, `/fc overview`, `/fc status`, and invalid navigation strings. These must affect only the addon's UI and printed guidance.
+- Inspect the compact dashboard footer and source labels at multiple UI scales; verify the additional status line does not clip or overlap the footer.
+- These checks must be repeated in the actual target client. Offline mocked tests and preview PNGs are not substitutes for live compatibility evidence.
