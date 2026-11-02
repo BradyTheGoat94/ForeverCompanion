@@ -584,3 +584,18 @@ for class,spell in pairs(beginnerActions) do
  assert(type(steps)=="table" and #steps>=4,"missing beginner steps: "..class)
  assert(table.concat(steps," "):find(spell,1,true),"missing concrete spell priority: "..class)
 end
+
+-- Forever-specific mechanics must retain a traceable source and conditional coaching.
+for _,class in ipairs({"HUNTER","WARRIOR","ROGUE","SHAMAN"}) do
+ local notes=ForeverCompanionForeverMechanics[class]
+ assert(type(notes)=="table" and #notes>=3,"missing Forever mechanics: "..class)
+ local source=ForeverCompanionForeverMechanicsSources[class]
+ assert(type(source)=="string" and source:find("wowhead.com",1,true),"missing Wowhead attribution: "..class)
+end
+for _,class in ipairs({"SHAMAN","ROGUE","WARRIOR","WARLOCK"}) do
+ local specs=ForeverCompanionForeverDpsCoaching[class]
+ assert(type(specs)=="table" and next(specs)~=nil,"missing specialization coaching: "..class)
+ for _,steps in pairs(specs) do
+  assert(type(steps)=="table" and #steps>=3,"incomplete specialization coaching: "..class)
+ end
+end
