@@ -6,8 +6,11 @@ local function safeText(value)
   return nil
 end
 local function safeNumber(value)
-  local ok,n=pcall(tonumber,value)
-  if ok and type(n)=="number" and n>=0 and n<=100000 then return n end
+  local ok,n=pcall(function()
+    local number=tonumber(value)
+    if type(number)=="number" and number>=0 and number<=100000 then return number end
+  end)
+  if ok then return n end
 end
 function scanner.Read()
   if type(GetProfessions)~="function" or type(GetProfessionInfo)~="function" then
