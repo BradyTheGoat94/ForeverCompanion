@@ -147,6 +147,38 @@ dofile("ForeverCompanion/ProfessionProgress.lua")
 local professionOverview=ForeverCompanionProfessionProgress.Overview()
 assertEqual(professionOverview[1].remaining,100,"profession skill to cap")
 assert(ForeverCompanionProfessionProgress.FormatOverview():find("100 skill to current cap",1,true),"profession progress summary missing")
+-- Sparse modern profession slots must not disappear after the first nil.
+GetProfessions=function() return 1,nil,3,nil,5 end
+GetProfessionInfo=function(index)
+ if index==1 then return "Alchemy",nil,125,225 end
+ if index==3 then return "Mining",nil,175,225 end
+ if index==5 then return "Cooking",nil,75,150 end
+end
+local sparse=ForeverCompanionProfessionScanner.Read()
+assertEqual(#sparse,3,"sparse modern profession slots")
+assertEqual(sparse[3].name,"Cooking","fifth profession slot")
+-- Classic-era fallback reads the general skill lines without changing selection.
+GetProfessions=nil
+GetProfessionInfo=nil
+GetNumSkillLines=function() return 4 end
+GetSkillLineInfo=function(index)
+ if index==1 then return "Professions",true,false,0,0,0,0 end
+ if index==2 then return "Mining",false,false,175,0,0,225 end
+ if index==3 then return "Swords",false,false,200,0,0,300 end
+ return "Cooking",false,false,95,0,0,150
+end
+local classic=ForeverCompanionProfessionScanner.Read()
+assertEqual(#classic,2,"Classic profession detection excludes weapon skills")
+assertEqual(classic[1].name,"Mining","Classic first trade skill")
+assertEqual(classic[1].skill,175,"Classic skill rank")
+assertEqual(classic[1].maxSkill,225,"Classic skill cap")
+assert(ForeverCompanionProfessionScanner.Format():find("Classic skill-line fallback",1,true),"Classic fallback disclosure")
+GetNumSkillLines=function() error("restricted skill-line API") end
+local restricted,restrictedReason=ForeverCompanionProfessionScanner.Read()
+assertEqual(restricted,nil,"restricted legacy profession read")
+assert(type(restrictedReason)=="string","legacy error must have reason")
+GetNumSkillLines=nil
+GetSkillLineInfo=nil
 GetProfessions=function() error("unavailable") end
 local missing,reason=ForeverCompanionProfessionScanner.Read()
 assertEqual(missing,nil,"failed profession read")
