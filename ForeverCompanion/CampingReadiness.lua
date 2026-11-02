@@ -15,3 +15,14 @@ function R.Format(name,skill)
  local result=R.Check(name,skill)
  return "CAMP READINESS - "..result.status.."\n"..result.detail
 end
+
+function R.ForProfession(name)
+ local scanner=ForeverCompanionProfessionScanner
+ if not scanner or type(scanner.Read)~="function" then return R.Format(name,nil) end
+ local ok,items=pcall(scanner.Read)
+ if not ok or type(items)~="table" then return R.Format(name,nil) end
+ for _,item in ipairs(items) do
+  if type(item)=="table" and item.name==name then return R.Format(name,item.skill) end
+ end
+ return R.Format(name,nil)
+end
