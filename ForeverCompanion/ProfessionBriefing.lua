@@ -39,6 +39,7 @@ local function panel(parent,x,w,heading)
   right:SetPoint("TOPRIGHT",p,"TOPRIGHT",0,0)
   right:SetSize(1,156)
   paint(right,0.35,0.29,0.20,1)
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Inlay(p,w,156) end
   text(p,15,-14,w-30,heading,"GameFontNormal",{0.95,0.76,0.39})
   return p
 end
