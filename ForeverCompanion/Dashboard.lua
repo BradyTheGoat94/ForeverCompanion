@@ -195,9 +195,10 @@ function D.Create(parent,openPage,ctx)
   progress(goals,15,-88,221,"Quests ready",{0.25,0.60,0.94,1})
   progress(goals,15,-128,221,"Materials ready",{0.94,0.67,0.23,1})
   local steps=panel(0,-296,416,186,"RECOMMENDED NEXT STEPS","Interface\\Icons\\INV_Misc_Map_01")
-  values.step1=text(steps,steps,18,-48,382,"","GameFontHighlightSmall",PALE)
-  values.step2=text(steps,steps,18,-90,382,"","GameFontHighlightSmall",PALE)
-  values.step3=text(steps,steps,18,-132,382,"","GameFontHighlightSmall",PALE)
+  -- Recommended steps are genuine navigation actions, not decorative text.
+  values.step1=action(steps,12,-44,392,"",nil,function() navigate("Quests") end,39)
+  values.step2=action(steps,12,-89,392,"",nil,function() navigate("Leveling") end,39)
+  values.step3=action(steps,12,-134,392,"",nil,function() navigate("Professions") end,39)
   local focus=panel(428,-296,418,186,"TODAY'S FOCUS","Interface\\Icons\\INV_Misc_Note_01")
   local names={"Review active quests","Check leveling priorities","Review material goals","Check client diagnostics"}
   for i,label in ipairs(names) do
@@ -260,7 +261,7 @@ function D.Render()
     end
   end
   if firstReady and firstReady.title then
-    values.step1:SetText("1. Ready to turn in: "..tostring(firstReady.title):sub(1,58))
+    values.step1.caption:SetText("1. Ready to turn in: "..tostring(firstReady.title):sub(1,58))
   elseif questSupported and selected and selected.title then
     values.step1:SetText("1. Quest focus: "..tostring(selected.title):sub(1,65))
   elseif questSupported then
@@ -268,9 +269,9 @@ function D.Render()
   else
     values.step1:SetText("1. Quest API unavailable; check the game log or manual notes.")
   end
-  values.step2:SetText("2. Review "..tostring(class).." leveling and rotation priorities.")
+  values.step2.caption:SetText("2. Review "..tostring(class).." leveling and rotation priorities.")
   if stats and stats.missing>0 then
-    values.step3:SetText("3. Gather "..stats.missing.." units for tracked material goals.")
+    values.step3.caption:SetText("3. Gather "..stats.missing.." units for tracked material goals.")
   else
     values.step3:SetText("3. Add or review your manual profession goals.")
   end
