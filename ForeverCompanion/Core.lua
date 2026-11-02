@@ -455,6 +455,7 @@ local function render()
       lines[#lines+1] = "Selected professions: "..(DB.professions or "Not selected")
       lines[#lines+1] = "Set with /fc professions <names>"
     elseif currentTab == "PvP" then
+      if ForeverCompanionPvPPreparation then lines[#lines+1]=ForeverCompanionPvPPreparation.Format(classToken()) end
       lines[#lines+1] = "Use game-supported tools and coordinate objectives with your group."
     end
   end
