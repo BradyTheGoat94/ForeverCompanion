@@ -270,3 +270,13 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Check that the client version/Interface comes from the live `GetBuildInfo` result; do not assume the provisional .toc Interface is correct.
 - Verify quest/profession/spellbook/XP API presence indicators only say **API exposed; compatibility unverified**, never imply tested or complete support.
 - Confirm the mock-generated `ui_settings_preview.png` is clearly labeled an offline approximation, not a live-client screenshot.
+
+### Quest priorities (v3.14 beta)
+
+- Select a live quest row, click **Pin Focus**, and verify the row shows **[PIN]**, the journal summary increments, and the button changes to **Unpin Focus**. Click again to remove the priority.
+- Pin two quests, cycle sorting through log, zone, ready and pinned; confirm pinned quests appear first without changing the native game quest log order or tracking state.
+- Pin a quest, reload the UI and confirm the priority persists for the same character. Test a second character to confirm pins are not shared.
+- Verify a ready-to-turn-in quest takes precedence over an unfinished pinned quest on the dashboard. After ready quests disappear, confirm the dashboard recommends an unfinished pinned quest and its button opens that quest in the addon's journal.
+- Try `/fcq pin selected`, `/fcq pin 1`, `/fcq pins` and `/fcq clearpins`. Check that an invalid index fails safely, and that the 100-pin limit can be cleared without deleting manual notes.
+- Make the quest API temporarily unavailable or test with no recognized quest API; confirm the addon marks cached data as stale rather than claiming live quest tracking. Pins must never accept, abandon, complete, share or set game quest tracking.
+- Compare the mock-derived `ui_quest_preview.png` with an **actual in-game screenshot** for toolbar alignment, text clipping, compact layout, and gold row highlights. The preview itself does not establish compatibility.
