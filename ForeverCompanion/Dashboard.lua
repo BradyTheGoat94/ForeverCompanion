@@ -69,6 +69,9 @@ local function action(parent,x,y,w,label,icon,fn,height)
   paint(bg,0.12,0.15,0.20,1)
   strip(b,0,0,w,1,{0.60,0.45,0.23,1})
   strip(b,0,-h+1,w,1,{0.45,0.35,0.21,1})
+  local rail=strip(b,0,0,3,h,{0.46,0.35,0.20,1})
+  strip(b,w-11,-6,6,1,{0.67,0.51,0.26,0.9})
+  strip(b,w-6,-6,1,6,{0.67,0.51,0.26,0.9})
   local offset=12
   if icon then
     local i=b:CreateTexture(nil,"ARTWORK")
@@ -87,6 +90,8 @@ local function action(parent,x,y,w,label,icon,fn,height)
   b:SetScript("OnClick",fn)
   b:SetScript("OnEnter",function(self)
     paint(bg,0.24,0.20,0.12,1)
+    paint(rail,0.98,0.73,0.30,1)
+    caption:SetTextColor(1,0.91,0.72)
     if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" then
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
       GameTooltip:SetText(self.detail,1,0.84,0.47)
@@ -95,6 +100,8 @@ local function action(parent,x,y,w,label,icon,fn,height)
   end)
   b:SetScript("OnLeave",function()
     paint(bg,0.12,0.15,0.20,1)
+    paint(rail,0.46,0.35,0.20,1)
+    caption:SetTextColor(0.96,0.88,0.69)
     if GameTooltip and type(GameTooltip.Hide)=="function" then GameTooltip:Hide() end
   end)
   return b
@@ -111,6 +118,13 @@ local function progress(parent,x,y,w,label,color)
   local caption=text(parent,parent,x,y,w,label,"GameFontHighlightSmall",PALE)
   local track=strip(parent,x,y-20,w,9,{0.18,0.22,0.29,1})
   local fill=strip(parent,x,y-20,1,9,color or {0.27,0.72,0.39,1})
+  -- Small graduation marks make progress readable without relying on color.
+  for i=1,3 do
+    local tick=parent:CreateTexture(nil,"OVERLAY")
+    tick:SetPoint("TOPLEFT",parent,"TOPLEFT",x+math.floor(w*i/4),y-20)
+    tick:SetSize(1,9)
+    paint(tick,0.73,0.65,0.46,0.58)
+  end
   local value=text(parent,parent,x+w-78,y,78,"","GameFontHighlightSmall",GOLD)
   value:SetJustifyH("RIGHT")
   bars[label]={fill=fill,width=w,value=value,caption=caption}
