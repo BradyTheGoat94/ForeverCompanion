@@ -22,6 +22,13 @@ jobs:
         run: lua5.1 tests/offline_smoke.lua
       - name: Exercise addon UI in mocked client
         run: lua5.1 tests/mock_ui.lua
+      - name: Upload offline UI text snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-ui-snapshot
+          path: ui_snapshot.txt
+          if-no-files-found: ignore
       - name: Validate manifest
         run: |
           python3 - <<'PY'
