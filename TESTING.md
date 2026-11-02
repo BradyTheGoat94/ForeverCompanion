@@ -172,3 +172,11 @@ This addon is **not verified on the target client**. Use this checklist on the f
 121. Verify spellbook scanning is read-only and never casts or activates abilities.
 122. Verify cooldown guidance remains usable when no spellbook entries are returned.
 123. Check long spellbook output scrolls in standard and compact layouts.
+
+## v3.3 modern spellbook compatibility
+124. Confirm C_SpellBook namespace and Player bank are available on the actual Forever client.
+125. Verify spellbook skill-line offsets and item counts scan without Lua errors.
+126. Verify partial or unloaded spellbook data is labeled unverified, not missing.
+127. Confirm learned spells are reported as found in spellbook rather than claimed verified for Forever mechanics.
+128. Confirm unsupported APIs fail safely and the guide still renders.
+129. Re-audit remaining legacy quest/profession APIs against captured Forever client definitions.
