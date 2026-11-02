@@ -603,6 +603,7 @@ local function createUI()
     b:SetSize(164, 37)
     b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-138-(i-1)*43)
     b.section=section
+    if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Panel(b,164,37) end
     b.navBackground=b:CreateTexture(nil,"BACKGROUND")
     b.navBackground:SetAllPoints(b)
     colorTexture(b.navBackground,0.10,0.13,0.17,1)
