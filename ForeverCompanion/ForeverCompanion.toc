@@ -16,6 +16,7 @@ LevelingCurriculum.lua
 SpecPlanner.lua
 ProfessionScanner.lua
 ProfessionProgress.lua
+ProfessionFieldGuide.lua
 CraftingPlanner.lua
 RecipePlans.lua
 CraftingAdvice.lua
