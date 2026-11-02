@@ -488,3 +488,14 @@ assert(ForeverCompanionCampingReadiness.Check("Alchemy",19).status=="BELOW PREVI
 assert(ForeverCompanionCampingReadiness.Check("Alchemy",20).status=="MEETS PREVIEW GATE")
 assert(ForeverCompanionCampingReadiness.Check("Alchemy",nil).status=="CHECK SKILL")
 assert(ForeverCompanionCampingReadiness.Check("Mining",300).status=="UNCONFIRMED")
+
+dofile("ForeverCompanion/ForeverClassChanges.lua")
+local changes=ForeverCompanionClassChanges
+for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}) do
+ local entry=changes.classes[class]
+ assert(entry and #entry.notes>=3 and entry.source:find("worldofwarcraft.blizzard.com",1,true),"missing sourced class preview: "..class)
+ assert(changes.Format(class,30):find("published beta mechanics may change",1,true),"missing class-preview caution")
+end
+assert(changes.Format("WARRIOR",13):find("Announced for level 14",1,true),"Warrior level 14 preview gate missing")
+assert(changes.Format("MAGE",39):find("Announced for level 40",1,true),"Mage level 40 preview gate missing")
+assert(changes.Format("PALADIN",6):find("Published level 6",1,true),"Paladin level 6 preview gate missing")
