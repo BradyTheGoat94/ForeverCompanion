@@ -5,6 +5,7 @@
 - Added /fcq pin N, /fcq pin selected, /fcq pins and /fcq clearpins. Pins are capped at 100 and never alter the game's quest tracking or map.
 - Added `/fcm shopping`, deterministic ranked manual shortages, named material recommendations on the dashboard, and a top-five shopping summary in the Professions handbook. Counts are manual, not bag scans or market prices.
 - Reworked the quest toolbar spacing so pin, sort, filter and section information remain distinct. Updated the mock-derived quest preview to render the actual toolbar and highlighted rows.
+- Refined the original native FC monogram with a stepped shield, a small inset jewel and symmetrical gold rivets; updated offline previews to approximate the new in-game texture geometry.
 - Expanded Lua and mock UI regression tests for pin persistence, sorting, slash commands, and visual controls. This is offline verification only; no Forever-client compatibility is claimed.
 - Interface version, guide accuracy, original illustrated artwork, licensing and CurseForge version support remain unverified.
 
