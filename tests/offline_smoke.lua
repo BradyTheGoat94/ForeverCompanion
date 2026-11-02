@@ -818,6 +818,7 @@ for class,choices in pairs(ForeverCompanionSpecs) do
    assert(lines[1]:find(choice[1],1,true),"source-reviewed spec mismatch: "..class.." "..choice[1])
    assert(joined:find("https://",1,true),"source-reviewed URL missing: "..class.." "..choice[1])
    assert(joined:find("Re-check after each action",1,true),"decision safety reminder missing: "..class.." "..choice[1])
+   assert(joined:find("not a DPS benchmark",1,true),"unverified benchmark disclaimer missing: "..class.." "..choice[1])
    standardSpecs=standardSpecs+1
   end
  end
