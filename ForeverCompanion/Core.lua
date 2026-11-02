@@ -369,7 +369,7 @@ local function render()
         for i,button in ipairs(handbookButtons) do
           local entry=DATA.professionHandbook[i]
           if entry then
-            button.label:SetText(clipText(entry.name,13))
+            button.label:SetText(clipText(entry.name,18))
             button.icon:SetTexture(entry.icon)
             local selected=professionIndex==i
             colorTexture(button.bg,selected and 0.26 or 0.09,selected and 0.20 or 0.12,selected and 0.12 or 0.16,1)
