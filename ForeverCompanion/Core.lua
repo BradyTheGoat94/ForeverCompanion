@@ -418,7 +418,7 @@ local function createUI()
   end)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v1.8.0 beta  |  /fc help  |  Read-only quest tracking")
+  footer:SetText("v1.8.1 beta  |  /fc help  |  Read-only quest tracking")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
