@@ -138,7 +138,9 @@ function B.Render(tab,class,db)
  summary:SetText("Personal checklist  |  No game progress detected")
  progressCaption:SetText(state.done.." / "..state.total.." reviewed")
  progressCaption:SetTextColor(accent[1],accent[2],accent[3])
- nextTask:SetText(state.nextStep and ("NEXT TO REVIEW: "..state.nextStep) or "ALL ITEMS REVIEWED  |  You can reset this personal checklist at any time.")
+ local preview=state.nextStep
+ if preview and #preview>94 then preview=preview:sub(1,91).."..." end
+ nextTask:SetText(preview and ("NEXT: "..preview) or "ALL ITEMS REVIEWED  |  Reset to practice again.")
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
  fill:SetWidth(state.total>0 and math.max(1,738*state.done/state.total) or 1)
  for i,row in ipairs(rows) do
