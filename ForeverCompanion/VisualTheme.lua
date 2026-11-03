@@ -19,7 +19,8 @@ end
 function T.Panel(parent,w,h)
  -- Charcoal rather than blue-gray; restrained brass edges and a lit title band.
  local bg=parent:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(parent)
- if bg.SetColorTexture then bg:SetColorTexture(0.023,0.025,0.030,1) end
+ if bg.SetColorTexture then bg:SetColorTexture(0.023,0.025,0.030,1)
+ else bg:SetTexture(0.023,0.025,0.030,1) end
  for i=0,7 do strip(parent,2,-2-i*4,w-4,4,0.12-i*.009,0.105-i*.007,0.077-i*.004,0.65) end
  strip(parent,0,0,w,1,0.87,0.71,0.40)
  local bottom=strip(parent,0,-h+1,w,1,0.43,0.35,0.23)
