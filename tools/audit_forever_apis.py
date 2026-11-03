@@ -19,13 +19,16 @@ MISSING = (
 # rather than incorrectly claiming safety from a regex-level inspection.
 def scan():
     hits = []
-    for path in sorted(ROOT.glob("*.lua")):
+    for path in sorted(ROOT.rglob("*.lua")):
         source = path.read_text(encoding="utf-8")
-        for symbol in MISSING:
-            pattern = r"(?<![\w.:'\"])"+re.escape(symbol)+r"\s*\("
-            for m in re.finditer(pattern, source):
-                line = source.count("\n", 0, m.start()) + 1
-                hits.append((path.name, line, symbol))
+        for line, raw in enumerate(source.splitlines(), 1):
+            # Exclude full-line Lua comments; ordinary code remains fail-closed.
+            if raw.lstrip().startswith("--"):
+                continue
+            for symbol in MISSING:
+                pattern = r"(?<![\w.:'\"])"+re.escape(symbol)+r"\s*\("
+                if re.search(pattern, raw):
+                    hits.append((str(path.relative_to(ROOT)), line, symbol))
     return hits
 
 if __name__ == "__main__":
