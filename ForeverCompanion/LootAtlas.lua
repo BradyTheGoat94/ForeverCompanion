@@ -172,12 +172,13 @@ function Loot.CatalogSummary()
   lines[#lines+1]="This is not a complete dungeon loot table."
   return table.concat(lines,"\n")
 end
-function Loot.Filter(query, dungeon, savedOnly, db)
+function Loot.Filter(query, dungeon, savedOnly, db, boss)
   local matches=Loot.Search(query)
   local results={}
   local wishes=savedOnly and Loot.Wishlist(db) or nil
   for _,record in ipairs(matches) do
     if (not dungeon or dungeon=="" or record.dungeon==dungeon)
+      and (not boss or boss=="" or record.boss==boss)
       and (not savedOnly or wishes[record.item]) then
       results[#results+1]=record
     end
@@ -189,8 +190,8 @@ function Loot.Filter(query, dungeon, savedOnly, db)
   end)
   return results
 end
-function Loot.FilterSummary(query,dungeon,savedOnly,db)
-  local matches=Loot.Filter(query,dungeon,savedOnly,db)
+function Loot.FilterSummary(query,dungeon,savedOnly,db,boss)
+  local matches=Loot.Filter(query,dungeon,savedOnly,db,boss)
   local wishes=Loot.Wishlist(db)
   local saved=0
   for _,record in ipairs(matches) do
@@ -200,6 +201,7 @@ function Loot.FilterSummary(query,dungeon,savedOnly,db)
     "ACTIVE FILTERS / "..#matches.." matching drops",
     "Search: "..(type(query)=="string" and query~="" and query or "All items and bosses"),
     "Dungeon: "..(type(dungeon)=="string" and dungeon~="" and dungeon or "All dungeons"),
+    "Boss: "..(type(boss)=="string" and boss~="" and boss or "All bosses"),
     "Wishlist only: "..(savedOnly and "On" or "Off"),
     "Saved in results: "..saved,
   }
