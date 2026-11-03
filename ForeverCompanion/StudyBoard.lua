@@ -47,6 +47,13 @@ function B.Get(tab,class,db)
  end
  return {title=def.title,tasks=def.tasks,links=def.links,key=key,done=done,total=#def.tasks,nextStep=nextStep,checked=saved}
 end
+-- Expose native task tile expectations to the offline snapshot harness.
+-- This describes the actual checklist data, not a fabricated rendered count.
+function B.TaskTileCount(tab,class,db)
+ local state=B.Get(tab,class,db)
+ if not state then return 0 end
+ return math.min(5,state.total)
+end
 function B.Toggle(tab,class,db,index)
  local state=B.Get(tab,class,db)
  if not state or type(db)~="table" or type(index)~="number" or index%1~=0 or not state.tasks[index] then return false end
