@@ -2,14 +2,14 @@
 -- of unlocks, skill ownership, combat readiness, or server mechanics.
 local B={}
 ForeverCompanionStudyBoard=B
-local host,root,heading,summary,evidence,fill,navigate,current,rows,links
+local host,root,heading,summary,evidence,fill,navigate,current,rows,links,progressCaption
 local classAccents={
  WARRIOR={0.78,0.61,0.43},PALADIN={0.96,0.55,0.73},HUNTER={0.67,0.83,0.45},
  ROGUE={1,0.96,0.41},PRIEST={0.90,0.93,1},SHAMAN={0.20,0.55,1},
  MAGE={0.25,0.78,0.92},WARLOCK={0.63,0.55,0.94},DRUID={1,0.49,0.18}
 }
 function B.Accent(tab,class)
- if tab=="Leveling" then return classAccents[class] or {0.94,0.72,0.32} end
+ if tab=="Leveling" then return (type(class)=="string" and classAccents[class]) or {0.94,0.72,0.32} end
  return tab=="Alts" and {0.29,0.77,0.86} or {0.94,0.72,0.32}
 end
 local definitions={
@@ -28,7 +28,7 @@ local definitions={
 }
 local function selection(tab,class)
  if definitions[tab] then return definitions[tab],tab end
- if tab~="Leveling" then return end
+ if tab~="Leveling" or type(class)~="string" then return end
  local spec=ForeverCompanionSpecPlanner and ForeverCompanionSpecPlanner.Get(class)
  local name=spec and spec[1]
  local book=ForeverCompanionSpecPlaybooks and ForeverCompanionSpecPlaybooks[class]
@@ -81,6 +81,7 @@ function B.Create(parent,openPage)
  summary=text(root,16,-43,730,"")
  evidence=text(root,16,-63,735,"");evidence:SetTextColor(0.70,0.76,0.83)
  bar(root,16,-85,738,5,0.16,0.20,0.27);fill=bar(root,16,-85,1,5,0.91,0.68,0.29)
+ progressCaption=text(root,540,-43,210,"", "GameFontHighlightSmall");progressCaption:SetJustifyH("RIGHT")
  rows={}
  for i=1,5 do
   local index=i
@@ -91,7 +92,10 @@ function B.Create(parent,openPage)
   b:SetScript("OnClick",function()
    if current and B.Toggle(current.tab,current.class,current.db,index) and ForeverCompanionRefresh then ForeverCompanionRefresh() end
   end)
-  b:SetScript("OnEnter",function(self) paint(self.bg,0.20,0.18,0.13) end)
+  b:SetScript("OnEnter",function(self)
+   local accent=current and B.Accent(current.tab,current.class) or {0.94,0.72,0.32}
+   paint(self.bg,0.08+accent[1]*0.12,0.08+accent[2]*0.12,0.08+accent[3]*0.12)
+  end)
   b:SetScript("OnLeave",function() if current then B.Render(current.tab,current.class,current.db) end end)
   rows[i]=b
  end
@@ -116,15 +120,19 @@ function B.Render(tab,class,db)
  heading:SetText(state.title)
  heading:SetTextColor(accent[1],accent[2],accent[3])
  paint(fill,accent[1],accent[2],accent[3])
- summary:SetText(state.done.." / "..state.total.." reviewed  |  Personal checklist; no game progress is detected")
+ summary:SetText("Personal checklist  |  No game progress detected")
+ progressCaption:SetText(state.done.." / "..state.total.." reviewed")
+ progressCaption:SetTextColor(accent[1],accent[2],accent[3])
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
- fill:SetWidth(math.max(1,738*state.done/state.total))
+ fill:SetWidth(state.total>0 and math.max(1,738*state.done/state.total) or 1)
  for i,row in ipairs(rows) do
   local task=state.tasks[i]
   if task then
    row:Show();row.number:SetText(state.checked[i]==true and "DONE" or string.format("%02d",i));row.number:SetTextColor(state.checked[i]==true and 0.43 or accent[1],state.checked[i]==true and 0.91 or accent[2],state.checked[i]==true and 0.66 or accent[3])
    paint(row.rail,state.checked[i]==true and 0.43 or accent[1],state.checked[i]==true and 0.91 or accent[2],state.checked[i]==true and 0.66 or accent[3])
-   row.caption:SetText(task);paint(row.bg,state.checked[i]==true and 0.10 or 0.065,state.checked[i]==true and 0.19 or 0.085,0.12)
+   row.caption:SetText(task)
+   row.caption:SetTextColor(state.checked[i]==true and 0.66 or 0.94,state.checked[i]==true and 0.81 or 0.90,state.checked[i]==true and 0.75 or 0.81)
+   paint(row.bg,state.checked[i]==true and 0.10 or 0.065,state.checked[i]==true and 0.19 or 0.085,0.12)
   else row:Hide() end
  end
  for i,link in ipairs(links) do link:SetText(state.links[i][1]) end
