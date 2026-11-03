@@ -63,6 +63,14 @@ for class in pairs(ForeverCompanionSpecs) do
  ForeverCompanionDB.specSelections={[class]="2"}
  assert(select(2,ForeverCompanionSpecPlanner.Get(class))==2,"valid numeric strings remain supported")
 end
+-- Unknown and malformed class identifiers must use safe fallbacks.
+for _,badClass in ipairs({false,42,{}}) do
+ local spec,index,total=ForeverCompanionSpecPlanner.Get(badClass)
+ assert(spec==nil and index==1 and total==0)
+ assert(ForeverCompanionSpecPlanner.Next(badClass)==nil)
+ assert(b.Get('Leveling',badClass,db)==nil)
+ assert(#b.Accent('Leveling',badClass)==3)
+end
 -- Missing class context must not index SavedVariables with nil.
 local missing,missingIndex,missingTotal=ForeverCompanionSpecPlanner.Get(nil)
 assert(missing==nil and missingIndex==1 and missingTotal==0,'nil class lookup must remain safe')
