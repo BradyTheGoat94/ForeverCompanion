@@ -290,3 +290,25 @@ function Loot.BossSummary(dungeon,boss,db)
   end
   return table.concat(lines,"\n")
 end
+
+-- A compact, evidence-aware collection tracker. Counts unique recorded items only;
+-- it never implies that a dungeon has a complete loot table.
+function Loot.Progress(db,dungeon,boss)
+  local wishes=Loot.Wishlist(db)
+  local total,saved=0,0
+  for _,record in ipairs(Loot.records) do
+    if (not dungeon or dungeon=="" or record.dungeon==dungeon)
+      and (not boss or boss=="" or record.boss==boss) then
+      total=total+1
+      if wishes[record.item] then saved=saved+1 end
+    end
+  end
+  return {total=total,saved=saved}
+end
+function Loot.ProgressSummary(db,dungeon,boss)
+  local progress=Loot.Progress(db,dungeon,boss)
+  local scope=type(boss)=="string" and boss~="" and boss
+    or (type(dungeon)=="string" and dungeon~="" and dungeon or "All recorded dungeons")
+  return "WISHLIST TARGETS / "..scope..": "..progress.saved.." of "..progress.total
+    .." recorded drops saved (catalog may be incomplete; saved does not mean obtained)"
+end
