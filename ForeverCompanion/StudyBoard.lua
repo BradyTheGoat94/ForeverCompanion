@@ -117,7 +117,7 @@ function B.Create(parent,openPage)
  for i=1,2 do
   local index=i
   local b=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");b:SetSize(245,24);b:SetPoint("TOPLEFT",root,"TOPLEFT",16+(i-1)*255,-338)
-  b:SetScript("OnClick",function() if current and navigate then navigate(current.state.links[index][2]) end end)
+  b:SetScript("OnClick",function() if current and navigate and current.state.links[index] then navigate(current.state.links[index][2]) end end)
   links[i]=b
  end
  local reset=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");reset:SetSize(180,24);reset:SetPoint("TOPRIGHT",root,"TOPRIGHT",-16,-338);reset:SetText("Reset practice ticks")
@@ -160,7 +160,10 @@ function B.Render(tab,class,db)
    paint(row.bg,state.checked[i]==true and 0.10 or 0.065,state.checked[i]==true and 0.19 or 0.085,0.12)
   else row:Hide() end
  end
- for i,link in ipairs(links) do link:SetText(state.links[i][1]) end
+ for i,link in ipairs(links) do
+  local target=state.links[i]
+  if target then link:SetText(target[1]);link:Show() else link:Hide() end
+ end
  root:Show()
 end
 
