@@ -58,7 +58,7 @@ function B.Toggle(tab,class,db,index)
 end
 function B.Reset(tab,class,db)
  local state=B.Get(tab,class,db)
- if state and type(db.studyChecks)=="table" then db.studyChecks[state.key]=nil end
+ if state and type(db)=="table" and type(db.studyChecks)=="table" then db.studyChecks[state.key]=nil end
 end
 local function paint(t,r,g,b,a)
  if t.SetColorTexture then t:SetColorTexture(r,g,b,a or 1) else t:SetTexture(r,g,b,a or 1) end
