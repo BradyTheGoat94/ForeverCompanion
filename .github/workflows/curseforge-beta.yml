@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout develop
         uses: actions/checkout@v4
+      - name: Scan for removed legacy API calls
+        run: python3 tools/audit_forever_apis.py
       - name: Validate addon manifest and bundled files
         run: python3 tools/build_curseforge_beta.py --check-only
       - name: Build reproducible installable beta ZIP
