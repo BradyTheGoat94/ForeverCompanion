@@ -241,3 +241,50 @@ function Loot.Format(query)
   end
   return table.concat(lines,"\n")
 end
+
+-- Boss-first navigation for players who know the dungeon but not the item name.
+-- This is deliberately a read-only index of attributed records, not a complete loot table.
+function Loot.BossNames(dungeon)
+  local seen, names = {}, {}
+  for _, record in ipairs(Loot.records) do
+    if (not dungeon or dungeon=="" or record.dungeon==dungeon) and not seen[record.boss] then
+      seen[record.boss]=true
+      names[#names+1]=record.boss
+    end
+  end
+  table.sort(names)
+  return names
+end
+
+function Loot.BossDrops(dungeon,boss)
+  local matches={}
+  if type(dungeon)~="string" or dungeon=="" or type(boss)~="string" or boss=="" then
+    return matches
+  end
+  for _,record in ipairs(Loot.records) do
+    if record.dungeon==dungeon and record.boss==boss then
+      matches[#matches+1]=record
+    end
+  end
+  table.sort(matches,function(a,b) return a.item<b.item end)
+  return matches
+end
+
+function Loot.BossSummary(dungeon,boss,db)
+  local matches=Loot.BossDrops(dungeon,boss)
+  local lines={"BOSS LOOT / "..tostring(boss or "Unknown"),
+    "Dungeon: "..tostring(dungeon or "Unknown"),
+    "Records: "..#matches.." (not necessarily complete)"}
+  if #matches==0 then
+    lines[#lines+1]="No source-attributed drops are recorded for this boss."
+  end
+  local wishes=Loot.Wishlist(db)
+  for _,record in ipairs(matches) do
+    lines[#lines+1]=(wishes[record.item] and "[WISHLIST] " or "")..record.item
+    lines[#lines+1]="Evidence: "..record.status
+    lines[#lines+1]="Source: "..record.source
+    lines[#lines+1]="Drop chance: "..(type(record.dropRate)=="number" and
+      (tostring(record.dropRate).."% reported; methodology unverified") or "unknown")
+  end
+  return table.concat(lines,"\\n")
+end
