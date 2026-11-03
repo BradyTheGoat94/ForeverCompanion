@@ -1,3 +1,23 @@
+## 3.16.0-beta: illustrated class-guide workspace (develop)
+
+- Replaced the two small class cards with a wide illustrated class banner,
+  breadcrumb, large class icon/name, specialization/role line and XP strip.
+- Added eight functional, persisted topic tabs across all nine classes: Overview,
+  Talents, Rotations, Leveling, Dungeons, PvP, Gear & Stats and Professions.
+- Added original Warrior header artwork; other classes retain the neutral citadel
+  backdrop. Class and ability icons remain client-sourced.
+- Enlarged priority icons and number badges, added concise headings and flow
+  markers, and made the explanation table clickable with full selected detail.
+- Added class-specific quick tips and resource/spec information. Context and topic
+  switches preserve the underlying advisory data and do not automate gameplay.
+- Moved specialization/role controls into the top header, added class-strip icons,
+  and removed duplicate class-page headings/footer controls from the reading area.
+- Added guarded C_Spell.GetSpellTexture artwork lookup with safe class-icon fallback;
+  missing APIs, unresolved English names and invalid/restricted results remain safe.
+- Expanded offline coverage for all 72 class/topic combinations, all 45 class/context
+  combinations, topic state recovery and selected table instructions. Native
+  previews remain approximations; live-client visual/interaction approval is pending.
+
 ## 3.15.0-beta: reference-inspired visual rebuild (develop)
 
 - Added original illustrated citadel and transparent heraldic crest textures to

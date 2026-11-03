@@ -27,6 +27,32 @@ CI also captures `ui_encounter_snapshot.txt` and renders
 `ui_encounter_preview.png` from the browser's native widget coordinates. This is
 an offline illustration with approximate fonts, not an in-game screenshot.
 
+## Illustrated class guide (3.16.0-beta, develop)
+
+The **Class Guides** sidebar entry opens a wide class banner with eight functional
+blue-accented topic tabs. Choose Overview, Talents, Rotations, Leveling, Dungeons,
+PvP, Gear & Stats or Professions. The selected topic is saved per character;
+invalid saved values safely return to Rotations. Topic content uses the existing
+advisory references. Talents is a planning reference, not an interactive talent
+allocation tool; Gear & Stats does not invent stat weights or best-in-slot lists.
+
+The rotation view has a direct five-context rail, larger numbered icon tiles,
+clickable explanation rows, class quick information and a complete selected
+instruction. Concise captions never replace the full conditional instruction.
+The class strip now includes icons, while specialization and role selectors sit
+in the top header. Long-form guidance and the practice desk remain below.
+
+Warrior has original illustrated header art. Other classes use the neutral
+citadel backdrop. Spell artwork is read from the client through a guarded optional
+API where a reference cue resolves; class icons are the fallback. The icon does
+not mean a spell is trained, a talent is selected, or an action is recommended now.
+English-name lookup may fall back on clients using another language.
+
+`ui_class_native.png`, `ui_rotation_native.png` and `ui_topic_native.png` in CI
+show captured widget layout with original project art. Fonts and game icons are
+approximations. Live client appearance, texture loading and interactions still
+require testing before release approval.
+
 ## Visual rebuild (3.15.0-beta, develop)
 
 The dashboard now uses an original illustrated citadel banner and a matching

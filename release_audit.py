@@ -18,7 +18,7 @@ for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellB
 # Blizzard artwork or executable payloads. Keep any future assets explicitly
 # reviewed instead of silently expanding the allowed package surface.
 allowed_extensions={".lua",".toc"}
-reviewed_assets={"Media/Citadel.tga":(1024,256,24),"Media/Crest.tga":(256,256,32)}
+reviewed_assets={"Media/Citadel.tga":(1024,256,24),"Media/Crest.tga":(256,256,32),"Media/Warrior.tga":(1024,256,24)}
 for path in root.rglob("*"):
  if path.is_file() and path.relative_to(root).as_posix() in reviewed_assets:
   import struct

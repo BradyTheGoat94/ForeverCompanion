@@ -917,3 +917,17 @@ for _,class in ipairs({"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","M
 end
 assertEqual(checklistCount,9,"all class hero checklists present")
 assertEqual(#ForeverCompanionBeginnerChecklist("UNKNOWN"),0,"unsupported class must not invent coaching")
+
+-- Icon lookup is read-only and must never imply availability or crash the guide.
+local oldSpellAPI=C_Spell
+local originalIcon=ForeverCompanionRotationCardIcon('WARRIOR','leveling',1)
+C_Spell={GetSpellTexture=function(name) assert(name=='Battle Shout');return 12345 end}
+assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','leveling',1),12345,'client-native spell icon')
+assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','boss',1),originalIcon,'generic context keeps class cue')
+for _,result in ipairs({0,-1,math.huge,0/0,{},'https://example.test/icon'}) do
+ C_Spell.GetSpellTexture=function() return result end
+ assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','leveling',1),originalIcon,'invalid artwork result falls back')
+end
+C_Spell.GetSpellTexture=function() error('unavailable client texture API') end
+assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','leveling',1),originalIcon,'texture API error')
+C_Spell=oldSpellAPI

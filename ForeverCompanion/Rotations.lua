@@ -219,3 +219,44 @@ function ForeverCompanionBeginnerAvailability(class,scan)
  end
  return result
 end
+
+-- Concise display labels for the existing four-step leveling references.
+-- These do not replace the complete instructions or imply a fixed spell sequence.
+ForeverCompanionRotationCardTitles={
+ WARRIOR={"Shout / engage","Manage rage","Execute window","Talent attacks"},
+ PALADIN={"Blessing / Seal","Judgement","Seal upkeep","Talent attacks"},
+ HUNTER={"Pet preparation","Ranged position","Serpent Sting","Shots / spacing"},
+ ROGUE={"Poison preparation","Build points","Slice and Dice","Finishers"},
+ PRIEST={"Self-buffs","Shadow Word: Pain","Primary casts","Mana / survival"},
+ SHAMAN={"Imbue / totems","Melee priority","Caster priority","Reserve mana"},
+ MAGE={"Arcane Intellect","Frostbolt","Nova / reposition","Fire alternative"},
+ WARLOCK={"Pet preparation","Damage effects","Filler casts","Refresh / recover"},
+ DRUID={"Choose form","Cat priorities","Caster priorities","Resource / healing"}
+}
+
+-- Client artwork lookup only; an icon never establishes that a spell is learned.
+-- API contract: Blizzard_APIDocumentationGenerated/SpellDocumentation.lua,
+-- GetSpellTexture (SpellIdentifier -> iconID, may return nothing).
+local iconCues={
+ WARRIOR={"Battle Shout","Heroic Strike","Execute"},
+ PALADIN={"Blessing of Might","Judgement","Seal of Righteousness","Crusader Strike"},
+ HUNTER={"Call Pet","Auto Shot","Serpent Sting","Arcane Shot"},
+ ROGUE={"Instant Poison","Sinister Strike","Slice and Dice","Eviscerate"},
+ PRIEST={"Power Word: Fortitude","Shadow Word: Pain","Mind Blast"},
+ SHAMAN={"Rockbiter Weapon","Earth Shock","Lightning Bolt"},
+ MAGE={"Arcane Intellect","Frostbolt","Frost Nova","Fireball"},
+ WARLOCK={"Summon Imp","Corruption","Shadow Bolt","Life Tap"},
+ DRUID={"Cat Form","Claw","Moonfire","Healing Touch"}
+}
+function ForeverCompanionRotationCardIcon(class,mode,index)
+ local cue=mode=="leveling" and iconCues[class] and iconCues[class][index]
+ if cue and type(C_Spell)=="table" and type(C_Spell.GetSpellTexture)=="function" then
+  local ok,icon=pcall(function()
+   local value=C_Spell.GetSpellTexture(cue)
+   if type(value)=="number" and value==value and value>0 and value<math.huge then return value end
+  end)
+  if ok and icon then return icon end
+ end
+ local entry=ForeverCompanionData and ForeverCompanionData.classHandbook and ForeverCompanionData.classHandbook[class]
+ return entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09"
+end

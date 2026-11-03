@@ -4,6 +4,7 @@ local T={}
 ForeverCompanionVisualTheme=T
 T.citadel="Interface\\AddOns\\ForeverCompanion\\Media\\Citadel.tga"
 T.crest="Interface\\AddOns\\ForeverCompanion\\Media\\Crest.tga"
+T.warrior="Interface\\AddOns\\ForeverCompanion\\Media\\Warrior.tga"
 function T.Font(widget,size,display)
  if widget and type(widget.SetFont)=="function" then
   pcall(widget.SetFont,widget,display and "Fonts\\MORPHEUS.TTF" or "Fonts\\FRIZQT__.TTF",size,"")

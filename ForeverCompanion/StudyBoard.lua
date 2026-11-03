@@ -101,7 +101,7 @@ function B.Render(tab,class,db)
  local state=B.Get(tab,class,db)
  if not state then root:Hide();current=nil;return end
  current={tab=tab,class=class,db=db,state=state}
- root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -586 or -5)
+ root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -580 or -5)
  heading:SetText(state.title)
  summary:SetText(state.done.." / "..state.total.." reviewed  |  Personal checklist; no game progress is detected")
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")

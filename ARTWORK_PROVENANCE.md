@@ -49,3 +49,25 @@ checks that ZIP bytes match the project assets. The offline native renderer uses
 the bundled textures and captured widget coordinates, colors, labels, visibility,
 and parent relationships. It approximates client fonts and Blizzard icons;
 real-client texture loading, scaling and text appearance must still be tested.
+
+## Warrior header (3.16 beta)
+
+`ForeverCompanion/Media/Warrior.tga` is a new original generated illustration,
+1024×256 RGB uncompressed TGA, fitted from its PNG master with a top-aligned crop.
+It appears only for the Warrior preview. The source is original fictional character
+art, not a Blizzard character, a game screenshot or evidence of available gear.
+
+Built-in image-generation prompt: Use case: stylized-concept. Asset type: original
+illustrated header artwork for the Warrior class page of an independent fantasy RPG
+companion addon, Forever Companion. Wide cinematic panorama, premium hand-painted
+fantasy game artwork. Rightmost third: a battle-worn human warrior with
+shoulder-length brown hair in elaborately engraved antique-gold and charcoal plate
+armor, a large round burnished shield and broad pauldrons, resolute expression,
+chest-up three-quarter view. Behind him dark volcanic mountains and faint warm
+ember light. Left TWO THIRDS: very dark charcoal and midnight-blue smoke, almost
+black negative space for class title and readable UI copy; no major subjects there.
+Sophisticated restrained colors, warm metal highlights, crisp dramatic facial
+detail, depth and atmosphere. It should feel elegant and heroic, not cartoonish.
+No text, no lettering, no frames, no UI, no badges, no trademarks, no logos, no
+watermark. Original fictional character and original armor, not an existing named
+character. Compose for a shallow wide class banner crop.

@@ -1,333 +1,157 @@
--- Class guide hero cards. Native, read-only UI: no spell casts or protected actions.
+-- Class-banner and topic navigation. All controls change addon presentation only.
 local Guide={}
 ForeverCompanionClassGuide=Guide
-local root, values, xpFill
-local GOLD={0.93,0.70,0.30}
-local PALE={0.92,0.89,0.81}
-local MUTED={0.67,0.72,0.78}
-local function paint(texture,r,g,b,a)
-  if texture.SetColorTexture then texture:SetColorTexture(r,g,b,a or 1)
-  else texture:SetTexture(r,g,b,a or 1) end
+local root,values,topics,topicPanel,topicTitle,topicBody,topicLink,navigate
+local views={"Overview","Talents","Rotations","Leveling","Dungeons","PvP","Gear & Stats","Professions"}
+local function text(parent,x,y,w,value,size,gold)
+ local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetWidth(w);f:SetJustifyH("LEFT");f:SetText(value or "")
+ ForeverCompanionVisualTheme.Font(f,size or 12)
+ f:SetTextColor(gold and .97 or .92,gold and .80 or .90,gold and .48 or .84)
+ return f
 end
-local function label(parent,x,y,w,value,font,color)
-  local f=parent:CreateFontString(nil,"OVERLAY",font or "GameFontHighlightSmall")
-  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
-  f:SetWidth(w)
-  f:SetJustifyH("LEFT")
-  f:SetText(value or "")
-  if color then f:SetTextColor(color[1],color[2],color[3]) end
-  return f
+function Guide.GetView()
+ local wanted=type(ForeverCompanionDB)=="table" and ForeverCompanionDB.classGuideView
+ for _,name in ipairs(views) do if name==wanted then return name end end
+ return "Rotations"
 end
-local function plate(parent,x,y,w,h)
-  local f=CreateFrame("Frame",nil,parent)
-  f:SetSize(w,h)
-  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
-  local bg=f:CreateTexture(nil,"BACKGROUND")
-  bg:SetAllPoints(f)
-  paint(bg,0.035,0.044,0.066,0.99)
-  local trim=f:CreateTexture(nil,"ARTWORK")
-  trim:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
-  trim:SetSize(w,2)
-  paint(trim,0.82,0.59,0.25)
-  local bottom=f:CreateTexture(nil,"ARTWORK")
-  bottom:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",0,0)
-  bottom:SetSize(w,1)
-  paint(bottom,0.35,0.29,0.20)
-  local left=f:CreateTexture(nil,"ARTWORK")
-  left:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
-  left:SetSize(1,h)
-  paint(left,0.35,0.29,0.20)
-  local right=f:CreateTexture(nil,"ARTWORK")
-  right:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
-  right:SetSize(1,h)
-  paint(right,0.35,0.29,0.20)
-  -- Double-line gilded inlay, ornamental corner studs, and velvet header.
-  local function ornament(x,y,w,h,r,g,b,a)
-    local t=f:CreateTexture(nil,"ARTWORK")
-    t:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
-    t:SetSize(w,h)
-    paint(t,r,g,b,a)
+function Guide.SelectView(name)
+ for _,valid in ipairs(views) do
+  if valid==name and type(ForeverCompanionDB)=="table" then
+   ForeverCompanionDB.classGuideView=name
+   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+   return true
   end
-  ornament(4,-5,w-8,1,0.58,0.39,0.17,0.9)
-  ornament(5,-h+6,w-10,1,0.46,0.33,0.18,0.7)
-  ornament(4,-4,16,2,0.98,0.76,0.34,1)
-  ornament(4,-4,2,16,0.98,0.76,0.34,1)
-  ornament(w-20,-4,16,2,0.98,0.76,0.34,1)
-  ornament(w-6,-4,2,16,0.98,0.76,0.34,1)
-  ornament(4,-h+19,2,15,0.68,0.49,0.23,0.95)
-  ornament(w-6,-h+19,2,15,0.68,0.49,0.23,0.95)
-  ornament(13,-34,w-26,1,0.57,0.42,0.23,0.55)
-  -- Soft inset framing and corner filigree give the hero cards depth while
-  -- keeping all artwork native to the client and inexpensive to render.
-  ornament(8,-9,w-16,1,0.28,0.23,0.17,0.46)
-  ornament(8,-h+10,w-16,1,0.70,0.48,0.22,0.34)
-  ornament(9,-12,1,h-24,0.43,0.33,0.21,0.28)
-  ornament(w-10,-12,1,h-24,0.43,0.33,0.21,0.28)
-  ornament(23,-12,13,1,0.90,0.69,0.32,0.75)
-  ornament(w-36,-12,13,1,0.90,0.69,0.32,0.75)
-  ornament(23,-h+13,13,1,0.78,0.54,0.24,0.60)
-  ornament(w-36,-h+13,13,1,0.78,0.54,0.24,0.60)
-  -- Header title remains legible over a restrained velvet-colored band.
-  local velvet=f:CreateTexture(nil,"BORDER")
-  velvet:SetPoint("TOPLEFT",f,"TOPLEFT",11,-12)
-  velvet:SetSize(w-22,21)
-  paint(velvet,0.17,0.12,0.085,0.33)
-
-  if type(ForeverCompanionOrnaments)=="table" and type(ForeverCompanionOrnaments.Hero)=="function" then
-    pcall(ForeverCompanionOrnaments.Hero,f,w,h)
-  end
-  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Panel(f,w,h) end
-  return f
+ end
+ return false
 end
-local function safeXP()
-  if type(UnitXP)~="function" or type(UnitXPMax)~="function" then return nil end
-  local ok,a,b=pcall(function() return UnitXP("player"),UnitXPMax("player") end)
-  if not ok then return nil end
-  local success,ratio=pcall(function()
-    if type(a)=="number" and type(b)=="number" and a==a and b==b and b>0 and b<math.huge then
-      return math.max(0,math.min(1,a/b))
-    end
-  end)
-  if success and type(ratio)=="number" and ratio==ratio then return ratio end
+function Guide.Create(parent,openPage)
+ navigate=openPage
+ root=CreateFrame("Frame",nil,parent);root:SetPoint("TOPLEFT",parent,"TOPLEFT",5,-4);root:SetSize(780,165)
+ values={};topics={};Guide.topicButtons=topics
+ local hero=CreateFrame("Frame",nil,root);hero:SetSize(780,118);hero:SetPoint("TOPLEFT",root,"TOPLEFT",0,0)
+ ForeverCompanionVisualTheme.Panel(hero,780,118)
+ values.art=ForeverCompanionVisualTheme.Banner(hero,2,-2,776,114,1)
+ values.crumb=text(hero,16,-12,480,"CLASS GUIDES",11,true)
+ local iconMat=hero:CreateTexture(nil,"ARTWORK");iconMat:SetPoint("TOPLEFT",hero,"TOPLEFT",14,-39);iconMat:SetSize(60,60);iconMat:SetColorTexture(.76,.62,.36,1)
+ values.icon=hero:CreateTexture(nil,"OVERLAY");values.icon:SetPoint("TOPLEFT",hero,"TOPLEFT",17,-42);values.icon:SetSize(54,54)
+ values.name=text(hero,89,-37,445,"",30,true)
+ values.role=text(hero,91,-75,425,"",12)
+ values.focus=text(hero,16,-98,495,"",10)
+ values.xp=text(hero,545,-94,218,"",10,true)
+ local xpTrack=hero:CreateTexture(nil,"ARTWORK");xpTrack:SetPoint("TOPLEFT",hero,"TOPLEFT",545,-111);xpTrack:SetSize(218,3);xpTrack:SetColorTexture(.08,.10,.14,1)
+ values.xpFill=hero:CreateTexture(nil,"OVERLAY");values.xpFill:SetPoint("TOPLEFT",hero,"TOPLEFT",545,-111);values.xpFill:SetSize(1,3);values.xpFill:SetColorTexture(.76,.60,.32,1)
+ hero:EnableMouse(true)
+ hero:SetScript("OnEnter",function(self)
+  if GameTooltip then
+   GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:SetText("CLASS PRACTICE / ADVISORY",1,.8,.4)
+   GameTooltip:AddLine(values.tip or "Check the class reference below.",.9,.9,.85,true)
+   GameTooltip:AddLine(values.band or "Level unavailable",.7,.8,.9,true)
+   GameTooltip:AddLine("Illustrative artwork. Spell availability and live-client behavior require verification.",.7,.75,.8,true)
+   GameTooltip:Show()
+  end
+ end)
+ hero:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ for i,name in ipairs(views) do
+  local b=CreateFrame("Button",nil,root);b:SetSize(93,32);b:SetPoint("TOPLEFT",root,"TOPLEFT",(i-1)*98,-129)
+  b.bg=ForeverCompanionVisualTheme.Button(b,93,32)
+  b.label=text(b,3,-10,87,name,11);b.label:SetJustifyH("CENTER");b.view=name
+  b.rail=b:CreateTexture(nil,"OVERLAY");b.rail:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",0,0);b.rail:SetSize(93,2)
+  b:SetScript("OnClick",function() Guide.SelectView(name) end)
+  topics[i]=b
+ end
+ topicPanel=CreateFrame("Frame",nil,parent);topicPanel:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);topicPanel:SetSize(770,352)
+ ForeverCompanionVisualTheme.Panel(topicPanel,770,352)
+ topicTitle=text(topicPanel,16,-13,730,"",18,true)
+ topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetHeight(242)
+ topicLink=CreateFrame("Button",nil,topicPanel,"UIPanelButtonTemplate");topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
+ topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
+ Guide.topicPanel=topicPanel;Guide.topicBody=topicBody
+ topicPanel:Hide();root:Hide()
 end
-local function short(value,max)
-  value=tostring(value or "Not available"):gsub("[\r\n]"," ")
-  if #value>max then return value:sub(1,max-3).."..." end
-  return value
+local function xp()
+ if type(UnitXP)~="function" or type(UnitXPMax)~="function" then return nil end
+ local ok,value=pcall(function()
+  local a,b=UnitXP("player"),UnitXPMax("player")
+  if type(a)=="number" and type(b)=="number" and a==a and b==b and b>0 and b<math.huge then return math.max(0,math.min(1,a/b)) end
+ end)
+ return ok and value or nil
 end
-function Guide.Create(parent)
-  root=CreateFrame("Frame",nil,parent)
-  root:SetSize(780,151)
-  root:SetPoint("TOPLEFT",parent,"TOPLEFT",5,-4)
-  values={}
-  local profile=plate(root,0,0,382,151)
-  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Banner(profile,2,-35,378,113,.34) end
-  local profileGlow=profile:CreateTexture(nil,"BORDER")
-  profileGlow:SetPoint("TOPLEFT",profile,"TOPLEFT",7,-39)
-  profileGlow:SetSize(368,102)
-  paint(profileGlow,0.08,0.13,0.20,0.38)
-  -- Built-in class artwork provides a real native hero motif without shipping
-  -- copyrighted screenshots or relying on external image downloads.
-  values.heroArt=profile:CreateTexture(nil,"BORDER")
-  values.heroArt:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-15,-37)
-  values.heroArt:SetSize(122,110)
-  if type(values.heroArt.SetAlpha)=="function" then values.heroArt:SetAlpha(0.12) end
-  local heroVeil=profile:CreateTexture(nil,"ARTWORK")
-  heroVeil:SetPoint("TOPRIGHT",profile,"TOPRIGHT",-11,-36)
-  heroVeil:SetSize(113,110)
-  paint(heroVeil,0.025,0.035,0.055,0.19)
-  label(profile,15,-13,300,"CLASS GUIDE  /  LEVELING","GameFontNormal",GOLD)
-  local profileRule=profile:CreateTexture(nil,"ARTWORK")
-  profileRule:SetPoint("TOPLEFT",profile,"TOPLEFT",16,-33)
-  profileRule:SetSize(350,1)
-  paint(profileRule,0.65,0.47,0.24,0.56)
-  local iconFrame=profile:CreateTexture(nil,"ARTWORK")
-  iconFrame:SetPoint("TOPLEFT",profile,"TOPLEFT",13,-41)
-  iconFrame:SetSize(54,54)
-  iconFrame:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-  -- Two native gold rings frame the class icon without external assets.
-  local iconInset=profile:CreateTexture(nil,"ARTWORK")
-  iconInset:SetPoint("TOPLEFT",profile,"TOPLEFT",15,-43)
-  iconInset:SetSize(50,50)
-  paint(iconInset,0.78,0.57,0.27,0.70)
-  local iconMat=profile:CreateTexture(nil,"ARTWORK")
-  iconMat:SetPoint("TOPLEFT",profile,"TOPLEFT",17,-45)
-  iconMat:SetSize(46,46)
-  paint(iconMat,0.045,0.055,0.075,1)
-  values.icon=profile:CreateTexture(nil,"OVERLAY")
-  values.icon:SetPoint("TOPLEFT",profile,"TOPLEFT",16,-44)
-  values.icon:SetSize(48,48)
-  values.name=label(profile,80,-45,265,"","GameFontNormalLarge",PALE)
-  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(values.name,23) end
-  values.classSigil=label(profile,330,-13,36,"","GameFontNormal",GOLD)
-  values.role=label(profile,80,-73,255,"","GameFontHighlightSmall",MUTED)
-  values.coachHint=label(profile,80,-87,270,"HOVER FOR COMBAT STEPS","GameFontNormalSmall",GOLD)
-  values.band=label(profile,16,-101,350,"","GameFontHighlightSmall",GOLD)
-  values.tip=label(profile,16,-123,352,"","GameFontHighlightSmall",PALE)
-  local focusMarker=profile:CreateTexture(nil,"OVERLAY")
-  focusMarker:SetPoint("TOPLEFT",profile,"TOPLEFT",9,-123)
-  focusMarker:SetSize(3,11)
-  paint(focusMarker,0.94,0.70,0.29,0.92)
-  -- The compact card shows a short actionable focus. Hover for the complete,
-  -- class-specific practice note; this tooltip never changes game state.
-  profile:EnableMouse(true)
-  profile:SetScript("OnEnter",function(self)
-    if GameTooltip and values.currentTip then
-      GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-      GameTooltip:SetText("CURRENT LEVELING FOCUS",0.96,0.75,0.36)
-      GameTooltip:AddLine(values.currentTip,0.92,0.89,0.82,true)
-      if type(ForeverCompanionBeginnerChecklist)=="function" then
-        local ok,checklist=pcall(ForeverCompanionBeginnerChecklist,values.currentClass)
-        if ok and type(checklist)=="table" then
-          GameTooltip:AddLine(" ",1,1,1)
-          for _,step in ipairs(checklist) do
-            GameTooltip:AddLine(step,0.88,0.83,0.70,true)
-          end
-        end
-      end
-      GameTooltip:AddLine("General guidance: verify skills and unlocks in the live Forever client.",0.67,0.76,0.83,true)
-      GameTooltip:Show()
-    end
-  end)
-  profile:SetScript("OnLeave",function()
-    if GameTooltip then GameTooltip:Hide() end
-  end)
-  local build=plate(root,394,0,386,151)
-  local buildGlow=build:CreateTexture(nil,"BORDER")
-  buildGlow:SetPoint("TOPLEFT",build,"TOPLEFT",7,-39)
-  buildGlow:SetSize(372,102)
-  paint(buildGlow,0.13,0.09,0.06,0.32)
-  label(build,15,-13,345,"TALENTS  /  ROTATIONS  /  GEAR","GameFontNormal",GOLD)
-  local buildRule=build:CreateTexture(nil,"ARTWORK")
-  buildRule:SetPoint("TOPLEFT",build,"TOPLEFT",16,-33)
-  buildRule:SetSize(354,1)
-  paint(buildRule,0.65,0.47,0.24,0.56)
-  label(build,339,-13,30,"II","GameFontNormal",GOLD)
-  -- Expose specialization-specific practice steps without obscuring the compact card.
-  build:EnableMouse(true)
-  build:SetScript("OnEnter",function(self)
-    if not GameTooltip then return end
-    GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-    GameTooltip:SetText("BEGINNER ROTATION PRACTICE",0.96,0.75,0.36)
-    local quick
-    if type(ForeverCompanionQuickStartLines)=="function" then
-      local ok,result=pcall(ForeverCompanionQuickStartLines,values.currentClass)
-      if ok and type(result)=="table" then quick=result end
-    end
-    if type(quick)=="table" and #quick>0 then
-      for _,line in ipairs(quick) do
-        if type(line)=="string" then GameTooltip:AddLine(line,0.92,0.89,0.82,true) end
-      end
-    else
-      GameTooltip:AddLine("Select a specialization to see its practice steps.",0.92,0.89,0.82,true)
-    end
-    GameTooltip:AddLine("Practice advice only; check trained abilities and the sourced priority.",0.67,0.76,0.83,true)
-    GameTooltip:Show()
-  end)
-  build:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
-  values.spec=label(build,16,-45,351,"","GameFontHighlight",PALE)
-  values.mode=label(build,16,-70,351,"","GameFontHighlightSmall",MUTED)
-  values.practiceHint=label(build,16,-82,351,"HOVER FOR 3 PRACTICE STEPS","GameFontNormalSmall",GOLD)
-  -- A visible cue keeps the first practice action discoverable for players
-  -- who do not know that hovering opens the full rotation walkthrough.
-  local practiceAccent=build:CreateTexture(nil,"ARTWORK")
-  practiceAccent:SetPoint("TOPLEFT",build,"TOPLEFT",10,-82)
-  practiceAccent:SetSize(3,12)
-  paint(practiceAccent,0.96,0.72,0.30,0.95)
-  values.xp=label(build,16,-93,351,"","GameFontHighlightSmall",PALE)
-  values.xpCaption=label(build,16,-108,351,"LEVEL PROGRESS","GameFontNormalSmall",GOLD)
-  local trackShadow=build:CreateTexture(nil,"BORDER")
-  trackShadow:SetPoint("TOPLEFT",build,"TOPLEFT",14,-123)
-  trackShadow:SetSize(354,12)
-  paint(trackShadow,0.035,0.028,0.020,0.92)
-  local track=build:CreateTexture(nil,"ARTWORK")
-  track:SetPoint("TOPLEFT",build,"TOPLEFT",16,-125)
-  track:SetSize(350,8)
-  paint(track,0.10,0.13,0.19)
-  local xpBorder=build:CreateTexture(nil,"ARTWORK")
-  xpBorder:SetPoint("TOPLEFT",build,"TOPLEFT",15,-124)
-  xpBorder:SetSize(352,10)
-  paint(xpBorder,0.50,0.36,0.18,0.38)
-  xpFill=build:CreateTexture(nil,"OVERLAY")
-  xpFill:SetPoint("TOPLEFT",build,"TOPLEFT",16,-125)
-  xpFill:SetSize(1,8)
-  paint(xpFill,0.92,0.67,0.28)
-  root:Hide()
-  return root
+local function clip(value,n)
+ value=tostring(value or ""):gsub("[\r\n]"," ")
+ return #value>n and value:sub(1,n-3).."..." or value
 end
-function Guide.Render(classToken,classLabel,level,role,mode)
-  if not root then return end
-  values.currentClass=classToken
-  if values.coachHint then
-    values.coachHint:SetText(type(ForeverCompanionBeginnerChecklist)=="function" and "HOVER FOR COMBAT STEPS" or "CLASS PRACTICE NOTES")
-  end
-  local handbook=type(ForeverCompanionData)=="table" and ForeverCompanionData.classHandbook
-  local entry=type(handbook)=="table" and handbook[classToken]
-  -- Use only Blizzard textures already present in the client. A missing
-  -- class icon falls back to the native book symbol; class names stay visible.
-  local nativeIcon=type(entry)=="table" and entry.icon or nil
-  if type(nativeIcon)~="string" or not nativeIcon:find("^Interface") then
-    nativeIcon="Interface\\Icons\\INV_Misc_Book_09"
-  end
-  values.icon:SetTexture(nativeIcon)
-  values.heroArt:SetTexture(nativeIcon)
-  -- Tint the class motif with native class colors when exposed by the client.
-  local classColor=type(RAID_CLASS_COLORS)=="table" and RAID_CLASS_COLORS[classToken]
-  if type(values.heroArt.SetVertexColor)=="function" then
-    if type(classColor)=="table" then
-      values.heroArt:SetVertexColor(type(classColor.r)=="number" and classColor.r or 1,type(classColor.g)=="number" and classColor.g or 1,type(classColor.b)=="number" and classColor.b or 1)
-    else
-      values.heroArt:SetVertexColor(0.95,0.72,0.36)
-    end
-  end
-  values.name:SetText(short(classLabel,18).."  |  Lv "..short(level or "?",4))
-  values.classSigil:SetText(({WARRIOR="I",PALADIN="II",HUNTER="III",ROGUE="IV",PRIEST="V",SHAMAN="VI",MAGE="VII",WARLOCK="VIII",DRUID="IX"})[classToken] or "*")
-  local selectedRole=type(role)=="string" and role~="" and role or "Not selected"
-  values.role:SetText("Preferred role: "..short(selectedRole,23))
-  local band,number=nil,tonumber(level)
-  if number and (number~=number or number<1 or number==math.huge) then number=nil end
-  local zones=type(ForeverCompanionData)=="table" and ForeverCompanionData.zones
-  if number and type(zones)=="table" then
-    for _,candidate in ipairs(zones) do
-      if type(candidate)=="table" and type(candidate[1])=="number" and type(candidate[2])=="number" and number>=candidate[1] and number<=candidate[2] then band=candidate;break end
-    end
-  end
-  values.band:SetText(band and ("Leveling phase: "..short(band[3],20).." ("..band[1].."-"..band[2]..")") or "Leveling phase: unavailable")
-  local curriculum=type(ForeverCompanionLevelingCurriculum)=="table" and ForeverCompanionLevelingCurriculum
-  local stage
-  if curriculum and type(curriculum.Stage)=="function" then
-    local ok,result=pcall(curriculum.Stage,number or 1)
-    if ok and (type(result)=="number" or type(result)=="string") then stage=result end
-  end
-  local notes=curriculum and type(curriculum.classes)=="table" and curriculum.classes[classToken]
-  local tip=(type(notes)=="table" and notes[stage]) or (type(entry)=="table" and entry.leveling)
-  values.currentTip=type(tip)=="string" and tip~="" and tip or "Review class-specific tips below."
-  values.tip:SetText("FOCUS: "..short(values.currentTip,38))
-  local planner=ForeverCompanionSpecPlanner
-  local spec
-  if type(planner)=="table" and type(planner.Get)=="function" then
-    local ok,result=pcall(planner.Get,classToken)
-    if ok and type(result)=="table" then spec=result end
-  end
-  values.spec:SetText("Suggested build: "..short(type(spec)=="table" and spec[1] or "Not available",24))
-  local contexts=type(ForeverCompanionRotationPresentation)=="table" and ForeverCompanionRotationPresentation.contexts
-  local context=type(contexts)=="table" and contexts[mode]
-  values.mode:SetText("Suggested priority: "..short((type(context)=="table" and context.title) or mode or "Leveling",24))
-  -- Show the first concrete practice action without requiring a tooltip.
-  -- Remaining actions stay available on hover; do not claim a validated DPS order.
-  if values.practiceHint then
-    local quick
-    if type(ForeverCompanionQuickStartLines)=="function" then
-      local ok,result=pcall(ForeverCompanionQuickStartLines,classToken)
-      if ok and type(result)=="table" then quick=result end
-    end
-    local first
-    if type(quick)=="table" then
-      for _,line in ipairs(quick) do
-        if type(line)=="string" and line:find("PRACTICE 1:",1,true)==1 then
-          first=line
-          break
-        end
-      end
-    end
-    if first then
-      values.practiceHint:SetText(short(first,51))
-    else
-      values.practiceHint:SetText("HOVER FOR PRACTICE STEPS")
-    end
-  end
-  local fraction=safeXP()
-  if fraction then
-    values.xpCaption:SetText("LEVEL PROGRESS")
-    values.xp:SetText("Experience progress: "..math.floor(fraction*100+0.5).."%")
-    xpFill:SetWidth(math.max(1,math.floor(350*fraction)))
-  else
-    values.xpCaption:SetText("LEVEL PROGRESS  /  UNAVAILABLE")
-    values.xp:SetText("Experience: unavailable on this client/level")
-    xpFill:SetWidth(1)
-  end
+function Guide.TopicLines(class,view,role)
+ local data=ForeverCompanionData or {}
+ local entry=data.classHandbook and data.classHandbook[class] or {}
+ local coach=type(ForeverCompanionGetBeginnerCoach)=="function" and ForeverCompanionGetBeginnerCoach(class) or {}
+ local spec=ForeverCompanionSpecPlanner.Get(class)
+ local lines={"GENERAL REFERENCE / Live Forever verification pending."}
+ if view=="Overview" then
+  lines[#lines+1]="Resource: "..(coach.resource or "Check the client class panel")
+  for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
+  lines[#lines+1]="Selected specialization: "..(spec and spec[1] or "Not available")..". Role preference: "..(role or "Not selected")
+ elseif view=="Talents" then
+  lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"leveling")
+  lines[#lines+1]=ForeverCompanionSpecPlanner.Evidence(class)
+  lines[#lines+1]="Use the Spec selector to preview another build. The addon does not spend talent points."
+ elseif view=="Leveling" then
+  lines[#lines+1]=entry.leveling or "Train abilities and review your current class resources."
+  lines[#lines+1]=coach.first or "Check trained spells before pulling."
+  lines[#lines+1]=coach.loop or "Practice safely before increasing pull size."
+  lines[#lines+1]=coach.recover or "Keep a recovery option available."
+ elseif view=="Dungeons" then
+  lines[#lines+1]=entry.dungeon or "Coordinate target, role and pull size with the group."
+  lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"dungeon")
+ elseif view=="PvP" then
+  lines[#lines+1]=entry.pvp or "Plan positioning, control and defensive responses."
+  lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"pvp")
+ elseif view=="Gear & Stats" then
+  lines[#lines+1]="GEAR REFERENCE / No verified stat weights or best-in-slot ranking is supplied."
+  for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
+  lines[#lines+1]="Compare role, usable equipment and actual item tooltips in the client. Catalog drops do not establish that an item is an upgrade."
+ elseif view=="Professions" then
+  lines[#lines+1]=entry.professions or "Compare gathering income and crafting goals before committing."
+  lines[#lines+1]="Profession material goals are manually entered. The addon does not purchase or craft items."
+ end
+ return lines
+end
+function Guide.Render(class,label,level,role,mode)
+ if not root then return end
+ local entry=ForeverCompanionData and ForeverCompanionData.classHandbook and ForeverCompanionData.classHandbook[class] or {}
+ local selected=ForeverCompanionSpecPlanner.Get(class)
+ values.crumb:SetText("CLASS GUIDES  /  "..string.upper(tostring(label)))
+ values.name:SetText(tostring(label))
+ values.role:SetText("Level "..tostring(level or "?").."  /  "..(selected and selected[1] or "Choose specialization").."  /  "..tostring(role or "Choose role"))
+ values.icon:SetTexture(entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+ values.art:SetTexture(class=="WARRIOR" and ForeverCompanionVisualTheme.warrior or ForeverCompanionVisualTheme.citadel)
+ if values.art.SetTexCoord then values.art:SetTexCoord(0,1,0,.66) end
+ values.tip=entry.leveling or "Check trained spells and the reference guide."
+ local levelNumber=tonumber(level)
+ local stage=levelNumber and ForeverCompanionLevelingCurriculum.Stage(levelNumber)
+ local notes=ForeverCompanionLevelingCurriculum and ForeverCompanionLevelingCurriculum.classes and ForeverCompanionLevelingCurriculum.classes[class]
+ if stage and type(notes)=="table" and type(notes[stage])=="string" then values.tip=notes[stage] end
+ values.band=levelNumber and ("Leveling phase: "..(levelNumber>=50 and "Endgame preparation (50-60)" or "Check current class training")) or "Level unavailable"
+ values.focus:SetText("FOCUS: "..clip(values.tip,81))
+ local fraction=xp()
+ values.xp:SetText(fraction and ("Experience progress: "..math.floor(fraction*100+.5).."%") or "Experience: unavailable")
+ values.xpFill:SetWidth(fraction and math.max(1,218*fraction) or 1)
+ local view=Guide.GetView()
+ for _,b in ipairs(topics) do
+  local active=b.view==view
+  b.bg:SetColorTexture(active and .06 or .025,active and .17 or .028,active and .30 or .034,1)
+  b.rail:SetColorTexture(active and .95 or .38,active and .76 or .32,active and .38 or .23,1)
+ end
+ if view=="Rotations" then topicPanel:Hide() else
+  topicTitle:SetText(label.." / "..view)
+  topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),"\n\n"))
+  local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot",Overview="Settings"}
+  topicLink.target=targets[view]
+  if topicLink.target then topicLink:SetText("Open "..topicLink.target.." handbook");topicLink:Show() else topicLink:Hide() end
+  topicPanel:Show()
+ end
 end
 function Guide.Show(visible)
-  if not root then return end
-  if visible then root:Show() else root:Hide() end
+ if not root then return end
+ if visible then root:Show() else root:Hide();topicPanel:Hide() end
 end

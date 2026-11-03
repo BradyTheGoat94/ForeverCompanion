@@ -172,7 +172,7 @@ local function render()
   end
   local isOverview=currentTab=="Overview"
   if sectionHeader then
-    if isOverview then sectionHeader:Hide()
+    if isOverview or currentTab=="Leveling" then sectionHeader:Hide()
     else
       sectionTitle:SetText(string.upper(currentTab).." GUIDE")
       sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
@@ -183,8 +183,8 @@ local function render()
   if scrollFrame then
     if isOverview then scrollFrame:Hide() else scrollFrame:Show() end
     scrollFrame:ClearAllPoints()
-    scrollFrame:SetPoint("TOPLEFT",216,-163)
-    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Leveling" and 125 or 92)
+    scrollFrame:SetPoint("TOPLEFT",216,currentTab=="Leveling" and -104 or -163)
+    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Leveling" and 57 or 92)
   end
   if ForeverCompanionClassGuide then
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
@@ -193,11 +193,15 @@ local function render()
   if ForeverCompanionRotationWorkspace then
     local priorities=ROTATIONS and ROTATIONS[classToken()] and ROTATIONS[classToken()][rotationModes[rotationMode]] or {}
     if rotationDetail>#priorities then rotationDetail=1 end
-    ForeverCompanionRotationWorkspace.Render(currentTab,classToken(),rotationModes[rotationMode],rotationDetail,priorities)
+    ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],rotationDetail,priorities)
   end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Render(currentTab,DB) end
-  if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Render(currentTab,classToken(),DB) end
+  if ForeverCompanionStudyBoard then
+    local studyTab=currentTab
+    if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then studyTab="" end
+    ForeverCompanionStudyBoard.Render(studyTab,classToken(),DB)
+  end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
     ForeverCompanionProfessionBriefing.Show(currentTab=="Professions")
@@ -215,10 +219,34 @@ local function render()
     ForeverCompanionDashboard.Show(isOverview)
   end
   ForeverCompanionClassStripRender(currentTab,classToken())
+  -- The class page uses a reference-style class strip and moves redundant
+  -- footer controls out of the reading area; every action remains accessible.
+  if ForeverCompanionUIState.classButton then
+    if currentTab=="Leveling" then ForeverCompanionUIState.classButton:Hide() else ForeverCompanionUIState.classButton:Show() end
+  end
+  if ForeverCompanionUIState.footer then
+    if currentTab=="Leveling" then ForeverCompanionUIState.footer:Hide() else ForeverCompanionUIState.footer:Show() end
+  end
+  if ForeverCompanionUIState.roleButton then
+    local role=ForeverCompanionUIState.roleButton
+    role:ClearAllPoints()
+    role:SetPoint(currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",window,currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",-25,currentTab=="Leveling" and -62 or 45)
+  end
+  if resetClassButton then
+    resetClassButton:ClearAllPoints()
+    if currentTab=="Leveling" then resetClassButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,16)
+    else resetClassButton:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-125,16) end
+  end
+  if ForeverCompanionUIState.compactButton then
+    local button=ForeverCompanionUIState.compactButton
+    button:ClearAllPoints();button:SetSize(currentTab=="Leveling" and 70 or 92,23)
+    if currentTab=="Leveling" then button:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",117,16)
+    else button:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-25,16) end
+  end
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then
-      colorTexture(b.navBackground,0.20,0.145,0.075,1)
-      if b.navGlow then colorTexture(b.navGlow,0.42,0.28,0.10,0.32) end
+      colorTexture(b.navBackground,currentTab=="Leveling" and 0.055 or 0.20,currentTab=="Leveling" and 0.15 or 0.145,currentTab=="Leveling" and 0.31 or 0.075,1)
+      if b.navGlow then colorTexture(b.navGlow,currentTab=="Leveling" and .08 or .42,currentTab=="Leveling" and .22 or .28,currentTab=="Leveling" and .52 or .10,currentTab=="Leveling" and .48 or .32) end
       colorTexture(b.navAccent,0.98,0.74,0.29,1)
       colorTexture(b.navTop,0.92,0.69,0.29,0.98)
       colorTexture(b.navMarker,0.96,0.76,0.38,1)
@@ -238,7 +266,7 @@ local function render()
   if handbookIcon then handbookIcon:Hide() end
   if rotationIcon then rotationIcon:Hide() end
   for _,row in ipairs(rotationRows) do row:Hide() end
-  if rotationButton then if currentTab=="Leveling" then rotationButton:Show(); rotationButton:SetText("Rotation: "..rotationModes[rotationMode]) else rotationButton:Hide() end end
+  if rotationButton then rotationButton:SetText("Rotation: "..rotationModes[rotationMode]);rotationButton:Hide() end
   if specButton then
     if currentTab=="Leveling" and ForeverCompanionSpecPlanner then
       local selected=ForeverCompanionSpecPlanner.Get(classToken())
@@ -339,7 +367,7 @@ local function render()
       local context=presentation and presentation.contexts[mode]
       if context then lines[#lines+1]=context.title.." - "..context.description end
       local icons=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
-      if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]); rotationIcon:Show() end
+      if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]) end
       local priorities=rotations[mode] or {}
       if rotationDetail>#priorities then rotationDetail=1 end
       for i,ability in ipairs(priorities) do
@@ -350,13 +378,14 @@ local function render()
           local count=math.min(6,#priorities)
           local inset=math.max(0,math.floor((570-(count*95-7))/2))
           row:ClearAllPoints()
-          row:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",208+inset+(i-1)*95,-286)
+          row:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",208+inset+(i-1)*95,-256)
           -- Use a concise action heading on the tile; retain the full
           -- instructional sentence in the tooltip and guide detail.
           local short=tostring(ability):gsub("^[Bb]efore pull:%s*","Prep: "):gsub("^[Bb]efore combat:%s*","Prep: ")
           short=short:match("^([^;%.]+)") or short
           if #short>26 then short=short:sub(1,23).."..." end
-          row.label:SetText(short)
+          local titles=mode=="leveling" and ForeverCompanionRotationCardTitles and ForeverCompanionRotationCardTitles[classToken()]
+          row.label:SetText(titles and titles[i] or short)
           colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
           colorTexture(row.trim,rotationDetail==i and 0.99 or 0.45,rotationDetail==i and 0.76 or 0.36,rotationDetail==i and 0.32 or 0.20,1)
           row.detail=ability
@@ -374,22 +403,17 @@ local function render()
                 GameTooltip:AddLine("IF STUCK: "..coach.recover,0.84,0.86,0.81,true)
               end
               GameTooltip:AddLine("Reference only; verify trained abilities in your Forever spellbook.",0.72,0.78,0.86,true)
+              GameTooltip:AddLine("Icon is a client artwork cue, not proof of training; the full instruction may cover several conditional actions.",0.72,0.78,0.86,true)
               GameTooltip:Show()
             end
           end)
           row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
-          local iconList=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
           if row.icon then
-            if iconList and iconList[i] then
-              row.icon:SetTexture(iconList[i])
-              row.icon:Show()
-            else
-              row.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-              row.icon:Show()
-            end
+            row.icon:SetTexture(ForeverCompanionRotationCardIcon(classToken(),mode,i))
+            row.icon:Show()
           end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
-          row:Show()
+          if ForeverCompanionClassGuide.GetView()=="Rotations" then row:Show() end
         end
       end
       -- Read-only beginner coaching appears in the visible guide text for every class.
@@ -565,7 +589,7 @@ local function render()
       lines[#lines+1]="DUNGEON: "..guide.dungeon
       lines[#lines+1]="PVP: "..guide.pvp
       lines[#lines+1]="PROFESSIONS: "..guide.professions
-      if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
+      if handbookIcon then handbookIcon:SetTexture(guide.icon) end
     end
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
     local deep=ADVANCED and ADVANCED.classes[classToken()]
@@ -768,8 +792,9 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Loot=215,Quests=650,Professions=445,Leveling=980,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Loot=215,Quests=650,Professions=445,Leveling=970,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
+  if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=580 end
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
   -- Keep the player's current scroll position during refresh.
@@ -786,6 +811,8 @@ end
 -- Changes only the addon's current guide page, never the game quest log.
 local function openSection(name)
   if type(name)~="string" then return false end
+  local aliases={["home"]="Overview",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["gear & loot"]="Loot",["pvp guide"]="PvP"}
+  name=aliases[name:lower()] or name
   for _,section in ipairs(tabs) do
     if section:lower()==name:lower() then
       currentTab=section
@@ -1112,7 +1139,10 @@ local function createUI()
     colorTexture(b.navGlow,0.08,0.18,0.36,0)
     b.navLabel=b:CreateFontString(nil,"OVERLAY","GameFontHighlight")
     b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
-    b.navLabel:SetText(section)
+    local labels={Overview="Home",Leveling="Class Guides",Quests="Quest Log",Alts="Alt Leveling",Dungeons="Dungeons & Raids",Loot="Gear & Loot",PvP="PvP Guide"}
+    b.navLabel:SetText(labels[section] or section)
+    b.navLabel:SetWidth(116);b.navLabel:SetJustifyH("LEFT")
+    if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.navLabel,12) end
     b.navLabel:SetTextColor(0.88,0.87,0.83)
     b.navIcon=icon
     b:SetScript("OnEnter",function(self)
@@ -1171,9 +1201,9 @@ local function createUI()
   child:SetSize(790, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
-  if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
+  if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child,openSection) end
   if ForeverCompanionRotationWorkspace then
-    ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;rotationDetail=1;render() end)
+    ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;rotationDetail=1;render() end,function(index) rotationDetail=index;render() end)
   end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection) end
@@ -1252,9 +1282,9 @@ local function createUI()
   rotationButton:SetPoint("TOPLEFT",child,"TOPLEFT",8,-166)
   rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; rotationDetail=1; render() end)
   rotationButton:Hide()
-  specButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  specButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   specButton:SetSize(195,23)
-  specButton:SetPoint("LEFT",rotationButton,"RIGHT",14,0)
+  specButton:SetPoint("TOPRIGHT",window,"TOPRIGHT",-180,-62)
   specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); rotationDetail=1; render() end)
   specButton:Hide()
   handbookIcon=child:CreateTexture(nil,"OVERLAY")
@@ -1322,8 +1352,8 @@ local function createUI()
   end
   for i=1,6 do
     local row=CreateFrame("Button",nil,child)
-    row:SetSize(88,88)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",208+(i-1)*95,-286)
+    row:SetSize(88,96)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",208+(i-1)*95,-256)
     row:EnableMouse(true)
     row.bg=row:CreateTexture(nil,"BACKGROUND")
     row.bg:SetAllPoints(row)
@@ -1352,11 +1382,11 @@ local function createUI()
     colorTexture(row.edgeBottom,0.53,0.40,0.23,0.9)
     row.edgeLeft=row:CreateTexture(nil,"ARTWORK")
     row.edgeLeft:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
-    row.edgeLeft:SetSize(1,88)
+    row.edgeLeft:SetSize(1,96)
     colorTexture(row.edgeLeft,0.44,0.33,0.19,0.85)
     row.edgeRight=row:CreateTexture(nil,"ARTWORK")
     row.edgeRight:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
-    row.edgeRight:SetSize(1,88)
+    row.edgeRight:SetSize(1,96)
     colorTexture(row.edgeRight,0.44,0.33,0.19,0.85)
     row.trim=row:CreateTexture(nil,"ARTWORK")
     row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
@@ -1364,17 +1394,17 @@ local function createUI()
     colorTexture(row.trim,0.45,0.36,0.20,1)
     row.iconFrame=row:CreateTexture(nil,"OVERLAY")
     row.iconFrame:SetPoint("TOP",row,"TOP",0,-5)
-    row.iconFrame:SetSize(48,48)
+    row.iconFrame:SetSize(64,64)
     row.iconFrame:SetTexture("Interface\\Buttons\\UI-Quickslot2")
     row.icon=row:CreateTexture(nil,"ARTWORK")
-    row.icon:SetSize(38,38)
-    row.icon:SetPoint("TOP",row,"TOP",0,-7)
+    row.icon:SetSize(52,52)
+    row.icon:SetPoint("TOP",row,"TOP",0,-10)
     row.rankPlate=row:CreateTexture(nil,"BORDER")
-    row.rankPlate:SetPoint("TOPLEFT",row,"TOPLEFT",3,-3)
-    row.rankPlate:SetSize(17,17)
+    row.rankPlate:SetPoint("TOP",row,"TOP",0,0)
+    row.rankPlate:SetSize(22,16)
     colorTexture(row.rankPlate,0.13,0.11,0.10,0.95)
     row.number=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-    row.number:SetPoint("TOPLEFT",row,"TOPLEFT",5,-5)
+    row.number:SetPoint("TOP",row,"TOP",0,-1)
     row.number:SetText(tostring(i))
     row.number:SetTextColor(1,0.78,0.34)
     local rankRule=row:CreateTexture(nil,"ARTWORK")
@@ -1386,9 +1416,9 @@ local function createUI()
     corner:SetSize(10,2)
     colorTexture(corner,0.95,0.70,0.29,0.90)
     row.label=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    row.label:SetPoint("BOTTOM",row,"BOTTOM",0,7)
+    row.label:SetPoint("BOTTOM",row,"BOTTOM",0,4)
     row.label:SetWidth(80)
-    row.label:SetHeight(30)
+    row.label:SetHeight(28)
     row.label:SetJustifyH("CENTER")
     if row.label.SetJustifyV then row.label:SetJustifyV("MIDDLE") end
     local labelShade=row:CreateTexture(nil,"BORDER")
@@ -1474,7 +1504,7 @@ local function createUI()
   for i,token in ipairs(classOrder) do
     local button=CreateFrame("Button",nil,window)
     button:SetSize(89,30)
-    button:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",214+(i-1)*92,89)
+    button:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",214+(i-1)*92,17)
     button.classToken=token
     button.bg=button:CreateTexture(nil,"BACKGROUND")
     button.bg:SetAllPoints(button)
@@ -1484,9 +1514,14 @@ local function createUI()
     button.trim:SetSize(89,2)
     colorTexture(button.trim,0.44,0.34,0.18,1)
     local name=button:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    name:SetPoint("CENTER",button,"CENTER",0,0)
+    name:SetPoint("LEFT",button,"LEFT",26,0)
+    name:SetWidth(60);name:SetJustifyH("LEFT")
+    if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(name,10) end
     name:SetText(classNames[token])
     name:SetTextColor(0.95,0.83,0.60)
+    local classIcon=button:CreateTexture(nil,"ARTWORK")
+    classIcon:SetPoint("LEFT",button,"LEFT",4,0);classIcon:SetSize(19,19)
+    classIcon:SetTexture(DATA.classHandbook[token].icon)
     button:SetScript("OnClick",function()
       DB.previewClass=token
       DB.role=nil
@@ -1514,8 +1549,9 @@ local function createUI()
   ForeverCompanionUIState.compactButton:SetText(DB.compact and "Expand" or "Compact")
   ForeverCompanionUIState.compactButton:SetScript("OnClick",toggleCompactMode)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  ForeverCompanionUIState.footer=footer
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.15.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
+  footer:SetText("v3.16.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end

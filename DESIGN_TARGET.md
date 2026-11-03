@@ -84,3 +84,16 @@ The new `ui_*_native.png` views render captured widget geometry and project asse
 They are a closer offline inspection tool, not proof of exact client pixels.
 Remaining gaps include reference-style character illustration, a true topic-tab
 class-guide layout, finer frame treatment, and real-client visual acceptance.
+
+## Attached-reference pass (3.16 beta)
+
+The wide class banner, original Warrior illustration, functional eight-topic strip,
+blue selected states, larger numbered priority cards, flow markers, clickable
+instruction table, quick-info/tip cards and icon class strip now follow the attached
+Warrior layout. Redundant section headings were removed from the class page and
+its spec/role controls moved to the main header to free reading space.
+
+Topic tabs use existing guide/reference data; no talent allocation UI or verified
+stat weights are implied. Remaining fidelity work includes more class illustrations,
+more ornate frame artwork and real client font/icon/scale comparisons. The native
+CI images deliberately retain their offline watermark and icon/font caveats.

@@ -53,3 +53,16 @@ Reviewed 2026-11-02. **Status: conditional / not verified in a live client.** Th
 ## Release decision
 
 **Do not approve** based on CI, a static preview, or this audit. Run the exact packaged build in the actual current Forever client and complete `BETA_CLIENT_ACCEPTANCE.md`.
+
+## Optional spell artwork lookup (3.16 beta)
+
+The guide uses guarded `C_Spell.GetSpellTexture` for representative leveling cues.
+Only a positive finite numeric file ID is accepted; unresolved names, absent APIs,
+restricted results and exceptions fall back to the class icon. This reads artwork,
+not training, cooldowns, combat state or talent availability. English reference
+names may not resolve in localized clients. There is no network access in the addon.
+
+API contract reviewed from Blizzard-generated documentation mirrored at
+https://github.com/Gethe/wow-ui-source/blob/live/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellDocumentation.lua
+(`GetSpellTexture`, `SpellIdentifier`, optional result). This contract review does
+not establish target-client support; actual Forever texture loading remains pending.

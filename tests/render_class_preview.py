@@ -1,110 +1,16 @@
-"""Offline class-guide visualization from the addon's mocked native widget tree.
-Illustrative layout only: not a live game screenshot or verified gameplay advice.
-"""
-import csv
-import re
-import textwrap
-from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+"""Validate the reference-style class layout before the native renderer runs.
 
-source=Path("ui_leveling_snapshot.txt")
-if not source.exists():
-    raise SystemExit("Missing leveling widget snapshot")
-rows=list(csv.DictReader(source.open(encoding="utf-8"),delimiter="|"))
-strings=[r["text"] for r in rows if r.get("kind")=="FontString" and r.get("text")]
-required=["CLASS GUIDE  /  LEVELING","TALENTS  /  ROTATIONS  /  GEAR"]
-missing=[item for item in required if item not in strings]
-if missing:
-    raise SystemExit("Class guide snapshot missing real widgets: "+", ".join(missing))
-def find(prefix,default="Unavailable"):
-    return next((s for s in strings if s.startswith(prefix)),default)
-def panel_value(heading,anchor_y,default="Unavailable"):
-    parent=next((r["parent"] for r in rows if r.get("text")==heading),None)
-    return next((r["text"] for r in rows if r.get("parent")==parent and r.get("y")==str(anchor_y) and r.get("kind")=="FontString"),default)
-def font(size,bold=False):
-    try:
-        return ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans"+("-Bold" if bold else "")+".ttf",size)
-    except OSError:
-        return ImageFont.load_default()
-small=font(14)
-body=font(18)
-heading=font(22,True)
-title=font(38,True)
-gold=(236,183,86)
-dim=(138,103,50)
-cream=(242,235,220)
-muted=(174,184,196)
-im=Image.new("RGB",(1500,950),(11,15,22))
-d=ImageDraw.Draw(im)
-x,y=70,58
-d.rounded_rectangle((x,y,x+1360,y+810),radius=14,fill=(17,22,31),outline=dim,width=4)
-d.rectangle((x+12,y+13,x+1348,y+18),fill=dim)
-d.rectangle((x+14,y+24,x+1346,y+126),fill=(26,31,41))
-d.ellipse((x+27,y+37,x+105,y+115),fill=(28,29,31),outline=gold,width=3)
-d.line((x+49,y+59,x+66,y+72,x+85,y+59),fill=gold,width=3)
-d.line((x+49,y+59,x+49,y+94,x+66,y+105,x+66,y+72),fill=gold,width=3)
-d.line((x+85,y+59,x+85,y+94,x+66,y+105),fill=gold,width=3)
-d.text((x+125,y+38),"FOREVER COMPANION",font=title,fill=gold)
-d.text((x+126,y+92),"Class Guide  /  Leveling  /  Rotation Priorities",font=body,fill=muted)
-d.text((x+1165,y+46),"BETA",font=heading,fill=gold)
-navx,navy=x+15,y+140
-d.rounded_rectangle((navx,navy,navx+247,navy+594),radius=6,fill=(20,26,35),outline=(86,68,43))
-d.text((navx+20,navy+17),"NAVIGATION",font=heading,fill=gold)
-for i,name in enumerate(["Overview","Leveling","Quests","Dungeons","Professions","PvP","Settings"]):
-    yy=navy+62+i*64
-    active=name=="Leveling"
-    d.rounded_rectangle((navx+13,yy,navx+232,yy+51),radius=5,fill=(80,58,27) if active else (29,36,47),outline=gold if active else (63,66,73),width=2 if active else 1)
-    d.ellipse((navx+28,yy+18,navx+46,yy+36),fill=gold if active else dim)
-    d.text((navx+61,yy+15),name,font=body,fill=gold if active else cream)
-cx=x+280
-def card(px,py,w,h,label):
-    d.rounded_rectangle((px,py,px+w,py+h),radius=7,fill=(25,32,43),outline=(112,87,50),width=2)
-    d.rectangle((px+2,py+2,px+w-2,py+6),fill=dim)
-    d.text((px+20,py+18),label,font=heading,fill=gold)
-cy=y+140
-card(cx,cy,520,197,"CLASS GUIDE  /  LEVELING")
-card(cx+534,cy,520,197,"TALENTS  /  ROTATIONS  /  GEAR")
-d.text((cx+22,cy+70),panel_value("CLASS GUIDE  /  LEVELING",-45,"Class preview unavailable"),font=heading,fill=cream)
-d.text((cx+22,cy+111),panel_value("CLASS GUIDE  /  LEVELING",-73,"Role not selected"),font=body,fill=muted)
-band=panel_value("CLASS GUIDE  /  LEVELING",-101,"Leveling phase unavailable")
-tip=panel_value("CLASS GUIDE  /  LEVELING",-123,"Class-specific leveling reference")
-if not band.startswith("Leveling phase:"):
-    raise SystemExit("Leveling phase is missing from native class hero")
-d.text((cx+22,cy+144),band[:57],font=small,fill=gold)
-d.text((cx+22,cy+169),tip[:51],font=small,fill=cream)
-d.text((cx+555,cy+71),find("Spec preview:","Spec preview unavailable"),font=body,fill=cream)
-d.text((cx+555,cy+108),find("Priority context:","Leveling"),font=body,fill=muted)
-xp=find("Experience progress:","Experience unavailable")
-d.text((cx+555,cy+148),xp,font=body,fill=gold)
-d.rounded_rectangle((cx+555,cy+175,cx+1018,cy+184),radius=4,fill=(65,70,76))
-percent=re.search(r"(\d+)%",xp)
-if percent:
-    fraction=min(1,int(percent.group(1))/100)
-    if fraction>0:
-        d.rounded_rectangle((cx+555,cy+175,cx+555+max(3,int(463*fraction)),cy+184),radius=4,fill=gold)
-ry=cy+213
-card(cx,ry,1054,182,"ROTATION PRIORITY")
-mode=find("Rotation:","Rotation: leveling")
-d.text((cx+21,ry+60),mode+"   |   General reference, not a verified optimized sequence",font=body,fill=muted)
-# Read actual native priority widgets, independent of their visual dimensions.
-tile_ids={r["id"] for r in rows if r.get("kind")=="Button" and r.get("width") in ("146","122","88") and r.get("height") in ("47","78","88")}
-priority=[r["text"] for r in rows if r.get("parent") in tile_ids and r.get("kind")=="FontString" and r.get("visible")=="1" and r.get("text") and not re.match(r"^[1-6]$",r["text"])]
-if not priority:
-    raise SystemExit("No real priority-tile labels found in mock UI")
-priority=priority[:6]
-tile_width=int((1014-13*(len(priority)-1))/len(priority))
-for i,val in enumerate(priority):
-    tx=cx+20+i*(tile_width+13)
-    yy=ry+101
-    d.rounded_rectangle((tx,yy,tx+tile_width,yy+58),radius=5,fill=(68,52,31) if i==0 else (40,47,57),outline=gold if i==0 else dim)
-    lines=textwrap.wrap(val,width=27,break_long_words=False,break_on_hyphens=False)
-    for line_index,line in enumerate(lines[:2]):
-        d.text((tx+13,yy+10+line_index*20),line,font=small,fill=cream)
-by=ry+198
-card(cx,by,1054,179,"GUIDE DETAILS & SAFETY")
-d.text((cx+22,by+66),"Explore specialization context, role notes, cooldowns and leveling guidance below.",font=body,fill=cream)
-d.text((cx+22,by+105),"Priorities are illustrative. Check abilities and talents in your live client.",font=body,fill=muted)
-d.text((cx+22,by+143),"Navigation and priority tiles are clickable in the actual addon.",font=small,fill=gold)
-d.text((x+6,y+834),"OFFLINE MOCK-CLIENT PREVIEW  •  SIMULATED CHARACTER DATA  •  NOT A LIVE WOW SCREENSHOT",font=body,fill=gold)
-im.save("ui_class_preview.png")
-print("Rendered class preview from",len(rows),"mock widgets")
+The native renderer owns the final PNG: this preflight does not invent a layout.
+"""
+import json
+from pathlib import Path
+nodes=json.loads(Path('ui_class_native.json').read_text())
+texts={n.get('text','') for n in nodes}
+for title in ['CLASS GUIDES  /  WARRIOR','Rotation Type','Priority & Explanations','Quick Tips','Class Quick Info','Selected Priority']:
+    assert title in texts, 'Missing native class widget: '+title
+for view in ['Overview','Talents','Rotations','Leveling','Dungeons','PvP','Gear & Stats','Professions']:
+    assert any(n.get('text')==view and n['kind']=='FontString' for n in nodes), 'Missing topic: '+view
+assert any(n.get('texture','').endswith('Warrior.tga') for n in nodes), 'Missing illustrated class header'
+tiles=[n for n in nodes if n['kind']=='Button' and n.get('width')==88 and n.get('height')==96 and n.get('visible')]
+assert tiles, 'No native priority tiles captured'
+print('PASS: illustrated class banner, eight topic tabs, priority table and large tiles captured')

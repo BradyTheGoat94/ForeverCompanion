@@ -73,10 +73,10 @@ def render(source,output,workspace=False):
         return (max(a[0],b[0]),max(a[1],b[1]),min(a[2],b[2]),min(a[3],b[3]))
 
     if workspace:
-        label=next(n for n in records if n.get('text')=='ROTATION TYPE')
+        label=next(n for n in records if n.get('text')=='Rotation Type')
         target=nodes[nodes[label['parent']]['parent']]
         bx,by,bw,bh=box(target['id'])
-        offset=(24-bx,24-by);width,height=818,426
+        offset=(24-bx,24-by);width,height=818,476
         start=target['id']
     else:
         offset=(0,0);width,height=1128,int(window['height'])+94;start=window['id']
@@ -144,7 +144,7 @@ def render(source,output,workspace=False):
     # existing selected-priority behavior. Include them in the inspection crop.
     if workspace:
         for n in records:
-            if n['kind']=='Button' and n.get('width')==88 and n.get('height')==88:visit(n['id'],(24,24,width-24,height-45))
+            if n['kind']=='Button' and n.get('width')==88 and n.get('height')==96:visit(n['id'],(24,24,width-24,height-45))
     d=ImageDraw.Draw(im)
     f=ImageFont.truetype(FONT_ROOT+'DejaVuSans.ttf',12)
     d.text((24,height-29),'OFFLINE NATIVE WIDGET LAYOUT / fonts & Blizzard icons approximated / not an in-game screenshot',font=f,fill=(221,181,105))
@@ -154,6 +154,7 @@ def render(source,output,workspace=False):
 render('ui_dashboard_native.json','ui_dashboard_native.png')
 render('ui_class_native.json','ui_class_native.png')
 render('ui_class_native.json','ui_rotation_native.png',True)
+render('ui_topic_native.json','ui_topic_native.png')
 # Existing automation consumes these established preview filenames. Keep them
 # aligned with the native-layout outputs rather than older schematic drawings.
 from shutil import copyfile

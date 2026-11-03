@@ -24,7 +24,7 @@ with ZipFile(zip_path) as archive:
     unlisted = sorted(lua_members - {"ForeverCompanion/" + x for x in files})
     assert not unlisted, f"Unlisted Lua source files: {unlisted}"
     assert "## Interface:" in toc and "## Version:" in toc, "Missing manifest metadata"
-    for name in ('Citadel.tga','Crest.tga'):
+    for name in ('Citadel.tga','Crest.tga','Warrior.tga'):
         asset='ForeverCompanion/Media/'+name
         assert asset in members, f'Missing project artwork: {asset}'
         assert archive.read(asset)==Path(asset).read_bytes(), f'Packaged artwork differs: {asset}'

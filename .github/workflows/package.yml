@@ -65,6 +65,8 @@ jobs:
             ui_class_native.json
             ui_class_native.png
             ui_rotation_native.png
+            ui_topic_native.json
+            ui_topic_native.png
             ui_practice_snapshot.txt
             ui_legacy_preview.png
             ui_alts_preview.png

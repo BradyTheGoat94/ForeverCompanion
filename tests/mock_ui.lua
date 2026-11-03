@@ -456,18 +456,32 @@ for _,w in ipairs(frames) do if w.section=="Leveling" then levelingButton=w end 
 assert(levelingButton and levelingButton.OnClick,"leveling sidebar navigation missing")
 levelingButton.OnClick(levelingButton)
 assert(ForeverCompanionDB.tab=="Leveling","leveling navigation failed")
-local classHeading,buildHeading,rotationControl
+local classHeading,rotationControl
 for _,w in ipairs(frames) do
- if w.text=="CLASS GUIDE  /  LEVELING" then classHeading=w end
- if w.text=="TALENTS  /  ROTATIONS  /  GEAR" then buildHeading=w end
+ if w.text=="CLASS GUIDES  /  WARRIOR" then classHeading=w end
  if w.text=="Rotation: leveling" then rotationControl=w end
 end
-assert(classHeading and buildHeading,"native class-guide header cards missing")
-local levelBandFound=false
-for _,w in ipairs(frames) do
- if w.text=="Leveling phase: Endgame preparation (50-60)" then levelBandFound=true end
+assert(classHeading,"wide class banner breadcrumb missing")
+SlashCmdList.FOREVERCOMPANION("open class guides")
+assert(ForeverCompanionDB.tab=="Leveling","visible Class Guides label must work in slash navigation")
+local specControl
+for _,w in ipairs(frames) do if w.text=="Spec: Arms" then specControl=w end end
+assert(specControl and specControl.parent==mainWindow.id,"header specialization selector must avoid scroll-child clipping")
+assert(#ForeverCompanionClassGuide.topicButtons==8,"class guide requires eight functional topic tabs")
+for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
+ button.OnClick()
+ assert(ForeverCompanionClassGuide.GetView()==button.view,"topic selection must persist")
+ assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
+ if button.view~="Rotations" then
+  assert(ForeverCompanionClassGuide.topicBody.text:find("GENERAL REFERENCE",1,true),"topic evidence notice")
+ end
 end
-assert(levelBandFound,"leveling hero should show the current level band")
+ForeverCompanionClassGuide.SelectView("Talents")
+exportNative("ui_topic_native.json")
+assert(not ForeverCompanionClassGuide.SelectView("Not a topic"),"invalid topic must be rejected")
+ForeverCompanionDB.classGuideView="malformed saved view"
+assert(ForeverCompanionClassGuide.GetView()=="Rotations","invalid saved topic must recover to rotation view")
+ForeverCompanionClassGuide.SelectView("Rotations")
 local currentFocus=false
 for _,w in ipairs(frames) do
  if w.text:find("FOCUS: At higher levels",1,true)==1 then currentFocus=true end
@@ -482,12 +496,9 @@ end
 assert(inlaySegments>=16,"quest and profession cards must share original gilded corner inlays")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
-local levelingHeading
-for _,w in ipairs(frames) do if w.text=="LEVELING GUIDE" then levelingHeading=w end end
-assert(levelingHeading and frames[levelingHeading.parent].visible,"section header should appear on Leveling")
 local priorityTile, priorityNumber
 for _,w in ipairs(frames) do
- if w.kind=="Button" and w.width==88 and w.height==88 and w.label and w.label.text~="" then
+ if w.kind=="Button" and w.width==88 and w.height==96 and w.label and w.label.text~="" then
    priorityTile=w
    if w.number and w.number.text=="1" then priorityNumber=w.number end
  end
@@ -502,6 +513,11 @@ for i,token in ipairs(classTokens) do
  assert(button.classToken==token and button.OnClick and button.visible,"class strip button missing or hidden")
  button.OnClick(button)
  assert(ForeverCompanionDB.previewClass==token,"class selector did not update addon preview")
+ for _,topicButton in ipairs(ForeverCompanionClassGuide.topicButtons) do
+  topicButton.OnClick()
+  assert(ForeverCompanionClassGuide.GetView()==topicButton.view,"topic navigation must work for every class")
+ end
+ ForeverCompanionClassGuide.SelectView("Rotations")
  for _,contextButton in ipairs(ForeverCompanionRotationWorkspace.buttons) do
   contextButton.OnClick()
   local reference=ForeverCompanionRotations[token][contextButton.mode]
@@ -539,11 +555,13 @@ end
 workspace.buttons[1].OnClick()
 priorityTile.OnClick(priorityTile)
 assert(workspace.selectedText.text:find(priorityTile.detail,1,true),"selected tile instruction must be visible in explanation panel")
+workspace.explanations[2].OnClick()
+assert(workspace.selectedText.text:find("PRIORITY 2:",1,true),"instruction table must focus the clicked priority")
+assert(workspace.selectedText.text:find(ForeverCompanionRotations.WARRIOR.leveling[2],1,true),"table selection must keep the complete conditional instruction")
 workspace.buttons[1].OnClick()
 rotationControl.OnClick(rotationControl)
 assert(rotationControl.text=="Rotation: dungeon","rotation context selector failed")
 overviewButton.OnClick(overviewButton)
-assert(not frames[levelingHeading.parent].visible,"section header should hide on dashboard")
 assert(not frames[frames[classHeading.parent].parent].visible,"class guide should hide outside Leveling")
 mockXP=2000
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")

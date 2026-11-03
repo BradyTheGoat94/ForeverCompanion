@@ -321,3 +321,23 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - The CI native-layout previews use the bundled art and captured widget metadata;
   fonts and Blizzard icons are approximate. Obtain actual client screenshots and
   record texture/font failures before approving release.
+
+## Reference-style class workspace (3.16 beta)
+
+- Open Class Guides on each of the nine classes. Confirm the class banner, eight
+  topic tabs and bottom icon strip do not overlap. Warrior artwork must not appear
+  on another class; unsupported classes retain readable fallback labels.
+- Click every topic, reload and return. Confirm the topic persists per character,
+  invalid saved topic values return to Rotations, and non-rotation topics hide all
+  priority controls and the practice desk. Class-preview changes do not change the
+  actual character, talent points, role assignment or equipped items.
+- Confirm topic handbook links navigate the intended addon pages. Talent planning
+  and Gear & Stats must retain their advisory/unknown-data notices.
+- Select each context, click both an icon and an explanation row, and compare the
+  complete selected instruction with its tooltip and the long-form reference.
+- Test the optional spell-icon API present, absent, throwing, unresolved names,
+  invalid IDs, localized spell names and restricted results. No fallback icon may
+  be presented as evidence that a spell is learned or a talent is available.
+- Compare expanded/compact layouts, header spec/role controls, footer class strip
+  and long instruction wrapping in the real client. CI previews approximate fonts
+  and client icons; they do not substitute for actual in-game screenshots.
