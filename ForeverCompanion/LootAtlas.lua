@@ -286,5 +286,5 @@ function Loot.BossSummary(dungeon,boss,db)
     lines[#lines+1]="Drop chance: "..(type(record.dropRate)=="number" and
       (tostring(record.dropRate).."% reported; methodology unverified") or "unknown")
   end
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
