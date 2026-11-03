@@ -2,6 +2,19 @@
 local N={}
 ForeverCompanionResearchNotebook=N
 local root,host,fields,status,current,heading
+-- Session-only drafts survive navigation; only Save writes SavedVariables.
+local drafts=setmetatable({},{__mode="k"})
+local function draftStore(db)
+ if not drafts[db] then drafts[db]={} end
+ return drafts[db]
+end
+local function captureDraft()
+ if current and current.dirty then
+  local entry={}
+  for name,edit in pairs(fields) do entry[name]=edit:GetText() end
+  draftStore(current.db)[current.key]=entry
+ end
+end
 local limits={note=320,source=240,build=80}
 local function clean(value,limit)
  if type(value)~="string" then return "" end
@@ -59,7 +72,7 @@ function N.Create(parent)
   if not current then return end
   local entry={}
   for name,edit in pairs(fields) do entry[name]=edit:GetText();if edit.ClearFocus then edit:ClearFocus() end end
-  if N.Save(current.db,current.key,entry) then status:SetText("Saved locally for this character. Personal observation; not verified.");current.dirty=false end
+  if N.Save(current.db,current.key,entry) then status:SetText("Saved locally for this character. Personal observation; not verified.");current.dirty=false;draftStore(current.db)[current.key]=nil end
  end
  for _,edit in pairs(fields) do
   edit:SetScript("OnEnterPressed",save)
@@ -76,15 +89,19 @@ end
 function N.Render(tab,db,reload)
  if not root then return end
  local key=N.Context(tab)
- if not key then root:Hide();current=nil;return end
+ if not key then captureDraft();root:Hide();current=nil;return end
  local changed=not current or current.key~=key or current.db~=db
  if changed or reload then
+  if changed then captureDraft() end
+  local pending=draftStore(db)
+  if reload then pending[key]=nil end
   current={tab=tab,db=db,key=key,dirty=false}
-  local entry=N.Read(db,key)
+  local entry=pending[key] or N.Read(db,key)
+  current.dirty=pending[key]~=nil
   for name,edit in pairs(fields) do edit:SetText(entry[name]) end
-  status:SetText("Personal notes only; no source, mechanic or client compatibility is verified here.")
+  status:SetText(current.dirty and "Unsaved draft restored. Save before reloading the UI; Escape discards this draft." or "Personal notes only; no source, mechanic or client compatibility is verified here.")
  end
- root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Dungeons" and -550 or -395)
+ root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Dungeons" and -706 or -395)
  heading:SetText("PERSONAL RESEARCH / "..(tab=="Dungeons" and "SELECTED BOSS" or string.upper(tab)).." / NOT VERIFIED")
  root:Show()
 end

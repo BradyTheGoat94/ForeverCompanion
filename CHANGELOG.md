@@ -1,3 +1,16 @@
+## Develop: searchable encounter navigation and session drafts
+
+- Replaced boss-only cycling with four clickable, paginated catalog rows and
+  literal boss/dungeon/item search within the selected dungeon.
+- Preserved explicit boss selection while filtering, including no-result searches;
+  research context and loot navigation follow only the selected encounter.
+- Retained unsaved research drafts across page and boss changes for the current
+  session. Explicit Save persists; Escape discards; Clear affects only one context.
+- Added mocked interaction coverage and a coordinate-derived encounter preview
+  to CI. Increased the Dungeon scroll offsets to fit the browser and notebook.
+- Catalog coverage, live API compatibility, in-game appearance and CurseForge
+  acceptance remain unverified.
+
 ## Develop research and acquisition tracking — 2026-11-02
 
 - Added editable, per-character research notebooks for Legacy, alt preparation and individual catalog bosses, with explicit save, restore and clear controls. Personal notes never change evidence status.
@@ -207,4 +220,3 @@
 - Manual checklists and saved settings.
 
 **Note:** The current manifest Interface value is provisional pending live-client verification.
-

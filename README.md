@@ -6,6 +6,27 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Searchable encounter catalog (develop)
+
+The Dungeons page has clickable boss rows with four results per page. Search the
+selected dungeon by boss, dungeon or item name; use **Clear search** to restore
+its list. Changing the search does not change the selected encounter. Click a
+boss row to switch its research notebook, then **Open boss loot** to browse that
+boss's attributed records. Changing dungeon clears the search and selects its
+first catalog boss. This is a partial historical loot catalog, not a complete
+boss roster or a verified encounter guide; no mechanics or drop rates are inferred.
+
+Unsaved research text is retained as a session draft when switching between
+bosses, Legacy, Alts and other pages. Returning to its context restores the draft.
+**Save research note** (or Enter) writes it for the character; Escape restores the
+saved note, and Clear removes that context's saved note and draft. Drafts are lost
+on UI reload or logout, so save before leaving the session. Notes remain personal
+observations and never change the guide's evidence status.
+
+CI also captures `ui_encounter_snapshot.txt` and renders
+`ui_encounter_preview.png` from the browser's native widget coordinates. This is
+an offline illustration with approximate fonts, not an in-game screenshot.
+
 ## Quest priorities (3.14.0-beta, develop)
 
 The Quest Journal now has a **Pin Focus / Unpin Focus** button. Select a quest row, then pin it to keep that quest as a personal priority. Pinned quests receive a gold-accented **[PIN]** badge, survive quest-log rescans and UI reloads through per-character SavedVariables, and can be brought to the top with the **Sort: pinned** mode. The journal briefing shows how many *currently scanned* quests are pinned. Dashboard recommendations prioritize quests ready for turn-in first, then an unfinished pinned quest; clicking a recommendation focuses the relevant quest in the addon before opening the journal.

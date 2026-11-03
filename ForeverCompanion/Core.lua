@@ -758,7 +758,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Loot=215,Quests=650,Professions=445,Leveling=720,Dungeons=785,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Loot=215,Quests=650,Professions=445,Leveling=720,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end

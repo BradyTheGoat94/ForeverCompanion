@@ -1,5 +1,22 @@
 # Launch-day smoke test
 
+## Encounter browser and session research drafts (develop)
+
+- Open Dungeons, search a boss or a catalog item, and click its result. The selected
+  boss, research notebook and Open boss loot destination must agree.
+- Page through more than four bosses. Check first/last-page button states, a
+  literal `%` search, an empty result, and Clear search. Filtering must retain the
+  selected encounter; it must not silently switch the notebook to a result.
+- Change dungeon; confirm the search clears, the first catalog boss is selected,
+  and pagination returns to page one. No missing bosses or mechanics are inferred.
+- Type an unsaved note, switch boss or page, and return. The draft must reappear
+  without being written to SavedVariables. Save it, change context and return;
+  the saved text must match. Escape discards a draft; Clear only clears this context.
+- Save before `/reload`: session drafts deliberately do not survive reload/logout.
+- Inspect the scrolled browser, notebook and guide text in compact and expanded
+  mode at supported UI scales. Check keyboard focus, long names and text wrapping
+  in the real client. The offline coordinate illustration does not certify layout.
+
 This addon is **not verified on the target client**. Use this checklist on the first available login.
 
 1. Extract the packaged ZIP and ensure the game sees one `ForeverCompanion` directory with `ForeverCompanion.toc`, `Core.lua` and `GuideData.lua`.
