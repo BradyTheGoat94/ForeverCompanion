@@ -7,6 +7,11 @@ dofile('ForeverCompanion/PracticeNotes.lua')
 local b=ForeverCompanionStudyBoard
 local db={}
 assert(b.Get('Overview','MAGE',db)==nil)
+assert(b.NextActionLabel({nextStep="Practice interrupts"})=="NEXT: Practice interrupts")
+assert(b.NextActionLabel({nextStep=string.rep("x",140)}):sub(-3)=="...")
+assert(#b.NextActionLabel({nextStep=string.rep("x",140)})<=100)
+assert(b.NextActionLabel({nextStep=nil}):find("ALL ITEMS REVIEWED",1,true))
+assert(b.NextActionLabel(nil):find("ALL ITEMS REVIEWED",1,true))
 local count=0
 for class,specs in pairs(ForeverCompanionSpecs) do
  for i,spec in ipairs(specs) do
