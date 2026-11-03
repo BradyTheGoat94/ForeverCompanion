@@ -1,3 +1,16 @@
+## 3.15.0-beta: reference-inspired visual rebuild (develop)
+
+- Added original illustrated citadel and transparent heraldic crest textures to
+  the actual addon, with explicit provenance and audited package inclusion.
+- Added shared charcoal/brass panel styling and guarded native serif font styling.
+- Rebuilt dashboard shortcuts as six icon-first tiles and enlarged the header crest.
+- Added direct Leveling/Dungeon/Boss/AoE/PvP rotation-context navigation, selected
+  priority explanations and visible resource tips; preserved existing guide data,
+  priority tooltips, class/spec controls and the lower practice desk.
+- Added geometry/color/visibility/texture exports and an offline native renderer.
+  Previews use actual widget layout; game fonts/icons are approximate.
+- Retained live-client acceptance and CurseForge submission gates.
+
 ## Develop: searchable encounter navigation and session drafts
 
 - Replaced boss-only cycling with four clickable, paginated catalog rows and

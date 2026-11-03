@@ -35,7 +35,7 @@ local function panel(x,y,w,h,label,icon)
   p:SetPoint("TOPLEFT",root,"TOPLEFT",x,y)
   local bg=p:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(p)
-  paint(bg,0.055,0.069,0.093,0.98)
+  paint(bg,0.023,0.025,0.030,0.99)
   -- Layered header rule and inset bevel create a deeper gilded card frame.
   strip(p,0,0,w,2,GOLD)
   strip(p,3,-4,w-6,1,{0.72,0.53,0.25,0.52})
@@ -72,6 +72,10 @@ local function panel(x,y,w,h,label,icon)
     start=45
   end
   p.heading=text(p,p,start,-13,w-start-12,label,"GameFontNormal",GOLD)
+  if ForeverCompanionVisualTheme then
+    ForeverCompanionVisualTheme.Panel(p,w,h)
+    ForeverCompanionVisualTheme.Font(p.heading,14)
+  end
   return p
 end
 local function action(parent,x,y,w,label,icon,fn,height)
@@ -81,7 +85,7 @@ local function action(parent,x,y,w,label,icon,fn,height)
   b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
   local bg=b:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(b)
-  paint(bg,0.12,0.15,0.20,1)
+  paint(bg,0.035,0.038,0.045,1)
   strip(b,0,0,w,1,{0.60,0.45,0.23,1})
   strip(b,0,-h+1,w,1,{0.45,0.35,0.21,1})
   local rail=strip(b,0,0,3,h,{0.46,0.35,0.20,1})
@@ -123,7 +127,7 @@ local function action(parent,x,y,w,label,icon,fn,height)
     end
   end)
   b:SetScript("OnLeave",function()
-    paint(bg,0.12,0.15,0.20,1)
+    paint(bg,0.035,0.038,0.045,1)
     paint(rail,0.46,0.35,0.20,1)
     caption:SetTextColor(0.96,0.88,0.69)
     if GameTooltip and type(GameTooltip.Hide)=="function" then GameTooltip:Hide() end
@@ -241,9 +245,15 @@ function D.Create(parent,openPage,ctx)
   local bannerBg=banner:CreateTexture(nil,"ARTWORK")
   bannerBg:SetPoint("TOPLEFT",banner,"TOPLEFT",1,-3)
   bannerBg:SetSize(844,90)
-  paint(bannerBg,0.105,0.116,0.16,0.98)
+  paint(bannerBg,0.035,0.046,0.071,1)
+  if ForeverCompanionVisualTheme then
+    -- The artwork occupies BORDER above the panel background and below text.
+    bannerBg:Hide()
+    ForeverCompanionVisualTheme.Banner(banner,2,-3,842,89,1)
+  end
   -- Layered atmospheric bands and distant ridge lines enrich the banner
   -- without external artwork or additional client dependencies.
+  if not ForeverCompanionVisualTheme then
   strip(banner,2,-5,840,1,{0.78,0.57,0.28,0.46})
   strip(banner,3,-86,838,1,{0.39,0.31,0.21,0.62})
   strip(banner,504,-14,326,1,{0.65,0.49,0.30,0.18})
@@ -270,6 +280,7 @@ function D.Create(parent,openPage,ctx)
     windowLight:SetSize(4,8)
     paint(windowLight,0.76,0.53,0.22,0.8)
   end
+  end
   if ForeverCompanionHeraldry then
     ForeverCompanionHeraldry.Create(banner,16,-13,68)
   else
@@ -278,7 +289,8 @@ function D.Create(parent,openPage,ctx)
     crest:SetSize(54,54)
     crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
   end
-  text(banner,banner,93,-18,700,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",GOLD)
+  local welcome=text(banner,banner,93,-18,700,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",PALE)
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,24) end
   text(banner,banner,94,-49,700,"Your in-game guide for leveling, quests, builds and professions","GameFontHighlight",PALE)
   values.bannerStatus=text(banner,banner,94,-72,670,"Checking current character progress...","GameFontHighlightSmall",MUTED)
   strip(banner,94,-88,402,1,{0.69,0.51,0.24,0.75})
@@ -292,11 +304,14 @@ function D.Create(parent,openPage,ctx)
   values.role=text(character,character,16,-99,236,"","GameFontHighlightSmall",MUTED)
   values.professions=text(character,character,16,-125,236,"","GameFontHighlightSmall",MUTED)
   local quick=panel(275,-108,306,176,"QUICK ACTIONS","Interface\\Icons\\INV_Misc_Map_01")
-  -- Six compact, player-controlled routes keep preparation desks discoverable.
+  -- Icon-first tiles mirror the reference; each remains an explicit page action.
   local shortcuts={{"Leveling","INV_Misc_Book_09"},{"Quests","INV_Misc_Note_01"},{"Professions","Trade_BlackSmithing"},{"Dungeons","INV_Weapon_ShortBlade_01"},{"Legacy","INV_Misc_Book_11"},{"Alts","INV_Misc_GroupNeedMore"}}
   for i,entry in ipairs(shortcuts) do
     local target=entry[1]
-    action(quick,12+((i-1)%2)*145,-44-math.floor((i-1)/2)*41,137,target,"Interface\\Icons\\"..entry[2],function() navigate(target) end,34)
+    local b=action(quick,12+((i-1)%3)*96,-44-math.floor((i-1)/3)*63,90,target,nil,function() navigate(target) end,57)
+    local icon=b:CreateTexture(nil,"ARTWORK");icon:SetPoint("TOP",b,"TOP",0,-5);icon:SetSize(27,27);icon:SetTexture("Interface\\Icons\\"..entry[2])
+    b.caption:ClearAllPoints();b.caption:SetPoint("BOTTOM",b,"BOTTOM",0,5);b.caption:SetWidth(86);b.caption:SetJustifyH("CENTER")
+    if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.caption,10) end
   end
   local goals=panel(593,-108,253,176,"PROGRESS & GOALS","Interface\\Icons\\INV_Misc_Rune_01")
   progress(goals,15,-48,221,"Experience",{0.30,0.76,0.40,1},"Leveling","Read-only XP progress toward your next level.")

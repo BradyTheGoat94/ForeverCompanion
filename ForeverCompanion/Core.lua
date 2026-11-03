@@ -190,6 +190,11 @@ local function render()
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
     if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
   end
+  if ForeverCompanionRotationWorkspace then
+    local priorities=ROTATIONS and ROTATIONS[classToken()] and ROTATIONS[classToken()][rotationModes[rotationMode]] or {}
+    if rotationDetail>#priorities then rotationDetail=1 end
+    ForeverCompanionRotationWorkspace.Render(currentTab,classToken(),rotationModes[rotationMode],rotationDetail,priorities)
+  end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Render(currentTab,DB) end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Render(currentTab,classToken(),DB) end
@@ -758,7 +763,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Loot=215,Quests=650,Professions=445,Leveling=720,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Loot=215,Quests=650,Professions=445,Leveling=980,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
@@ -1021,12 +1026,13 @@ local function createUI()
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
   titleText:SetPoint("TOPLEFT", 86, -22)
   titleText:SetTextColor(1,0.79,0.36)
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(titleText,30,true) end
   ForeverCompanionUIState.subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionUIState.subtitleText:SetPoint("TOPLEFT",86,-51)
   ForeverCompanionUIState.subtitleText:SetText("Guides  -  Professions  -  Quests  -  Builds  -  More")
   ForeverCompanionUIState.subtitleText:SetTextColor(0.72,0.78,0.84)
   if ForeverCompanionHeraldry then
-    ForeverCompanionHeraldry.Create(window,19,-17,54)
+    ForeverCompanionHeraldry.Create(window,13,-10,72)
   else
     local crest=window:CreateTexture(nil,"OVERLAY")
     crest:SetPoint("TOPLEFT",window,"TOPLEFT",19,-17)
@@ -1161,6 +1167,9 @@ local function createUI()
   scrollChild = child
   scroll:SetScrollChild(child)
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
+  if ForeverCompanionRotationWorkspace then
+    ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;rotationDetail=1;render() end)
+  end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
@@ -1308,8 +1317,8 @@ local function createUI()
   end
   for i=1,6 do
     local row=CreateFrame("Button",nil,child)
-    row:SetSize(122,88)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",8+(i-1)*127,-222)
+    row:SetSize(88,88)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",208+(i-1)*95,-286)
     row:EnableMouse(true)
     row.bg=row:CreateTexture(nil,"BACKGROUND")
     row.bg:SetAllPoints(row)
@@ -1322,7 +1331,7 @@ local function createUI()
     colorTexture(cardInset,0.035,0.050,0.077,0.92)
     local cardTop=row:CreateTexture(nil,"ARTWORK")
     cardTop:SetPoint("TOPLEFT",row,"TOPLEFT",5,-4)
-    cardTop:SetSize(112,1)
+    cardTop:SetSize(78,1)
     colorTexture(cardTop,0.72,0.51,0.24,0.85)
     local cardCornerLeft=row:CreateTexture(nil,"ARTWORK")
     cardCornerLeft:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",5,5)
@@ -1334,7 +1343,7 @@ local function createUI()
     colorTexture(cardCornerRight,0.90,0.65,0.27,0.85)
     row.edgeBottom=row:CreateTexture(nil,"ARTWORK")
     row.edgeBottom:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",0,0)
-    row.edgeBottom:SetSize(122,1)
+    row.edgeBottom:SetSize(88,1)
     colorTexture(row.edgeBottom,0.53,0.40,0.23,0.9)
     row.edgeLeft=row:CreateTexture(nil,"ARTWORK")
     row.edgeLeft:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
@@ -1346,7 +1355,7 @@ local function createUI()
     colorTexture(row.edgeRight,0.44,0.33,0.19,0.85)
     row.trim=row:CreateTexture(nil,"ARTWORK")
     row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
-    row.trim:SetSize(122,3)
+    row.trim:SetSize(88,3)
     colorTexture(row.trim,0.45,0.36,0.20,1)
     row.iconFrame=row:CreateTexture(nil,"OVERLAY")
     row.iconFrame:SetPoint("TOP",row,"TOP",0,-5)
@@ -1373,17 +1382,17 @@ local function createUI()
     colorTexture(corner,0.95,0.70,0.29,0.90)
     row.label=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     row.label:SetPoint("BOTTOM",row,"BOTTOM",0,7)
-    row.label:SetWidth(112)
+    row.label:SetWidth(80)
     row.label:SetHeight(27)
     row.label:SetJustifyH("CENTER")
     if row.label.SetJustifyV then row.label:SetJustifyV("MIDDLE") end
     local labelShade=row:CreateTexture(nil,"BORDER")
     labelShade:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",3,3)
-    labelShade:SetSize(116,33)
+    labelShade:SetSize(82,33)
     colorTexture(labelShade,0.025,0.035,0.055,0.90)
     local divider=row:CreateTexture(nil,"ARTWORK")
     divider:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",8,36)
-    divider:SetSize(106,1)
+    divider:SetSize(72,1)
     colorTexture(divider,0.62,0.43,0.21,0.70)
     row.label:SetTextColor(0.95,0.88,0.72)
     -- Render() owns the selected tile palette; do not override it with
@@ -1501,7 +1510,7 @@ local function createUI()
   ForeverCompanionUIState.compactButton:SetScript("OnClick",toggleCompactMode)
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.14.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
+  footer:SetText("v3.15.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end

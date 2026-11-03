@@ -76,6 +76,7 @@ local function plate(parent,x,y,w,h)
   if type(ForeverCompanionOrnaments)=="table" and type(ForeverCompanionOrnaments.Hero)=="function" then
     pcall(ForeverCompanionOrnaments.Hero,f,w,h)
   end
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Panel(f,w,h) end
   return f
 end
 local function safeXP()
@@ -100,6 +101,7 @@ function Guide.Create(parent)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",5,-4)
   values={}
   local profile=plate(root,0,0,382,151)
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Banner(profile,2,-35,378,113,.34) end
   local profileGlow=profile:CreateTexture(nil,"BORDER")
   profileGlow:SetPoint("TOPLEFT",profile,"TOPLEFT",7,-39)
   profileGlow:SetSize(368,102)
@@ -136,6 +138,7 @@ function Guide.Create(parent)
   values.icon:SetPoint("TOPLEFT",profile,"TOPLEFT",16,-44)
   values.icon:SetSize(48,48)
   values.name=label(profile,80,-45,265,"","GameFontNormalLarge",PALE)
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(values.name,23) end
   values.classSigil=label(profile,330,-13,36,"","GameFontNormal",GOLD)
   values.role=label(profile,80,-73,255,"","GameFontHighlightSmall",MUTED)
   values.coachHint=label(profile,80,-87,270,"HOVER FOR COMBAT STEPS","GameFontNormalSmall",GOLD)

@@ -68,3 +68,19 @@ Still to do: genuine original crest/banner art, finer pixel-level layout fidelit
 - Added a reusable original geometric FC monogram crest to the dashboard and main header, drawn with native WoW UI textures and fontstrings. This improves consistency but is **not** yet the detailed illustrated crest requested in the reference artwork.
 - Extended mocked UI tests, two new illustrative CI previews, and live-client testing instructions.
 - Keep remaining visual goals: richer banner artwork, class-guide hierarchy, verified spell/quest content, and real-client screenshot comparisons.
+
+## Reference comparison pass (3.15 beta)
+
+Implemented the original reference's illustrated welcome banner, ivory/gold
+medallion, serif title treatment, charcoal card surfaces and icon-first shortcuts.
+The class guide now has a direct context rail, numbered priorities, explanation
+panel and quick tips. The lower practice desk is repositioned below this workspace.
+
+The original raster backdrop and crest ship as audited TGA textures with provenance.
+Class/ability icons still reference Blizzard's installed assets. Previous notes
+calling banner/crest artwork missing are superseded for these two assets.
+
+The new `ui_*_native.png` views render captured widget geometry and project assets.
+They are a closer offline inspection tool, not proof of exact client pixels.
+Remaining gaps include reference-style character illustration, a true topic-tab
+class-guide layout, finer frame treatment, and real-client visual acceptance.

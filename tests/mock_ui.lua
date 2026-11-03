@@ -18,6 +18,38 @@ local function exportSnapshot(path)
  out:write(table.concat(lines,string.char(10)))
  out:close()
 end
+local function exportNative(path)
+ local function quote(value)
+  local s=tostring(value or ""):gsub("\\","\\\\"):gsub('"','\\"'):gsub("\n","\\n"):gsub("\r","\\r"):gsub("\t","\\t")
+  return '"'..s..'"'
+ end
+ local function encode(v)
+  if type(v)=="string" then return quote(v) end
+  if type(v)=="number" or type(v)=="boolean" then return tostring(v) end
+  if type(v)~="table" then return "null" end
+  local result={}
+  for i,value in ipairs(v) do result[i]=encode(value) end
+  return "["..table.concat(result,",").."]"
+ end
+ local records={}
+ for _,f in ipairs(frames) do
+  local values={id=f.id,kind=f.kind,parent=f.parent,name=f.name,visible=f.visible,width=f.width,height=f.height,
+   text=f.text,texture=type(f.texture)=="string" and f.texture or nil,color=f.color,textColor=f.textColor,
+   layer=f.layer,font=f.font,alpha=f.alpha,crop=f.texCoord,all=f.all,template=f.template,justify=f.justify}
+  local points={}
+  for _,p in ipairs(f.points or {}) do
+   local point,relative,relativePoint,x,y=p[1],f.parent,p[1],0,0
+   if type(p[2])=="table" then relative=p[2].id;relativePoint=p[3];x=p[4] or 0;y=p[5] or 0
+   elseif type(p[2])=="number" then x=p[2];y=p[3] or 0 end
+   points[#points+1]={point,relative or 1,relativePoint,x,y}
+  end
+  values.points=points
+  local record={}
+  for key,value in pairs(values) do record[#record+1]=quote(key)..":"..encode(value) end
+  records[#records+1]="{"..table.concat(record,",").."}"
+ end
+ local out=assert(io.open(path,"w"));out:write("["..table.concat(records,",").."]");out:close()
+end
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
  function w:SetText(v) self.text=tostring(v or "") end
@@ -28,11 +60,11 @@ local function widget(kind)
  function w:IsShown() return self.visible end
  function w:SetScript(name,fn) self[name]=fn end
  function w:RegisterEvent(name) self.events=self.events or {};self.events[name]=true end
- function w:CreateTexture() local child=widget("Texture");child.parent=self.id;return child end
- function w:CreateFontString() local child=widget("FontString");child.parent=self.id;return child end
+ function w:CreateTexture(_,layer) local child=widget("Texture");child.parent=self.id;child.layer=layer;return child end
+ function w:CreateFontString(_,layer,template) local child=widget("FontString");child.parent=self.id;child.layer=layer;child.template=template;return child end
  function w:SetColorTexture(...) self.color={...} end
  function w:SetTexture(v) self.texture=v end
- function w:SetPoint(...) self.point={...} end
+ function w:SetPoint(...) self.point={...};self.points=self.points or {};for i,p in ipairs(self.points) do if p[1]==self.point[1] then self.points[i]=self.point;return end end;self.points[#self.points+1]=self.point end
  function w:SetSize(width,height) self.width=width;self.height=height end
  function w:SetHeight(height) self.height=height end
  function w:SetWidth(width) self.width=width end
@@ -55,20 +87,23 @@ local function widget(kind)
  function w:SetBackdrop(...) end
  function w:SetBackdropColor(...) end
  function w:SetBackdropBorderColor(...) end
- function w:SetAllPoints() end
- function w:SetJustifyH() end
+ function w:SetAllPoints(target) self.all=target and target.id or self.parent end
+ function w:SetJustifyH(value) self.justify=value end
  function w:SetJustifyV() end
  function w:SetSpacing() end
- function w:SetTextColor() end
+ function w:SetTextColor(...) self.textColor={...} end
  function w:SetFontObject() end
+ function w:SetFont(path,size,flags) self.font={path,size,flags} end
+ function w:SetTexCoord(...) self.texCoord={...} end
+ function w:SetAlpha(value) self.alpha=value end
  function w:SetNormalTexture() end
  function w:SetHighlightTexture() end
  function w:SetPushedTexture() end
- function w:ClearAllPoints() end
+ function w:ClearAllPoints() self.point=nil;self.points={} end
  frames[#frames+1]=w
  return w
 end
-CreateFrame=function(kind,_,parent) local child=widget(kind);child.parent=parent and parent.id;return child end
+CreateFrame=function(kind,name,parent,template) local child=widget(kind);child.parent=parent and parent.id;child.name=name;child.template=template;return child end
 UIParent=widget("UIParent")
 UIParent:SetSize(1000,700)
 SlashCmdList={}
@@ -412,7 +447,7 @@ for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foun
 assert(foundBanner,"premium dashboard welcome banner missing")
 local heraldicMarks=0
 for _,w in ipairs(frames) do
- if w.kind=="FontString" and w.text=="FC" then heraldicMarks=heraldicMarks+1 end
+ if w.kind=="Texture" and w.texture=="Interface\\AddOns\\ForeverCompanion\\Media\\Crest.tga" then heraldicMarks=heraldicMarks+1 end
 end
 assert(heraldicMarks>=2,"header and dashboard must use the same original heraldic crest")
 -- Exercise the native class-guide hero and capture its real mock widget tree.
@@ -452,7 +487,7 @@ for _,w in ipairs(frames) do if w.text=="LEVELING GUIDE" then levelingHeading=w 
 assert(levelingHeading and frames[levelingHeading.parent].visible,"section header should appear on Leveling")
 local priorityTile, priorityNumber
 for _,w in ipairs(frames) do
- if w.kind=="Button" and w.width==122 and (w.height==78 or w.height==88) and w.label and w.label.text~="" then
+ if w.kind=="Button" and w.width==88 and w.height==88 and w.label and w.label.text~="" then
    priorityTile=w
    if w.number and w.number.text=="1" then priorityNumber=w.number end
  end
@@ -467,8 +502,14 @@ for i,token in ipairs(classTokens) do
  assert(button.classToken==token and button.OnClick and button.visible,"class strip button missing or hidden")
  button.OnClick(button)
  assert(ForeverCompanionDB.previewClass==token,"class selector did not update addon preview")
+ for _,contextButton in ipairs(ForeverCompanionRotationWorkspace.buttons) do
+  contextButton.OnClick()
+  local reference=ForeverCompanionRotations[token][contextButton.mode]
+  assert(ForeverCompanionRotationWorkspace.selectedText.text:find(reference[1],1,true),"visible explanation must match this class/context")
+ end
 end
 ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
+ForeverCompanionRotationWorkspace.buttons[1].OnClick()
 -- Clear preview before testing unavailable live class APIs.
 ForeverCompanionDB.previewClass=nil
 ForeverCompanionDB.role=savedPreviewRole
@@ -487,6 +528,18 @@ local classOut=assert(io.open("ui_leveling_snapshot.txt","w"))
 classOut:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",string.char(10))
 classOut:write(table.concat(classSnapshot,string.char(10)))
 classOut:close()
+exportNative("ui_class_native.json")
+local workspace=ForeverCompanionRotationWorkspace
+assert(#workspace.buttons==5,"direct context navigation must expose every context")
+for i,b in ipairs(workspace.buttons) do
+ b.OnClick()
+ assert(rotationControl.text=="Rotation: "..({"leveling","dungeon","boss","aoe","pvp"})[i])
+ assert(workspace.selectedText.text:find("PRIORITY 1",1,true),"mode change resets visible explanation")
+end
+workspace.buttons[1].OnClick()
+priorityTile.OnClick(priorityTile)
+assert(workspace.selectedText.text:find(priorityTile.detail,1,true),"selected tile instruction must be visible in explanation panel")
+workspace.buttons[1].OnClick()
 rotationControl.OnClick(rotationControl)
 assert(rotationControl.text=="Rotation: dungeon","rotation context selector failed")
 overviewButton.OnClick(overviewButton)
@@ -755,6 +808,8 @@ for _,w in ipairs(frames) do
  if w.texture then assert(not w.texture:find("\\\\",1,true),"over-escaped texture path: "..w.texture) end
 end
 overviewButton.OnClick(overviewButton)
+if ForeverCompanionDB.compact then ForeverCompanionUIState.compactButton.OnClick() end
+exportNative("ui_dashboard_native.json")
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""

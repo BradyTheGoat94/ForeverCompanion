@@ -303,3 +303,21 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Track two or more materials with different required/owned quantities under different professions. Run `/fcm shopping` and confirm the five largest shortages are listed with correct profession names, stable ordering and no invented prices.
 - Confirm the Dashboard's third recommendation names the largest shortage, then update the owned quantity with `/fcm owned` and verify the recommendation changes or disappears when the goal is complete.
 - Confirm the Professions handbook's shopping summary is consistent with the manual tracker and remains readable in compact mode. It must not imply live bag, recipe or auction-house data.
+
+## Visual rebuild acceptance (3.15 beta)
+
+- Verify the original citadel texture and ivory/gold crest load from the installed
+  addon. Test a clean ZIP install; do not rely on files from a previous build.
+- Inspect serif headings, character name, six shortcut icons and selected sidebar
+  state at compact/expanded sizes and multiple UI scales. Compare the actual
+  screen against the original reference artwork, not just the CI approximation.
+- On Leveling, click every rotation-context button for several classes and specs.
+  Verify the cycle control and direct selector agree, focused priority resets,
+  and clicking a tile updates the visible explanation and its existing tooltip.
+- Verify long instructions remain accessible in tooltips and the long-form guide;
+  the left rail, tiles, explanations, quick tips and practice desk must not overlap.
+- Confirm the class strip, specialization preview and all nine class entries work
+  after switching contexts. Never present the advisory sequence as validated DPS.
+- The CI native-layout previews use the bundled art and captured widget metadata;
+  fonts and Blizzard icons are approximate. Obtain actual client screenshots and
+  record texture/font failures before approving release.

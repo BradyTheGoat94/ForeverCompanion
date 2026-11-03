@@ -21,6 +21,13 @@ function H.Create(parent,x,y,size)
   local frame=CreateFrame("Frame",nil,parent)
   frame:SetSize(size,size)
   frame:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+  if ForeverCompanionVisualTheme then
+    local art=frame:CreateTexture(nil,"OVERLAY")
+    art:SetAllPoints(frame)
+    art:SetTexture(ForeverCompanionVisualTheme.crest)
+    frame.art=art
+    return frame
+  end
   local bg=frame:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(frame)
   paint(bg,0.030,0.042,0.061,1)

@@ -18,9 +18,18 @@ for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellB
 # Blizzard artwork or executable payloads. Keep any future assets explicitly
 # reviewed instead of silently expanding the allowed package surface.
 allowed_extensions={".lua",".toc"}
+reviewed_assets={"Media/Citadel.tga":(1024,256,24),"Media/Crest.tga":(256,256,32)}
 for path in root.rglob("*"):
+ if path.is_file() and path.relative_to(root).as_posix() in reviewed_assets:
+  import struct
+  data=path.read_bytes()
+  width,height,bpp=reviewed_assets[path.relative_to(root).as_posix()]
+  if len(data)<18 or data[2]!=2 or struct.unpack_from('<HHB',data,12)!=(width,height,bpp):
+   issues.append("Invalid uncompressed project texture: "+str(path))
+  continue
  if path.is_file() and path.suffix.lower() not in allowed_extensions:
   issues.append("Unexpected packaged asset (manual license review required): "+str(path))
+if not Path('ARTWORK_PROVENANCE.md').is_file(): issues.append('Missing project artwork provenance')
 for entry in entries:
  if "/" in entry or "\\\\" in entry or entry.startswith(".") or ".." in entry:
   issues.append("Unsafe manifest path: "+entry)

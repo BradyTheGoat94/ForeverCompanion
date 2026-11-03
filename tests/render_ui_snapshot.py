@@ -42,8 +42,8 @@ d.rectangle((x+14,y+22,x+1346,y+125),fill=(24,28,39))
 # Original native-UI FC heraldic monogram, approximated from actual widget labels.
 d.rounded_rectangle((x+29,y+42,x+103,y+116),radius=5,fill=(26,28,33),outline=gold,width=3)
 d.rounded_rectangle((x+35,y+48,x+97,y+110),radius=3,outline=goldDim,width=2)
-if strings.count("FC")<2:
-    raise SystemExit("Native header/dashboard heraldic marks missing from mock widget tree")
+if not any(r.get("texture","").endswith("Crest.tga") for r in rows):
+    raise SystemExit("Bundled heraldic texture missing from mock widget tree")
 # Inset shield, crown jewel and rivets approximate native heraldry strips.
 d.line((x+45,y+97,x+87,y+97),fill=goldDim,width=2)
 d.line((x+49,y+103,x+83,y+103),fill=gold,width=2)

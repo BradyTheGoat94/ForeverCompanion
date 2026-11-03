@@ -27,6 +27,25 @@ CI also captures `ui_encounter_snapshot.txt` and renders
 `ui_encounter_preview.png` from the browser's native widget coordinates. This is
 an offline illustration with approximate fonts, not an in-game screenshot.
 
+## Visual rebuild (3.15.0-beta, develop)
+
+The dashboard now uses an original illustrated citadel banner and a matching
+ivory-and-gold heraldic crest, with darker charcoal cards, serif headings and six
+icon-first shortcuts. These textures ship inside the addon; they are not just
+preview decorations. Game ability and class icons still use client-native assets.
+
+The Leveling page has a five-context rotation sidebar, numbered priority tiles,
+a visible selected-priority explanation, and a quick-tips card. Context buttons
+update the existing advisory guide and reset priority focus. Selecting an ability
+updates its explanation without casting or changing any game state. The practice
+desk and long-form references remain below, accessible by scrolling.
+
+The CI artifact includes `ui_dashboard_native.png`, `ui_class_native.png` and
+`ui_rotation_native.png`. These use captured widget geometry and the bundled art;
+fonts and game icons are approximations. They are not actual game screenshots.
+See [ARTWORK_PROVENANCE.md](ARTWORK_PROVENANCE.md) for asset origins and prompts.
+Live-client appearance, texture support and compatibility remain unverified.
+
 ## Quest priorities (3.14.0-beta, develop)
 
 The Quest Journal now has a **Pin Focus / Unpin Focus** button. Select a quest row, then pin it to keep that quest as a personal priority. Pinned quests receive a gold-accented **[PIN]** badge, survive quest-log rescans and UI reloads through per-character SavedVariables, and can be brought to the top with the **Sort: pinned** mode. The journal briefing shows how many *currently scanned* quests are pinned. Dashboard recommendations prioritize quests ready for turn-in first, then an unfinished pinned quest; clicking a recommendation focuses the relevant quest in the addon before opening the journal.

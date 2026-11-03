@@ -87,7 +87,7 @@ card(cx,ry,1054,182,"ROTATION PRIORITY")
 mode=find("Rotation:","Rotation: leveling")
 d.text((cx+21,ry+60),mode+"   |   General reference, not a verified optimized sequence",font=body,fill=muted)
 # Read actual native priority widgets, independent of their visual dimensions.
-tile_ids={r["id"] for r in rows if r.get("kind")=="Button" and r.get("width") in ("146","122") and r.get("height") in ("47","78","88")}
+tile_ids={r["id"] for r in rows if r.get("kind")=="Button" and r.get("width") in ("146","122","88") and r.get("height") in ("47","78","88")}
 priority=[r["text"] for r in rows if r.get("parent") in tile_ids and r.get("kind")=="FontString" and r.get("visible")=="1" and r.get("text") and not re.match(r"^[1-6]$",r["text"])]
 if not priority:
     raise SystemExit("No real priority-tile labels found in mock UI")
