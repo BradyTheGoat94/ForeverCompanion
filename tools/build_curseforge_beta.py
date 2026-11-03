@@ -43,11 +43,13 @@ def validate() -> tuple[list[pathlib.Path], dict]:
                 continue
             rel = pathlib.PureWindowsPath(line.replace("/", "\\"))
             parts = rel.parts
-            if not parts or any(x in ("..", ".") for x in parts) or rel.is_absolute():
+            if not parts or any(x in ("..", ".") for x in parts) or rel.is_absolute() or rel.drive or any(":" in x for x in parts):
                 errors.append("Unsafe manifest path: " + line)
                 continue
             target = ADDON.joinpath(*parts)
-            if not target.is_file():
+            if target.is_symlink():
+                errors.append("Symlink manifest dependency: " + line)
+            elif not target.is_file():
                 errors.append("Missing manifest dependency: " + line)
             else:
                 sources.append(target)
@@ -76,6 +78,8 @@ def validate() -> tuple[list[pathlib.Path], dict]:
         if p.suffix.lower() not in ALLOWED:
             errors.append("Unexpected packaged extension: " + str(p.relative_to(ROOT)))
             continue
+        if p.stat().st_size == 0:
+            errors.append("Empty addon file: " + str(p.relative_to(ROOT)))
         if p.stat().st_size > MAX_FILE:
             errors.append("Oversized addon asset: " + str(p.relative_to(ROOT)))
         files.append(p)
