@@ -20,7 +20,7 @@ local function db()
 end
 function P.Get(class)
  local choices=ForeverCompanionSpecs[class] or {}
- local saved=db()[class]
+ local saved=class~=nil and db()[class] or nil
  local index=(type(saved)=="number" or type(saved)=="string") and tonumber(saved) or 1
  if not index or index~=index or index<1 or index>#choices or index%1~=0 then index=1 end
  return choices[index],index,#choices
