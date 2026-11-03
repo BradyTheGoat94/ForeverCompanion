@@ -292,10 +292,12 @@ function D.Create(parent,openPage,ctx)
   values.role=text(character,character,16,-99,236,"","GameFontHighlightSmall",MUTED)
   values.professions=text(character,character,16,-125,236,"","GameFontHighlightSmall",MUTED)
   local quick=panel(275,-108,306,176,"QUICK ACTIONS","Interface\\Icons\\INV_Misc_Map_01")
-  action(quick,12,-46,137,"Leveling","Interface\\Icons\\INV_Misc_Book_09",function() navigate("Leveling") end)
-  action(quick,157,-46,137,"Quests","Interface\\Icons\\INV_Misc_Note_01",function() navigate("Quests") end)
-  action(quick,12,-100,137,"Professions","Interface\\Icons\\Trade_BlackSmithing",function() navigate("Professions") end)
-  action(quick,157,-100,137,"Dungeons","Interface\\Icons\\INV_Weapon_ShortBlade_01",function() navigate("Dungeons") end)
+  -- Six compact, player-controlled routes keep preparation desks discoverable.
+  local shortcuts={{"Leveling","INV_Misc_Book_09"},{"Quests","INV_Misc_Note_01"},{"Professions","Trade_BlackSmithing"},{"Dungeons","INV_Weapon_ShortBlade_01"},{"Legacy","INV_Misc_Book_11"},{"Alts","INV_Misc_GroupNeedMore"}}
+  for i,entry in ipairs(shortcuts) do
+    local target=entry[1]
+    action(quick,12+((i-1)%2)*145,-44-math.floor((i-1)/2)*41,137,target,"Interface\\Icons\\"..entry[2],function() navigate(target) end,34)
+  end
   local goals=panel(593,-108,253,176,"PROGRESS & GOALS","Interface\\Icons\\INV_Misc_Rune_01")
   progress(goals,15,-48,221,"Experience",{0.30,0.76,0.40,1},"Leveling","Read-only XP progress toward your next level.")
   progress(goals,15,-88,221,"Quests ready",{0.25,0.60,0.94,1},"Quests","Ready-to-turn-in quests in the latest successful quest-log scan.")

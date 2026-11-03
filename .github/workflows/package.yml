@@ -19,7 +19,10 @@ jobs:
         run: |
           find ForeverCompanion -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
       - name: Run mocked WoW API smoke tests
-        run: lua5.1 tests/offline_smoke.lua
+        run: |
+          lua5.1 tests/offline_smoke.lua
+          lua5.1 tests/loot_boss_smoke.lua
+          lua5.1 tests/study_board_smoke.lua
       - name: Exercise addon UI in mocked client
         run: lua5.1 tests/mock_ui.lua
       - name: Render offline UI preview
@@ -28,6 +31,7 @@ jobs:
           python3 tests/render_ui_snapshot.py
           python3 tests/render_class_preview.py
           python3 tests/render_section_previews.py
+          python3 tests/render_planning_previews.py
       - name: Upload offline UI text snapshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -48,6 +52,13 @@ jobs:
             ui_pvp_preview.png
             ui_settings_snapshot.txt
             ui_settings_preview.png
+            ui_legacy_snapshot.txt
+            ui_alts_snapshot.txt
+            ui_loot_snapshot.txt
+            ui_practice_snapshot.txt
+            ui_legacy_preview.png
+            ui_alts_preview.png
+            ui_practice_preview.png
           if-no-files-found: ignore
       - name: Validate manifest
         run: |

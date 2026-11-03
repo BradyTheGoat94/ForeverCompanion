@@ -111,6 +111,7 @@ function ForeverCompanionClassStripRender(tab,selectedToken)
     else button:Hide() end
   end
 end
+local lootMatches
 local function render()
   if not window or not DB then return end
   if ForeverCompanionLootUI.searchBox then
@@ -183,6 +184,8 @@ local function render()
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
     if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
   end
+  if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
+  if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Render(currentTab,classToken(),DB) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
     ForeverCompanionProfessionBriefing.Show(currentTab=="Professions")
@@ -202,8 +205,8 @@ local function render()
   ForeverCompanionClassStripRender(currentTab,classToken())
   for _, b in ipairs(tabButtons) do
     if b.section == currentTab then
-      colorTexture(b.navBackground,0.045,0.16,0.37,1)
-      if b.navGlow then colorTexture(b.navGlow,0.10,0.29,0.68,0.65) end
+      colorTexture(b.navBackground,0.20,0.145,0.075,1)
+      if b.navGlow then colorTexture(b.navGlow,0.42,0.28,0.10,0.32) end
       colorTexture(b.navAccent,0.98,0.74,0.29,1)
       colorTexture(b.navTop,0.92,0.69,0.29,0.98)
       colorTexture(b.navMarker,0.96,0.76,0.38,1)
@@ -385,6 +388,9 @@ local function render()
       end
       -- Specialization-aware practice guidance uses the player's selected
       -- planning spec and never assumes that an untrained spell is available.
+      if ForeverCompanionPracticeNotes then
+        for _,note in ipairs(ForeverCompanionPracticeNotes.Lines(classToken())) do lines[#lines+1]=note end
+      end
       if type(ForeverCompanionSpecCoachLines)=="function" then
         for _,note in ipairs(ForeverCompanionSpecCoachLines(classToken())) do
           lines[#lines+1]=note
@@ -744,8 +750,10 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,currentTab=="Loot" and -190 or (currentTab=="Quests" and -650 or (currentTab=="Professions" and -445 or (currentTab=="Leveling" and -322 or ((currentTab=="Dungeons" or currentTab=="PvP") and -325 or (currentTab=="Overview" and -215 or (currentTab=="Settings" and -282 or -5)))))))
-  if scrollChild then scrollChild:SetHeight(math.max(420, (tonumber(content:GetStringHeight()) or 0) + (currentTab=="Quests" and 680 or (currentTab=="Professions" and 475 or (currentTab=="Leveling" and 346 or ((currentTab=="Dungeons" or currentTab=="PvP") and 345 or (currentTab=="Settings" and 310 or 24))))))) end
+  local offsets={Loot=190,Quests=650,Professions=445,Leveling=720,Dungeons=550,PvP=325,Overview=215,Settings=282,Legacy=390,Alts=390}
+  local offset=offsets[currentTab] or 5
+  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
+  if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
   -- Keep the player's current scroll position during refresh.
   if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
   if ForeverCompanionUIState.roleButton then ForeverCompanionUIState.roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -779,7 +787,7 @@ local function fitWindow()
   local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
   if scale>0 then pcall(window.SetScale,window,math.max(0.1,scale)) end
 end
-local function lootMatches()
+lootMatches=function()
   return ForeverCompanionLoot and ForeverCompanionLoot.Filter(
     ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,
     ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss) or {}
@@ -885,17 +893,17 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.bossButton,"BOTTOMLEFT",0,-8)
   ForeverCompanionLootUI.itemBackground=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"BACKGROUND")
   ForeverCompanionLootUI.itemBackground:SetAllPoints(ForeverCompanionLootUI.itemCard)
-  ForeverCompanionLootUI.itemBackground:SetTexture("Interface\\\\Buttons\\\\WHITE8X8")
+  ForeverCompanionLootUI.itemBackground:SetTexture("Interface\\Buttons\\WHITE8X8")
   if ForeverCompanionLootUI.itemBackground.SetVertexColor then ForeverCompanionLootUI.itemBackground:SetVertexColor(0.075,0.095,0.14,0.93) end
   ForeverCompanionLootUI.itemAccent=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"BORDER")
   ForeverCompanionLootUI.itemAccent:SetSize(4,64)
   ForeverCompanionLootUI.itemAccent:SetPoint("LEFT",ForeverCompanionLootUI.itemCard,"LEFT",0,0)
-  ForeverCompanionLootUI.itemAccent:SetTexture("Interface\\\\Buttons\\\\WHITE8X8")
+  ForeverCompanionLootUI.itemAccent:SetTexture("Interface\\Buttons\\WHITE8X8")
   if ForeverCompanionLootUI.itemAccent.SetVertexColor then ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1) end
   ForeverCompanionLootUI.itemIcon=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"ARTWORK")
   ForeverCompanionLootUI.itemIcon:SetSize(42,42)
   ForeverCompanionLootUI.itemIcon:SetPoint("LEFT",ForeverCompanionLootUI.itemCard,"LEFT",8,0)
-  ForeverCompanionLootUI.itemIcon:SetTexture("Interface\\\\Icons\\\\INV_Misc_QuestionMark")
+  ForeverCompanionLootUI.itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
   ForeverCompanionLootUI.itemTitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
   ForeverCompanionLootUI.itemTitle:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemIcon,"TOPRIGHT",12,-2)
   ForeverCompanionLootUI.itemSubtitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
@@ -1081,7 +1089,7 @@ local function createUI()
       if currentTab~=self.section then colorTexture(self.navBackground,0.18,0.17,0.14,1) end
     end)
     b:SetScript("OnLeave",function(self)
-      if currentTab~=self.section then colorTexture(self.navBackground,0.10,0.13,0.17,1) end
+      if currentTab~=self.section then colorTexture(self.navBackground,0.050,0.067,0.100,1) end
     end)
     b:SetScript("OnClick", function() openSection(section) end)
     tabButtons[#tabButtons+1]=b
@@ -1134,6 +1142,8 @@ local function createUI()
   scrollChild = child
   scroll:SetScrollChild(child)
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
+  if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
+  if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then

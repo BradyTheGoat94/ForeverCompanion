@@ -1,3 +1,11 @@
+## Develop preparation and practice interface batch — 2026-11-02
+
+- Added native Legacy and Alts planning desks with five saved review tasks, progress, reset, and cross-page navigation. These record personal preparation, not detected game progress.
+- Added visible specialization practice desks plus individual learning goals, common mistakes and role-based cooldown exercises for all 27 requested specialization guides, with the existing Guardian/Bear alternative explicitly unconfirmed.
+- Added historical dungeon/boss browsing and direct boss-filtered Loot Atlas navigation without inventing mechanics, rates or availability.
+- Expanded dashboard quick actions, unified amber sidebar selection, repaired native class/profession texture paths and the Loot render helper scope, and corrected content spacing.
+- Added real-widget interaction coverage, specialization progress-isolation tests, planning layout previews, and CI execution of boss-loot and study tests. Live-client and CurseForge acceptance remain pending.
+
 ## 3.14.0-beta (develop, 2026-11-02; mocked-client verification only)
 ### Dashboard mission-control improvements (develop, 2026-11-02)
 - The three progress metrics are now native, clickable navigation targets: XP opens Leveling, quest readiness opens Quests, and manual materials open Professions. Hover tooltips disclose data provenance and current values.

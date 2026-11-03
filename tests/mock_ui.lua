@@ -631,6 +631,53 @@ ForeverCompanionRefresh()
 exportSnapshot("ui_settings_snapshot.txt")
 overviewButton.OnClick(overviewButton)
 assert(not frames[frames[settingsHeading.parent].parent].visible,"Settings cards must hide on dashboard")
+-- Exercise newly integrated pages through the actual manifest and native buttons.
+local function buttonWithText(value)
+ for _,w in ipairs(frames) do if w.OnClick and w.text==value then return w end end
+end
+SlashCmdList.FOREVERCOMPANION("open legacy")
+local legacyState=ForeverCompanionStudyBoard.Get("Legacy","WARRIOR",ForeverCompanionDB)
+assert(legacyState.total==5 and legacyState.done==0)
+local studyRow
+for _,w in ipairs(frames) do
+ if w.kind=="FontString" and w.text==legacyState.tasks[1] then studyRow=frames[w.parent] end
+end
+assert(studyRow and studyRow.OnClick,"visible Legacy task must be clickable")
+studyRow.OnClick(studyRow)
+assert(ForeverCompanionStudyBoard.Get("Legacy","WARRIOR",ForeverCompanionDB).done==1)
+exportSnapshot("ui_legacy_snapshot.txt")
+buttonWithText("ALT PREPARATION").OnClick()
+assert(ForeverCompanionDB.tab=="Alts","Legacy shortcut should open alt desk")
+assert(ForeverCompanionStudyBoard.Get("Alts","WARRIOR",ForeverCompanionDB).done==0)
+exportSnapshot("ui_alts_snapshot.txt")
+SlashCmdList.FOREVERCOMPANION("open dungeons")
+assert(ForeverCompanionEncounterBrowser.dungeon~="")
+local openLoot=buttonWithText("Open boss loot")
+assert(openLoot and openLoot.OnClick,"boss loot shortcut missing")
+openLoot.OnClick()
+assert(ForeverCompanionDB.tab=="Loot")
+assert(ForeverCompanionLootUI.dungeon==ForeverCompanionEncounterBrowser.dungeon)
+assert(ForeverCompanionLootUI.boss==ForeverCompanionEncounterBrowser.boss)
+assert(ForeverCompanionLootUI.itemCard.visible,"loot card must render after navigation")
+local selected=ForeverCompanionLoot.Filter("",ForeverCompanionLootUI.dungeon,false,ForeverCompanionDB,ForeverCompanionLootUI.boss)[1]
+assert(selected and ForeverCompanionLootUI.itemTitle.text==selected.item)
+ForeverCompanionLootUI.wishButton.OnClick()
+assert(ForeverCompanionLoot.Wishlist(ForeverCompanionDB)[selected.item]==true)
+ForeverCompanionLootUI.savedButton.OnClick()
+assert(ForeverCompanionLootUI.savedOnly)
+ForeverCompanionLootUI.resetButton.OnClick()
+assert(ForeverCompanionLootUI.dungeon=="" and ForeverCompanionLootUI.boss=="" and not ForeverCompanionLootUI.savedOnly)
+assert(ForeverCompanionLootUI.selectedIndex==1)
+exportSnapshot("ui_loot_snapshot.txt")
+SlashCmdList.FOREVERCOMPANION("open leveling")
+assert(not ForeverCompanionLootUI.itemCard.visible,"loot widgets hide outside Loot")
+local practice=ForeverCompanionStudyBoard.Get("Leveling","WARRIOR",ForeverCompanionDB)
+assert(practice and practice.total>=3)
+exportSnapshot("ui_practice_snapshot.txt")
+for _,w in ipairs(frames) do
+ if w.texture then assert(not w.texture:find("\\\\",1,true),"over-escaped texture path: "..w.texture) end
+end
+overviewButton.OnClick(overviewButton)
 for _,f in ipairs(frames) do
  local anchor=f.point and clean(f.point[1]) or ""
  local x,y="",""

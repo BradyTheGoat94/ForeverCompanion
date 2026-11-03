@@ -45,4 +45,7 @@ SettingsBriefing.lua
 Heraldry.lua
 Dashboard.lua
 ClassGuide.lua
+PracticeNotes.lua
+StudyBoard.lua
+EncounterBrowser.lua
 Core.lua
