@@ -2,7 +2,7 @@
 -- of unlocks, skill ownership, combat readiness, or server mechanics.
 local B={}
 ForeverCompanionStudyBoard=B
-local host,root,heading,summary,evidence,fill,navigate,current,rows,links,progressCaption
+local host,root,heading,summary,evidence,fill,navigate,current,rows,links,progressCaption,nextTask
 local classAccents={
  WARRIOR={0.78,0.61,0.43},PALADIN={0.96,0.55,0.73},HUNTER={0.67,0.83,0.45},
  ROGUE={1,0.96,0.41},PRIEST={0.90,0.93,1},SHAMAN={0.20,0.55,1},
@@ -80,14 +80,16 @@ function B.Create(parent,openPage)
  heading=text(root,16,-15,565,"STUDY DESK","GameFontNormalLarge");heading:SetTextColor(0.97,0.77,0.40)
  summary=text(root,16,-43,730,"")
  evidence=text(root,16,-63,735,"");evidence:SetTextColor(0.70,0.76,0.83)
- bar(root,16,-85,738,5,0.16,0.20,0.27);fill=bar(root,16,-85,1,5,0.91,0.68,0.29)
+ nextTask=text(root,16,-78,738,"", "GameFontHighlightSmall")
+ nextTask:SetTextColor(0.82,0.85,0.91)
+ bar(root,16,-100,738,5,0.16,0.20,0.27);fill=bar(root,16,-100,1,5,0.91,0.68,0.29)
  progressCaption=text(root,540,-43,210,"", "GameFontHighlightSmall");progressCaption:SetJustifyH("RIGHT")
  rows={}
  for i=1,5 do
   local index=i
-  local b=CreateFrame("Button",nil,root);b:SetSize(738,43);b:SetPoint("TOPLEFT",root,"TOPLEFT",16,-100-(i-1)*46)
+  local b=CreateFrame("Button",nil,root);b:SetSize(738,40);b:SetPoint("TOPLEFT",root,"TOPLEFT",16,-113-(i-1)*43)
   b.bg=b:CreateTexture(nil,"BACKGROUND");b.bg:SetAllPoints(b)
-  b.rail=bar(b,0,0,3,43,0.94,0.72,0.32)
+  b.rail=bar(b,0,0,3,40,0.94,0.72,0.32)
   b.number=text(b,10,-12,60,"");b.caption=text(b,77,-7,647,"");b.caption:SetTextColor(0.94,0.90,0.81)
   b:SetScript("OnClick",function()
    if current and B.Toggle(current.tab,current.class,current.db,index) then
@@ -136,6 +138,7 @@ function B.Render(tab,class,db)
  summary:SetText("Personal checklist  |  No game progress detected")
  progressCaption:SetText(state.done.." / "..state.total.." reviewed")
  progressCaption:SetTextColor(accent[1],accent[2],accent[3])
+ nextTask:SetText(state.nextStep and ("NEXT TO REVIEW: "..state.nextStep) or "ALL ITEMS REVIEWED  |  You can reset this personal checklist at any time.")
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
  fill:SetWidth(state.total>0 and math.max(1,738*state.done/state.total) or 1)
  for i,row in ipairs(rows) do
