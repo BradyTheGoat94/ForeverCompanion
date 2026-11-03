@@ -107,9 +107,7 @@ function Guide.TopicLines(class,view,role)
   lines[#lines+1]=entry.pvp or "Plan positioning, control and defensive responses."
   lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"pvp")
  elseif view=="Gear & Stats" then
-  lines[#lines+1]="GEAR REFERENCE / No verified stat weights or best-in-slot ranking is supplied."
-  for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
-  lines[#lines+1]="Compare role, usable equipment and actual item tooltips in the client. Catalog drops do not establish that an item is an upgrade."
+  return ForeverCompanionGearStats.Lines(class)
  elseif view=="Professions" then
   lines[#lines+1]=entry.professions or "Compare gathering income and crafting goals before committing."
   lines[#lines+1]="Profession material goals are manually entered. The addon does not purchase or craft items."
@@ -123,7 +121,7 @@ function Guide.Render(class,label,level,role,mode)
  values.crumb:SetText("CLASS GUIDES  /  "..string.upper(tostring(label)))
  values.name:SetText(tostring(label))
  values.role:SetText("Level "..tostring(level or "?").."  /  "..(selected and selected[1] or "Choose specialization").."  /  "..tostring(role or "Choose role"))
- values.icon:SetTexture(entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+ ForeverCompanionIcons.ApplyClass(values.icon,class)
  values.art:SetTexture(class=="WARRIOR" and ForeverCompanionVisualTheme.warrior or ForeverCompanionVisualTheme.citadel)
  if values.art.SetTexCoord then values.art:SetTexCoord(0,1,0,.66) end
  values.tip=entry.leveling or "Check trained spells and the reference guide."

@@ -362,9 +362,7 @@ function D.Render()
   values.character:SetText(tostring(player).."   •   Level "..tostring(level))
   values.class:SetText("Class: "..tostring(class))
   if values.classIcon then
-    local handbook=ForeverCompanionData and ForeverCompanionData.classHandbook
-    local entry=handbook and handbook[string.upper(tostring(class))]
-    values.classIcon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09")
+    ForeverCompanionIcons.ApplyClass(values.classIcon,context and context.classToken and context.classToken() or string.upper(tostring(class)))
   end
   values.role:SetText("Role preference: "..tostring(db.role or "Not selected"))
   local professions=ForeverCompanionProfessionScanner

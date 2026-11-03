@@ -1,3 +1,11 @@
+## 3.18.0-beta — November 2, 2026 (develop)
+
+- Added source-reviewed Forever beta PvE stat references for all 27 standard specializations, with separate Bear-tank guidance under the conditional planner label. Included source URLs, practical caveats, conditional target references, and explicit uncertainty where sources conflict.
+- Corrected class emblems to Blizzard's class sheet/crops across dashboard, banner, class strip and general priority cards. Skill artwork now requires a named cue present in the instruction; unresolved lookups show a question mark. Class-to-skill transitions reset texture crops.
+- Added a clickable paged loot catalog, slot and manual-acquisition filters, source-detail panel and item-to-boss-notebook navigation. Existing wishlist and acquisition controls remain independent. No new item/drop claims or verified BiS rankings.
+- Added all-profile/icon regression checks, compound filter and UI navigation tests, and native gear/loot preview artifacts. Mock text measurement now accounts for explicit line breaks and widget width.
+- Live client icon rendering, installation, current Interface version and CurseForge acceptance remain unverified. Main and public release are unchanged.
+
 ## 3.17.0-beta: readable class-guide details (develop)
 
 - Replace the one-line selected-priority area with a larger, measured multiline card.

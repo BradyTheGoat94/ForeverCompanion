@@ -6,6 +6,42 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Stat priorities, accurate icon identities and gear browsing (3.18.0-beta, develop)
+
+**Class Guides → Gear & Stats** follows the selected specialization and now has
+27 source-reviewed Forever PvE stat profiles, plus the conditional Bear tank
+reference. Each includes a ranked reference, practical comparison notes, a source
+URL and review date. These are beta theorycraft, not live-tested weights or a
+universal shopping rule. Talent-adjusted targets and tank survival/threat choices
+are explained. Conflicting Fury Hit figures are explicitly flagged; no universal
+numeric cap is inferred for that profile. A complete verified BiS set is not yet
+established. Sources and editorial decisions: [STAT_PRIORITY_SOURCES.md](docs/STAT_PRIORITY_SOURCES.md).
+
+Class badges now use Blizzard's actual class-icon sheet and distinct class crops,
+rather than spell art used as class symbols. Dashboard, class banner, class strip
+and generic priority tiles share the same mapping. Named ability cards query the
+client's spell-texture API only when that name occurs in the full instruction.
+The selected detail and hover tooltip identify the artwork cue. Missing spell
+art shows a question mark; general instructions use the class emblem. Artwork
+lookup never proves a spell is trained. English-name lookup can remain unresolved
+on a localized client; no cross-version spell IDs are guessed. See
+[ICON_IDENTITY_AUDIT.md](docs/ICON_IDENTITY_AUDIT.md).
+
+**Gear & Loot** now has six clickable catalog rows per page, a source-detail card,
+slot filters, and All / Not marked / Obtained (manual) acquisition filters. These
+combine with the existing search, dungeon, boss and wishlist filters. Selecting a
+row updates the existing wishlist and acquisition controls. **Open selected boss
+research** opens that encounter and its personal notebook. Opening loot from the
+boss browser clears unrelated slot/acquisition filters; **Clear filters** resets
+all filters. Acquisitions and saved targets remain separate per-character notes.
+The eight existing sourced catalog records are unchanged; this is not a full loot
+database, inventory scanner, drop-rate predictor, or automatically ranked BiS list.
+
+Offline tests cover icon identity/crop resets, all stat profiles, compound filters,
+paging, empty results, long source descriptions and the round trip between an item
+and its boss notebook. `ui_gear_native.png` and `ui_loot_native.png` in CI illustrate
+the captured layout; Blizzard icons and fonts are approximations, not client images.
+
 ## Readable class-guide detail (3.17.0-beta, develop)
 
 Selected ability instructions now use a larger, multiline detail card whose height

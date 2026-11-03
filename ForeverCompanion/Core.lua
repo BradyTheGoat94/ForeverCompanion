@@ -195,6 +195,7 @@ local function render()
     if rotationDetail>#priorities then rotationDetail=1 end
     ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],rotationDetail,priorities)
   end
+  if ForeverCompanionLootWorkspace then ForeverCompanionLootWorkspace.Render(currentTab,DB,currentTab=="Loot" and lootMatches() or {}) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Render(currentTab,DB) end
   if ForeverCompanionStudyBoard then
@@ -306,7 +307,7 @@ local function render()
       local matches=lootMatches()
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
-      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss)
+      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss,ForeverCompanionLootUI.acquisition,ForeverCompanionLootUI.slot)
       lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
       if selected and type(ForeverCompanionLoot.BossSummary)=="function" then
         lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
@@ -366,8 +367,6 @@ local function render()
       local presentation=ForeverCompanionRotationPresentation
       local context=presentation and presentation.contexts[mode]
       if context then lines[#lines+1]=context.title.." - "..context.description end
-      local icons=ForeverCompanionRotationIcons and ForeverCompanionRotationIcons[classToken()]
-      if rotationIcon and icons and icons[1] then rotationIcon:SetTexture(icons[1]) end
       local priorities=rotations[mode] or {}
       if rotationDetail>#priorities then rotationDetail=1 end
       for i,ability in ipairs(priorities) do
@@ -403,13 +402,14 @@ local function render()
                 GameTooltip:AddLine("IF STUCK: "..coach.recover,0.84,0.86,0.81,true)
               end
               GameTooltip:AddLine("Reference only; verify trained abilities in your Forever spellbook.",0.72,0.78,0.86,true)
-              GameTooltip:AddLine("Icon is a client artwork cue, not proof of training; the full instruction may cover several conditional actions.",0.72,0.78,0.86,true)
+              GameTooltip:AddLine(self.iconCue and ("Icon: "..self.iconCue..(self.iconStatus=="spell" and " / client texture" or " / unavailable, showing question mark")) or "Class emblem / general instruction, no single spell named.",0.72,0.78,0.86,true)
+              GameTooltip:AddLine("Artwork lookup does not establish training or recommend a cast.",0.72,0.78,0.86,true)
               GameTooltip:Show()
             end
           end)
           row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
           if row.icon then
-            row.icon:SetTexture(ForeverCompanionRotationCardIcon(classToken(),mode,i))
+            row.iconCue,row.iconStatus=ForeverCompanionIcons.ApplyRotation(row.icon,classToken(),mode,i)
             row.icon:Show()
           end
           row:SetScript("OnClick",function() rotationDetail=i; render() end)
@@ -589,7 +589,7 @@ local function render()
       lines[#lines+1]="DUNGEON: "..guide.dungeon
       lines[#lines+1]="PVP: "..guide.pvp
       lines[#lines+1]="PROFESSIONS: "..guide.professions
-      if handbookIcon then handbookIcon:SetTexture(guide.icon) end
+      if handbookIcon then ForeverCompanionIcons.ApplyClass(handbookIcon,classToken()) end
     end
     for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
     local deep=ADVANCED and ADVANCED.classes[classToken()]
@@ -794,6 +794,7 @@ local function render()
   content:ClearAllPoints()
   local offsets={Loot=215,Quests=650,Professions=445,Leveling=970,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
+  if currentTab=="Loot" then offset=230+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
   if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=198+ForeverCompanionClassGuide.GetTopicHeight() end
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
@@ -836,7 +837,7 @@ end
 lootMatches=function()
   return ForeverCompanionLoot and ForeverCompanionLoot.Filter(
     ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,
-    ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss) or {}
+    ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss,ForeverCompanionLootUI.acquisition,ForeverCompanionLootUI.slot) or {}
 end
 local function setupLootControls(child)
   ForeverCompanionLootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
@@ -929,6 +930,7 @@ local function setupLootControls(child)
     ForeverCompanionLootUI.dungeon=""
     ForeverCompanionLootUI.boss=""
     ForeverCompanionLootUI.savedOnly=false
+    ForeverCompanionLootUI.acquisition="";ForeverCompanionLootUI.slot=""
     ForeverCompanionLootUI.selectedIndex=1
     if ForeverCompanionLootUI.searchBox.SetText then ForeverCompanionLootUI.searchBox:SetText("") end
     render()
@@ -1220,7 +1222,7 @@ local function createUI()
     })
   end
   if ForeverCompanionDashboard then
-    ForeverCompanionDashboard.Create(window,openSection,{db=function() return DB end,class=classLabel,level=level})
+    ForeverCompanionDashboard.Create(window,openSection,{db=function() return DB end,class=classLabel,classToken=classToken,level=level})
   end
   if ForeverCompanionSettingsBriefing then
     ForeverCompanionSettingsBriefing.Create(child,{
@@ -1437,6 +1439,7 @@ local function createUI()
     rotationRows[i]=row
   end
   setupLootControls(child)
+  ForeverCompanionLootWorkspace.Create(child,openSection,render)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
@@ -1522,7 +1525,7 @@ local function createUI()
     name:SetTextColor(0.95,0.83,0.60)
     local classIcon=button:CreateTexture(nil,"ARTWORK")
     classIcon:SetPoint("LEFT",button,"LEFT",4,0);classIcon:SetSize(19,19)
-    classIcon:SetTexture(DATA.classHandbook[token].icon)
+    ForeverCompanionIcons.ApplyClass(classIcon,token)
     button:SetScript("OnClick",function()
       DB.previewClass=token
       DB.role=nil

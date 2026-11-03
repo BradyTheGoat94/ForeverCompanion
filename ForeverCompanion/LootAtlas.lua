@@ -195,14 +195,17 @@ function Loot.CatalogSummary()
   lines[#lines+1]="This is not a complete dungeon loot table."
   return table.concat(lines,"\n")
 end
-function Loot.Filter(query, dungeon, savedOnly, db, boss)
+function Loot.Filter(query, dungeon, savedOnly, db, boss, acquisition, slot)
   local matches=Loot.Search(query)
   local results={}
   local wishes=savedOnly and Loot.Wishlist(db) or nil
   for _,record in ipairs(matches) do
     if (not dungeon or dungeon=="" or record.dungeon==dungeon)
       and (not boss or boss=="" or record.boss==boss)
-      and (not savedOnly or wishes[record.item]) then
+      and (not savedOnly or wishes[record.item])
+      and (not slot or slot=="" or record.slot==slot)
+      and (acquisition~="outstanding" or not Loot.Obtained(db,record.item))
+      and (acquisition~="obtained" or Loot.Obtained(db,record.item)) then
       results[#results+1]=record
     end
   end
@@ -213,8 +216,8 @@ function Loot.Filter(query, dungeon, savedOnly, db, boss)
   end)
   return results
 end
-function Loot.FilterSummary(query,dungeon,savedOnly,db,boss)
-  local matches=Loot.Filter(query,dungeon,savedOnly,db,boss)
+function Loot.FilterSummary(query,dungeon,savedOnly,db,boss,acquisition,slot)
+  local matches=Loot.Filter(query,dungeon,savedOnly,db,boss,acquisition,slot)
   local wishes=Loot.Wishlist(db)
   local saved=0
   for _,record in ipairs(matches) do
@@ -227,6 +230,8 @@ function Loot.FilterSummary(query,dungeon,savedOnly,db,boss)
     "Boss: "..(type(boss)=="string" and boss~="" and boss or "All bosses"),
     "Wishlist only: "..(savedOnly and "On" or "Off"),
     "Saved in results: "..saved,
+    "Slot: "..(slot and slot~="" and slot or "All"),
+    "Acquisition (manual): "..(acquisition=="obtained" and "Obtained" or (acquisition=="outstanding" and "Not marked" or "All")),
   }
   return table.concat(lines,"\n")
 end
@@ -336,3 +341,13 @@ function Loot.ProgressSummary(db,dungeon,boss)
     .." recorded drops saved (catalog may be incomplete; saved does not mean obtained)"
 end
 
+
+-- Options come from the attributed catalog; never infer equipment eligibility.
+function Loot.SlotNames()
+ local seen,names={},{}
+ for _,record in ipairs(Loot.records) do
+  if clean(record.slot) and not seen[record.slot] then seen[record.slot]=true;names[#names+1]=record.slot end
+ end
+ table.sort(names)
+ return names
+end

@@ -51,7 +51,7 @@ function E.Create(parent,openPage)
  buttons[3]:SetScript("OnClick",function()
   if E.dungeon=="" or E.boss=="" then return end
   local ui=ForeverCompanionLootUI
-  ui.query="";ui.dungeon=E.dungeon;ui.boss=E.boss;ui.savedOnly=false;ui.selectedIndex=1
+  ui.query="";ui.dungeon=E.dungeon;ui.boss=E.boss;ui.savedOnly=false;ui.acquisition="";ui.slot="";ui.selectedIndex=1
   if ui.searchBox then ui.searchBox:SetText("") end
   navigate("Loot")
  end)

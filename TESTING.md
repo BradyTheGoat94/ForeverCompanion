@@ -352,3 +352,25 @@ expands. The native renderer exports a long-priority inspection view in CI.
 In the real client, inspect the longest instructions and Talents topic at several
 UI scales: all text should remain visible while scrolling; the practice desk and
 handbook shortcut must follow their preceding content without overlap.
+
+## 3.18 stat, icon and gear-catalog regression pass
+
+Run `lua5.1 tests/icons_and_gear_smoke.lua` alongside the existing smoke suites.
+It exercises nine distinct class-sheet crops, every class/context priority icon,
+class-to-spell crop reset, unresolved/invalid/erroring texture lookups, the optional
+legacy texture fallback, and all 27 stat profiles plus conditional Bear reference.
+It requires an explicit source and beta evidence label for every profile.
+
+`tests/loot_boss_smoke.lua` now combines acquisition, slot, wishlist, dungeon and
+boss filters and checks character isolation. `tests/mock_ui.lua` exercises direct
+row selection, page boundaries, acquisition-driven row removal, empty filters,
+all-filter reset, item-to-boss notebook context, and clearing unrelated filters
+when opening boss loot. Forced 700-pixel source details check panel expansion.
+Native preview output now includes `ui_gear_native.png` and `ui_loot_native.png`.
+Mock font heights account for line breaks and width, but remain approximations.
+
+Manual client acceptance must additionally verify every class's crop and named
+spell's icon in the actual client, unavailable/localized spell names, class preview
+versus character identity, stat-page scrolling/source legibility, all loot filters,
+SavedVariables acquisition/wishlist persistence and the notebook round trip.
+Source review does not verify the guides' estimated stat rankings or caps in-game.

@@ -54,7 +54,13 @@ local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
  function w:SetText(v) self.text=tostring(v or "") end
  function w:GetText() return self.text end
- function w:GetStringHeight() return math.max(16,math.ceil(#self.text/75)*16) end
+ function w:GetStringHeight()
+  local size=self.font and self.font[2] or 12
+  local chars=math.max(1,math.floor((self.width or 525)/(size*.56)))
+  local lines=0
+  for paragraph in (self.text.."\n"):gmatch("(.-)\n") do lines=lines+math.max(1,math.ceil(#paragraph/chars)) end
+  return math.max(16,lines*(size+2))
+ end
  function w:Show() self.visible=true end
  function w:Hide() self.visible=false end
  function w:IsShown() return self.visible end
@@ -473,9 +479,11 @@ for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
  assert(ForeverCompanionClassGuide.GetView()==button.view,"topic selection must persist")
  assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
  if button.view~="Rotations" then
-  assert(ForeverCompanionClassGuide.topicBody.text:find("GENERAL REFERENCE",1,true),"topic evidence notice")
+  assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or "GENERAL REFERENCE",1,true),"topic evidence notice")
  end
 end
+ForeverCompanionClassGuide.SelectView("Gear & Stats")
+exportNative("ui_gear_native.json")
 ForeverCompanionClassGuide.SelectView("Talents")
 exportNative("ui_topic_native.json")
 assert(not ForeverCompanionClassGuide.SelectView("Not a topic"),"invalid topic must be rejected")
@@ -849,8 +857,50 @@ assert(ForeverCompanionLootUI.savedOnly)
 ForeverCompanionLootUI.resetButton.OnClick()
 assert(ForeverCompanionLootUI.dungeon=="" and ForeverCompanionLootUI.boss=="" and not ForeverCompanionLootUI.savedOnly)
 assert(ForeverCompanionLootUI.selectedIndex==1)
+-- Browse directly, including the second page, then combine filters.
+local catalog=ForeverCompanionLootWorkspace
+assert(catalog.root.visible and #catalog.rows==6)
+assert(catalog.rows[2].record)
+catalog.rows[2].OnClick(catalog.rows[2])
+assert(ForeverCompanionLootUI.selectedIndex==2 and ForeverCompanionLootUI.itemTitle.text==catalog.rows[2].record.item)
+catalog.nextPage.OnClick()
+assert(ForeverCompanionLootUI.selectedIndex==7 and catalog.rows[1].resultIndex==7)
+assert(not catalog.nextPage.enabled and catalog.previous.enabled)
+catalog.previous.OnClick()
+assert(ForeverCompanionLootUI.selectedIndex==1)
+local desired=catalog.rows[1].record
+catalog.statusButton.OnClick()
+assert(ForeverCompanionLootUI.acquisition=="outstanding")
+ForeverCompanionLootUI.obtainedButton.OnClick()
+assert(ForeverCompanionLootUI.itemTitle.text~=desired.item,'marking acquired must update outstanding results')
+catalog.statusButton.OnClick()
+assert(ForeverCompanionLootUI.acquisition=="obtained" and catalog.rows[1].record.item==desired.item)
+assert(not catalog.rows[2].visible,'stale result rows must hide')
+catalog.researchButton.OnClick()
+assert(ForeverCompanionDB.tab=="Dungeons" and browser.boss==desired.boss and browser.dungeon==desired.dungeon)
+assert(ForeverCompanionResearchNotebook.Context("Dungeons")=="Boss:"..desired.dungeon..":"..desired.boss)
+openLoot.OnClick()
+assert(ForeverCompanionLootUI.acquisition=="" and ForeverCompanionLootUI.slot=="",'boss shortcut clears unrelated filters')
+ForeverCompanionLootUI.resetButton.OnClick()
+catalog.slotButton.OnClick()
+local selectedSlot=ForeverCompanionLootUI.slot
+for _,row in ipairs(catalog.rows) do if row.record then assert(row.record.slot==selectedSlot) end end
+ForeverCompanionLootUI.query="no such loot";ForeverCompanionRefresh()
+assert(not catalog.rows[1].visible and not catalog.researchButton.enabled)
+assert(not ForeverCompanionLootUI.wishButton.enabled and not ForeverCompanionLootUI.obtainedButton.enabled)
+ForeverCompanionLootUI.resetButton.OnClick()
+assert(ForeverCompanionLootUI.slot=="" and ForeverCompanionLootUI.acquisition=="")
+local measure=catalog.detail.GetStringHeight
+catalog.detail.GetStringHeight=function() return 700 end
+ForeverCompanionRefresh()
+assert(catalog.detail.height>=707 and catalog.root.height>=894,'long source descriptions expand beyond fixed row area')
+assert(catalog.detailPanel.fcPanelEdges.left.height==catalog.detailPanel.height,'detail panel edges follow expansion')
+catalog.detail.GetStringHeight=measure
+ForeverCompanionRefresh()
+exportNative("ui_loot_native.json")
 exportSnapshot("ui_loot_snapshot.txt")
 SlashCmdList.FOREVERCOMPANION("open leveling")
+assert(not catalog.root.visible,"catalog must hide outside Loot")
 assert(not ForeverCompanionLootUI.itemCard.visible,"loot widgets hide outside Loot")
 assert(not ForeverCompanionLootUI.obtainedButton.visible,"manual acquisition button hides outside Loot")
 local practice=ForeverCompanionStudyBoard.Get("Leveling","WARRIOR",ForeverCompanionDB)

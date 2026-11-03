@@ -22,6 +22,7 @@ jobs:
         run: |
           lua5.1 tests/offline_smoke.lua
           lua5.1 tests/loot_boss_smoke.lua
+          lua5.1 tests/icons_and_gear_smoke.lua
           lua5.1 tests/study_board_smoke.lua
           lua5.1 tests/research_notebook_smoke.lua
       - name: Exercise addon UI in mocked client
@@ -67,6 +68,10 @@ jobs:
             ui_rotation_native.png
             ui_topic_native.json
             ui_topic_native.png
+            ui_gear_native.json
+            ui_gear_native.png
+            ui_loot_native.json
+            ui_loot_native.png
             ui_long_priority_native.json
             ui_long_priority_native.png
             ui_practice_snapshot.txt

@@ -12,19 +12,6 @@ ForeverCompanionRotations = {
  DRUID={leveling={"Before pull: choose Cat Form for melee damage if trained, otherwise use available caster spells","Cat: build combo points with trained attacks such as Claw, then spend with Rip or Ferocious Bite if available","Caster: apply Moonfire if the target lives long enough, then cast Wrath or Starfire","Use form-specific resources efficiently and heal between pulls rather than wasting combat uptime"},dungeon={"Tank: control threat and positioning","Healer: manage mana and dispels","Damage: maintain role-specific uptime"},boss={"Use specialization-specific form and abilities","Manage resources and cooldowns"},aoe={"Choose safe multi-target tools for your role","Avoid excessive threat"},pvp={"Shift forms for mobility and utility","Use control and healing","Manage defensive cooldowns"}}
 }
 
--- Optional illustrative ability icons. A missing texture should fall back to readable text.
-ForeverCompanionRotationIcons = {
- WARRIOR={"Interface\\Icons\\Ability_Warrior_BattleShout","Interface\\Icons\\Ability_Warrior_Charge"},
- PALADIN={"Interface\\Icons\\Spell_Holy_SealOfMight","Interface\\Icons\\Spell_Holy_HolyBolt"},
- HUNTER={"Interface\\Icons\\Ability_Hunter_BeastTaming","Interface\\Icons\\Ability_Hunter_AspectOfTheHawk"},
- ROGUE={"Interface\\Icons\\Ability_Stealth","Interface\\Icons\\Ability_Rogue_SliceDice"},
- PRIEST={"Interface\\Icons\\Spell_Holy_PowerWordShield","Interface\\Icons\\Spell_Holy_Renew"},
- SHAMAN={"Interface\\Icons\\Spell_Nature_Lightning","Interface\\Icons\\Spell_Nature_HealingWaveGreater"},
- MAGE={"Interface\\Icons\\Spell_Frost_FrostBolt02","Interface\\Icons\\Spell_Frost_FrostNova"},
- WARLOCK={"Interface\\Icons\\Spell_Shadow_CurseOfSargeras","Interface\\Icons\\Spell_Shadow_DeathCoil"},
- DRUID={"Interface\\Icons\\Ability_Druid_Maul","Interface\\Icons\\Spell_Nature_Rejuvenation"}
-}
-
 -- A guide presentation contract for a future clickable ability-card interface.
 -- Data is explanatory, not a recommendation to automate gameplay.
 ForeverCompanionRotationPresentation = {
@@ -250,13 +237,13 @@ local iconCues={
 }
 function ForeverCompanionRotationCardIcon(class,mode,index)
  local cue=mode=="leveling" and iconCues[class] and iconCues[class][index]
- if cue and type(C_Spell)=="table" and type(C_Spell.GetSpellTexture)=="function" then
-  local ok,icon=pcall(function()
-   local value=C_Spell.GetSpellTexture(cue)
-   if type(value)=="number" and value==value and value>0 and value<math.huge then return value end
-  end)
-  if ok and icon then return icon end
+ local instruction=ForeverCompanionRotations[class] and ForeverCompanionRotations[class][mode]
+ instruction=instruction and instruction[index]
+ -- A representative spell must actually be named in this instruction. Generic
+ -- preparation rows must not pretend an arbitrary poison, pet or buff was named.
+ if cue and type(instruction)=="string" and instruction:lower():find(cue:lower(),1,true) then
+  local icon=ForeverCompanionIcons.Spell(cue)
+  return icon or ForeverCompanionIcons.unknown,cue,icon and "spell" or "unresolved"
  end
- local entry=ForeverCompanionData and ForeverCompanionData.classHandbook and ForeverCompanionData.classHandbook[class]
- return entry and entry.icon or "Interface\\Icons\\INV_Misc_Book_09"
+ return ForeverCompanionIcons.Class(class),nil,"class"
 end

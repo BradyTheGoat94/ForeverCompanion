@@ -52,13 +52,12 @@ for class_name in ("WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST",
     lines=[line.strip() for line in section.splitlines()
            if line.strip().startswith(class_name+"=")]
     assert len(lines)==1,f"Missing or duplicate class entry for {class_name}"
-    line=lines[0]
-    assert line.startswith(class_name+'={icon="Interface'), (
-        f"Class icon for {class_name} must use a Blizzard client icon path"
-    )
-    icon=line.split('icon=',1)[1].split(',',1)[0]
-    assert "Icons" in icon,f"Missing icon directory for {class_name}"
-    assert "http" not in icon.lower(),f"External icon reference for {class_name}"
-print("PASS: nine class icons reference native Blizzard interface textures")
+    assert 'classToken="'+class_name+'"' in lines[0],f"Wrong class identity for {class_name}"
+icons=(root/"Icons.lua").read_text(encoding="utf-8")
+assert "UI-CharacterCreate-Classes" in icons,"Missing native Blizzard class sheet"
+assert "GetSpellTexture" in icons,"Missing client spell artwork lookup"
+for name in ("ClassGuide.lua","Dashboard.lua","Core.lua"):
+    assert "ForeverCompanionIcons.ApplyClass" in (root/name).read_text(),f"Class widget bypasses central icon mapping: {name}"
+print("PASS: nine class identities and centralized native Blizzard class/spell icon lookup")
 
 print("PASS: beta metadata, required release docs and live-client gate present")

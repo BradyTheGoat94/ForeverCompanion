@@ -69,7 +69,9 @@ function W.Render(tab,class,mode,index,priorities)
  index=type(index)=="number" and math.floor(index) or 1
  if index<1 or index>#priorities then index=1 end
  local ability=priorities[index]
- selectedText:SetText(ability and ("PRIORITY "..index..": "..ability) or "No reference priority available for this class and context.")
+ local _,cue,iconStatus=ForeverCompanionRotationCardIcon(class,mode,index)
+ local artwork=cue and ("\nArtwork: "..cue..(iconStatus=="spell" and " / client spell icon" or " / unresolved, showing question mark")) or "\nArtwork: class emblem / general instruction"
+ selectedText:SetText(ability and ("PRIORITY "..index..": "..ability..artwork) or "No reference priority available for this class and context.")
  -- Measure after assigning the complete instruction; never clip its conditions.
  local detailHeight=math.max(72,selectedText:GetStringHeight()+8)
  selectedText:SetHeight(detailHeight)

@@ -72,7 +72,12 @@ def render(source,output,workspace=False):
     def intersect(a,b):
         return (max(a[0],b[0]),max(a[1],b[1]),min(a[2],b[2]),min(a[3],b[3]))
 
-    if workspace:
+    if workspace=='loot':
+        target=next(n for n in records if n.get('name')=='ForeverCompanionLootCatalog')
+        bx,by,bw,bh=box(target['id'])
+        offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
+        start=target['id']
+    elif workspace:
         label=next(n for n in records if n.get('text')=='Rotation Type')
         target=nodes[nodes[label['parent']]['parent']]
         bx,by,bw,bh=box(target['id'])
@@ -142,7 +147,7 @@ def render(source,output,workspace=False):
     visit(start,(0,0,width,height-45))
     # Rotation tiles are siblings of the workspace so the addon can reuse its
     # existing selected-priority behavior. Include them in the inspection crop.
-    if workspace:
+    if workspace is True:
         for n in records:
             if n['kind']=='Button' and n.get('width')==88 and n.get('height')==96:visit(n['id'],(24,24,width-24,height-45))
     d=ImageDraw.Draw(im)
@@ -155,6 +160,8 @@ render('ui_dashboard_native.json','ui_dashboard_native.png')
 render('ui_class_native.json','ui_class_native.png')
 render('ui_class_native.json','ui_rotation_native.png',True)
 render('ui_topic_native.json','ui_topic_native.png')
+render('ui_gear_native.json','ui_gear_native.png')
+render('ui_loot_native.json','ui_loot_native.png','loot')
 render('ui_long_priority_native.json','ui_long_priority_native.png',True)
 # Existing automation consumes these established preview filenames. Keep them
 # aligned with the native-layout outputs rather than older schematic drawings.
