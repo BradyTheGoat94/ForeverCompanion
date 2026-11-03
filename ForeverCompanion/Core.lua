@@ -131,6 +131,7 @@ local function render()
     ForeverCompanionLootUI.savedButton:SetText(ForeverCompanionLootUI.savedOnly and "Wishlist: Only" or "Wishlist: All")
     ForeverCompanionLootUI.dungeonButton:Show()
     ForeverCompanionLootUI.savedButton:Show()
+    ForeverCompanionLootUI.resetButton:Show()
     ForeverCompanionLootUI.itemTitle:SetText(selected and selected.item or "No matching loot")
     ForeverCompanionLootUI.itemSubtitle:SetText(selected and (selected.boss.." / "..selected.dungeon.." | "..(selected.slot or "Slot unknown").." | Beta reference") or "Change your search or filters")
     ForeverCompanionLootUI.itemStatus:SetText(selected and ((ForeverCompanionLoot.Wishlist(DB)[selected.item] and "[SAVED]  " or "[NOT SAVED]  ")..(selected.status or "Verification unknown")) or "No matching source-attributed item")
@@ -144,7 +145,7 @@ local function render()
       ForeverCompanionLootUI.searchBox:Hide()
       ForeverCompanionLootUI.wishButton:Hide()
       ForeverCompanionLootUI.prevButton:Hide(); ForeverCompanionLootUI.nextButton:Hide()
-    ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.savedButton:Hide()
+    ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.savedButton:Hide(); ForeverCompanionLootUI.resetButton:Hide()
     ForeverCompanionLootUI.itemCard:Hide()
     end
   end
@@ -843,6 +844,19 @@ local function setupLootControls(child)
     render()
   end)
   ForeverCompanionLootUI.savedButton:Hide()
+  ForeverCompanionLootUI.resetButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  ForeverCompanionLootUI.resetButton:SetSize(115,22)
+  ForeverCompanionLootUI.resetButton:SetPoint("LEFT",ForeverCompanionLootUI.savedButton,"RIGHT",8,0)
+  ForeverCompanionLootUI.resetButton:SetText("Clear filters")
+  ForeverCompanionLootUI.resetButton:SetScript("OnClick",function()
+    ForeverCompanionLootUI.query=""
+    ForeverCompanionLootUI.dungeon=""
+    ForeverCompanionLootUI.savedOnly=false
+    ForeverCompanionLootUI.selectedIndex=1
+    if ForeverCompanionLootUI.searchBox.SetText then ForeverCompanionLootUI.searchBox:SetText("") end
+    render()
+  end)
+  ForeverCompanionLootUI.resetButton:Hide()
   ForeverCompanionLootUI.itemCard=CreateFrame("Frame",nil,child)
   ForeverCompanionLootUI.itemCard:SetSize(655,64)
   ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.dungeonButton,"BOTTOMLEFT",0,-8)
