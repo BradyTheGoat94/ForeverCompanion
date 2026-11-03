@@ -55,7 +55,7 @@ local function colorTexture(texture,r,g,b,a)
   if texture.SetColorTexture then texture:SetColorTexture(r,g,b,a)
   else texture:SetTexture(r,g,b,a) end
 end
-local function say(msg) print("|cffffcc66Forever Companion:|r "..msg) end
+local function say(msg) print("|cffffcc66Brady\'s Forever Companion:|r "..msg) end
 local function clipText(value,limit)
   local text=tostring(value or ""):gsub("[\r\n]"," ")
   if #text>limit then return text:sub(1,limit-3).."..." end
@@ -158,7 +158,7 @@ local function render()
     if ForeverCompanionLootUI.obtainedButton then ForeverCompanionLootUI.obtainedButton:Hide() end
     end
   end
-  titleText:SetText("Forever Companion")
+  titleText:SetText("Brady\'s Forever Companion")
   if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..tostring(level() or "?").."  |  "..(DB.role or "Choose role")) end
   if ForeverCompanionUIState.questCountText and ForeverCompanionQuestPlanner then
     local planner=ForeverCompanionQuestPlanner
