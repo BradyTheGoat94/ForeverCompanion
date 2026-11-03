@@ -19,12 +19,12 @@ end
 function I.ApplyClass(texture,class)
  local path,coords=I.Class(class)
  texture:SetTexture(path)
- texture:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
+ if texture.SetTexCoord then texture:SetTexCoord(coords[1],coords[2],coords[3],coords[4]) end
 end
 function I.Spell(name)
  if type(name)~="string" or name=="" then return nil end
  local api=type(C_Spell)=="table" and C_Spell.GetSpellTexture
- if type(api)~="function" then api=GetSpellTexture end
+ if type(api)~="function" then api=type(GetSpellTexture)=="function" and GetSpellTexture or nil end
  if type(api)~="function" then return nil end
  local ok,value=pcall(function()
   local icon=api(name)
