@@ -63,7 +63,7 @@ function Guide.Create(parent,openPage)
  topicPanel=CreateFrame("Frame",nil,parent);topicPanel:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);topicPanel:SetSize(770,352)
  ForeverCompanionVisualTheme.Panel(topicPanel,770,352)
  topicTitle=text(topicPanel,16,-13,730,"",18,true)
- topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetHeight(242)
+ topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetJustifyV("TOP")
  topicLink=CreateFrame("Button",nil,topicPanel,"UIPanelButtonTemplate");topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
  topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
  Guide.topicPanel=topicPanel;Guide.topicBody=topicBody
@@ -145,13 +145,21 @@ function Guide.Render(class,label,level,role,mode)
  if view=="Rotations" then topicPanel:Hide() else
   topicTitle:SetText(label.." / "..view)
   topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),"\n\n"))
+  local bodyHeight=math.max(242,topicBody:GetStringHeight()+12)
+  topicBody:SetHeight(bodyHeight)
+  ForeverCompanionVisualTheme.ResizePanel(topicPanel,bodyHeight+110)
+  topicLink:ClearAllPoints();topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-(bodyHeight+67))
   local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot",Overview="Settings"}
   topicLink.target=targets[view]
   if topicLink.target then topicLink:SetText("Open "..topicLink.target.." handbook");topicLink:Show() else topicLink:Hide() end
   topicPanel:Show()
  end
 end
+function Guide.GetTopicHeight()
+ return topicPanel and topicPanel:GetHeight() or 352
+end
 function Guide.Show(visible)
  if not root then return end
  if visible then root:Show() else root:Hide();topicPanel:Hide() end
 end
+

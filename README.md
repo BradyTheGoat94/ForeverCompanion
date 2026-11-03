@@ -6,6 +6,21 @@ Independent, free World of Warcraft addon project for class-aware leveling, dung
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Readable class-guide detail (3.17.0-beta, develop)
+
+Selected ability instructions now use a larger, multiline detail card whose height
+follows the measured text. The practice desk and long reference guide move below
+it. The instruction table has taller click targets, larger text and full hover
+explanations. Resource and specialization information use separate labeled blocks.
+Topic pages also expand for long text and move their handbook shortcut below it.
+Gold frame edges follow resized cards. These changes apply across all nine classes
+and five rotation contexts; they do not change ability recommendations or evidence.
+
+CI exercises every available priority selection and forced long-text layouts,
+including expansion, shrink-back, frame borders and separation from the practice
+desk. `ui_long_priority_native.png` illustrates the expanded mock layout. Live
+Forever font metrics and appearance still require client testing.
+
 ## Searchable encounter catalog (develop)
 
 The Dungeons page has clickable boss rows with four results per page. Search the
@@ -229,3 +244,4 @@ The quest planner now uses the modern `C_QuestLog` APIs through protected calls.
 ## Settings dashboard (3.13 beta)
 
 The Settings page now has native black-and-gold preference and client-API cards. Use **Auto-Detect Class** to clear the addon-only class preview, **Center Window** to reset its saved position, or **Toggle Compact** to change the addon layout. The actual class, talents and gameplay are not changed. The cards display the client version when exposed by `GetBuildInfo` and distinguish API visibility from confirmed functionality; an exposed quest, profession, spellbook or XP API does **not** establish compatibility. A mocked Settings preview is generated as `ui_settings_preview.png` in the offline CI artifact. Real client testing and Interface version verification remain mandatory before CurseForge publication.
+

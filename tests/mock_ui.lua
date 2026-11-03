@@ -522,6 +522,12 @@ for i,token in ipairs(classTokens) do
   contextButton.OnClick()
   local reference=ForeverCompanionRotations[token][contextButton.mode]
   assert(ForeverCompanionRotationWorkspace.selectedText.text:find(reference[1],1,true),"visible explanation must match this class/context")
+  for priority,instruction in ipairs(reference) do
+   local row=ForeverCompanionRotationWorkspace.explanations[priority]
+   assert(row and row.visible,"each reference priority needs a visible instruction row")
+   row.OnClick()
+   assert(ForeverCompanionRotationWorkspace.selectedText.text:find(instruction,1,true),"all priority selections must retain their complete conditions")
+  end
  end
 end
 ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
@@ -558,6 +564,34 @@ assert(workspace.selectedText.text:find(priorityTile.detail,1,true),"selected ti
 workspace.explanations[2].OnClick()
 assert(workspace.selectedText.text:find("PRIORITY 2:",1,true),"instruction table must focus the clicked priority")
 assert(workspace.selectedText.text:find(ForeverCompanionRotations.WARRIOR.leveling[2],1,true),"table selection must keep the complete conditional instruction")
+-- Long text must increase physical reading space, not just remain in SetText.
+local originalMeasure=workspace.selectedText.GetStringHeight
+workspace.selectedText.GetStringHeight=function() return 240 end
+workspace.buttons[1].OnClick()
+assert(workspace.selectedText.height>=248,"long instructions need their measured height")
+assert(workspace.summaryPlate.height>=300,"selected detail panel must grow with its text")
+local edges=workspace.summaryPlate.fcPanelEdges
+assert(edges.left.height==workspace.summaryPlate.height,"resized left border must follow the panel")
+assert(edges.bottom.point[5]==-workspace.summaryPlate.height+1,"bottom border must follow resized panel")
+local desk
+for _,w in ipairs(frames) do
+ if w.text=="ARMS / PRACTICE DESK" then desk=frames[w.parent] end
+end
+assert(desk and -desk.point[5]>=174+workspace.GetHeight()+20,"practice desk must follow the expanded workspace")
+for _,row in ipairs(workspace.explanations) do
+ if row.visible then assert(row.height>=20 and row.OnEnter and row.detail,"instruction rows need readable targets and full hover text") end
+end
+exportNative("ui_long_priority_native.json")
+workspace.selectedText.GetStringHeight=originalMeasure
+workspace.buttons[1].OnClick()
+assert(workspace.GetHeight()==500,"short content must shrink after an expanded instruction")
+local originalTopicMeasure=ForeverCompanionClassGuide.topicBody.GetStringHeight
+ForeverCompanionClassGuide.topicBody.GetStringHeight=function() return 480 end
+ForeverCompanionClassGuide.SelectView("Talents")
+assert(ForeverCompanionClassGuide.topicBody.height>=492,"long topic needs measured body space")
+assert(ForeverCompanionClassGuide.GetTopicHeight()>=602,"topic frame must expand with body")
+ForeverCompanionClassGuide.topicBody.GetStringHeight=originalTopicMeasure
+ForeverCompanionClassGuide.SelectView("Rotations")
 workspace.buttons[1].OnClick()
 rotationControl.OnClick(rotationControl)
 assert(rotationControl.text=="Rotation: dungeon","rotation context selector failed")
@@ -841,4 +875,5 @@ out:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",string.c
 out:write(table.concat(snapshot,string.char(10)))
 out:close()
 io.write("PASS: actual addon manifest loaded and core UI rendered in offline mock ("..#frames.." widgets)\n")
+
 

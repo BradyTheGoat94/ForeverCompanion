@@ -67,6 +67,8 @@ jobs:
             ui_rotation_native.png
             ui_topic_native.json
             ui_topic_native.png
+            ui_long_priority_native.json
+            ui_long_priority_native.png
             ui_practice_snapshot.txt
             ui_legacy_preview.png
             ui_alts_preview.png
@@ -109,4 +111,5 @@ jobs:
             ForeverCompanion.zip
             beta-build-manifest.json
           if-no-files-found: error
+
 

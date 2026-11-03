@@ -1,7 +1,7 @@
 -- Reference-style rotation rail, priority table, quick tips and selected detail.
 local W={}
 ForeverCompanionRotationWorkspace=W
-local root,heading,selectedText,tipText,quickText,buttons,explanations,arrows,sequencePlate
+local root,heading,selectedText,tipText,quickText,buttons,explanations,arrows,sequencePlate,summaryPlate,quickPlate
 local modes={"leveling","dungeon","boss","aoe","pvp"}
 local names={"Leveling Rotation","Dungeon Rotation","Boss Rotation","AoE Rotation","PvP Rotation"}
 local captions={"Solo practice","Group preparation","Single target","Multiple enemies","Player combat"}
@@ -19,7 +19,7 @@ local function plate(parent,x,y,w,h,title)
  return p
 end
 function W.Create(parent,selectMode,selectPriority)
- root=CreateFrame("Frame",nil,parent);root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);root:SetSize(770,386)
+ root=CreateFrame("Frame",nil,parent);root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);root:SetSize(770,500);W.root=root
  local rail=plate(root,0,0,180,302,"Rotation Type")
  buttons={};explanations={};arrows={}
  for i,mode in ipairs(modes) do
@@ -37,24 +37,27 @@ function W.Create(parent,selectMode,selectPriority)
  local notice=text(sequence,14,-65,550,"Conditional priorities / click an icon or instruction / skip untrained spells",10)
  notice:SetTextColor(.70,.75,.82)
  for i=1,5 do arrows[i]=text(sequence,0,-113,9,"›",15);arrows[i]:SetTextColor(.94,.75,.38) end
- local explanation=plate(root,192,-190,374,134,"Priority & Explanations")
+ local explanation=plate(root,192,-190,374,174,"Priority & Explanations")
  for i=1,6 do
-  local b=CreateFrame("Button",nil,explanation);b:SetSize(346,12);b:SetPoint("TOPLEFT",explanation,"TOPLEFT",14,-39-(i-1)*16)
-  b.bg=ForeverCompanionVisualTheme.Button(b,346,12)
-  b.number=text(b,4,-1,18,tostring(i),9);b.number:SetTextColor(.96,.80,.48)
-  b.caption=text(b,26,-1,316,"",9);b.caption:SetHeight(12)
+  local b=CreateFrame("Button",nil,explanation);b:SetSize(346,20);b:SetPoint("TOPLEFT",explanation,"TOPLEFT",14,-39-(i-1)*22)
+  b.bg=ForeverCompanionVisualTheme.Button(b,346,20)
+  b.number=text(b,4,-4,18,tostring(i),11);b.number:SetTextColor(.96,.80,.48)
+  b.caption=text(b,26,-4,316,"",11);b.caption:SetHeight(16)
   b:SetScript("OnClick",function() selectPriority(i) end)
   explanations[i]=b
  end
  W.explanations=explanations
- local tips=plate(root,578,-190,192,134,"Quick Tips")
- tipText=text(tips,12,-43,168,"",10);tipText:SetHeight(81)
- local quick=plate(root,0,-314,180,71,"Class Quick Info")
- quickText=text(quick,12,-43,156,"",10);quickText:SetHeight(27)
- local summary=plate(root,192,-328,578,58,"Selected Priority")
- selectedText=text(summary,12,-39,554,"",10);selectedText:SetHeight(17)
- W.selectedText=selectedText
+ local tips=plate(root,578,-190,192,174,"Quick Tips")
+ tipText=text(tips,12,-43,168,"",11);tipText:SetHeight(120)
+ local quick=plate(root,0,-314,180,186,"Class Quick Info");quickPlate=quick
+ quickText=text(quick,12,-43,156,"",11);quickText:SetHeight(132)
+ local summary=plate(root,192,-376,578,124,"Selected Priority");summaryPlate=summary
+ selectedText=text(summary,12,-39,554,"",12);selectedText:SetJustifyV("TOP")
+ W.selectedText=selectedText;W.summaryPlate=summaryPlate;W.quickText=quickText
  root:Hide()
+end
+function W.GetHeight()
+ return root and root:GetHeight() or 500
 end
 function W.Render(tab,class,mode,index,priorities)
  if not root then return end
@@ -63,14 +66,22 @@ function W.Render(tab,class,mode,index,priorities)
  priorities=type(priorities)=="table" and priorities or {}
  local context=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts[mode]
  heading:SetText(context and context.title or "Conditional class guidance")
+ index=type(index)=="number" and math.floor(index) or 1
+ if index<1 or index>#priorities then index=1 end
  local ability=priorities[index]
  selectedText:SetText(ability and ("PRIORITY "..index..": "..ability) or "No reference priority available for this class and context.")
+ -- Measure after assigning the complete instruction; never clip its conditions.
+ local detailHeight=math.max(72,selectedText:GetStringHeight()+8)
+ selectedText:SetHeight(detailHeight)
+ ForeverCompanionVisualTheme.ResizePanel(summaryPlate,detailHeight+52)
+ root:SetHeight(376+detailHeight+52)
+ ForeverCompanionVisualTheme.ResizePanel(quickPlate,root:GetHeight()-314)
+ quickText:SetHeight(quickPlate:GetHeight()-52)
  local coach=type(ForeverCompanionGetBeginnerCoach)=="function" and ForeverCompanionGetBeginnerCoach(class) or {}
  local caution=coach.check or "Check trained abilities and your assigned role."
- if #caution>100 then caution=caution:sub(1,97).."..." end
  tipText:SetText("• "..caution.."\n\nAdvisory / skip untrained spells.")
  local spec=ForeverCompanionSpecPlanner.Get(class)
- quickText:SetText("Resource: "..(coach.resource or "Check client").."\nSpec: "..(spec and spec[1] or "Not available"))
+ quickText:SetText("RESOURCE\n"..(coach.resource or "Check client").."\n\nSPECIALIZATION\n"..(spec and spec[1] or "Not available"))
  for _,b in ipairs(buttons) do
   local active=b.mode==mode
   b.name:SetTextColor(active and 1 or .88,active and .84 or .86,active and .52 or .82)
@@ -79,7 +90,15 @@ function W.Render(tab,class,mode,index,priorities)
  for i,b in ipairs(explanations) do
   local instruction=priorities[i]
   if instruction then
-   b.caption:SetText(#instruction>55 and instruction:sub(1,52).."..." or instruction)
+   b.caption:SetText(#instruction>45 and instruction:sub(1,42).."..." or instruction)
+   b.detail=instruction
+   b:SetScript("OnEnter",function(self)
+    if GameTooltip then
+     GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:SetText("Priority "..i,1,.8,.4)
+     GameTooltip:AddLine(self.detail,.92,.92,.88,true);GameTooltip:Show()
+    end
+   end)
+   b:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
    b.bg:SetColorTexture(index==i and .065 or .025,index==i and .12 or .028,index==i and .20 or .034,1)
    b:Show()
   else b:Hide() end
@@ -91,3 +110,4 @@ function W.Render(tab,class,mode,index,priorities)
   if i<count then arrow:Show() else arrow:Hide() end
  end
 end
+

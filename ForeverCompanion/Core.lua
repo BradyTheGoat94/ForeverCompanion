@@ -794,7 +794,8 @@ local function render()
   content:ClearAllPoints()
   local offsets={Loot=215,Quests=650,Professions=445,Leveling=970,Dungeons=941,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
-  if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=580 end
+  if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
+  if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=198+ForeverCompanionClassGuide.GetTopicHeight() end
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
   -- Keep the player's current scroll position during refresh.
@@ -1551,7 +1552,7 @@ local function createUI()
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   ForeverCompanionUIState.footer=footer
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.16.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
+  footer:SetText("v3.17.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
@@ -1654,4 +1655,5 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
 end
 
 ForeverCompanionRefresh = function() if DB and window then render() end end
+
 

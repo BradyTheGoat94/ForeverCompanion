@@ -341,3 +341,14 @@ CI artifact expectations: `ui_quest_snapshot.txt`, `ui_profession_snapshot.txt`,
 - Compare expanded/compact layouts, header spec/role controls, footer class strip
   and long instruction wrapping in the real client. CI previews approximate fonts
   and client icons; they do not substitute for actual in-game screenshots.
+
+
+## 3.17 class-guide readability
+
+Offline UI tests select every reference priority in all 45 class/context pairs.
+A forced 240px measured instruction verifies card growth, matching gold borders,
+practice-desk separation and shrink-back. A forced long topic verifies its frame
+expands. The native renderer exports a long-priority inspection view in CI.
+In the real client, inspect the longest instructions and Talents topic at several
+UI scales: all text should remain visible while scrolling; the practice desk and
+handbook shortcut must follow their preceding content without overlap.

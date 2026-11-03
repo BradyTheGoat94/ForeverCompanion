@@ -76,7 +76,7 @@ def render(source,output,workspace=False):
         label=next(n for n in records if n.get('text')=='Rotation Type')
         target=nodes[nodes[label['parent']]['parent']]
         bx,by,bw,bh=box(target['id'])
-        offset=(24-bx,24-by);width,height=818,476
+        offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
         start=target['id']
     else:
         offset=(0,0);width,height=1128,int(window['height'])+94;start=window['id']
@@ -155,8 +155,10 @@ render('ui_dashboard_native.json','ui_dashboard_native.png')
 render('ui_class_native.json','ui_class_native.png')
 render('ui_class_native.json','ui_rotation_native.png',True)
 render('ui_topic_native.json','ui_topic_native.png')
+render('ui_long_priority_native.json','ui_long_priority_native.png',True)
 # Existing automation consumes these established preview filenames. Keep them
 # aligned with the native-layout outputs rather than older schematic drawings.
 from shutil import copyfile
 copyfile('ui_dashboard_native.png','ui_preview.png')
 copyfile('ui_class_native.png','ui_class_preview.png')
+

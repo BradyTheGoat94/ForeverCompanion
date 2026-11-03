@@ -1,3 +1,15 @@
+## 3.17.0-beta: readable class-guide details (develop)
+
+- Replace the one-line selected-priority area with a larger, measured multiline card.
+- Reflow the practice desk and long-form guidance below expanding instructions.
+- Enlarge explanation row text and click targets; retain full text in hover details.
+- Separate resource and specialization labels and give quick information more space.
+- Expand long topic bodies and reposition their handbook navigation below the text.
+- Keep gold borders attached to resized cards and resize offline inspection crops.
+- Exercise every available priority across all nine classes and five contexts, plus
+  forced long-text expansion/shrink-back and panel separation in the mocked client.
+- Preserve all advisory evidence labels; real-client testing remains pending.
+
 ## 3.16.0-beta: illustrated class-guide workspace (develop)
 
 - Replaced the two small class cards with a wide illustrated class banner,
@@ -253,3 +265,4 @@
 - Manual checklists and saved settings.
 
 **Note:** The current manifest Interface value is provisional pending live-client verification.
+

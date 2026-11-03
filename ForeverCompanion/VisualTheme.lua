@@ -22,11 +22,20 @@ function T.Panel(parent,w,h)
  if bg.SetColorTexture then bg:SetColorTexture(0.023,0.025,0.030,1) end
  for i=0,7 do strip(parent,2,-2-i*4,w-4,4,0.12-i*.009,0.105-i*.007,0.077-i*.004,0.65) end
  strip(parent,0,0,w,1,0.87,0.71,0.40)
- strip(parent,0,-h+1,w,1,0.43,0.35,0.23)
- strip(parent,0,0,1,h,0.51,0.43,0.29)
- strip(parent,w-1,0,1,h,0.51,0.43,0.29)
+ local bottom=strip(parent,0,-h+1,w,1,0.43,0.35,0.23)
+ local left=strip(parent,0,0,1,h,0.51,0.43,0.29)
+ local right=strip(parent,w-1,0,1,h,0.51,0.43,0.29)
+ parent.fcPanelEdges={bottom=bottom,left=left,right=right}
  strip(parent,3,-3,w-6,1,0.36,0.30,0.21,0.55)
  strip(parent,12,-36,w-24,1,0.47,0.39,0.26,0.60)
+end
+function T.ResizePanel(parent,height)
+ parent:SetHeight(height)
+ local edges=parent.fcPanelEdges
+ if edges then
+  edges.bottom:ClearAllPoints();edges.bottom:SetPoint("TOPLEFT",parent,"TOPLEFT",0,-height+1)
+  edges.left:SetHeight(height);edges.right:SetHeight(height)
+ end
 end
 function T.Banner(parent,x,y,w,h,alpha)
  local art=parent:CreateTexture(nil,"BORDER")
@@ -41,3 +50,4 @@ function T.Button(parent,w,h)
  strip(parent,0,-h+1,w,1,0.30,0.27,0.21,1)
  return bg
 end
+
