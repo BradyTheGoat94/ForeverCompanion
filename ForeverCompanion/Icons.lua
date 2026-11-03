@@ -36,6 +36,6 @@ end
 function I.ApplyRotation(texture,class,mode,index)
  local path,cue,status=ForeverCompanionRotationCardIcon(class,mode,index)
  if status=="class" then I.ApplyClass(texture,class)
- else texture:SetTexture(path);texture:SetTexCoord(0,1,0,1) end
+ else texture:SetTexture(path);if texture.SetTexCoord then texture:SetTexCoord(0,1,0,1) end end
  return cue,status
 end
