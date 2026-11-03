@@ -1,0 +1,40 @@
+name: CurseForge beta package audit
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+      - name: Validate addon manifest and bundled files
+        run: python3 tools/build_curseforge_beta.py --check-only
+      - name: Build reproducible installable beta ZIP
+        run: python3 tools/build_curseforge_beta.py --output dist
+      - name: Inspect ZIP and checksum
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, zipfile
+          report = json.loads(pathlib.Path("dist/release-audit.json").read_text())
+          archive = pathlib.Path("dist") / report["archive"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == report["sha256"]
+          with zipfile.ZipFile(archive) as z:
+              assert z.testzip() is None
+              assert all(x.startswith("ForeverCompanion/") for x in z.namelist())
+              assert "ForeverCompanion/ForeverCompanion.toc" in z.namelist()
+          print("Archive integrity verified; in-game compatibility remains untested")
+          PY
+      - name: Upload beta package for review (not published)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bradys-forever-companion-beta-review
+          path: |
+            dist/*.zip
+            dist/release-audit.json
+          if-no-files-found: error
