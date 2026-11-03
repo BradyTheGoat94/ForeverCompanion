@@ -19,4 +19,12 @@ assert(summary:find("Source:",1,true),"source attribution")
 loot.ToggleWish(db,drops[1].item)
 assert(loot.BossSummary("The Deadmines","Sneed",db):find("[WISHLIST]",1,true),"wishlist marker")
 assert(loot.BossSummary("The Deadmines","Unknown",db):find("No source-attributed drops",1,true),"empty state")
+local filtered=loot.Filter("","The Deadmines",false,db,"Sneed")
+eq(#filtered,#drops,"boss filtered result count")
+for _,item in ipairs(filtered) do
+  eq(item.boss,"Sneed","boss filter isolation")
+end
+eq(#loot.Filter("","The Deadmines",false,db,"Unknown"),0,"unknown boss filter")
+local filterSummary=loot.FilterSummary("","The Deadmines",false,db,"Sneed")
+assert(filterSummary:find("Boss: Sneed",1,true),"boss filter must be visible")
 print("loot boss smoke: PASS")
