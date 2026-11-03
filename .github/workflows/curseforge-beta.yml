@@ -27,6 +27,18 @@ jobs:
         run: python3 tools/build_curseforge_beta.py --check-only
       - name: Build reproducible installable beta ZIP
         run: python3 tools/build_curseforge_beta.py --output dist
+      - name: Verify deterministic archive output
+        run: |
+          mkdir -p dist-repeat
+          python3 tools/build_curseforge_beta.py --output dist-repeat
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          first = json.loads(pathlib.Path('dist/release-audit.json').read_text())
+          second = json.loads(pathlib.Path('dist-repeat/release-audit.json').read_text())
+          assert first['sha256'] == second['sha256'], 'ZIP differs between builds of same source'
+          assert first['files'] == second['files']
+          print('Deterministic ZIP and manifest count verified')
+          PY
       - name: Inspect ZIP and checksum
         run: |
           python3 - <<'PY'
