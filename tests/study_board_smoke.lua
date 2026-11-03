@@ -14,6 +14,7 @@ for class,specs in pairs(ForeverCompanionSpecs) do
   local state=b.Get('Leveling',class,db)
   assert(state and state.total>=3,class..'/'..spec[1]..' missing practice')
   assert(state.done==0,'spec progress must start empty')
+  assert(state.nextStep==state.tasks[1],'first incomplete task must be next')
   assert(b.Toggle('Leveling',class,db,1))
   assert(b.Get('Leveling',class,db).done==1)
   b.Reset('Leveling',class,db)
@@ -30,6 +31,7 @@ assert(not b.Toggle('Legacy','MAGE',db,6))
 assert(b.Toggle('Legacy','MAGE',db,1))
 assert(b.Get('Alts','MAGE',db).done==0,'legacy/alt isolation')
 assert(b.Get('Legacy','MAGE',db).done==1)
+assert(b.Get('Legacy','MAGE',db).nextStep==b.Get('Legacy','MAGE',db).tasks[2])
 -- Repeated clicks must toggle only the selected task; reset must preserve other desks.
 assert(b.Toggle('Legacy','MAGE',db,2))
 assert(b.Get('Legacy','MAGE',db).done==2)
@@ -41,6 +43,14 @@ b.Reset('Legacy','MAGE',db)
 assert(b.Get('Legacy','MAGE',db).done==0)
 assert(b.Get('Alts','MAGE',db).done==1,'reset must not clear other desk')
 b.Reset('Alts','MAGE',db)
+-- The next-action prompt must disappear when all tasks have been reviewed.
+local completedDB={}
+local legacy=b.Get('Legacy','MAGE',completedDB)
+for i=1,legacy.total do assert(b.Toggle('Legacy','MAGE',completedDB,i)) end
+local complete=b.Get('Legacy','MAGE',completedDB)
+assert(complete.done==complete.total and complete.nextStep==nil)
+b.Reset('Legacy','MAGE',completedDB)
+assert(b.Get('Legacy','MAGE',completedDB).nextStep==legacy.tasks[1])
 -- Missing or malformed character settings must not crash reset actions.
 assert(b.Reset('Legacy','MAGE',nil)==nil)
 assert(b.Reset('Legacy','MAGE',false)==nil)
