@@ -203,7 +203,7 @@ function Loot.FilterSummary(query,dungeon,savedOnly,db)
     "Wishlist only: "..(savedOnly and "On" or "Off"),
     "Saved in results: "..saved,
   }
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.DungeonNames()
   local counts=Loot.CountByDungeon()
@@ -221,7 +221,7 @@ function Loot.FormatMatches(matches)
     lines[#lines+1]=i..". "..record.item.." | "..record.boss.." / "..record.dungeon
     lines[#lines+1]="Status: "..record.status.." | Source: "..record.source
   end
-  return table.concat(lines,"\\n")
+  return table.concat(lines,"\n")
 end
 function Loot.Format(query)
   local lines={"LOOT ATLAS / FOREVER", "Source-attributed dungeon and boss drops only.",
