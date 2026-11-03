@@ -14,9 +14,9 @@ function D.Collect()
   local ok,version,buildNumber,_,interface=pcall(GetBuildInfo)
   if ok then build=tostring(version or "?").." build "..tostring(buildNumber or "?").." interface "..tostring(interface or "?") end
  end
- rows[#rows+1]="Addon: Forever Companion 3.14.0-beta"
+ rows[#rows+1]="Addon: Brady\'s Forever Companion 3.18.0-beta"
  rows[#rows+1]="Client: "..build
- rows[#rows+1]="Manifest interface: 16001 (verify against live client)"
+ rows[#rows+1]="Manifest interface: 16001 (documented on Forever 1.60.1; verify current patch)"
  if type(GetBuildInfo)=="function" then
   local ok,_,_,_,interface=pcall(GetBuildInfo)
   if ok and type(interface)=="number" then
@@ -28,6 +28,12 @@ function D.Collect()
  add("Modern spellbook bank",type(Enum)=="table" and type(Enum.SpellBookSpellBank)=="table" and Enum.SpellBookSpellBank.Player~=nil)
  add("Modern spellbook line details",available(C_SpellBook,"GetSpellBookSkillLineInfo"))
  add("Modern talents",available(C_Traits,"GetConfigInfo"))
+ add("Modern trait trees",available(C_Traits,"GetTreeNodes"))
+ add("Modern spell API",available(C_Spell,"GetSpellInfo"))
+ add("Modern quest entry details",available(C_QuestLog,"GetInfo"))
+ add("Legacy UI toggle",type(ToggleLegacySystemUI)=="function")
+ add("Retail specialization global (not expected on early Forever)",type(GetSpecialization)=="function")
+ rows[#rows+1]="Spec picker: advisory; does not assume Retail specialization IDs"
  add("Legacy professions",type(GetProfessions)=="function" and type(GetProfessionInfo)=="function")
  add("Modern quest log",available(C_QuestLog,"GetNumQuestLogEntries"))
  add("Quest objective API",available(C_QuestLog,"GetQuestObjectives"))
@@ -55,6 +61,6 @@ function D.Collect()
 end
 SLASH_FOREVERCOMPANIONDIAGNOSTICS1="/fcdiag"
 SlashCmdList.FOREVERCOMPANIONDIAGNOSTICS=function()
- print("|cffffcc66Forever Companion compatibility:|r")
+ print("|cffffcc66Brady\'s Forever Companion compatibility:|r")
  for line in D.Collect():gmatch("[^\n]+") do print(line) end
 end
