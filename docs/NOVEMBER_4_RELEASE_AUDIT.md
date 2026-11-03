@@ -47,3 +47,15 @@ Changelog:
 
 Source: https://support.curseforge.com/support/solutions/articles/9000197242
 Source: https://support.curseforge.com/support/solutions/articles/9000197241
+
+## Source verification findings (2026-11-03)
+
+- Rotations.lua labels its rotations illustrative, not proven Forever-optimal. Treat all DPS optimization claims as provisional.
+- GuideData.lua contains general leveling advice rather than verified Forever quests.
+- VerifiedAbilities.lua cites a client-data snapshot and explicitly does not prove live trainer or talent availability.
+- GearStats.lua contains source-linked beta priorities, not measured stat weights. Individual citations still need checking.
+- EncounterBrowser.lua is historical catalog navigation, not verified final-client mechanics or drop rates.
+- Icons.lua uses Blizzard class art and client spell texture lookup; code review cannot confirm every displayed icon identity.
+- Dashboard.lua and ClassGuide.lua contain dark/gold presentation code; no real-client visual comparison has been completed.
+
+**Verification outcome:** Source labels checked; live gameplay accuracy, pixel-level presentation, full source-link verification and CI execution remain outstanding. Do not claim 100 percent verified.
