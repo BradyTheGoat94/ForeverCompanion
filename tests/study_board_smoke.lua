@@ -34,3 +34,13 @@ db.studyChecks='corrupt'
 assert(b.Toggle('Alts','MAGE',db,1),'recover malformed saved state')
 assert(b.Get('Alts','MAGE',db).done==1)
 print('PASS: study board isolation, persistence, reset and '..count..' specialization alternatives')
+
+for class in pairs(ForeverCompanionSpecs) do
+ local accent=b.Accent("Leveling",class)
+ assert(#accent==3)
+ for _,value in ipairs(accent) do assert(value>=0 and value<=1) end
+end
+assert(b.Accent("Leveling","MAGE")[3]>b.Accent("Leveling","MAGE")[1])
+assert(b.Accent("Alts","MAGE")[1]~=b.Accent("Legacy","MAGE")[1])
+assert(b.Accent("Leveling","UNKNOWN")[1]>0)
+print("PASS: class accents, planning palettes and fallback")

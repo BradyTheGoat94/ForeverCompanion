@@ -3,6 +3,15 @@
 local B={}
 ForeverCompanionStudyBoard=B
 local host,root,heading,summary,evidence,fill,navigate,current,rows,links
+local classAccents={
+ WARRIOR={0.78,0.61,0.43},PALADIN={0.96,0.55,0.73},HUNTER={0.67,0.83,0.45},
+ ROGUE={1,0.96,0.41},PRIEST={0.90,0.93,1},SHAMAN={0.20,0.55,1},
+ MAGE={0.25,0.78,0.92},WARLOCK={0.63,0.55,0.94},DRUID={1,0.49,0.18}
+}
+function B.Accent(tab,class)
+ if tab=="Leveling" then return classAccents[class] or {0.94,0.72,0.32} end
+ return tab=="Alts" and {0.29,0.77,0.86} or {0.94,0.72,0.32}
+end
 local definitions={
  Legacy={title="LEGACY RESEARCH DESK",tasks={
   "Locate the Legacy interface and record its unlock requirement.",
@@ -77,6 +86,7 @@ function B.Create(parent,openPage)
   local index=i
   local b=CreateFrame("Button",nil,root);b:SetSize(738,43);b:SetPoint("TOPLEFT",root,"TOPLEFT",16,-100-(i-1)*46)
   b.bg=b:CreateTexture(nil,"BACKGROUND");b.bg:SetAllPoints(b)
+  b.rail=bar(b,0,0,3,43,0.94,0.72,0.32)
   b.number=text(b,10,-12,60,"");b.caption=text(b,77,-7,647,"");b.caption:SetTextColor(0.94,0.90,0.81)
   b:SetScript("OnClick",function()
    if current and B.Toggle(current.tab,current.class,current.db,index) and ForeverCompanionRefresh then ForeverCompanionRefresh() end
@@ -102,14 +112,18 @@ function B.Render(tab,class,db)
  if not state then root:Hide();current=nil;return end
  current={tab=tab,class=class,db=db,state=state}
  root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -(194+ForeverCompanionRotationWorkspace.GetHeight()) or -5)
+ local accent=B.Accent(tab,class)
  heading:SetText(state.title)
+ heading:SetTextColor(accent[1],accent[2],accent[3])
+ paint(fill,accent[1],accent[2],accent[3])
  summary:SetText(state.done.." / "..state.total.." reviewed  |  Personal checklist; no game progress is detected")
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
  fill:SetWidth(math.max(1,738*state.done/state.total))
  for i,row in ipairs(rows) do
   local task=state.tasks[i]
   if task then
-   row:Show();row.number:SetText(state.checked[i]==true and "DONE" or string.format("%02d",i));row.number:SetTextColor(0.94,0.74,0.38)
+   row:Show();row.number:SetText(state.checked[i]==true and "DONE" or string.format("%02d",i));row.number:SetTextColor(state.checked[i]==true and 0.43 or accent[1],state.checked[i]==true and 0.91 or accent[2],state.checked[i]==true and 0.66 or accent[3])
+   paint(row.rail,state.checked[i]==true and 0.43 or accent[1],state.checked[i]==true and 0.91 or accent[2],state.checked[i]==true and 0.66 or accent[3])
    row.caption:SetText(task);paint(row.bg,state.checked[i]==true and 0.10 or 0.065,state.checked[i]==true and 0.19 or 0.085,0.12)
   else row:Hide() end
  end
