@@ -19,7 +19,7 @@ function Loot.Add(record)
   if not clean(record.source) or not clean(record.status) then
     return false,"source and verification status required"
   end
-  if record.dropRate~=nil and (type(record.dropRate)~="number" or record.dropRate<0 or record.dropRate>100) then
+  if record.dropRate~=nil and (type(record.dropRate)~="number" or record.dropRate~=record.dropRate or record.dropRate<0 or record.dropRate>100) then
     return false,"invalid drop rate"
   end
   for _,existing in ipairs(Loot.records) do
@@ -68,6 +68,28 @@ function Loot.ToggleWish(db,itemName)
   local key=record.item
   wishes[key]=not wishes[key] or nil
   return wishes[key]==true
+end
+-- Manual acquisition notes are separate from wishlist targets and inventory reads.
+function Loot.Obtained(db,itemName)
+  local record=Loot.Find(itemName)
+  return record~=nil and type(db)=="table" and type(db.lootObtained)=="table" and db.lootObtained[record.item]==true
+end
+function Loot.ToggleObtained(db,itemName)
+  local record=Loot.Find(itemName)
+  if not record or type(db)~="table" then return false,"unknown item or character" end
+  if type(db.lootObtained)~="table" then db.lootObtained={} end
+  db.lootObtained[record.item]=not (db.lootObtained[record.item]==true) or nil
+  return db.lootObtained[record.item]==true
+end
+function Loot.CollectionSummary(db,dungeon,boss)
+  local total,obtained=0,0
+  for _,record in ipairs(Loot.records) do
+    if (not dungeon or dungeon=="" or record.dungeon==dungeon) and (not boss or boss=="" or record.boss==boss) then
+      total=total+1
+      if Loot.Obtained(db,record.item) then obtained=obtained+1 end
+    end
+  end
+  return "MANUAL ACQUISITION NOTES: "..obtained.." / "..total.." catalog entries marked obtained. Not an inventory scan or complete collection."
 end
 function Loot.WishlistSummary(db)
   local wishes=Loot.Wishlist(db)
@@ -135,6 +157,7 @@ function Loot.Detail(record,db)
     "Verification: "..record.status,
     "Reference: "..record.source,
     "Wishlist: "..(saved and "Saved" or "Not saved"),
+    "Obtained (manual note): "..(Loot.Obtained(db,record.item) and "Yes" or "Not marked").."; not checked against inventory.",
   }
   if clean(record.slot) then lines[#lines+1]="Equipment slot: "..record.slot end
   if type(record.itemLevel)=="number" then lines[#lines+1]="Item level: "..record.itemLevel end
@@ -312,3 +335,4 @@ function Loot.ProgressSummary(db,dungeon,boss)
   return "WISHLIST TARGETS / "..scope..": "..progress.saved.." of "..progress.total
     .." recorded drops saved (catalog may be incomplete; saved does not mean obtained)"
 end
+

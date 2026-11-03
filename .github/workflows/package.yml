@@ -23,6 +23,7 @@ jobs:
           lua5.1 tests/offline_smoke.lua
           lua5.1 tests/loot_boss_smoke.lua
           lua5.1 tests/study_board_smoke.lua
+          lua5.1 tests/research_notebook_smoke.lua
       - name: Exercise addon UI in mocked client
         run: lua5.1 tests/mock_ui.lua
       - name: Render offline UI preview
@@ -97,3 +98,4 @@ jobs:
             ForeverCompanion.zip
             beta-build-manifest.json
           if-no-files-found: error
+

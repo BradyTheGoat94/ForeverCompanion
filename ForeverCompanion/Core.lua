@@ -143,6 +143,11 @@ local function render()
     else
       if ForeverCompanionLootUI.itemAccent.SetVertexColor then ForeverCompanionLootUI.itemAccent:SetVertexColor(0.84,0.62,0.24,1) end
     end
+    if ForeverCompanionLootUI.obtainedButton then
+      ForeverCompanionLootUI.obtainedButton:SetText(selected and (ForeverCompanionLoot.Obtained(DB,selected.item) and "Unmark obtained (manual)" or "Mark obtained (manual)") or "Obtained: no match")
+      if ForeverCompanionLootUI.obtainedButton.SetEnabled then ForeverCompanionLootUI.obtainedButton:SetEnabled(selected~=nil) end
+      ForeverCompanionLootUI.obtainedButton:Show()
+    end
     ForeverCompanionLootUI.itemCard:Show()
     else
       ForeverCompanionLootUI.searchBox:Hide()
@@ -150,6 +155,7 @@ local function render()
       ForeverCompanionLootUI.prevButton:Hide(); ForeverCompanionLootUI.nextButton:Hide()
     ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.bossButton:Hide(); ForeverCompanionLootUI.savedButton:Hide(); ForeverCompanionLootUI.resetButton:Hide()
     ForeverCompanionLootUI.itemCard:Hide()
+    if ForeverCompanionLootUI.obtainedButton then ForeverCompanionLootUI.obtainedButton:Hide() end
     end
   end
   titleText:SetText("Forever Companion")
@@ -185,6 +191,7 @@ local function render()
     if currentTab=="Leveling" then ForeverCompanionClassGuide.Render(classToken(),classLabel(),level(),DB.role,rotationModes[rotationMode]) end
   end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
+  if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Render(currentTab,DB) end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Render(currentTab,classToken(),DB) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
@@ -272,6 +279,7 @@ local function render()
         lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
       end
       lines[#lines+1]=ForeverCompanionLoot.ProgressSummary(DB,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.boss)
+      lines[#lines+1]=ForeverCompanionLoot.CollectionSummary(DB,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.boss)
       lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
       lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
@@ -750,7 +758,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Loot=190,Quests=650,Professions=445,Leveling=720,Dungeons=550,PvP=325,Overview=215,Settings=282,Legacy=390,Alts=390}
+  local offsets={Loot=215,Quests=650,Professions=445,Leveling=720,Dungeons=785,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
@@ -888,6 +896,14 @@ local function setupLootControls(child)
     render()
   end)
   ForeverCompanionLootUI.resetButton:Hide()
+  ForeverCompanionLootUI.obtainedButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  ForeverCompanionLootUI.obtainedButton:SetSize(245,22)
+  ForeverCompanionLootUI.obtainedButton:SetPoint("LEFT",ForeverCompanionLootUI.bossButton,"RIGHT",8,0)
+  ForeverCompanionLootUI.obtainedButton:SetScript("OnClick",function()
+    local selected=lootMatches()[ForeverCompanionLootUI.selectedIndex]
+    if selected then ForeverCompanionLoot.ToggleObtained(DB,selected.item);render() end
+  end)
+  ForeverCompanionLootUI.obtainedButton:Hide()
   ForeverCompanionLootUI.itemCard=CreateFrame("Frame",nil,child)
   ForeverCompanionLootUI.itemCard:SetSize(655,64)
   ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.bossButton,"BOTTOMLEFT",0,-8)
@@ -906,10 +922,13 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.itemIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
   ForeverCompanionLootUI.itemTitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
   ForeverCompanionLootUI.itemTitle:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemIcon,"TOPRIGHT",12,-2)
+  ForeverCompanionLootUI.itemTitle:SetWidth(575)
   ForeverCompanionLootUI.itemSubtitle=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionLootUI.itemSubtitle:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemTitle,"BOTTOMLEFT",0,-5)
+  ForeverCompanionLootUI.itemSubtitle:SetWidth(575)
   ForeverCompanionLootUI.itemStatus=ForeverCompanionLootUI.itemCard:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionLootUI.itemStatus:SetPoint("TOPLEFT",ForeverCompanionLootUI.itemSubtitle,"BOTTOMLEFT",0,-5)
+  ForeverCompanionLootUI.itemStatus:SetWidth(575)
   ForeverCompanionLootUI.itemCard:Hide()
 end
 local function cyclePreviewClass()
@@ -1144,6 +1163,7 @@ local function createUI()
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child) end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection) end
+  if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then
@@ -1584,3 +1604,4 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
 end
 
 ForeverCompanionRefresh = function() if DB and window then render() end end
+

@@ -48,4 +48,6 @@ ClassGuide.lua
 PracticeNotes.lua
 StudyBoard.lua
 EncounterBrowser.lua
+ResearchNotebook.lua
 Core.lua
+

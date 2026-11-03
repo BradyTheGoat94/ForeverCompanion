@@ -631,6 +631,38 @@ ForeverCompanionRefresh()
 exportSnapshot("ui_settings_snapshot.txt")
 overviewButton.OnClick(overviewButton)
 assert(not frames[frames[settingsHeading.parent].parent].visible,"Settings cards must hide on dashboard")
+-- Notebook edits persist only when explicitly saved and are context-isolated.
+SlashCmdList.FOREVERCOMPANION("open legacy")
+local saveNote,clearNote
+for _,w in ipairs(frames) do
+ if w.OnClick and w.text=="Save research note" then saveNote=w end
+ if w.OnClick and w.text=="Clear research note" then clearNote=w end
+end
+assert(saveNote and clearNote,"notebook controls missing")
+local noteFields={}
+for _,w in ipairs(frames) do
+ if w.kind=="EditBox" and w.parent==saveNote.parent then noteFields[#noteFields+1]=w end
+end
+assert(#noteFields==3,"note/source/build inputs required")
+noteFields[1]:SetText("Check exact unlock requirement")
+noteFields[1].OnTextChanged(noteFields[1],true)
+ForeverCompanionRefresh()
+assert(noteFields[1]:GetText()=="Check exact unlock requirement","ordinary refresh must preserve unsaved input")
+assert(ForeverCompanionResearchNotebook.Read(ForeverCompanionDB,"Legacy").note=="")
+noteFields[2]:SetText("https://example.test/observation")
+noteFields[3]:SetText("offline test build")
+saveNote.OnClick()
+assert(ForeverCompanionResearchNotebook.Read(ForeverCompanionDB,"Legacy").note=="Check exact unlock requirement")
+SlashCmdList.FOREVERCOMPANION("open alts")
+assert(noteFields[1]:GetText()=="","Alt notes must not show Legacy text")
+SlashCmdList.FOREVERCOMPANION("open legacy")
+assert(noteFields[1]:GetText()=="Check exact unlock requirement")
+noteFields[1]:SetText("Unsaved replacement")
+noteFields[1].OnEscapePressed(noteFields[1])
+assert(noteFields[1]:GetText()=="Check exact unlock requirement","Escape restores saved research")
+clearNote.OnClick()
+assert(ForeverCompanionResearchNotebook.Read(ForeverCompanionDB,"Legacy").note=="")
+overviewButton.OnClick(overviewButton)
 -- Exercise newly integrated pages through the actual manifest and native buttons.
 local function buttonWithText(value)
  for _,w in ipairs(frames) do if w.OnClick and w.text==value then return w end end
@@ -661,6 +693,12 @@ assert(ForeverCompanionLootUI.boss==ForeverCompanionEncounterBrowser.boss)
 assert(ForeverCompanionLootUI.itemCard.visible,"loot card must render after navigation")
 local selected=ForeverCompanionLoot.Filter("",ForeverCompanionLootUI.dungeon,false,ForeverCompanionDB,ForeverCompanionLootUI.boss)[1]
 assert(selected and ForeverCompanionLootUI.itemTitle.text==selected.item)
+assert(ForeverCompanionLootUI.obtainedButton.visible)
+ForeverCompanionLootUI.obtainedButton.OnClick()
+assert(ForeverCompanionLoot.Obtained(ForeverCompanionDB,selected.item))
+assert(not ForeverCompanionLoot.Wishlist(ForeverCompanionDB)[selected.item],"obtained toggle must not add wishes")
+ForeverCompanionLootUI.obtainedButton.OnClick()
+assert(not ForeverCompanionLoot.Obtained(ForeverCompanionDB,selected.item))
 ForeverCompanionLootUI.wishButton.OnClick()
 assert(ForeverCompanionLoot.Wishlist(ForeverCompanionDB)[selected.item]==true)
 ForeverCompanionLootUI.savedButton.OnClick()
@@ -671,6 +709,7 @@ assert(ForeverCompanionLootUI.selectedIndex==1)
 exportSnapshot("ui_loot_snapshot.txt")
 SlashCmdList.FOREVERCOMPANION("open leveling")
 assert(not ForeverCompanionLootUI.itemCard.visible,"loot widgets hide outside Loot")
+assert(not ForeverCompanionLootUI.obtainedButton.visible,"manual acquisition button hides outside Loot")
 local practice=ForeverCompanionStudyBoard.Get("Leveling","WARRIOR",ForeverCompanionDB)
 assert(practice and practice.total>=3)
 exportSnapshot("ui_practice_snapshot.txt")
@@ -691,3 +730,4 @@ out:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",string.c
 out:write(table.concat(snapshot,string.char(10)))
 out:close()
 io.write("PASS: actual addon manifest loaded and core UI rendered in offline mock ("..#frames.." widgets)\n")
+
