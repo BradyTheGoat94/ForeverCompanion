@@ -126,8 +126,9 @@ function Guide.Render(class,label,level,role,mode)
  if values.art.SetTexCoord then values.art:SetTexCoord(0,1,0,.66) end
  values.tip=entry.leveling or "Check trained spells and the reference guide."
  local levelNumber=tonumber(level)
- local stage=levelNumber and ForeverCompanionLevelingCurriculum.Stage(levelNumber)
- local notes=ForeverCompanionLevelingCurriculum and ForeverCompanionLevelingCurriculum.classes and ForeverCompanionLevelingCurriculum.classes[class]
+ local curriculum=ForeverCompanionLevelingCurriculum
+ local stage=levelNumber and type(curriculum)=="table" and type(curriculum.Stage)=="function" and curriculum.Stage(levelNumber) or nil
+ local notes=curriculum and curriculum.classes and curriculum.classes[class]
  if stage and type(notes)=="table" and type(notes[stage])=="string" then values.tip=notes[stage] end
  values.band=levelNumber and ("Leveling phase: "..(levelNumber>=50 and "Endgame preparation (50-60)" or "Check current class training")) or "Level unavailable"
  values.focus:SetText("FOCUS: "..clip(values.tip,81))
