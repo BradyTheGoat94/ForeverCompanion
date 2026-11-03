@@ -11,7 +11,7 @@ The Forever client is based on the modern Retail UI API, not the old Classic add
 
 ## Audit actions
 
-- The addon API scanner now checks for missing GetSpecialization, GetSpecializationInfo and GetNumSpecializations globals, in addition to legacy item/spell/talent calls.
+- The addon API scanner checks for missing GetSpecialization and GetSpecializationInfo globals, in addition to legacy item/spell/talent calls. GetNumSpecializations is present in a captured Forever API dump and must not be classified as missing.
 - Core.lua and Icons.lua were directly inspected for the cited build-check trap and specialization globals; no GetBuildInfo threshold or GetSpecialization calls were found in those two modules. This is not a repository-wide proof.
 - TOC interface 16001 agrees with published beta-client evidence. Reconfirm after release.
 
@@ -30,3 +30,7 @@ For each spell and icon: compare the spell ID, client build and actual texture r
 ## Release status
 
 Research corroborates the API approach and provisional TOC value, **not** full functionality. A passing GitHub Actions build, real-client visual review and source-by-source content validation remain separate gates.
+
+## Cross-source correction (2026-11-03)
+
+ForeverPlusPlus reports GetNumSpecializations still present in the API dump, even though GetSpecialization and GetSpecializationInfo globals are absent. The scanner was corrected to avoid flagging GetNumSpecializations. The published API docs also show C_SpecializationInfo.GetSpecialization as a modern replacement. Evidence: https://github.com/xIGBClutchIx/ForeverPlusPlus/blob/main/docs/forever-api.md and https://warcraft.wiki.gg/wiki/API:C_SpecializationInfo.GetSpecialization
