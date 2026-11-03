@@ -9,7 +9,7 @@ local rotationButton, rotationIcon, rotationDescription, specButton
 local rotationRows={}
 local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
-ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", savedOnly=false}
+ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
@@ -128,8 +128,10 @@ local function render()
       if ForeverCompanionLootUI.nextButton.SetEnabled then ForeverCompanionLootUI.nextButton:SetEnabled(ForeverCompanionLootUI.selectedIndex<#matches) end
       ForeverCompanionLootUI.prevButton:Show(); ForeverCompanionLootUI.nextButton:Show()
     ForeverCompanionLootUI.dungeonButton:SetText("Dungeon: "..(ForeverCompanionLootUI.dungeon~="" and ForeverCompanionLootUI.dungeon or "All"))
+    ForeverCompanionLootUI.bossButton:SetText("Boss: "..(ForeverCompanionLootUI.boss~="" and ForeverCompanionLootUI.boss or "All"))
     ForeverCompanionLootUI.savedButton:SetText(ForeverCompanionLootUI.savedOnly and "Wishlist: Only" or "Wishlist: All")
     ForeverCompanionLootUI.dungeonButton:Show()
+    ForeverCompanionLootUI.bossButton:Show()
     ForeverCompanionLootUI.savedButton:Show()
     ForeverCompanionLootUI.resetButton:Show()
     ForeverCompanionLootUI.itemTitle:SetText(selected and selected.item or "No matching loot")
@@ -145,7 +147,7 @@ local function render()
       ForeverCompanionLootUI.searchBox:Hide()
       ForeverCompanionLootUI.wishButton:Hide()
       ForeverCompanionLootUI.prevButton:Hide(); ForeverCompanionLootUI.nextButton:Hide()
-    ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.savedButton:Hide(); ForeverCompanionLootUI.resetButton:Hide()
+    ForeverCompanionLootUI.dungeonButton:Hide(); ForeverCompanionLootUI.bossButton:Hide(); ForeverCompanionLootUI.savedButton:Hide(); ForeverCompanionLootUI.resetButton:Hide()
     ForeverCompanionLootUI.itemCard:Hide()
     end
   end
@@ -261,7 +263,7 @@ local function render()
       local matches=lootMatches()
       local selected=matches[ForeverCompanionLootUI.selectedIndex]
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
-      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB)
+      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss)
       lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
       if selected and type(ForeverCompanionLoot.BossSummary)=="function" then
         lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
@@ -779,7 +781,7 @@ end
 local function lootMatches()
   return ForeverCompanionLoot and ForeverCompanionLoot.Filter(
     ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,
-    ForeverCompanionLootUI.savedOnly,DB) or {}
+    ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss) or {}
 end
 local function setupLootControls(child)
   ForeverCompanionLootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
@@ -834,10 +836,26 @@ local function setupLootControls(child)
       if ForeverCompanionLootUI.dungeon==name then nextIndex=i+1; break end
     end
     ForeverCompanionLootUI.dungeon=names[nextIndex] or ""
+    ForeverCompanionLootUI.boss=""
     ForeverCompanionLootUI.selectedIndex=1
     render()
   end)
   ForeverCompanionLootUI.dungeonButton:Hide()
+  ForeverCompanionLootUI.bossButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
+  ForeverCompanionLootUI.bossButton:SetSize(245,22)
+  ForeverCompanionLootUI.bossButton:SetPoint("TOPLEFT",ForeverCompanionLootUI.dungeonButton,"BOTTOMLEFT",0,-6)
+  ForeverCompanionLootUI.bossButton:SetScript("OnClick",function()
+    if not ForeverCompanionLoot then return end
+    local names=ForeverCompanionLoot.BossNames(ForeverCompanionLootUI.dungeon)
+    local nextIndex=1
+    for i,name in ipairs(names) do
+      if ForeverCompanionLootUI.boss==name then nextIndex=i+1; break end
+    end
+    ForeverCompanionLootUI.boss=names[nextIndex] or ""
+    ForeverCompanionLootUI.selectedIndex=1
+    render()
+  end)
+  ForeverCompanionLootUI.bossButton:Hide()
   ForeverCompanionLootUI.savedButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   ForeverCompanionLootUI.savedButton:SetSize(160,22)
   ForeverCompanionLootUI.savedButton:SetPoint("LEFT",ForeverCompanionLootUI.dungeonButton,"RIGHT",8,0)
@@ -854,6 +872,7 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.resetButton:SetScript("OnClick",function()
     ForeverCompanionLootUI.query=""
     ForeverCompanionLootUI.dungeon=""
+    ForeverCompanionLootUI.boss=""
     ForeverCompanionLootUI.savedOnly=false
     ForeverCompanionLootUI.selectedIndex=1
     if ForeverCompanionLootUI.searchBox.SetText then ForeverCompanionLootUI.searchBox:SetText("") end
@@ -862,7 +881,7 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.resetButton:Hide()
   ForeverCompanionLootUI.itemCard=CreateFrame("Frame",nil,child)
   ForeverCompanionLootUI.itemCard:SetSize(655,64)
-  ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.dungeonButton,"BOTTOMLEFT",0,-8)
+  ForeverCompanionLootUI.itemCard:SetPoint("TOPLEFT",ForeverCompanionLootUI.bossButton,"BOTTOMLEFT",0,-8)
   ForeverCompanionLootUI.itemBackground=ForeverCompanionLootUI.itemCard:CreateTexture(nil,"BACKGROUND")
   ForeverCompanionLootUI.itemBackground:SetAllPoints(ForeverCompanionLootUI.itemCard)
   ForeverCompanionLootUI.itemBackground:SetTexture("Interface\\\\Buttons\\\\WHITE8X8")
