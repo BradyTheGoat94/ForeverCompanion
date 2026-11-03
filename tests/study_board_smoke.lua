@@ -30,6 +30,11 @@ assert(not b.Toggle('Legacy','MAGE',db,6))
 assert(b.Toggle('Legacy','MAGE',db,1))
 assert(b.Get('Alts','MAGE',db).done==0,'legacy/alt isolation')
 assert(b.Get('Legacy','MAGE',db).done==1)
+-- Missing or malformed character settings must not crash reset actions.
+assert(b.Reset('Legacy','MAGE',nil)==nil)
+assert(b.Reset('Legacy','MAGE',false)==nil)
+assert(b.Reset('Legacy','MAGE','bad saved variables')==nil)
+assert(b.Reset('Legacy','MAGE',{studyChecks='corrupt'})==nil)
 db.studyChecks='corrupt'
 assert(b.Toggle('Alts','MAGE',db,1),'recover malformed saved state')
 assert(b.Get('Alts','MAGE',db).done==1)
