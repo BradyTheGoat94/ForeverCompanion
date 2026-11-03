@@ -29,6 +29,7 @@ function I.Spell(name)
  local ok,value=pcall(function()
   local icon=api(name)
   if type(icon)=="number" and icon==icon and icon>0 and icon<math.huge and icon%1==0 then return icon end
+  if type(icon)=="string" and icon~="" then return icon end
  end)
  return ok and value or nil
 end
