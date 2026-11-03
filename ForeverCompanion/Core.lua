@@ -263,6 +263,9 @@ local function render()
       lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
       lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB)
       lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
+      if selected and type(ForeverCompanionLoot.BossSummary)=="function" then
+        lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
+      end
       lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
       lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
