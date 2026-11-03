@@ -8,7 +8,7 @@ Download the `bradys-forever-companion-beta-review` GitHub Actions artifact. The
 To build locally, run `python3 tools/build_curseforge_beta.py --output dist`. To validate only, use `--check-only`. Inspect `dist/release-audit.json` for SHA-256 and file count. The build rejects missing TOC dependencies, duplicate paths, symlinks, unexpected extensions, oversized assets and mismatched branding. ZIP timestamps are normalized for reproducibility.
 
 ## Human checks required before upload
-- Confirm the actual WoW Forever client interface number with `/dump select(4, GetBuildInfo())`; `16001` in the current manifest is **not verified**. Do not claim supported versions until this is checked.
+- Confirm the actual WoW Forever client interface number with `/dump select(4, GetBuildInfo())`; Public client captures independently report **16001** for Forever 1.60.1, including a 2026-10-30 live-client build; verify the installed release build and addon behavior in-game before claiming compatibility.
 - Install the ZIP in the target client's AddOns folder and confirm that the addon loads without Lua errors, including fresh installs and upgrades preserving `ForeverCompanionDB`.
 - Test dashboard, all nine class selectors, spec switching, navigation, quest API fallbacks, rotations, loot search, note persistence, combat lockdown behavior and performance in the real client.
 - Validate that spell/class icons resolve in the target client and that the native UI matches expectations; offline preview renders are **not** in-game screenshots.
@@ -30,3 +30,10 @@ Not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft and
 - https://support.curseforge.com/support/solutions/articles/9000197241-creating-and-submitting-a-project
 - https://support.curseforge.com/support/solutions/articles/9000209856-multi-toc-for-world-of-warcraft-addons
 - https://support.curseforge.com/support/solutions/articles/9000199552
+
+## Independent Forever API references (read-only research)
+- https://github.com/Thunderz96/forever-addon-kit — captured 1.60.1 API surface, dated September 2026
+- https://github.com/Atraeau/WoW-Addons — generated client API docs and `_Camelot` TOC convention
+- https://github.com/xIGBClutchIx/ForeverPlusPlus/blob/main/docs/forever-api.md — client probes through October 30, including the live `_forever_` folder
+
+These sources establish API names and version evidence, **not** that our addon runs correctly. The project does not vendor third-party code. Run `python3 tools/audit_forever_apis.py` to flag known-removed global calls. `/fcdiag` provides non-invasive checks inside the client. Recheck each new Forever patch.
