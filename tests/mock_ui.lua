@@ -445,7 +445,7 @@ SlashCmdList.FOREVERCOMPANION("")
 SlashCmdList.FOREVERCOMPANION("")
 local foundTitle=false
 for _,f in ipairs(frames) do
- if f.text=="Forever Companion" then foundTitle=true end
+ if f.text=="Brady\'s Forever Companion" then foundTitle=true end
 end
 assert(foundTitle,"main window title not rendered")
 local foundBanner=false
