@@ -81,6 +81,15 @@ def validate() -> tuple[list[pathlib.Path], dict]:
         files.append(p)
     if TOC not in files:
         errors.append("Manifest excluded from archive")
+    # Every shipped Lua/XML module must be reachable from the load manifest.
+    # Otherwise the ZIP can look complete while silently omitting a feature.
+    unreferenced = [p for p in files if p.suffix.lower() in {".lua", ".xml"} and p not in sources]
+    if unreferenced:
+        errors.extend("Unreferenced module in package: " + str(p.relative_to(ROOT)) for p in unreferenced)
+    # Case-only mismatches are especially risky across Windows/macOS installs.
+    folded = [str(p.relative_to(ADDON)).casefold() for p in files]
+    if len(folded) != len(set(folded)):
+        errors.append("Case-insensitive filename collision in addon package")
     if errors:
         raise ValueError("\n".join(errors))
     return files, meta
