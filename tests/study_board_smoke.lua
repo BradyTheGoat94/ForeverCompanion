@@ -58,6 +58,10 @@ for class in pairs(ForeverCompanionSpecs) do
  ForeverCompanionDB.specSelections={[class]="2"}
  assert(select(2,ForeverCompanionSpecPlanner.Get(class))==2,"valid numeric strings remain supported")
 end
+-- Missing class context must not index SavedVariables with nil.
+local missing,missingIndex,missingTotal=ForeverCompanionSpecPlanner.Get(nil)
+assert(missing==nil and missingIndex==1 and missingTotal==0,'nil class lookup must remain safe')
+assert(ForeverCompanionSpecPlanner.Next(nil)==nil,'nil class cycling must be a no-op')
 ForeverCompanionDB="malformed"
 assert(ForeverCompanionSpecPlanner.Get("MAGE"),"malformed database should recover")
 print("PASS: specialization selection recovery across all classes")
