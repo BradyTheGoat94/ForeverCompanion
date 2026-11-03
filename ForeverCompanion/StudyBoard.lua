@@ -90,7 +90,10 @@ function B.Create(parent,openPage)
   b.rail=bar(b,0,0,3,43,0.94,0.72,0.32)
   b.number=text(b,10,-12,60,"");b.caption=text(b,77,-7,647,"");b.caption:SetTextColor(0.94,0.90,0.81)
   b:SetScript("OnClick",function()
-   if current and B.Toggle(current.tab,current.class,current.db,index) and ForeverCompanionRefresh then ForeverCompanionRefresh() end
+   if current and B.Toggle(current.tab,current.class,current.db,index) then
+    if ForeverCompanionRefresh then ForeverCompanionRefresh()
+    else B.Render(current.tab,current.class,current.db) end
+   end
   end)
   b:SetScript("OnEnter",function(self)
    local accent=current and B.Accent(current.tab,current.class) or {0.94,0.72,0.32}
@@ -107,7 +110,11 @@ function B.Create(parent,openPage)
   links[i]=b
  end
  local reset=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");reset:SetSize(180,24);reset:SetPoint("TOPRIGHT",root,"TOPRIGHT",-16,-338);reset:SetText("Reset practice ticks")
- reset:SetScript("OnClick",function() if current then B.Reset(current.tab,current.class,current.db);if ForeverCompanionRefresh then ForeverCompanionRefresh() end end end)
+ reset:SetScript("OnClick",function() if current then
+   B.Reset(current.tab,current.class,current.db)
+   if ForeverCompanionRefresh then ForeverCompanionRefresh()
+   else B.Render(current.tab,current.class,current.db) end
+  end end)
  root:Hide()
 end
 function B.Render(tab,class,db)
@@ -115,7 +122,13 @@ function B.Render(tab,class,db)
  local state=B.Get(tab,class,db)
  if not state then root:Hide();current=nil;return end
  current={tab=tab,class=class,db=db,state=state}
- root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -(194+ForeverCompanionRotationWorkspace.GetHeight()) or -5)
+ root:ClearAllPoints()
+ local rotationHeight=0
+ if tab=="Leveling" and type(ForeverCompanionRotationWorkspace)=="table" and type(ForeverCompanionRotationWorkspace.GetHeight)=="function" then
+  rotationHeight=tonumber(ForeverCompanionRotationWorkspace.GetHeight()) or 0
+  if rotationHeight~=rotationHeight or rotationHeight<0 or rotationHeight>2000 then rotationHeight=0 end
+ end
+ root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -(194+rotationHeight) or -5)
  local accent=B.Accent(tab,class)
  heading:SetText(state.title)
  heading:SetTextColor(accent[1],accent[2],accent[3])
