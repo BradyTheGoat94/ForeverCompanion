@@ -268,6 +268,7 @@ local function render()
       if selected and type(ForeverCompanionLoot.BossSummary)=="function" then
         lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
       end
+      lines[#lines+1]=ForeverCompanionLoot.ProgressSummary(DB,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.boss)
       lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
       lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
       lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
