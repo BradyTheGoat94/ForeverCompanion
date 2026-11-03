@@ -13,6 +13,7 @@ BANNED = (
     r"\b(?:C_Spell\.CastSpell|C_ActionBar\.UseAction|C_Macro\.RunMacro)\s*\(",
     r"\b(?:SecureActionButtonTemplate|SecureHandlerClickTemplate)\b",
     r"\b(?:type\s*=\s*['\"](?:spell|macro|item|target)['\"])",
+    r"""\bSetAttribute\s*\(\s*['"]type['"]\s*,\s*['"](?:spell|macro|item|target)['"]""",
 )
 def scan():
     findings = []
