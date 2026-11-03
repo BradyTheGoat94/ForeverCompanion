@@ -64,6 +64,9 @@ def validate() -> tuple[list[pathlib.Path], dict]:
         errors.append("No Lua/XML entries in manifest")
     if len(sources) != len(set(sources)):
         errors.append("Duplicate manifest file entry")
+    manifest_names = [str(p.relative_to(ADDON)).casefold() for p in sources]
+    if len(manifest_names) != len(set(manifest_names)):
+        errors.append("Case-insensitive duplicate manifest entry")
     if sources and sources[-1].name != "Core.lua":
         errors.append("Core.lua should load last")
     files = []
