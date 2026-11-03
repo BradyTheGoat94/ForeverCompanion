@@ -22,9 +22,11 @@ jobs:
       - name: Run study-board interaction tests
         run: lua5.1 tests/study_board_smoke.lua
       - name: Verify Python release tooling compiles
-        run: python3 -m py_compile tools/build_curseforge_beta.py tools/audit_forever_apis.py
+        run: python3 -m py_compile tools/build_curseforge_beta.py tools/audit_forever_apis.py tools/audit_no_combat_automation.py
       - name: Scan for removed legacy API calls
         run: python3 tools/audit_forever_apis.py
+      - name: Reject combat automation indicators
+        run: python3 tools/audit_no_combat_automation.py
       - name: Validate addon manifest and bundled files
         run: python3 tools/build_curseforge_beta.py --check-only
       - name: Build reproducible installable beta ZIP
