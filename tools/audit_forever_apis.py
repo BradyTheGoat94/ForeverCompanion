@@ -14,6 +14,7 @@ MISSING = (
     "GetSpellInfo", "GetItemInfo", "UnitAura", "GetTalentInfo",
     "GetMerchantItemInfo", "CombatLogGetCurrentEventInfo",
     "GetContainerItemInfo", "GetNumTalentTabs", "GetTalentTabInfo",
+    "GetSpecialization", "GetSpecializationInfo", "GetNumSpecializations",
 )
 # Calls guarded by feature probes may be intentional. Report all direct calls
 # rather than incorrectly claiming safety from a regex-level inspection.
