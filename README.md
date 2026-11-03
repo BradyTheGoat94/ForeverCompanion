@@ -1,6 +1,6 @@
-# Forever Companion
+# Brady's Forever Companion
 
-Independent, free World of Warcraft addon project for class-aware leveling, dungeon, profession, and PvP reference guides.
+Brady's Forever Companion is an independent, free World of Warcraft addon project for class-aware leveling, dungeon, profession, and PvP reference guides.
 
 ## Status
 
