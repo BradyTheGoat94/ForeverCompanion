@@ -60,6 +60,15 @@ function B.Reset(tab,class,db)
  local state=B.Get(tab,class,db)
  if state and type(db)=="table" and type(db.studyChecks)=="table" then db.studyChecks[state.key]=nil end
 end
+-- Single-line action preview for the fixed-width native panel.
+function B.NextActionLabel(state)
+ local step=type(state)=="table" and state.nextStep
+ if type(step)~="string" or step=="" then
+  return "ALL ITEMS REVIEWED  |  Reset to practice again."
+ end
+ if #step>94 then step=step:sub(1,91).."..." end
+ return "NEXT: "..step
+end
 local function paint(t,r,g,b,a)
  if t.SetColorTexture then t:SetColorTexture(r,g,b,a or 1) else t:SetTexture(r,g,b,a or 1) end
 end
@@ -138,9 +147,7 @@ function B.Render(tab,class,db)
  summary:SetText("Personal checklist  |  No game progress detected")
  progressCaption:SetText(state.done.." / "..state.total.." reviewed")
  progressCaption:SetTextColor(accent[1],accent[2],accent[3])
- local preview=state.nextStep
- if preview and #preview>94 then preview=preview:sub(1,91).."..." end
- nextTask:SetText(preview and ("NEXT: "..preview) or "ALL ITEMS REVIEWED  |  Reset to practice again.")
+ nextTask:SetText(B.NextActionLabel(state))
  evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
  fill:SetWidth(state.total>0 and math.max(1,738*state.done/state.total) or 1)
  for i,row in ipairs(rows) do
