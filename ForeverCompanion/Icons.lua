@@ -19,7 +19,7 @@ end
 function I.ApplyClass(texture,class)
  local path,coords=I.Class(class)
  texture:SetTexture(path)
- texture:SetTexCoord(unpack(coords))
+ texture:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
 end
 function I.Spell(name)
  if type(name)~="string" or name=="" then return nil end
