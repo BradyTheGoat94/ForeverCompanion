@@ -34,3 +34,14 @@ Research corroborates the API approach and provisional TOC value, **not** full f
 ## Cross-source correction (2026-11-03)
 
 ForeverPlusPlus reports GetNumSpecializations still present in the API dump, even though GetSpecialization and GetSpecializationInfo globals are absent. The scanner was corrected to avoid flagging GetNumSpecializations. The published API docs also show C_SpecializationInfo.GetSpecialization as a modern replacement. Evidence: https://github.com/xIGBClutchIx/ForeverPlusPlus/blob/main/docs/forever-api.md and https://warcraft.wiki.gg/wiki/API:C_SpecializationInfo.GetSpecialization
+
+## Additional release-risk findings (2026-11-03)
+
+- Independent Forever API reference was generated from client build **70170** with interface **16001**, documenting 6,598 functions and 1,806 events: https://github.com/Atraeau/WoW-Addons/blob/main/docs/api/README.md . This is more recent than the kit's initial September build but still not launch-day proof.
+- Forever addon kit reports a **GetBuildInfo threshold trap**: code that assumes a modern API only for interface >=100000 chooses the wrong branch on Forever 16001. Inspect every imported library for this heuristic. https://github.com/Thunderz96/forever-addon-kit
+- The same kit reports an early beta SavedVariables persistence bug; it explicitly documents a later fix to secure snippet load order, while other sources report saved-variable loading fixed after build 70009. Do not ship a seed-file workaround without reproducing a current bug. https://forevermeta.me/en/guides/wow-forever-addons-interface
+- The beta's `_classic_beta_` installation folder should **not** be presented as the confirmed launch installation folder; public reporting says the launch path was still unknown as of November 3. https://forevermeta.me/en/guides/wow-forever-addons-interface
+- Published client guidance says combat-derived values may be secret and third-party combat-log DPS meters/rotation helpers cannot assume access. Forever Companion should remain a **static instructional guide**, not imply live DPS reading or automatic combat decisions. https://hearthproof.com/systems/addons/
+- A separate public Forever addon project uses API-specific lint and a CurseForge release pipeline, useful as process inspiration only; do not copy GPL code without license compliance: https://github.com/mparke/forever-addons
+
+**Local execution limitation:** this session's container could not resolve github.com to clone the repository; no real Lua smoke test, reproducible ZIP build, or in-client screenshot was performed during this pass. GitHub edits alone do not establish CI success.
