@@ -23,11 +23,16 @@ def render(name,needle):
             value=row['text'];width=max(10,int(float(row['width'])/7.5))
             for j,line in enumerate(textwrap.wrap(value,width=width)):
                 d.text((x*1.5,-y*1.5+j*21),line,font=font(size),fill=(237,188,97) if row==heading else (215,219,225))
-    board_rows=[r for r in rows if r['kind']=='Button' and r['parent']==parent and r['height']=='43']
-    assert len(board_rows)==5,'expected five native task tiles'
+    # Identify actual checklist buttons by their native widget dimensions.
+    # The study desk moved from 43px to 40px rows; hardcoded 43px broke CI.
+    board_rows=[r for r in rows if r['kind']=='Button' and r['parent']==parent
+                and r['width'] and r['height']
+                and float(r['width'])>=700 and 30<=float(r['height'])<=60]
+    assert len(board_rows)==5, f'expected five native task tiles, got {len(board_rows)}'
     for row in board_rows:
         x,y=int(float(row['x'])),int(float(row['y']))
-        d.rectangle((x*1.5,-y*1.5,(x+738)*1.5,(-y+43)*1.5),fill=(22,30,42),outline=(63,62,51))
+        w,h=float(row['width']),float(row['height'])
+        d.rectangle((x*1.5,-y*1.5,(x+w)*1.5,(-y+h)*1.5),fill=(22,30,42),outline=(63,62,51))
         for child in rows:
             if child['parent']==row['id'] and child['kind']=='FontString' and child['text']:
                 cx,cy=int(float(child['x'])),int(float(child['y']))
