@@ -22,6 +22,13 @@ function Loot.Add(record)
   if record.dropRate~=nil and (type(record.dropRate)~="number" or record.dropRate<0 or record.dropRate>100) then
     return false,"invalid drop rate"
   end
+  for _,existing in ipairs(Loot.records) do
+    if existing.item:lower()==record.item:lower()
+      and existing.dungeon:lower()==record.dungeon:lower()
+      and existing.boss:lower()==record.boss:lower() then
+      return false,"duplicate item, dungeon and boss"
+    end
+  end
   Loot.records[#Loot.records+1]=record
   return true
 end
