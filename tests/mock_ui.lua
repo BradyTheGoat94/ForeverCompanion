@@ -799,10 +799,12 @@ assert(studyRow and studyRow.OnClick,"visible Legacy task must be clickable")
 studyRow.OnClick(studyRow)
 assert(ForeverCompanionStudyBoard.Get("Legacy","WARRIOR",ForeverCompanionDB).done==1)
 exportSnapshot("ui_legacy_snapshot.txt")
+exportNative("ui_legacy_native.json")
 buttonWithText("ALT PREPARATION").OnClick()
 assert(ForeverCompanionDB.tab=="Alts","Legacy shortcut should open alt desk")
 assert(ForeverCompanionStudyBoard.Get("Alts","WARRIOR",ForeverCompanionDB).done==0)
 exportSnapshot("ui_alts_snapshot.txt")
+exportNative("ui_alts_native.json")
 SlashCmdList.FOREVERCOMPANION("open dungeons")
 assert(ForeverCompanionEncounterBrowser.dungeon~="")
 local browser=ForeverCompanionEncounterBrowser
@@ -906,6 +908,7 @@ assert(not ForeverCompanionLootUI.obtainedButton.visible,"manual acquisition but
 local practice=ForeverCompanionStudyBoard.Get("Leveling","WARRIOR",ForeverCompanionDB)
 assert(practice and practice.total>=3)
 exportSnapshot("ui_practice_snapshot.txt")
+exportNative("ui_practice_native.json")
 for _,w in ipairs(frames) do
  if w.texture then assert(not w.texture:find("\\\\",1,true),"over-escaped texture path: "..w.texture) end
 end

@@ -78,6 +78,12 @@ jobs:
             ui_legacy_preview.png
             ui_alts_preview.png
             ui_practice_preview.png
+            ui_legacy_native.json
+            ui_alts_native.json
+            ui_practice_native.json
+            ui_legacy_native.png
+            ui_alts_native.png
+            ui_practice_native.png
           if-no-files-found: ignore
       - name: Validate manifest
         run: |

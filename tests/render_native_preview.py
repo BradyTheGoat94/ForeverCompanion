@@ -72,7 +72,14 @@ def render(source,output,workspace=False):
     def intersect(a,b):
         return (max(a[0],b[0]),max(a[1],b[1]),min(a[2],b[2]),min(a[3],b[3]))
 
-    if workspace=='loot':
+    if workspace in ('legacy','alts','practice'):
+        expected={'legacy':'LEGACY RESEARCH DESK','alts':'ALT PREPARATION DESK'}
+        label=next(n for n in records if (workspace!='practice' and n.get('text')==expected.get(workspace)) or (workspace=='practice' and n.get('text','').endswith(' / PRACTICE DESK')))
+        target=nodes[label['parent']]
+        bx,by,bw,bh=box(target['id'])
+        offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
+        start=target['id']
+    elif workspace=='loot':
         target=next(n for n in records if n.get('name')=='ForeverCompanionLootCatalog')
         bx,by,bw,bh=box(target['id'])
         offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
@@ -169,3 +176,8 @@ from shutil import copyfile
 copyfile('ui_dashboard_native.png','ui_preview.png')
 copyfile('ui_class_native.png','ui_class_preview.png')
 
+
+# Planning-board inspection uses captured native colors and geometry, including
+# class accents and completion rails, rather than schematic recoloring.
+for section in ('legacy','alts','practice'):
+    render('ui_'+section+'_native.json','ui_'+section+'_native.png',section)
