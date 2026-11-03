@@ -346,11 +346,16 @@ local function render()
         lines[#lines+1]=i..". "..ability
         local row=rotationRows[i]
         if row then
+          -- Center short reference lists without inventing additional abilities.
+          local count=math.min(6,#priorities)
+          local inset=math.max(0,math.floor((570-(count*95-7))/2))
+          row:ClearAllPoints()
+          row:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",208+inset+(i-1)*95,-286)
           -- Use a concise action heading on the tile; retain the full
           -- instructional sentence in the tooltip and guide detail.
           local short=tostring(ability):gsub("^[Bb]efore pull:%s*","Prep: "):gsub("^[Bb]efore combat:%s*","Prep: ")
           short=short:match("^([^;%.]+)") or short
-          if #short>38 then short=short:sub(1,35).."..." end
+          if #short>26 then short=short:sub(1,23).."..." end
           row.label:SetText(short)
           colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
           colorTexture(row.trim,rotationDetail==i and 0.99 or 0.45,rotationDetail==i and 0.76 or 0.36,rotationDetail==i and 0.32 or 0.20,1)
@@ -1383,7 +1388,7 @@ local function createUI()
     row.label=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     row.label:SetPoint("BOTTOM",row,"BOTTOM",0,7)
     row.label:SetWidth(80)
-    row.label:SetHeight(27)
+    row.label:SetHeight(30)
     row.label:SetJustifyH("CENTER")
     if row.label.SetJustifyV then row.label:SetJustifyV("MIDDLE") end
     local labelShade=row:CreateTexture(nil,"BORDER")
