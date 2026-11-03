@@ -934,4 +934,7 @@ C_Spell.GetSpellTexture=function() return 'Interface\\\\Icons\\\\Spell_Holy_Devo
 assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','leveling',1),'Interface\\\\Icons\\\\Spell_Holy_DevotionAura','client texture path supported')
 C_Spell.GetSpellTexture=function() error('unavailable client texture API') end
 assertEqual(ForeverCompanionRotationCardIcon('WARRIOR','leveling',1),originalIcon,'texture API error')
+C_Spell=nil
+GetSpellTexture=nil
+assertEqual(ForeverCompanionIcons.Spell('Battle Shout'),nil,'missing spell texture API is safe')
 C_Spell=oldSpellAPI
