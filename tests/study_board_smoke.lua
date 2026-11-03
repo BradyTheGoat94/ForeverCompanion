@@ -44,3 +44,20 @@ assert(b.Accent("Leveling","MAGE")[3]>b.Accent("Leveling","MAGE")[1])
 assert(b.Accent("Alts","MAGE")[1]~=b.Accent("Legacy","MAGE")[1])
 assert(b.Accent("Leveling","UNKNOWN")[1]>0)
 print("PASS: class accents, planning palettes and fallback")
+
+-- Old or edited SavedVariables must not blank specialization-dependent pages.
+for class in pairs(ForeverCompanionSpecs) do
+ for _,bad in ipairs({0,-1,1.5,math.huge,-math.huge,0/0,"1.5","not a spec",{},true}) do
+  ForeverCompanionDB.specSelections={[class]=bad}
+  local selected,index=ForeverCompanionSpecPlanner.Get(class)
+  assert(selected and index==1,"invalid saved selection must fall back: "..class)
+  ForeverCompanionSpecPlanner.Next(class)
+  local nextChoice,nextIndex=ForeverCompanionSpecPlanner.Get(class)
+  assert(nextChoice and nextIndex==2,"cycling must recover after invalid selection")
+ end
+ ForeverCompanionDB.specSelections={[class]="2"}
+ assert(select(2,ForeverCompanionSpecPlanner.Get(class))==2,"valid numeric strings remain supported")
+end
+ForeverCompanionDB="malformed"
+assert(ForeverCompanionSpecPlanner.Get("MAGE"),"malformed database should recover")
+print("PASS: specialization selection recovery across all classes")

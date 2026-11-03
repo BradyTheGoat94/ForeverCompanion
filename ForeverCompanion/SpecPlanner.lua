@@ -14,14 +14,15 @@ ForeverCompanionSpecPlanner={}
 local P=ForeverCompanionSpecPlanner
 local modes={"leveling","dungeon","boss","aoe","pvp"}
 local function db()
- ForeverCompanionDB=ForeverCompanionDB or {}
+ if type(ForeverCompanionDB)~="table" then ForeverCompanionDB={} end
  if type(ForeverCompanionDB.specSelections)~="table" then ForeverCompanionDB.specSelections={} end
  return ForeverCompanionDB.specSelections
 end
 function P.Get(class)
  local choices=ForeverCompanionSpecs[class] or {}
- local index=tonumber(db()[class]) or 1
- if index<1 or index>#choices then index=1 end
+ local saved=db()[class]
+ local index=(type(saved)=="number" or type(saved)=="string") and tonumber(saved) or 1
+ if not index or index~=index or index<1 or index>#choices or index%1~=0 then index=1 end
  return choices[index],index,#choices
 end
 function P.Next(class)
