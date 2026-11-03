@@ -25,3 +25,13 @@ ForeverCompanionEncounterBrowser.boss='C'
 assert(n.Context('Dungeons')=='Boss:A:C')
 assert(n.Context('Leveling')==nil)
 print('PASS: research note bounds, recovery, sanitization, clearing and context isolation')
+
+
+assert(n.Save(db,'Legacy',{note=string.rep('a',319)..'é',source=string.rep('s',238)..'猫',build=string.rep('b',79)..'🙂'}))
+local localized=n.Read(db,'Legacy')
+assert(localized.note==string.rep('a',319))
+assert(localized.source==string.rep('s',238))
+assert(localized.build==string.rep('b',79))
+assert(n.Save(db,'Alts',{note=string.rep('a',318)..'é'}))
+assert(n.Read(db,'Alts').note==string.rep('a',318)..'é','complete character at boundary retained')
+print('PASS: UTF-8 notebook boundaries')

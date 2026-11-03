@@ -18,7 +18,16 @@ end
 local limits={note=320,source=240,build=80}
 local function clean(value,limit)
  if type(value)~="string" then return "" end
- return value:gsub("[%c|]"," "):sub(1,limit)
+ local text=value:gsub("[%c|]"," ")
+ if #text<=limit then return text end
+ -- Byte limits must preserve complete UTF-8 characters in localized notes.
+ local last=limit
+ while last>0 do
+  local nextByte=text:byte(last+1)
+  if not nextByte or nextByte<128 or nextByte>=192 then break end
+  last=last-1
+ end
+ return text:sub(1,last)
 end
 function N.Context(tab)
  if tab=="Legacy" or tab=="Alts" then return tab end
@@ -105,3 +114,4 @@ function N.Render(tab,db,reload)
  heading:SetText("PERSONAL RESEARCH / "..(tab=="Dungeons" and "SELECTED BOSS" or string.upper(tab)).." / NOT VERIFIED")
  root:Show()
 end
+
