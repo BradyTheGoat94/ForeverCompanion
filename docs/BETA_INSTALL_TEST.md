@@ -3,8 +3,8 @@
 This is a **pre-release beta**. It has not been certified on the final WoW Forever client.
 
 ## Install manually
-1. Download the ZIP from the successful **CurseForge beta package audit** run's `bradys-forever-companion-beta-review` artifact.
-2. Extract the ZIP. The resulting folder must be named **ForeverCompanion**, containing **ForeverCompanion.toc** directly inside. Do not leave a second outer folder around it.
+1. Download the ZIP from the successful **Validate and package addon** run's `ForeverCompanion` artifact (for example, [run #1904](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41751744280)).
+2. GitHub Actions downloads an **outer artifact ZIP**. Extract it, find the actual installable addon ZIP inside, and extract that second ZIP. The resulting folder must be named **ForeverCompanion**, containing **ForeverCompanion.toc** directly inside. Do not leave a second outer folder around it.
 3. Copy that folder into the game's `Interface/AddOns/` directory under the **actual Forever client installation** (often the `_forever_` installation). Confirm the folder in your launcher rather than assuming its path.
 4. Restart the game or reload its UI. Enable the addon in the character selection addon list if available.
 5. Open the addon with its documented slash command and run `/fcdiag` in-game. Record any missing API, Lua error, or interface mismatch.
