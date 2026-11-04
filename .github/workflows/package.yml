@@ -85,6 +85,12 @@ jobs:
             ui_alts_native.png
             ui_practice_native.png
           if-no-files-found: ignore
+      - name: Run release safety and packaging unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Reject combat automation indicators
+        run: python3 tools/audit_no_combat_automation.py
+      - name: Verify CurseForge submission metadata and disclosures
+        run: python3 tools/audit_curseforge_submission.py
       - name: Validate manifest
         run: |
           python3 - <<'PY'
