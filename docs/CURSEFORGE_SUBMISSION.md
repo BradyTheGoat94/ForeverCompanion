@@ -4,7 +4,7 @@
 **Version:** 3.18.0-beta
 **Release channel:** Beta
 **Repository branch:** develop only
-**Current verification:** GitHub Actions run [#1908](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41752074999) completed successfully. This is an automated package check, not a live-client certification or CurseForge approval.
+**Current verification:** GitHub Actions run [#1916](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41767947419) completed successfully with safety unit tests, the combat-automation scanner, submission preflight, packaging and provenance checks. This is an automated package check, not a live-client certification or CurseForge approval.
 
 ## Project summary (paste into CurseForge)
 
@@ -49,7 +49,7 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 
 | Gate | Status |
 | --- | --- |
-| Automated build and package integrity | PASS — Actions #1908 |
+| Automated build and package integrity | PASS — Actions #1916 |
 | Correct project title/version in TOC | PASS — 3.18.0-beta |
 | License choice and third-party asset review | BLOCKED — owner decision/review |
 | Original logo and truthful showcase images | NEEDS REVIEW |
@@ -58,3 +58,9 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 | CurseForge project/file approval | NOT SUBMITTED |
 
 **Do not claim publication, approval, perfect visual fidelity, or verified Forever-specific DPS optimization until independently confirmed.**
+
+## Candidate package selected — November 3, 2026 EST
+
+**Preferred CI artifact:** [Build #1916](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41767947419), `ForeverCompanion` artifact ID `13292594268` (GitHub Actions outer ZIP, 1,225,211 bytes). Commit `3bb42bb0184325b8640c77e38222e3f1fb9f9633`, branch `develop`. The accompanying `offline-ui-snapshot` is artifact ID `13293815454` and is **not** a real-game screenshot. All 20 required job steps completed successfully.
+
+**Important:** extract the outer GitHub artifact ZIP and upload only its internal `ForeverCompanion.zip` after verifying its contents. This artifact is a candidate, not a submitted or approved CurseForge file. License, artwork, correct CurseForge game selection and live-client verification are still unresolved.
