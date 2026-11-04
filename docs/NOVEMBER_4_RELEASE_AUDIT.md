@@ -59,3 +59,12 @@ Source: https://support.curseforge.com/support/solutions/articles/9000197241
 - Dashboard.lua and ClassGuide.lua contain dark/gold presentation code; no real-client visual comparison has been completed.
 
 **Verification outcome:** Source labels checked; live gameplay accuracy, pixel-level presentation, full source-link verification and CI execution remain outstanding. Do not claim 100 percent verified.
+
+## Confirmed GitHub Actions milestone — November 3, 2026 (EST)
+
+**Run:** https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41750567870
+**Commit:** `cf951edef0d0befdbd8631d64d2bdc39e43a8e85` on `develop`.
+**Result:** completed / success. All required steps in the **Validate and package addon** job succeeded, including Lua syntax, offline smoke tests, mocked UI, preview generation, manifest checks, guide completeness and safety labeling, compatibility, release gates, package and provenance verification, and artifact upload.
+**Artifacts:** `ForeverCompanion` (GitHub artifact ID 13285084436) and `offline-ui-snapshot` (ID 13284339660). The package artifact is an Actions artifact wrapper; inspect its contents before uploading any inner ZIP to CurseForge.
+
+**What this does not prove:** live Forever client compatibility, actual Blizzard spell texture identity for every spell, pixel-level visual match, or all 27 specialization recommendations being optimal. CurseForge approval/submission has not occurred.
