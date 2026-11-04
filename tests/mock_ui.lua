@@ -152,7 +152,21 @@ for _,f in ipairs(frames) do
  if f.events and f.events.ADDON_LOADED then addonFrame=f;break end
 end
 assert(addonFrame and addonFrame.OnEvent,"addon loaded handler missing")
+ForeverCompanionDB={role={},professions=false,position=true,checks={Dungeons=3,Legacy={true}}}
 addonFrame.OnEvent(addonFrame,"ADDON_LOADED",addon)
+assert(ForeverCompanionDB.role==nil and ForeverCompanionDB.professions==nil)
+assert(ForeverCompanionDB.checks.Dungeons==nil and ForeverCompanionDB.checks.Legacy[1]==true)
+local lootUI=ForeverCompanionLootUI
+lootUI.dungeon="invalid filter";lootUI.savedOnly=true
+local firstLoot=ForeverCompanionLoot.records[1]
+SlashCmdList.FOREVERCOMPANION("loot "..firstLoot.item)
+assert(ForeverCompanionDB.tab=="Loot" and lootUI.searchBox:GetText()==firstLoot.item)
+assert(lootUI.itemTitle:GetText()==firstLoot.item and lootUI.dungeon=="" and not lootUI.savedOnly)
+SlashCmdList.FOREVERCOMPANION("loot no such loot")
+assert(lootUI.selectedIndex==1 and lootUI.itemTitle:GetText()=="No matching loot")
+SlashCmdList.FOREVERCOMPANION("overview")
+lootUI.resetButton.OnClick()
+
 assert(#frames>50,"expected substantial UI frame tree")
 assert(type(SlashCmdList.FOREVERCOMPANION)=="function","slash command missing")
 SlashCmdList.FOREVERCOMPANION("class mage")

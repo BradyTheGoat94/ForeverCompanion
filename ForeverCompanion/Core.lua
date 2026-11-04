@@ -97,7 +97,7 @@ end
 local function toggleCheck(section, index)
   if not DATA.checklist[section] then return end
   DB.checks = DB.checks or {}
-  DB.checks[section] = DB.checks[section] or {}
+  if type(DB.checks[section])~="table" then DB.checks[section]={} end
   DB.checks[section][index] = not DB.checks[section][index]
 end
 -- Keep the large render function below Lua 5.1's 60-upvalue limit.
@@ -832,6 +832,13 @@ lootMatches=function()
     ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,
     ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss,ForeverCompanionLootUI.acquisition,ForeverCompanionLootUI.slot) or {}
 end
+local function resetLootFilters(query)
+  local ui=ForeverCompanionLootUI
+  ui.query=query or ""
+  ui.dungeon="";ui.boss="";ui.acquisition="";ui.slot=""
+  ui.savedOnly=false;ui.selectedIndex=1
+  ui.searchBox:SetText(ui.query)
+end
 local function setupLootControls(child)
   ForeverCompanionLootUI.searchBox=CreateFrame("EditBox",nil,child,"InputBoxTemplate")
   ForeverCompanionLootUI.searchBox:SetSize(270,24)
@@ -871,7 +878,7 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.nextButton:SetPoint("LEFT",ForeverCompanionLootUI.prevButton,"RIGHT",8,0)
   ForeverCompanionLootUI.nextButton:SetScript("OnClick",function()
     local matches=ForeverCompanionLoot and lootMatches() or {}
-    ForeverCompanionLootUI.selectedIndex=math.min(#matches,ForeverCompanionLootUI.selectedIndex+1)
+    ForeverCompanionLootUI.selectedIndex=math.max(1,math.min(#matches,ForeverCompanionLootUI.selectedIndex+1))
     render()
   end)
   ForeverCompanionLootUI.nextButton:Hide()
@@ -919,13 +926,7 @@ local function setupLootControls(child)
   ForeverCompanionLootUI.resetButton:SetPoint("LEFT",ForeverCompanionLootUI.savedButton,"RIGHT",8,0)
   ForeverCompanionLootUI.resetButton:SetText("Clear filters")
   ForeverCompanionLootUI.resetButton:SetScript("OnClick",function()
-    ForeverCompanionLootUI.query=""
-    ForeverCompanionLootUI.dungeon=""
-    ForeverCompanionLootUI.boss=""
-    ForeverCompanionLootUI.savedOnly=false
-    ForeverCompanionLootUI.acquisition="";ForeverCompanionLootUI.slot=""
-    ForeverCompanionLootUI.selectedIndex=1
-    if ForeverCompanionLootUI.searchBox.SetText then ForeverCompanionLootUI.searchBox:SetText("") end
+    resetLootFilters()
     render()
   end)
   ForeverCompanionLootUI.resetButton:Hide()
@@ -997,7 +998,7 @@ local function createUI()
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   window = CreateFrame("Frame", "ForeverCompanionMainFrame", UIParent, template)
   window:SetSize(1080, DB.compact and 620 or 720)
-  if DB.position and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
+  if type(DB.position)=="table" and type(DB.position.x)=="number" and type(DB.position.y)=="number" then
     window:SetPoint("CENTER", UIParent, "CENTER", DB.position.x, DB.position.y)
   else
     window:SetPoint("CENTER")
@@ -1564,9 +1565,14 @@ for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD",
 end
 addon:SetScript("OnEvent", function(_, event, arg)
   if event == "ADDON_LOADED" and arg == addonName then
-    ForeverCompanionDB = ForeverCompanionDB or {}
+    if type(ForeverCompanionDB)~="table" then ForeverCompanionDB={} end
     DB = ForeverCompanionDB
     if type(DB.checks)~="table" then DB.checks={} end
+    for section,checks in pairs(DB.checks) do
+      if type(checks)~="table" then DB.checks[section]=nil end
+    end
+    if type(DB.role)~="string" then DB.role=nil end
+    if type(DB.professions)~="string" then DB.professions=nil end
     if type(DB.tab)~="string" then DB.tab="Overview" end
     createUI()
     if not DB.welcomed then DB.welcomed=true; window:Show() end
@@ -1591,18 +1597,19 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     if not record then say("Item not found in the sourced loot catalog."); return end
     local added=ForeverCompanionLoot.ToggleWish(DB,record.item)
     say((added and "Wishlisted: " or "Removed from wishlist: ")..record.item)
-    currentTab="Loot"; render(); window:Show(); return
+    resetLootFilters(record.item); openSection("Loot"); window:Show(); return
   end
   local lootQuery=msg:match("^loot%s+(.+)$")
   if lootQuery then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end
+    lootQuery=lootQuery:sub(1,80)
     local matches=ForeverCompanionLoot.Search(lootQuery)
     say("Loot search: "..#matches.." match(es).")
     for i=1,math.min(#matches,8) do
       local item=matches[i]
       say(item.item.." — "..item.boss.." / "..item.dungeon.." ["..item.status.."]")
     end
-    currentTab="Loot"; render(); window:Show(); return
+    resetLootFilters(lootQuery); openSection("Loot"); window:Show(); return
   end
   local requested=msg:match("^open%s+(.+)$") or msg
   if openSection(requested) then window:Show(); return end
