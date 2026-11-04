@@ -1,7 +1,5 @@
 name: CurseForge beta package audit
 on:
-  push:
-    branches: [develop]
   workflow_dispatch:
 
 permissions:
