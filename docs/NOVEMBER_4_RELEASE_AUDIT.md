@@ -58,7 +58,7 @@ Source: https://support.curseforge.com/support/solutions/articles/9000197241
 - Icons.lua uses Blizzard class art and client spell texture lookup; code review cannot confirm every displayed icon identity.
 - Dashboard.lua and ClassGuide.lua contain dark/gold presentation code; no real-client visual comparison has been completed.
 
-**Verification outcome:** Source labels checked; live gameplay accuracy, pixel-level presentation, full source-link verification and CI execution remain outstanding. Do not claim 100 percent verified.
+**Verification outcome:** Source labels checked; live gameplay accuracy, pixel-level presentation, full source-link verification and live-client verification remain outstanding. Do not claim 100 percent verified.
 
 ## Confirmed GitHub Actions milestone — November 3, 2026 (EST)
 
@@ -68,3 +68,12 @@ Source: https://support.curseforge.com/support/solutions/articles/9000197241
 **Artifacts:** `ForeverCompanion` (GitHub artifact ID 13285084436) and `offline-ui-snapshot` (ID 13284339660). The package artifact is an Actions artifact wrapper; inspect its contents before uploading any inner ZIP to CurseForge.
 
 **What this does not prove:** live Forever client compatibility, actual Blizzard spell texture identity for every spell, pixel-level visual match, or all 27 specialization recommendations being optimal. CurseForge approval/submission has not occurred.
+
+## Second confirmed green workflow — November 3, 2026 (EST)
+
+**Run:** https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41751744280
+**Commit:** `51e185bfaaa1140d1837025590a5f0b20a284eda` on `develop`.
+**Result:** completed / success. All 17 required workflow steps passed.
+**Artifacts:** `ForeverCompanion` (ID 13286655644, 1,225,210 bytes) and `offline-ui-snapshot` (ID 13286565700, 2,781,755 bytes). Both were present and unexpired at inspection. Downloading the Actions artifact produces an outer wrapper ZIP, not necessarily the installable CurseForge ZIP.
+
+**Still pending:** review the rendered preview against the target visual references, install and interact in the live client, inspect addon license/brand materials, and submit for CurseForge moderation. A successful Actions run is not proof of approval or live compatibility.
