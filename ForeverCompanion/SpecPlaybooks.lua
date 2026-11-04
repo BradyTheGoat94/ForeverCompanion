@@ -574,6 +574,7 @@ ForeverCompanionSourcedPriorities={
   },
   Combat={
    source="https://mythicsim.com/wow-forever/difficulty",
+   experimental=true,
    reviewed="MythicSim Nov 2, 2026 preset; experimental, not benchmark-validated",
    rules={
     "1. Maintain Slice and Dice; MythicSim's Combat preset refreshes at five combo points.",
@@ -616,6 +617,7 @@ ForeverCompanionSourcedPriorities={
   },
   ["Beast Mastery"]={
    source="https://mythicsim.com/wow-forever/difficulty",
+   experimental=true,
    reviewed="MythicSim Nov 2, 2026 ranged/turret preset; experimental",
    rules={
     "1. Keep the pet active and attacking; maintain ranged attack uptime.",
@@ -690,7 +692,7 @@ function ForeverCompanionQuickStartLines(classToken)
  for i=1,math.min(3,#steps) do
   lines[#lines+1]="PRACTICE "..i..": "..steps[i]
  end
- lines[#lines+1]="NEXT: use the sourced conditional priority below when your abilities are learned; this practice list is not a live DPS rotation. If two instructions disagree, follow the sourced conditional priority."
+ lines[#lines+1]="NEXT: this practice list is not a live DPS rotation. If instructions differ, follow the sourced conditional priority only when your build matches its assumptions."
  return lines
 end
 
@@ -702,8 +704,9 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  local entry=ForeverCompanionSourcedPriorities[classToken]
  entry=type(entry)=="table" and entry[name]
  if type(entry)~="table" then return {} end
- local lines={"SOURCE-REVIEWED CONDITIONAL PRIORITY | "..name,entry.reviewed}
- lines[#lines+1]="VERIFY IN GAME: this guide is a source-reviewed starting priority, not a DPS benchmark or proof of live talent availability."
+ local heading=entry.experimental and "EXPERIMENTAL SIM PRESET" or "PUBLISHED FOREVER GUIDE"
+ local lines={heading.." | "..name,entry.reviewed}
+ lines[#lines+1]="VERIFY IN GAME: this is a starting priority, not a DPS benchmark or proof of live talent availability."
  lines[#lines+1]="LEVEL GATE: talents unlock at level 10; abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
  lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
  lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."

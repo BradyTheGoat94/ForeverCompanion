@@ -479,7 +479,7 @@ for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
  assert(ForeverCompanionClassGuide.GetView()==button.view,"topic selection must persist")
  assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
  if button.view~="Rotations" then
-  assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or "GENERAL REFERENCE",1,true),"topic evidence notice")
+  assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or (button.view=="Overview" and "SELECTED SPEC" or "GENERAL REFERENCE"),1,true),"topic evidence notice")
  end
 end
 ForeverCompanionClassGuide.SelectView("Gear & Stats")
@@ -595,6 +595,27 @@ exportNative("ui_long_priority_native.json")
 workspace.selectedText.GetStringHeight=originalMeasure
 workspace.buttons[1].OnClick()
 assert(workspace.GetHeight()==shortWorkspaceHeight,"short content must shrink after an expanded instruction")
+local guide=ForeverCompanionClassGuide
+local priorSelections=ForeverCompanionDB.specSelections
+ForeverCompanionDB.specSelections={}
+local specCount=0
+for class,choices in pairs(ForeverCompanionSpecs) do
+ for i,choice in ipairs(choices) do
+  ForeverCompanionDB.specSelections[class]=i
+  local overview=table.concat(guide.TopicLines(class,"Overview")," ")
+  assert(overview:find(choice[1],1,true) and overview:find("3 BEGINNER ACTIONS",1,true))
+  if choice[1]=="Guardian / Bear" then
+   assert(overview:find("No published Forever priority",1,true))
+  else
+   specCount=specCount+1
+   local experimental=choice[1]=="Combat" or choice[1]=="Beast Mastery"
+   assert(overview:find(experimental and "EXPERIMENTAL SIM PRESET" or "PUBLISHED FOREVER GUIDE",1,true))
+   assert(overview:find("Reference: https://",1,true))
+  end
+ end
+end
+assert(specCount==27)
+ForeverCompanionDB.specSelections=priorSelections
 local originalTopicMeasure=ForeverCompanionClassGuide.topicBody.GetStringHeight
 ForeverCompanionClassGuide.topicBody.GetStringHeight=function() return 480 end
 ForeverCompanionClassGuide.SelectView("Talents")

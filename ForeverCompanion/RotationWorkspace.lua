@@ -34,7 +34,7 @@ function W.Create(parent,selectMode,selectPriority)
  local sequence=plate(root,192,0,578,178,"Ability Priorities")
  sequencePlate=sequence
  heading=text(sequence,14,-44,550,"",14)
- local notice=text(sequence,14,-65,550,"General class practice / select a priority for the full explanation",10)
+ local notice=text(sequence,14,-65,550,"General class practice / see Overview for your selected spec",10)
  notice:SetTextColor(.70,.75,.82)
  for i=1,5 do arrows[i]=text(sequence,0,-113,9,"›",15);arrows[i]:SetTextColor(.94,.75,.38) end
  local explanation=plate(root,192,-190,374,174,"Priority & Explanations");explanationPlate=explanation

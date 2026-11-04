@@ -88,9 +88,15 @@ function Guide.TopicLines(class,view,role)
  local spec=ForeverCompanionSpecPlanner.Get(class)
  local lines={"GENERAL REFERENCE / Live Forever verification pending."}
  if view=="Overview" then
+  lines[1]="SELECTED SPEC / "..(spec and spec[1] or "Not available").."  •  "..(spec and spec[2] or "Role unavailable")
   lines[#lines+1]="Resource: "..(coach.resource or "Check the client class panel")
+  if spec then lines[#lines+1]="Focus: "..spec[3] end
+  lines[#lines+1]=ForeverCompanionSpecPlanner.Evidence(class)
+  local sourceLines=ForeverCompanionSourcedPriorityLines(class)
+  for _,line in ipairs(ForeverCompanionQuickStartLines(class)) do lines[#lines+1]=line end
+  for _,line in ipairs(sourceLines) do lines[#lines+1]=line end
+  if #sourceLines==0 then lines[#lines+1]="No published Forever priority is attached to this planner selection." end
   for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
-  lines[#lines+1]="Selected specialization: "..(spec and spec[1] or "Not available")..". Role preference: "..(role or "Not selected")
  elseif view=="Talents" then
   lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"leveling")
   lines[#lines+1]=ForeverCompanionSpecPlanner.Evidence(class)
@@ -143,12 +149,12 @@ function Guide.Render(class,label,level,role,mode)
  end
  if view=="Rotations" then topicPanel:Hide() else
   topicTitle:SetText(label.." / "..view)
-  topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),"\n\n"))
+  topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),view=="Overview" and "\n" or "\n\n"))
   local bodyHeight=math.max(242,topicBody:GetStringHeight()+12)
   topicBody:SetHeight(bodyHeight)
   ForeverCompanionVisualTheme.ResizePanel(topicPanel,bodyHeight+110)
   topicLink:ClearAllPoints();topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-(bodyHeight+67))
-  local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot",Overview="Settings"}
+  local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot"}
   topicLink.target=targets[view]
   if topicLink.target then topicLink:SetText("Open "..topicLink.target.." handbook");topicLink:Show() else topicLink:Hide() end
   topicPanel:Show()
