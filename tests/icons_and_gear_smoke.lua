@@ -53,6 +53,9 @@ for _,bad in ipairs({0,-1,math.huge,0/0,1.5,{},'https://example.invalid/icon'}) 
  local cue,status=I.ApplyRotation(texture,'MAGE','leveling',2)
  assert(cue=='Frostbolt' and status=='unresolved' and texture.path==I.unknown)
 end
+C_Spell.GetSpellTexture=function() return 'Interface\\\\Icons\\\\Spell_Frost_FrostBolt02' end
+local pathCue,pathStatus=I.ApplyRotation(texture,'MAGE','leveling',2)
+assert(pathCue=='Frostbolt' and pathStatus=='spell' and texture.path=='Interface\\\\Icons\\\\Spell_Frost_FrostBolt02','valid Blizzard texture path')
 C_Spell.GetSpellTexture=function() error('restricted') end
 assert(not I.Spell('Frostbolt'))
 C_Spell=nil;GetSpellTexture=function(name) assert(name=='Frostbolt');return 54321 end
