@@ -28,3 +28,22 @@ Record the **exact client build and interface number** shown by `/fcdiag`, the a
 - [ ] Submit file as **Beta** until live verification warrants Release
 
 This checklist is intentionally not pre-checked: automation cannot certify a real client session.
+
+## Final visual and icon acceptance matrix
+
+Test at **1920x1080**, **2560x1440**, and a smaller windowed resolution where possible, at UI scale 100% and a reduced scale. Record screenshots of each state, not just the default dashboard.
+
+| Screen | Required checks |
+| --- | --- |
+| Dashboard | All cards visible, decorative art does not obscure text, no clipped headings, navigation state obvious |
+| Class selection | All nine class icons display the intended Blizzard class, no atlas crop bleed, selected class unmistakable |
+| 27 specialization pages | Correct spec title and role; priority order understandable to beginners; every ability icon matches the text or shows an honest fallback |
+| Rotation workspace | Readable steps and cooldown notes, manual-only instructional presentation, no cast/action buttons |
+| Gear & Stats | Role-specific stat priority with a visible evidence caveat, no unverified numerical caps presented as fact |
+| Dungeons and loot | Search and pagination functional, no fabricated drop rates or confirmed-only labels for historical data |
+| Legacy, alts and leveling | Navigation and saved checklist state survive reload; speculative mechanics labeled |
+| Professions, PvP and settings | Controls usable with mouse, text contrast adequate, no overlay collision |
+
+**Stop-ship conditions:** a missing or wrong class icon; misleading spell art with no fallback; unreadable/clipped navigation; a runtime Lua error; any combat automation; or unsupported gameplay claims presented as verified.
+
+When the game client is available, capture the client build and UI screenshots before marking any of these checks complete. Code review cannot substitute for the screenshot comparison.
