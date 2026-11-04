@@ -1,7 +1,7 @@
 -- Reference-style rotation rail, priority table, quick tips and selected detail.
 local W={}
 ForeverCompanionRotationWorkspace=W
-local root,heading,selectedText,tipText,quickText,buttons,explanations,arrows,sequencePlate,summaryPlate,quickPlate
+local root,heading,selectedText,tipText,quickText,buttons,explanations,arrows,sequencePlate,summaryPlate,quickPlate,explanationPlate,tipsPlate
 local modes={"leveling","dungeon","boss","aoe","pvp"}
 local names={"Leveling Rotation","Dungeon Rotation","Boss Rotation","AoE Rotation","PvP Rotation"}
 local captions={"Solo practice","Group preparation","Single target","Multiple enemies","Player combat"}
@@ -34,10 +34,10 @@ function W.Create(parent,selectMode,selectPriority)
  local sequence=plate(root,192,0,578,178,"Ability Priorities")
  sequencePlate=sequence
  heading=text(sequence,14,-44,550,"",14)
- local notice=text(sequence,14,-65,550,"Conditional priorities / click an icon or instruction / skip untrained spells",10)
+ local notice=text(sequence,14,-65,550,"General class practice / select a priority for the full explanation",10)
  notice:SetTextColor(.70,.75,.82)
  for i=1,5 do arrows[i]=text(sequence,0,-113,9,"›",15);arrows[i]:SetTextColor(.94,.75,.38) end
- local explanation=plate(root,192,-190,374,174,"Priority & Explanations")
+ local explanation=plate(root,192,-190,374,174,"Priority & Explanations");explanationPlate=explanation
  for i=1,6 do
   local b=CreateFrame("Button",nil,explanation);b:SetSize(346,20);b:SetPoint("TOPLEFT",explanation,"TOPLEFT",14,-39-(i-1)*22)
   b.bg=ForeverCompanionVisualTheme.Button(b,346,20)
@@ -47,8 +47,8 @@ function W.Create(parent,selectMode,selectPriority)
   explanations[i]=b
  end
  W.explanations=explanations
- local tips=plate(root,578,-190,192,174,"Quick Tips")
- tipText=text(tips,12,-43,168,"",11);tipText:SetHeight(120)
+ local tips=plate(root,578,-190,192,174,"Quick Tips");tipsPlate=tips
+ tipText=text(tips,12,-43,168,"",11);tipText:SetJustifyV("TOP")
  local quick=plate(root,0,-314,180,186,"Class Quick Info");quickPlate=quick
  quickText=text(quick,12,-43,156,"",11);quickText:SetHeight(132)
  local summary=plate(root,192,-376,578,124,"Selected Priority");summaryPlate=summary
@@ -76,12 +76,20 @@ function W.Render(tab,class,mode,index,priorities)
  local detailHeight=math.max(72,selectedText:GetStringHeight()+8)
  selectedText:SetHeight(detailHeight)
  ForeverCompanionVisualTheme.ResizePanel(summaryPlate,detailHeight+52)
- root:SetHeight(376+detailHeight+52)
- ForeverCompanionVisualTheme.ResizePanel(quickPlate,root:GetHeight()-314)
- quickText:SetHeight(quickPlate:GetHeight()-52)
  local coach=type(ForeverCompanionGetBeginnerCoach)=="function" and ForeverCompanionGetBeginnerCoach(class) or {}
  local caution=coach.check or "Check trained abilities and your assigned role."
  tipText:SetText("• "..caution.."\n\nAdvisory / skip untrained spells.")
+ local tipsHeight=tipText:GetStringHeight()+8
+ local rowHeight=math.max(134,42+math.min(6,#priorities)*22,43+tipsHeight)
+ tipText:SetHeight(tipsHeight)
+ ForeverCompanionVisualTheme.ResizePanel(explanationPlate,rowHeight)
+ ForeverCompanionVisualTheme.ResizePanel(tipsPlate,rowHeight)
+ local detailTop=202+rowHeight
+ summaryPlate:ClearAllPoints()
+ summaryPlate:SetPoint("TOPLEFT",root,"TOPLEFT",192,-detailTop)
+ root:SetHeight(detailTop+summaryPlate:GetHeight())
+ ForeverCompanionVisualTheme.ResizePanel(quickPlate,root:GetHeight()-314)
+ quickText:SetHeight(quickPlate:GetHeight()-52)
  local spec=ForeverCompanionSpecPlanner.Get(class)
  quickText:SetText("RESOURCE\n"..(coach.resource or "Check client").."\n\nSPECIALIZATION\n"..(spec and spec[1] or "Not available"))
  for _,b in ipairs(buttons) do

@@ -289,11 +289,16 @@ function D.Create(parent,openPage,ctx)
     crest:SetSize(54,54)
     crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
   end
-  local welcome=text(banner,banner,93,-18,700,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",PALE)
+  local welcome=text(banner,banner,93,-18,540,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",PALE)
   if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,24) end
-  text(banner,banner,94,-49,700,"Your in-game guide for leveling, quests, builds and professions","GameFontHighlight",PALE)
-  values.bannerStatus=text(banner,banner,94,-72,670,"Checking current character progress...","GameFontHighlightSmall",MUTED)
+  text(banner,banner,94,-49,540,"Your in-game guide for leveling, quests, builds and professions","GameFontHighlight",PALE)
+  values.bannerStatus=text(banner,banner,94,-72,540,"Checking current character progress...","GameFontHighlightSmall",MUTED)
   strip(banner,94,-88,402,1,{0.69,0.51,0.24,0.75})
+  -- Keep the headline readable over the brighter portions of the citadel.
+  local headlineShade=banner:CreateTexture(nil,"ARTWORK")
+  headlineShade:SetPoint("TOPLEFT",banner,"TOPLEFT",84,-7)
+  headlineShade:SetSize(560,79)
+  paint(headlineShade,0.025,0.036,0.06,0.55)
   -- Three-card top row, echoing the original reference artwork.
   local character=panel(0,-108,263,176,"CHARACTER OVERVIEW","Interface\\Icons\\INV_Misc_Head_Human_01")
   values.character=text(character,character,16,-48,185,"","GameFontHighlight",PALE)

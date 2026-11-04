@@ -573,6 +573,8 @@ workspace.explanations[2].OnClick()
 assert(workspace.selectedText.text:find("PRIORITY 2:",1,true),"instruction table must focus the clicked priority")
 assert(workspace.selectedText.text:find(ForeverCompanionRotations.WARRIOR.leveling[2],1,true),"table selection must keep the complete conditional instruction")
 -- Long text must increase physical reading space, not just remain in SetText.
+local shortWorkspaceHeight=workspace.GetHeight()
+assert(shortWorkspaceHeight<500,"four priorities should leave room for the selected instruction")
 local originalMeasure=workspace.selectedText.GetStringHeight
 workspace.selectedText.GetStringHeight=function() return 240 end
 workspace.buttons[1].OnClick()
@@ -592,7 +594,7 @@ end
 exportNative("ui_long_priority_native.json")
 workspace.selectedText.GetStringHeight=originalMeasure
 workspace.buttons[1].OnClick()
-assert(workspace.GetHeight()==500,"short content must shrink after an expanded instruction")
+assert(workspace.GetHeight()==shortWorkspaceHeight,"short content must shrink after an expanded instruction")
 local originalTopicMeasure=ForeverCompanionClassGuide.topicBody.GetStringHeight
 ForeverCompanionClassGuide.topicBody.GetStringHeight=function() return 480 end
 ForeverCompanionClassGuide.SelectView("Talents")

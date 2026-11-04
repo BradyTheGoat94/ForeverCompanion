@@ -119,7 +119,7 @@ def render(source,output,workspace=False):
                 art=art.resize((iw,ih),Image.Resampling.LANCZOS)
                 if n.get('alpha') is not None: art.putalpha(art.getchannel('A').point(lambda a:round(a*n['alpha'])))
                 layer.alpha_composite(art)
-            elif texture and '\\Icons\\' in texture:
+            elif texture and ('\\Icons\\' in texture or texture.endswith('UI-CharacterCreate-Classes')):
                 d.rectangle((0,0,iw-1,ih-1),fill=(43,40,32),outline=(146,117,65))
                 d.line((3,ih-4,iw-4,3),fill=(202,169,91),width=max(1,iw//12))
         elif n['kind']=='FontString':

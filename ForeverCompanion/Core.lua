@@ -1555,7 +1555,10 @@ local function createUI()
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   ForeverCompanionUIState.footer=footer
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  footer:SetText("v3.17.0 Beta  |  /fc help  |  Read-only advisor  |  No gameplay automation")
+  local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata
+  local ok,version=pcall(metadata or GetAddOnMetadata,addonName,"Version")
+  local versionLabel=ok and type(version)=="string" and ("v"..version.."  |  ") or ""
+  footer:SetText(versionLabel.."/fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false
   for _, section in ipairs(tabs) do if section==currentTab then validTab=true end end
