@@ -469,6 +469,14 @@ for _,profession in ipairs({"Alchemy","Blacksmithing","Enchanting","Engineering"
 end
 
 dofile("ForeverCompanion/DungeonPreparation.lua")
+local dungeonGuide=ForeverCompanionDungeonPreparation
+local launch=dungeonGuide.LaunchReference(40)
+local _,matches=launch:gsub("%[YOUR LEVEL%]","")
+assert(matches==2 and launch:find("[YOUR LEVEL]  The Drowned City",1,true))
+assert(launch:find("[YOUR LEVEL]  Krol’dok Stronghold",1,true))
+assert(launch:find("Hall of Thanes",1,true) and launch:find("Shaper’s Terrace",1,true))
+assert(dungeonGuide.LaunchReference(47):find("outside the listed bands",1,true))
+assert(not dungeonGuide.LaunchReference(nil):find("[YOUR LEVEL]",1,true))
 for _,role in ipairs({"Tank","Healer","Damage"}) do
  local guidance=ForeverCompanionDungeonPreparation.Format(role)
  assert(guidance:find("DUNGEON READY CHECK",1,true) and guidance:find("not verified",1,true),"missing role readiness guidance")

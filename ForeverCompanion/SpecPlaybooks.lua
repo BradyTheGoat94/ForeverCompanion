@@ -705,7 +705,7 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  if type(entry)~="table" then return {} end
  local lines={"PUBLISHED FOREVER GUIDE | "..name,entry.reviewed}
  lines[#lines+1]="VERIFY IN GAME: this is a starting priority, not a DPS benchmark or proof of live talent availability."
- lines[#lines+1]="LEVEL GATE: talents unlock at level 10 by default; check for the Talented Legacy perk. abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
+ lines[#lines+1]="LEVEL GATE: talents unlock at level 10 by default; check for the Talented Legacy perk. Abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
  lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
  lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."
  for _,note in ipairs(ForeverCompanionGuideReadinessLines()) do lines[#lines+1]=note end

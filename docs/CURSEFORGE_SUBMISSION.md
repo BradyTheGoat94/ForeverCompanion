@@ -40,7 +40,7 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 **3.18.0-beta**
 - Improved dashboard banner contrast and brought selected rotation explanations closer to the initial viewport. Class topic changes return to the heading.
 - Put beginner actions and published PvE priorities for all 27 specializations in Class Guides → Overview. Updated Combat Rogue and Beast Mastery Hunter with patch 1.60.1 references.
-- Added Blizzard-published Legacy and alt planning details. Long loot descriptions leave the catalog evidence disclosure visible.
+- Added Blizzard-published Legacy and alt planning details and the nine new five-player dungeons with their suggested level bands. Long loot descriptions leave the catalog evidence disclosure visible.
 - Added diagnostics, offline UI smoke tests and reproducible package/provenance validation.
 - Clarified evidence labels for unverified Forever-specific mechanics and priorities.
 - No combat automation. Final-client compatibility testing remains pending.

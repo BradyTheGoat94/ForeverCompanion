@@ -7,9 +7,9 @@ function W.Milestones(level)
  level=tonumber(level) or 1
  local lines={"FOREVER MILESTONES - BLIZZARD PUBLISHED PREVIEW"}
  if level<10 then
-  lines[#lines+1]="At level 10: talent points become available (per Blizzard class deep dives)."
+  lines[#lines+1]="At level 10: talent points normally become available; check the Talented Legacy perk for earlier access."
  elseif level<40 then
-  lines[#lines+1]="Talents: available from level 10; dual specialization is announced for level 40."
+  lines[#lines+1]="Talents: normally available from level 10; dual specialization is announced for level 40."
  else
   lines[#lines+1]="Dual specialization: Blizzard announced availability starting at level 40; confirm trainer and client rules."
  end
