@@ -615,8 +615,9 @@ for class,choices in pairs(ForeverCompanionSpecs) do
    assert(overview:find("No published Forever priority",1,true))
   else
    specCount=specCount+1
-   local experimental=choice[1]=="Combat" or choice[1]=="Beast Mastery"
-   assert(overview:find(experimental and "EXPERIMENTAL SIM PRESET" or "PUBLISHED FOREVER GUIDE",1,true))
+   assert(overview:find("PUBLISHED FOREVER GUIDE",1,true))
+   if choice[1]=="Combat" then assert(overview:find("Blade Flurry",1,true)) end
+   if choice[1]=="Beast Mastery" then assert(overview:find("Bestial Wrath",1,true)) end
    assert(overview:find("Reference: https://",1,true))
   end
  end
@@ -821,6 +822,11 @@ end
 SlashCmdList.FOREVERCOMPANION("open legacy")
 local legacyState=ForeverCompanionStudyBoard.Get("Legacy","WARRIOR",ForeverCompanionDB)
 assert(legacyState.total==5 and legacyState.done==0)
+local legacyReference
+for _,w in ipairs(frames) do
+ if w.text:find("BLIZZARD LAUNCH REFERENCE",1,true) and w.text:find("launch cap of 16",1,true) then legacyReference=true end
+end
+assert(legacyReference,"Legacy handbook must show the published launch rules")
 local studyRow
 for _,w in ipairs(frames) do
  if w.kind=="FontString" and w.text==legacyState.tasks[1] then studyRow=frames[w.parent] end

@@ -573,15 +573,14 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Combat={
-   source="https://mythicsim.com/wow-forever/difficulty",
-   experimental=true,
-   reviewed="MythicSim Nov 2, 2026 preset; experimental, not benchmark-validated",
+   source="https://www.wowhead.com/forever/guide/classes/rogue/combat/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026 / beta patch 1.60.1",
    rules={
-    "1. Maintain Slice and Dice; MythicSim's Combat preset refreshes at five combo points.",
-    "2. Use Sinister Strike as the normal combo-point builder when trained.",
-    "3. Pool Energy rather than spending it immediately before a planned priority action.",
-    "4. Align Adrenaline Rush with Energy timing if talented; this is preset-specific.",
-    "5. Interrupt dangerous casts with Kick even when doing so costs some damage.",
+    "1. Apply the appropriate poisons to both weapons before the pull.",
+    "2. Build combo points with Sinister Strike, or Backstab if your weapon, build and position allow it.",
+    "3. Keep Slice and Dice active. Use Eviscerate only if you can refresh Slice and Dice before it falls off.",
+    "4. Pair Adrenaline Rush with Blade Flurry during sustained uptime or a planned cleave window.",
+    "5. Save enough Energy for Kick when assigned an important interrupt.",
    },
   },
  },
@@ -616,15 +615,15 @@ ForeverCompanionSourcedPriorities={
    },
   },
   ["Beast Mastery"]={
-   source="https://mythicsim.com/wow-forever/difficulty",
-   experimental=true,
-   reviewed="MythicSim Nov 2, 2026 ranged/turret preset; experimental",
+   source="https://www.wowhead.com/forever/guide/classes/hunter/beast-mastery/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Oct 30, 2026 / beta patch 1.60.1; ranged priority",
    rules={
-    "1. Keep the pet active and attacking; maintain ranged attack uptime.",
-    "2. Use Aimed Shot when available in the preset's trained build.",
-    "3. Maintain Serpent Sting only when its damage-over-time effect will run.",
-    "4. Use Summon Hawk when learned and appropriate; align Rapid Fire with Aimed Shot.",
-    "5. This is the turret preset, not a melee-weaving or leveling rotation.",
+    "1. Keep the pet active when safe, maintain ranged attack uptime and mark the priority enemy with Hunter's Mark.",
+    "2. Refresh Serpent Sting when the target will live long enough for it to tick.",
+    "3. Use Summon Hawk when available; the published ranged guide periodically substitutes Arcane Shot. Follow with trained Aimed Shot when ready.",
+    "4. Use Bestial Wrath and Rapid Fire when you and your pet can sustain damage; align with on-use gear when practical.",
+    "5. Use Multi-Shot for small packs and Volley when it is safe to channel into a larger group. Avoid breaking crowd control.",
+    "6. Use Tranquilizing Shot for assigned enrage dispels. Verify any melee-weaving variant separately.",
    },
   },
  },
@@ -664,7 +663,7 @@ function ForeverCompanionGuideReadinessLines()
  end
  if type(level)=="number" then
   if level<10 then
-   lines[#lines+1]="CURRENT LEVEL "..level..": talents are not unlocked yet. Practice your trained basic spells first."
+   lines[#lines+1]="CURRENT LEVEL "..level..": check whether talents are available. Practice your trained basic spells first."
   elseif level<40 then
    lines[#lines+1]="CURRENT LEVEL "..level..": follow only spells and talent ranks you have learned; dual specialization unlocks later."
   else
@@ -704,10 +703,9 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  local entry=ForeverCompanionSourcedPriorities[classToken]
  entry=type(entry)=="table" and entry[name]
  if type(entry)~="table" then return {} end
- local heading=entry.experimental and "EXPERIMENTAL SIM PRESET" or "PUBLISHED FOREVER GUIDE"
- local lines={heading.." | "..name,entry.reviewed}
+ local lines={"PUBLISHED FOREVER GUIDE | "..name,entry.reviewed}
  lines[#lines+1]="VERIFY IN GAME: this is a starting priority, not a DPS benchmark or proof of live talent availability."
- lines[#lines+1]="LEVEL GATE: talents unlock at level 10; abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
+ lines[#lines+1]="LEVEL GATE: talents unlock at level 10 by default; check for the Talented Legacy perk. abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
  lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
  lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."
  for _,note in ipairs(ForeverCompanionGuideReadinessLines()) do lines[#lines+1]=note end

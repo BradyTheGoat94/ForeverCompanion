@@ -322,33 +322,23 @@ local function render()
       lines[#lines+1]="Loot reference is unavailable."
     end
   elseif currentTab == "Legacy" then
-    lines = {"LEGACY SYSTEM / FOREVER REFERENCE",
-      "STATUS: Forever-specific rules are not yet verified.",
-      "UNLOCKS: Confirm the first available level, quest or prerequisite in the live client.",
-      "PROGRESSION: Check whether progress is per-character or account-wide.",
-      "REWARDS: Verify exact rewards and requirements before spending resources.",
-      "RESETS: Confirm season, weekly or permanent progression rules.",
-      "ALT BENEFITS: Do not assume unlocks transfer between characters.",
-      "NEXT STEP: Record an official source and client version for each confirmed rule.",
-      "No Legacy mechanics from other WoW versions are presented as Forever facts."}
+    lines = {"LEGACY SYSTEM / BLIZZARD LAUNCH REFERENCE",
+      "UNLOCK: Earn your first Legacy Point, commonly by reaching level 25 or 150 skill in a non-gathering primary profession. Once unlocked, open the Legacy shield or press Y with default bindings.",
+      "CHALLENGES: Each awards one account-wide point for eligible characters. Class milestones are 25, 45 and 60; non-gathering primary profession milestones are 150, 225 and 300.",
+      "PERKS: Spend points separately on each character. Blizzard lists a launch cap of 16 spent points per character, attainable without leveling alts.",
+      "REWARDS: Account-wide point totals unlock cosmetics. Check the client for current thresholds and ruleset restrictions.",
+      "Source: https://worldofwarcraft.blizzard.com/en-us/news/24307383",
+      "Evidence: Blizzard's published launch design. This addon does not read Legacy unlocks or spend points."}
   elseif currentTab == "Alts" then
     lines = {"ALT LEVELING / PLANNING GUIDE",
-      "1. Verify whether any Legacy or account unlocks benefit new characters.",
-      "2. Prepare class training, starter gear, bags and consumables.",
-      "3. Compare questing, dungeon runs and rested experience when XP rules are known.",
-      "4. Review dungeon entry levels, quests and role requirements before queuing.",
-      "5. Check profession training and travel unlocks on each alt.",
-      "6. Revisit class-specific ability priorities under Leveling.",
-      "STATUS: Forever alt XP rates, boosts and shared unlocks remain unverified.",
-      "Use this as a planning checklist, not a claim of available game features."}
+      "LEGACY: Eligible alts share earned points, with perk choices made per character. Check Well Rested for rested experience and Talented for earlier talent access.",
+      "MILESTONES: Review class challenges at levels 25, 45 and 60. Level an alt if you want to try another class or profession; Blizzard says one character can unlock all character advantages.",
+      "PREPARE: Compare your quest route, rested XP, class training, bags and dungeon entry requirements. Check the actual perk tooltips before planning around a bonus.",
+      "Source: https://worldofwarcraft.blizzard.com/en-us/news/24307383",
+      "Personal checklist and research notes are per character. Exact XP rates and client behavior remain unverified."}
   elseif currentTab == "Leveling" then
     lines = {"CLASS GUIDANCE",experienceText(),
-      "ALT LEVELING / PRE-LAUNCH CHECKLIST",
-      "1. Check whether Legacy progression or unlocks are account-wide; not verified for Forever.",
-      "2. Compare questing and dungeon leveling after the client unlocks and XP rules are confirmed.",
-      "3. Prepare class training, equipment and consumables; verify alt-specific restrictions.",
-      "LEGACY SYSTEM / STATUS: Awaiting official Forever mechanics and client verification.",
-      "Do not assume Legacy rewards, reset rules or shared benefits match another WoW version."}
+      "ALT LEVELING: The Alt Leveling and Legacy pages explain shared points, character-specific perks and practical preparation."}
     -- Put the immediately actionable, spec-specific steps first in the
     -- scrollable guide, before long reference material and rotation notes.
     if type(ForeverCompanionQuickStartLines)=="function" then

@@ -843,7 +843,7 @@ end
 -- Level readiness is informational and never uses secret combat data.
 local originalUnitLevel=UnitLevel
 UnitLevel=function() return 8 end
-assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("talents are not unlocked",1,true),"pre-talent level readiness missing")
+assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("check whether talents are available",1,true),"pre-talent level readiness missing")
 UnitLevel=function() return 25 end
 assert(table.concat(ForeverCompanionGuideReadinessLines()," "):find("dual specialization unlocks later",1,true),"mid-level readiness missing")
 UnitLevel=function() return 45 end
