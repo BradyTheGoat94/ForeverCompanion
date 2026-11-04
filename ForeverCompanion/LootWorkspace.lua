@@ -1,7 +1,7 @@
 -- Clickable catalog rows and source detail. All progress is entered manually.
 local W={pageSize=6}
 ForeverCompanionLootWorkspace=W
-local root,summary,detail,detailPanel,empty,pageText,previous,nextPage,research,slotButton,statusButton,current,navigate,refresh
+local root,summary,detail,detailPanel,empty,pageText,previous,nextPage,research,slotButton,statusButton,disclosure,current,navigate,refresh
 local function text(parent,x,y,width,value,size)
  local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetWidth(width);f:SetJustifyH("LEFT");f:SetText(value or "")
@@ -71,7 +71,7 @@ function W.Create(parent,openPage,onRefresh)
  end)
  pageText=text(root,150,-472,145,"",11);pageText:SetJustifyH("CENTER")
  W.previous=previous;W.nextPage=nextPage
- text(root,16,-505,735,"Partial beta catalog / manual marks are not inventory checks, drop guarantees or BiS rankings.",10)
+ disclosure=text(root,16,-505,735,"Partial beta catalog / manual marks are not inventory checks, drop guarantees or BiS rankings.",10)
  root:Hide()
 end
 function W.GetHeight() return root and root:GetHeight() or 530 end
@@ -108,7 +108,10 @@ function W.Render(tab,db,matches)
  local height=math.max(370,detail:GetStringHeight()+65)
  detail:SetHeight(height-58)
  ForeverCompanionVisualTheme.ResizePanel(detailPanel,height)
- ForeverCompanionVisualTheme.ResizePanel(root,math.max(530,111+height+18))
+ local disclosureTop=math.max(505,111+height+14)
+ disclosure:ClearAllPoints()
+ disclosure:SetPoint("TOPLEFT",root,"TOPLEFT",16,-disclosureTop)
+ ForeverCompanionVisualTheme.ResizePanel(root,disclosureTop+25)
  pageText:SetText("Page "..page.." / "..pages)
  if previous.SetEnabled then previous:SetEnabled(page>1);nextPage:SetEnabled(page<pages);research:SetEnabled(selected~=nil) end
  root:Show()

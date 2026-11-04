@@ -81,8 +81,8 @@ local function widget(kind)
  function w:LockHighlight() end
  function w:UnlockHighlight() end
  function w:SetScrollChild(child) self.child=child end
- function w:GetVerticalScroll() return 0 end
- function w:SetVerticalScroll() end
+ function w:GetVerticalScroll() return self.verticalScroll or 0 end
+ function w:SetVerticalScroll(offset) self.verticalScroll=offset end
  function w:StartMoving() end
  function w:StopMovingOrSizing() end
  function w:EnableMouse() end
@@ -474,9 +474,16 @@ local specControl
 for _,w in ipairs(frames) do if w.text=="Spec: Arms" then specControl=w end end
 assert(specControl and specControl.parent==mainWindow.id,"header specialization selector must avoid scroll-child clipping")
 assert(#ForeverCompanionClassGuide.topicButtons==8,"class guide requires eight functional topic tabs")
+local classScroll
+for _,w in ipairs(frames) do
+ if w.kind=="ScrollFrame" and w.parent==mainWindow.id then classScroll=w end
+end
+assert(classScroll,"class guide requires a scroll viewport")
 for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
+ classScroll:SetVerticalScroll(350)
  button.OnClick()
  assert(ForeverCompanionClassGuide.GetView()==button.view,"topic selection must persist")
+ assert(classScroll:GetVerticalScroll()==0,"switching guide topics returns to the heading")
  assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
  if button.view~="Rotations" then
   assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or (button.view=="Overview" and "SELECTED SPEC" or "GENERAL REFERENCE"),1,true),"topic evidence notice")
@@ -920,6 +927,11 @@ catalog.detail.GetStringHeight=function() return 700 end
 ForeverCompanionRefresh()
 assert(catalog.detail.height>=707 and catalog.root.height>=894,'long source descriptions expand beyond fixed row area')
 assert(catalog.detailPanel.fcPanelEdges.left.height==catalog.detailPanel.height,'detail panel edges follow expansion')
+for _,w in ipairs(frames) do
+ if w.parent==catalog.root.id and w.text:find("Partial beta catalog",1,true)==1 then
+  assert(-w.point[5]>=111+catalog.detailPanel.height+14,"long item details must not cover the catalog disclosure")
+ end
+end
 catalog.detail.GetStringHeight=measure
 ForeverCompanionRefresh()
 exportNative("ui_loot_native.json")

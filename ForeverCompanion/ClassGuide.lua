@@ -19,7 +19,7 @@ function Guide.SelectView(name)
  for _,valid in ipairs(views) do
   if valid==name and type(ForeverCompanionDB)=="table" then
    ForeverCompanionDB.classGuideView=name
-   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+   if navigate then navigate("Leveling") end
    return true
   end
  end
