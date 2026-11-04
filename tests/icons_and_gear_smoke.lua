@@ -48,7 +48,7 @@ end
 local requested=#requests
 I.ApplyRotation(texture,'PALADIN','leveling',1)
 assert(#requests==requested,'generic blessing preparation must not invent a named spell')
-for _,bad in ipairs({0,-1,math.huge,0/0,1.5,{},'Interface\\Icons\\wrong'}) do
+for _,bad in ipairs({0,-1,math.huge,0/0,1.5,{},'https://example.invalid/icon'}) do
  C_Spell.GetSpellTexture=function() return bad end
  local cue,status=I.ApplyRotation(texture,'MAGE','leveling',2)
  assert(cue=='Frostbolt' and status=='unresolved' and texture.path==I.unknown)
