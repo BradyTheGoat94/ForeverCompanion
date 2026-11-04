@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Regression tests for the CurseForge packaging safety checks."""
 import importlib.util
+import hashlib
+import json
+import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -38,6 +41,22 @@ class PackageTests(unittest.TestCase):
         files, meta = builder.validate()
         self.assertEqual(2, len(files))
         self.assertEqual("16001", meta["Interface"])
+
+    def test_archive_integrity_and_reproducibility(self):
+        self.manifest()
+        first = builder.build(builder.ROOT / "dist-first")
+        second = builder.build(builder.ROOT / "dist-second")
+        first_bytes, second_bytes = first.read_bytes(), second.read_bytes()
+        self.assertEqual(hashlib.sha256(first_bytes).digest(), hashlib.sha256(second_bytes).digest())
+        with zipfile.ZipFile(first) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(
+                {"ForeverCompanion/ForeverCompanion.toc", "ForeverCompanion/Core.lua"},
+                set(archive.namelist()),
+            )
+        report = json.loads((first.parent / "release-audit.json").read_text(encoding="utf-8"))
+        self.assertEqual(hashlib.sha256(first_bytes).hexdigest(), report["sha256"])
+        self.assertFalse(report["client_verified"])
 
     def test_missing_manifest_file(self):
         self.manifest("Missing.lua\n")
