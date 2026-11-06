@@ -271,12 +271,18 @@ function M.Refresh()
   return
  end
  local data
- if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" then
-  local history=availableHistory()
-  if pastIndex>#history then pastIndex=math.max(1,#history);selectedRow=nil;detailOpen=false end
-  local id=historyID(history[pastIndex])
-  if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
-  if data==nil and #history==0 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
+ if isPast then
+  local canReadHistory=type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function"
+  if canReadHistory then
+   local history=availableHistory()
+   if pastIndex>#history then pastIndex=math.max(1,#history);selectedRow=nil;detailOpen=false end
+   local id=historyID(history[pastIndex])
+   if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
+   if #history==0 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
+  else
+   -- The native Expired session is the only supported history fallback.
+   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
+  end
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
  end
