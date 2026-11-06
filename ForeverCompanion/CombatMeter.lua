@@ -263,6 +263,9 @@ function M.Refresh()
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if not M.Available() then
   if detailPanel then detailPanel:Hide() end
+  selectedRow=nil
+  detailOpen=false
+  if detailLabel then detailLabel:SetText("Select a player row for details") end
   for _,row in ipairs(rows) do row.frame:Hide() end
   notice:SetText("Blizzard combat meter API unavailable")
   return
