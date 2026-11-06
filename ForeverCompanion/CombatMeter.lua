@@ -278,8 +278,9 @@ function M.Refresh()
   local selected=sources[selectedRow]
   if type(selected)=="table" then
    detailLabel:SetText(selected.name)
-  else selectedRow=nil;detailLabel:SetText("Select a player row for details") end
- else selectedSource=nil;detailLabel:SetText("Select a player row for details") end
+  else selectedRow=nil;detailOpen=false;detailLabel:SetText("Select a player row for details") end
+ else detailLabel:SetText("Select a player row for details") end
+ if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if detailPanel and detailOpen and selectedRow then
   local selected=sources[selectedRow]
   local safeToInspect=not (InCombatLockdown and InCombatLockdown())
@@ -370,7 +371,7 @@ function M.SetSession(mode)
 end
 function M.SetMode(mode)
  for i,item in ipairs(metrics) do
-  if item[1]:lower()==tostring(mode):lower() then metricIndex=i;selectedRow=nil;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then metricIndex=i;selectedRow=nil;detailOpen=false;M.Refresh();return true end
  end
  return false
 end
