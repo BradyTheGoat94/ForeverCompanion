@@ -330,7 +330,10 @@ function M.Refresh()
    if type(spell)=="table" then
     local spellID=spell.spellID
     if issecretvalue and issecretvalue(spellID) then spellID=nil end
-    local info=type(spellID)=="number" and C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellID)
+    local info
+    if type(spellID)=="number" and C_Spell and type(C_Spell.GetSpellInfo)=="function" then
+     info=read(C_Spell.GetSpellInfo,spellID)
+    end
     item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
     item.value:SetText(spell.totalAmount)
    else
