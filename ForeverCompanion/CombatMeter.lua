@@ -128,6 +128,7 @@ local function build()
   end
   pastIndex=1
   selectedRow=nil
+  detailOpen=false
   M.Refresh()
  end)
  previousButton=button(frame,"<",27,-63,function() pastIndex=pastIndex+1;M.Refresh() end)
@@ -302,6 +303,7 @@ function M.Refresh()
    local spell=type(spells)=="table" and spells[i]
    if type(spell)=="table" then
     local spellID=spell.spellID
+    if issecretvalue and issecretvalue(spellID) then spellID=nil end
     local info=type(spellID)=="number" and C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellID)
     item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
     item.value:SetText(spell.totalAmount)
