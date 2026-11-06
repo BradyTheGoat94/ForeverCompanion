@@ -26,30 +26,48 @@ local function partyUnits()
  else
   for i=1,4 do
    local unit="party"..i
-   if UnitExists and UnitExists(unit) then units[#units+1]=unit end
+   if isOtherMember(unit) then units[#units+1]=unit end
   end
  end
  return units
 end
 P.PartyUnits=partyUnits
+-- Shared art factory keeps world-map and minimap markers visually identical.
+-- Only built-in textures and color primitives; no redistributed game artwork.
+function P.StyleMarker(marker)
+ marker:SetSize(28,28)
+ local shadow=marker:CreateTexture(nil,"BACKGROUND")
+ shadow:SetSize(27,27)
+ shadow:SetPoint("CENTER",1,-1)
+ shadow:SetColorTexture(.005,.025,.045,.84)
+ if shadow.SetRotation then shadow:SetRotation(math.pi/4) end
+ local rim=marker:CreateTexture(nil,"ARTWORK")
+ rim:SetSize(23,23)
+ rim:SetPoint("CENTER")
+ rim:SetColorTexture(.10,.67,.87,.96)
+ if rim.SetRotation then rim:SetRotation(math.pi/4) end
+ local core=marker:CreateTexture(nil,"OVERLAY")
+ core:SetSize(16,16)
+ core:SetPoint("CENTER")
+ core:SetColorTexture(.035,.13,.21,1)
+ if core.SetRotation then core:SetRotation(math.pi/4) end
+ local center=marker:CreateTexture(nil,"OVERLAY")
+ center:SetSize(8,8)
+ center:SetPoint("CENTER")
+ center:SetColorTexture(.70,.96,1,1)
+ if center.SetRotation then center:SetRotation(math.pi/4) end
+ local arrow=marker:CreateTexture(nil,"OVERLAY")
+ arrow:SetSize(16,16)
+ arrow:SetPoint("CENTER",marker,"CENTER",0,0)
+ arrow:SetTexture("Interface\\\\Minimap\\\\MinimapArrow")
+ arrow:SetVertexColor(.95,.81,.43,1)
+ marker.arrow=arrow
+ return marker
+end
 local function makeMarker(canvas)
  local button=CreateFrame("Button",nil,canvas)
- button:SetSize(24,24)
  button:SetFrameLevel(canvas:GetFrameLevel()+125)
- local halo=button:CreateTexture(nil,"BACKGROUND")
- halo:SetAllPoints(button)
- halo:SetColorTexture(.015,.05,.08,.92)
- local dot=button:CreateTexture(nil,"ARTWORK")
- dot:SetPoint("CENTER")
- dot:SetSize(18,18)
- dot:SetColorTexture(.20,.75,1,.96)
- button.dot=dot
- local arrow=button:CreateTexture(nil,"OVERLAY")
- arrow:SetSize(17,17)
- arrow:SetPoint("CENTER",button,"CENTER",0,0)
- arrow:SetTexture("Interface\\Minimap\\MinimapArrow")
- arrow:SetVertexColor(.25,.95,1,1)
- button.arrow=arrow
+ P.StyleMarker(button)
  button:SetScript("OnEnter",function(self)
   if GameTooltip and self.unit then
    GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
