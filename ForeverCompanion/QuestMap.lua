@@ -148,20 +148,29 @@ local function showServices(canvas,mapID,scale)
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  local groups,ordered={},{}
+ -- Keep essential services visible at broad zoom; reveal individual vendors
+ -- and trainers as the player zooms into a town. Never invent POIs.
+ local detailed=scale>=1.25
+ local radius=detailed and 18 or 42
  for _,point in ipairs(points) do
-  local key=point.symbol..":"..math.floor(point.x*width/27+.5)..":"..math.floor(point.y*height/27+.5)
-  local group=groups[key]
-  if not group then group={point};groups[key]=group;ordered[#ordered+1]=group
-  else group[#group+1]=point end
+  local essential=point.symbol=="B" or point.symbol=="AH"
+   or point.symbol=="F" or point.symbol=="M" or point.symbol=="I"
+  if detailed or essential then
+   local key=point.symbol..":"..math.floor(point.x*width/radius+.5)..":"..math.floor(point.y*height/radius+.5)
+   local group=groups[key]
+   if not group then group={point};groups[key]=group;ordered[#ordered+1]=group
+   else group[#group+1]=point end
+  end
  end
  for i,group in ipairs(ordered) do
   local pin=servicePins[i]
   if not pin then
    pin=CreateFrame("Button",nil,canvas)
    pin:RegisterForClicks("LeftButtonUp")
-   pin:SetSize(21,16)
+   pin:SetSize(25,19)
    local bg=pin:CreateTexture(nil,"BACKGROUND")
    bg:SetAllPoints(pin);bg:SetColorTexture(.07,.21,.37,.96)
+   pin.background=bg
    sharpenOverlay(bg)
    pin.label=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
    pin.label:SetPoint("CENTER")
@@ -186,6 +195,13 @@ local function showServices(canvas,mapID,scale)
   local point=group[1]
   pin.locations=group
   pin.label:SetText(point.symbol)
+  if pin.background then
+   if point.symbol=="B" or point.symbol=="AH" then
+    pin.background:SetColorTexture(.47,.31,.10,.97)
+   elseif point.symbol=="F" or point.symbol=="M" then
+    pin.background:SetColorTexture(.12,.34,.42,.97)
+   else pin.background:SetColorTexture(.09,.23,.35,.97) end
+  end
   local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
   pin:SetFrameLevel(canvas:GetFrameLevel()+priority)
   pin:SetScale(1/scale)
@@ -391,6 +407,7 @@ function M.Refresh()
  if (issecretvalue and (issecretvalue(width) or issecretvalue(height))) then return end
  if not width or not height or width<=0 or height<=0 then return end
  local scale=canvas.GetScale and canvas:GetScale() or 1
+ if issecretvalue and issecretvalue(scale) then return end
  if type(scale)~="number" or scale<=0 then scale=1 end
  local focus=planner.IsSupported() and planner.GetSelected()
  local view=mode()
