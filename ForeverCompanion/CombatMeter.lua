@@ -404,7 +404,8 @@ function M.Refresh()
     row.frame.sourceLabel=displayName
    else row.frame.sourceLabel=nil end
    if selectedRow==i then row.background:SetColorTexture(.075,.19,.23,.98)
-   elseif source.isLocalPlayer==true then row.background:SetColorTexture(.13,.16,.08,.98)
+   elseif not (issecretvalue and issecretvalue(source.isLocalPlayer)) and source.isLocalPlayer==true then
+    row.background:SetColorTexture(.13,.16,.08,.98)
    else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
