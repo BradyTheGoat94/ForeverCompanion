@@ -542,9 +542,25 @@ local events=CreateFrame("Frame")
 for _,event in ipairs({"PLAYER_ENTERING_WORLD","QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN","QUEST_WATCH_UPDATE","QUEST_POI_UPDATE","UNIT_QUEST_LOG_CHANGED"}) do
   pcall(function() events:RegisterEvent(event) end)
 end
+-- Coalesce bursts of quest events after kills, looting and zone changes.
+-- The scan remains read-only and does not alter Blizzard's watched quests.
+local syncPending=false
+local function scheduleSync()
+  if syncPending then return end
+  if not C_Timer or type(C_Timer.After)~="function" then
+    Planner.Sync()
+    return
+  end
+  syncPending=true
+  C_Timer.After(.12,function()
+    syncPending=false
+    Planner.Sync()
+  end)
+end
 events:SetScript("OnEvent",function(_,event,unit)
   if event=="UNIT_QUEST_LOG_CHANGED" and unit and unit~="player" then return end
-  Planner.Sync()
+  if event=="PLAYER_ENTERING_WORLD" then Planner.Sync()
+  else scheduleSync() end
 end)
 
 SLASH_FOREVERCOMPANIONQUEST1="/fcq"
