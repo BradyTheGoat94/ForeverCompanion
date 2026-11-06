@@ -17,6 +17,7 @@ function M.SetEnabled(value)
  return true
 end
 local function finite(n)
+ if issecretvalue and issecretvalue(n) then return false end
  return type(n)=="number" and n==n and n~=math.huge and n~=-math.huge
 end
 local function units()
