@@ -406,7 +406,14 @@ function M.Refresh()
  local width,height=canvas:GetWidth(),canvas:GetHeight()
  if (issecretvalue and (issecretvalue(width) or issecretvalue(height))) then return end
  if not width or not height or width<=0 or height<=0 then return end
- local scale=canvas.GetScale and canvas:GetScale() or 1
+ -- Canvas:GetScale() is often the UI scale, not the map zoom level.
+ -- Prefer Blizzard's scroll-container zoom when available.
+ local scroll=worldMap.ScrollContainer
+ local scale=scroll and scroll.GetCanvasScale and scroll:GetCanvasScale()
+ if issecretvalue and issecretvalue(scale) then scale=nil end
+ if type(scale)~="number" or scale<=0 then
+  scale=canvas.GetScale and canvas:GetScale() or 1
+ end
  if issecretvalue and issecretvalue(scale) then return end
  if type(scale)~="number" or scale<=0 then scale=1 end
  local focus=planner.IsSupported() and planner.GetSelected()
