@@ -71,7 +71,7 @@ local function build()
   frame:SetBackdropBorderColor(.66,.48,.23,1)
  end
  local db=saved()
- if type(db.rows)=="number" then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
+ if type(db.rows)=="number" and db.rows==db.rows then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
  frame:SetHeight(110+rowCount*24)
  if type(db.position)=="table" and type(db.position.x)=="number" and type(db.position.y)=="number" then
   frame:ClearAllPoints()
@@ -194,7 +194,8 @@ function M.Refresh()
    if not okAmount then row.amount:SetText("--") end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
-   local color=type(class)=="string" and colors[class]
+   local color
+   if not (issecretvalue and issecretvalue(class)) and type(class)=="string" then color=colors[class] end
    if color then row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
    else row.fill:SetStatusBarColor(.85,.65,.32,.78) end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
@@ -224,7 +225,7 @@ function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
 end
 function M.SetRows(count)
- if type(count)~="number" or count~=math.floor(count) or count<4 or count>12 then return false end
+ if type(count)~="number" or count~=count or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
  rowCount=count
  if frame then frame:SetHeight(110+rowCount*24) end
