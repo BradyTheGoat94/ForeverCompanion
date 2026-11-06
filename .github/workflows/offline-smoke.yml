@@ -1,0 +1,28 @@
+name: Offline Lua smoke tests
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lua-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.1
+      - name: Syntax-check addon and test files
+        run: |
+          find ForeverCompanion tests -type f -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
+      - name: Run offline smoke tests
+        run: lua5.1 tests/offline_smoke.lua
