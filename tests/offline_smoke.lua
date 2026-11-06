@@ -1076,6 +1076,16 @@ do
  assertEqual(ForeverCompanionDB.combatMeter.locked,true,"meter lock preference")
  SlashCmdList.FOREVERCOMPANIONMETER("unlock")
  assertEqual(ForeverCompanionDB.combatMeter.locked,false,"meter unlock preference")
+ assertEqual(ForeverCompanionCombatMeter.SetLayout("invalid"),false,"meter rejects unknown layout")
+ assertEqual(ForeverCompanionCombatMeter.SetLayout("compact"),true,"meter compact preset")
+ assertEqual(ForeverCompanionDB.combatMeter.width,260,"compact width saved")
+ assertEqual(ForeverCompanionDB.combatMeter.rows,4,"compact row count saved")
+ assertEqual(ForeverCompanionCombatMeter.SetLayout("expanded"),true,"meter expanded preset")
+ assertEqual(ForeverCompanionDB.combatMeter.width,400,"expanded width saved")
+ assertEqual(ForeverCompanionDB.combatMeter.rows,12,"expanded row count saved")
+ assertEqual(ForeverCompanionCombatMeter.SetLayout("standard"),true,"meter standard preset")
+ assertEqual(ForeverCompanionDB.combatMeter.width,290,"standard width saved")
+ assertEqual(ForeverCompanionDB.combatMeter.rows,8,"standard row count saved")
  C_DamageMeter,Enum,CreateFrame=oldAPI,oldEnum,oldFrame
  SlashCmdList.FOREVERCOMPANIONMETER=oldSlash
  ForeverCompanionDB=oldDB
