@@ -232,6 +232,7 @@ function M.Refresh()
  nextButton:SetEnabled(isPast and pastIndex>1)
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if not M.Available() then
+  if detailPanel then detailPanel:Hide() end
   for _,row in ipairs(rows) do row.frame:Hide() end
   notice:SetText("Blizzard combat meter API unavailable")
   return
@@ -270,8 +271,15 @@ function M.Refresh()
     row.accent:SetColorTexture(.86,.65,.35,1)
    end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
-   row.fill:SetMinMaxValues(0,data.maxAmount)
-   row.fill:SetValue(source.totalAmount)
+   -- The session may omit a maximum; only pass known-safe values to the bar.
+   local maximum=data.maxAmount
+   if maximum~=nil then
+    row.fill:SetMinMaxValues(0,maximum)
+    row.fill:SetValue(source.totalAmount)
+   else
+    row.fill:SetMinMaxValues(0,1)
+    row.fill:SetValue(0)
+   end
   else row.frame:Hide() end
  end
  if selectedRow then
