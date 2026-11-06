@@ -311,6 +311,7 @@ function M.Refresh()
   if type(source)=="table" then
    row.frame:Show()
    if selectedRow==i then row.background:SetColorTexture(.075,.19,.23,.98)
+   elseif source.isLocalPlayer==true then row.background:SetColorTexture(.13,.16,.08,.98)
    else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
@@ -323,12 +324,20 @@ function M.Refresh()
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
    local icon=row.classIcon
-   local coords=not (issecretvalue and issecretvalue(class)) and type(class)=="string"
-    and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[class]
-   if coords then
-    icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
+   local spec=source.specIconID
+   if not (issecretvalue and issecretvalue(spec)) and type(spec)=="number" and spec>0 then
+    icon:SetTexture(spec)
+    icon:SetTexCoord(0,1,0,1)
     icon:Show()
-   else icon:Hide() end
+   else
+    local coords=not (issecretvalue and issecretvalue(class)) and type(class)=="string"
+     and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[class]
+    if coords then
+     icon:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes")
+     icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
+     icon:Show()
+    else icon:Hide() end
+   end
    local color
    if not (issecretvalue and issecretvalue(class)) and type(class)=="string" then color=colors[class] end
    if color then
@@ -344,7 +353,7 @@ function M.Refresh()
    -- A per-source maximum can make every player's bar appear full.
    -- Pass secret numeric values only to secret-safe native status-bar methods.
    local maximum=data and data.maxAmount
-   if maximum~=nil then
+   if (issecretvalue and issecretvalue(maximum)) or maximum~=nil then
     row.fill:SetMinMaxValues(0,maximum)
     row.fill:SetValue(source.totalAmount)
    else
