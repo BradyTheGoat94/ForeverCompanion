@@ -537,12 +537,18 @@ do
    assert(model.LoadOpening(class,tree,spec,draft,11),spec)
    assert(model.Rank(draft,opening[1])==opening[1][6],opening[1][9])
    assert(not model.LoadOpening(class,tree,spec,draft,51),"opening must preserve existing drafts")
+   local full={}
+   assert(model.LoadOpening(class,tree,spec,full,51),spec)
+   for _,node in ipairs(opening) do assert(model.Rank(full,node)==node[6],spec.." / "..node[9]) end
    local first={}
    assert(model.LoadOpening(class,tree,spec,first,1) and model.Total(class,first)==1,spec)
    trees=trees+1
   end
  end
  assert(count==467 and trees==27)
+ local bear={}
+ assert(model.LoadOpening("DRUID",2,"Guardian / Bear",bear,51))
+ for _,node in ipairs(model.Opening("DRUID",2,"Guardian / Bear")) do assert(model.Rank(bear,node)==node[6]) end
  local warrior=talents.classes.WARRIOR.nodes
  local arms={}
  assert(not model.Change("WARRIOR",arms,warrior[4],1,51),"tier gate")
