@@ -261,6 +261,7 @@ function M.Refresh()
  end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
+ if selectedRow and selectedRow>rowCount then selectedRow=nil;detailOpen=false end
  local colors=RAID_CLASS_COLORS or {}
  for i,row in ipairs(rows) do
   local source=i<=rowCount and sources[i]
@@ -388,6 +389,7 @@ function M.SetRows(count)
  if type(count)~="number" or count~=count or count==math.huge or count==-math.huge or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
  rowCount=count
+ if selectedRow and selectedRow>rowCount then selectedRow=nil;detailOpen=false end
  if frame then frame:SetHeight(110+rowCount*24) end
  M.Refresh()
  return true
