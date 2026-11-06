@@ -341,18 +341,20 @@ function M.Refresh()
  guideHint:SetText(serviceNotice or (view=="off" and "Companion quest markers hidden" or "No quest destination on this map"))
  zoomButton:SetEnabled(false)
  guide:Show()
- if view=="off" or not focus then return end
+ if view=="off" then return end
+ -- All-mode must still display live quest locations when no quest is focused.
+ -- A missing focus is not an empty quest log.
 
- pcall(drawArea,canvas,mapID,focus,width,height)
+ if focus then pcall(drawArea,canvas,mapID,focus,width,height) end
  local quests=planner.GetLive()
  local locations=ForeverCompanionQuestWaypoints.MapLocations(mapID,view=="focus" and {focus} or quests)
- local groups=focusGroups(locations,focus,width*scale,height*scale)
+ local groups=focus and focusGroups(locations,focus,width*scale,height*scale) or {}
  if #groups>0 then
   zoomPoint=groups[1].entry.target
   zoomButton:SetEnabled(type(worldMap.PanAndZoomTo)=="function")
   guideHint:SetText(focus.complete and "Turn-in  ·  Click marker for arrow" or "Highlighted destinations  ·  Click marker for arrow")
  elseif view=="all" then
-  guideHint:SetText("Click another quest marker to focus it")
+  guideHint:SetText("Click a quest marker to focus it")
  end
  if view=="all" then
   addOtherQuests(groups,locations,focus,width*scale,height*scale)
