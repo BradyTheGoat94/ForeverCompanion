@@ -198,6 +198,12 @@ local function showServices(canvas,mapID,scale)
   local point=group[1]
   pin.locations=group
   pin.label:SetText(point.symbol)
+  -- Use compact category-specific symbols so the map remains legible when
+  -- several service types share a building or city block.
+  pin.label:SetTextColor(1,.96,.82)
+  if point.symbol=="AH" then pin:SetSize(29,19)
+  elseif point.symbol=="B" then pin:SetSize(23,19)
+  else pin:SetSize(25,19) end
   if pin.background then
    if point.symbol=="B" or point.symbol=="AH" then
     pin.background:SetColorTexture(.47,.31,.10,.97)
