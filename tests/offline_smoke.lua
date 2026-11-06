@@ -1022,6 +1022,9 @@ do
  assertEqual(meter.Available(),false,"meter safely detects missing Blizzard API")
  C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={}} end}
  assertEqual(meter.Available(),true,"meter detects native API")
+ assertEqual(type(meter.Toggle),"function","meter exposes dashboard toggle")
+ assertEqual(type(meter.SelectedSource),"function","meter exposes safe selection state")
+ assertEqual(meter.SelectedSource(),nil,"meter starts with no selected player")
  assertEqual(meter.SetMode("healing"),true,"meter mode selection")
  assertEqual(meter.SetSession("current"),true,"current combat session selection")
  assertEqual(meter.SetSession("past"),true,"past combat session selection")
