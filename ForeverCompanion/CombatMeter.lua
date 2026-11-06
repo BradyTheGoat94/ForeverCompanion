@@ -332,7 +332,13 @@ function M.Refresh()
   end
  end
  if isPast then
-  notice:SetText("Past fight "..pastIndex.." | Native history")
+  local entry=availableHistory()[pastIndex]
+  local title=type(entry)=="table" and entry.name
+  if type(title)=="string" and not (issecretvalue and issecretvalue(title)) and title~="" then
+   notice:SetText(title)
+  else
+   notice:SetText("Past fight "..pastIndex.." | Native history")
+  end
  else
   notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  |  Experimental")
  end
