@@ -1103,3 +1103,27 @@ do
  assertEqual(map.MapStyle(),"original","legacy original terrain preference honored")
  CreateFrame,ForeverCompanionDB,ForeverCompanionQuestMap=oldFrame,oldDB,oldMap
 end
+
+
+-- Minimap party overlay must fail closed until explicitly enabled and calibrated.
+do
+ local oldFrame,oldDB,oldMinimap,oldParty=CreateFrame,ForeverCompanionDB,Minimap,ForeverCompanionPartyMinimap
+ local oldSlash=SlashCmdList.FOREVERCOMPANIONPARTYMAP
+ CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
+ ForeverCompanionDB={}
+ Minimap=nil
+ dofile("ForeverCompanion/PartyMinimap.lua")
+ local overlay=ForeverCompanionPartyMinimap
+ overlay.Refresh()
+ assertEqual(overlay.Status(),"Off (opt-in beta)","party minimap defaults off")
+ assertEqual(overlay.SetEnabled("yes"),false,"party minimap rejects invalid setting")
+ assertEqual(overlay.SetEnabled(true),true,"party minimap can be explicitly enabled")
+ overlay.Refresh()
+ assertEqual(overlay.Status(),"Native minimap radius unavailable","party minimap fails closed without native API")
+ SlashCmdList.FOREVERCOMPANIONPARTYMAP("off")
+ assertEqual(ForeverCompanionDB.partyMinimapEnabled,false,"party minimap slash disable")
+ SlashCmdList.FOREVERCOMPANIONPARTYMAP("on")
+ assertEqual(ForeverCompanionDB.partyMinimapEnabled,true,"party minimap slash enable")
+ CreateFrame,ForeverCompanionDB,Minimap,ForeverCompanionPartyMinimap=oldFrame,oldDB,oldMinimap,oldParty
+ SlashCmdList.FOREVERCOMPANIONPARTYMAP=oldSlash
+end
