@@ -139,3 +139,16 @@ function P.LoadOpening(class,tree,spec,allocation,budget)
  if P.Total(class,allocation)==0 then return false,"Choose a higher level to plan your first point." end
  return true
 end
+
+function P.Recommendation(class,spec)
+ local choices=ForeverCompanionTalentRecommendations[class]
+ return choices and choices[spec]
+end
+
+function P.CopyRecommendation(class,spec,allocation)
+ local recommendation=P.Recommendation(class,spec)
+ if not recommendation then return false,"No recommended build for this specialization." end
+ if P.Total(class,allocation)>0 then return false,"Reset your draft before copying this build." end
+ for id,rank in pairs(recommendation[3]) do allocation[id]=rank end
+ return true
+end

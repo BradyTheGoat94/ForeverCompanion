@@ -1,3 +1,8 @@
+## 3.21.0-beta
+
+- Added Recommended Build to Class Guides → Talents. Preview a complete Icy Veins level-60 PvE allocation for every specialization, including a separate Bear tank build. See the split across all three trees and copy a build to an empty draft.
+- Checked all 28 allocations against the bundled 1.60.1.70790 data and tested that previewing a build preserves saved drafts.
+
 ## 3.20.0-beta
 
 - Rebuilt Class Guides → Talents into a grid of 467 talents across all nine classes and 27 trees, with Blizzard client icon and tooltip references.

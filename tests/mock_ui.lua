@@ -514,7 +514,6 @@ end
 ForeverCompanionClassGuide.SelectView("Gear & Stats")
 exportNative("ui_gear_native.json")
 ForeverCompanionClassGuide.SelectView("Talents")
-exportNative("ui_topic_native.json")
 do
  local model=ForeverCompanionTalentPlanner
  local talents=ForeverCompanionTalentData
@@ -528,6 +527,27 @@ do
    assert(not positions[position] and node[7]>0 and node[8]>0,node[9])
    positions[position]=true
    count=count+1
+  end
+  for _,specEntry in ipairs(ForeverCompanionSpecs[class]) do
+   local name=specEntry[1]
+   local recommendation=assert(model.Recommendation(class,name),class.." / "..name)
+   local draft={}
+   assert(model.CopyRecommendation(class,name,draft))
+   assert(model.Total(class,draft)==51 and not model.CopyRecommendation(class,name,draft))
+   local replay={}
+   local count=0
+   while count<51 do
+    local before=count
+    for _,node in ipairs(data.nodes) do
+     local target=draft[node[1]] or 0
+     assert(target<=node[6],node[9])
+     while model.Rank(replay,node)<target and model.Change(class,replay,node,1,51) do
+      count=count+1
+     end
+    end
+    assert(count>before,class.." / "..name.." has an unreachable recommendation")
+   end
+   for id,rank in pairs(recommendation[3]) do assert(replay[id]==rank) end
   end
   for tree=1,3 do
    local spec=ForeverCompanionSpecs[class][tree][1]
@@ -571,6 +591,17 @@ do
  assert(model.Total("WARRIOR",allocation)==0)
  planner.buildButton:OnClick()
  assert(model.Total("WARRIOR",allocation)>0 and model.Load("WARRIOR","Arms")==allocation)
+ local openingTotal=model.Total("WARRIOR",allocation)
+ planner.recommendationButton:OnClick()
+ assert(planner.recommendationButton.text=="Back to My Draft")
+ assert(planner.buildButton.text=="Copy to empty draft" and not planner.lowerLevel.enabled)
+ exportNative("ui_topic_native.json")
+ planner.buttons[1]:OnClick("LeftButton")
+ planner.buttons[1]:OnClick("RightButton")
+ planner.buildButton:OnClick()
+ assert(model.Total("WARRIOR",allocation)==openingTotal,"preview and copy guard preserve the draft")
+ planner.recommendationButton:OnClick()
+ assert(planner.buildButton.text=="Load opening ranks" and planner.lowerLevel.enabled)
  planner.tabs[2]:OnClick()
  assert(planner.buttons[1].node[2]==2)
  planner.tabs[1]:OnClick()
@@ -580,6 +611,12 @@ do
  assert(model.Total("WARRIOR",allocation)>0,"reset needs confirmation")
  planner.resetButton:OnClick()
  assert(model.Total("WARRIOR",allocation)==0,"confirmed reset clears draft")
+ planner.lowerLevel:OnClick()
+ planner.recommendationButton:OnClick()
+ planner.buildButton:OnClick()
+ assert(model.Total("WARRIOR",allocation)==51 and planner.recommendationButton.text=="Recommended Build")
+ planner.resetButton:OnClick()
+ planner.resetButton:OnClick()
 end
 assert(not ForeverCompanionClassGuide.SelectView("Not a topic"),"invalid topic must be rejected")
 ForeverCompanionDB.classGuideView="malformed saved view"
