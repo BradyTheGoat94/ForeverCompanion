@@ -33,8 +33,7 @@ local function makeMarker(canvas)
  local dot=button:CreateTexture(nil,"ARTWORK")
  dot:SetPoint("CENTER")
  dot:SetSize(18,18)
- dot:SetTexture("Interface\\Minimap\\PartyRaidBlips")
- dot:SetTexCoord(0,1,0,1)
+ dot:SetColorTexture(.20,.75,1,.96)
  button.dot=dot
  local arrow=button:CreateTexture(nil,"OVERLAY")
  arrow:SetSize(17,17)
@@ -81,7 +80,11 @@ function P.Refresh()
    marker:SetScale(1/scale)
    marker:ClearAllPoints()
    marker:SetPoint("CENTER",canvas,"TOPLEFT",x*width*scale,-y*height*scale)
-   local facing=UnitFacing and UnitFacing(unit)
+   local facing
+   if UnitFacing then
+    local ok,result=pcall(UnitFacing,unit)
+    if ok and not (issecretvalue and issecretvalue(result)) then facing=result end
+   end
    if type(facing)=="number" and facing==facing and marker.arrow.SetRotation then
     marker.arrow:SetRotation(-facing)
     marker.arrow:Show()
