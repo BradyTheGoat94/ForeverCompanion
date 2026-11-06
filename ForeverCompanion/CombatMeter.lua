@@ -457,14 +457,15 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="resetpos" then
   saved().position=nil
   if frame then frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0) end
- elseif msg:match("^width%s+%d+$") then
-  M.SetWidth(tonumber(msg:match("%d+")))
-  M.Show()
- elseif msg:match("^rows%s+%d+$") then
-  M.SetRows(tonumber(msg:match("%d+")))
-  M.Show()
+ elseif msg:match("^width%s+") then
+  local width=tonumber(msg:match("^width%s+(%d+)$"))
+  if width and M.SetWidth(width) then M.Show() end
+ elseif msg:match("^rows%s+") then
+  local count=tonumber(msg:match("^rows%s+(%d+)$"))
+  if count and M.SetRows(count) then M.Show() end
+ elseif msg=="" or msg=="toggle" then M.Toggle()
  elseif M.SetSession(msg) or M.SetMode(msg) then M.Show()
- else M.Toggle() end
+ end
 end
 local events=CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
