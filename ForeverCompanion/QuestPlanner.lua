@@ -125,7 +125,7 @@ local function questRows()
             end
           end
         end
-        if #result>=count then return result,true end
+        if #result>0 then return result,true end
       end
     end
     local header="Quest log"
