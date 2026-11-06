@@ -10,10 +10,27 @@ eq(#loot.BossDrops(nil,"Sneed"),0,"missing dungeon")
 local ids={}
 for _,record in ipairs(loot.records) do
   assert(type(record.itemID)=="number" and not ids[record.itemID],"unique Forever item ID required")
-  assert(record.source:find("item="..record.itemID,1,true),"item source must match ID")
+  assert(record.source:find("item="..record.itemID,1,true) or record.source:find("items/"..record.itemID,1,true),"item source must match ID")
   ids[record.itemID]=true
 end
-eq(#loot.records,27,"catalog size")
+eq(#loot.records,127,"catalog size")
+eq(#loot.DungeonNames(),9,"dungeon coverage")
+local newRecords={
+  ["Strike of the Hydra"]={"Blackfathom Deeps","Aku'mai",6909},
+  ["Cartilage Shapers"]={"City of Dalaran","Lyn the Ignored",273054},
+  ["Raptor's Gaze"]={"Excavation Site: Wetlands","Shadetooth",273027},
+  ["Barbaric Crossbow"]={"Ragefire Chasm","Oggleflint",272999},
+  ["Coldspire Staff"]={"Ruins of Lordaeron","Rath'mael",271215},
+  ["Commander's Crest"]={"Shadowfang Keep","Commander Springvale",6320},
+}
+for item,expected in pairs(newRecords) do
+  local record=assert(loot.Find(item))
+  eq(record.dungeon,expected[1],item)
+  eq(record.boss,expected[2],item)
+  eq(record.itemID,expected[3],item)
+  assert(record.encounterSource and not record.dropRate)
+end
+eq(loot.Search("  barbaric crossbow  ")[1].itemID,272999,"item search trims whitespace")
 for _,boss in ipairs({"Faldrim Anvilmar","Magmatus","Plunder","Durgen Dirgehammer"}) do
   eq(#loot.BossDrops("Hall of Thanes",boss),3,"Hall of Thanes boss drops")
 end

@@ -1424,7 +1424,7 @@ addon:SetScript("OnEvent", function(_, event, arg)
   elseif DB and event == "SPELLS_CHANGED" then
     if window and window:IsShown() and currentTab=="Leveling" then render() end
   elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_XP_UPDATE" or event == "SKILL_LINES_CHANGED" or event == "CHAT_MSG_SKILL") then
-    render()
+    if window and window:IsShown() then render() end
   end
 end)
 SLASH_FOREVERCOMPANION1 = "/fc"
@@ -1504,6 +1504,6 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   say("Unknown command; type /fc help")
 end
 
-ForeverCompanionRefresh = function() if DB and window then render() end end
+ForeverCompanionRefresh = function() if DB and window and window:IsShown() then render() end end
 
 

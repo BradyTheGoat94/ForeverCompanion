@@ -1,7 +1,7 @@
 # CurseForge beta release gate — Brady's Forever Companion
 
 ## Automated package
-On every push to `develop`, the `CurseForge beta package audit` workflow validates the manifest and creates a **review artifact only**. It does not upload or publish to CurseForge.
+The manually dispatched `CurseForge beta package audit` workflow validates the manifest on `develop` and creates a **review artifact only**.
 
 Download the `bradys-forever-companion-beta-review` GitHub Actions artifact. The contained ZIP has exactly one top-level addon folder: `ForeverCompanion/`. Its manifest is `ForeverCompanion/ForeverCompanion.toc`. The **public title** is Brady's Forever Companion; the technical folder, addon name and saved-variable keys remain unchanged to protect existing installations.
 

@@ -1,3 +1,8 @@
+## 3.22.0-beta
+
+- Added 100 source-attributed equipment entries from six Forever dungeons. The catalog now has 127 entries across nine dungeons, with item and encounter references.
+- Trim spaces around loot searches and avoid rebuilding the closed addon window on XP, zone and profession updates.
+
 ## 3.21.1-beta
 
 - Save the planning level separately for each specialization’s talent draft, including when resetting ranks.

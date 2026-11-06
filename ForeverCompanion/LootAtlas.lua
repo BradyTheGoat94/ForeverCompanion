@@ -75,6 +75,131 @@ for _,entry in ipairs(drops) do
     source="https://www.wowhead.com/forever/item="..entry[5]})
 end
 
+-- Selected equipment from Icy Veins Forever encounter tables. Each ID links to
+-- its Forever database entry. Ambiguous shared drops and unclassified slots are omitted.
+local extraDrops={
+  {"Blackfathom Deeps", "blackfathom-deeps", {
+    {"Ghamoo-ra's Bind", "Ghamoo-ra", "Feet", 6908},
+    {"Tortoise Armor", "Ghamoo-ra", "Chest", 6907},
+    {"Spiked Shell Band", "Ghamoo-ra", "Finger", 273839},
+    {"Naga Battle Gloves", "Lady Sarevess", "Hands", 888},
+    {"Darkwater Talwar", "Lady Sarevess", "One-Hand", 11121},
+    {"Naga Heartpiercer", "Lady Sarevess", "Ranged", 3078},
+    {"Algae Fists", "Gelihast", "Hands", 6906},
+    {"Reef Axe", "Gelihast", "Two-Hand", 6905},
+    {"Cursed Murloc Eye", "Gelihast", "Trinket", 273840},
+    {"Treacherous Treads", "Lorgus Jett", "Feet", 273842},
+    {"Twilight Maul", "Lorgus Jett", "Two-Hand", 273841},
+    {"Fallenroot Longbow", "Lorgus Jett", "Ranged", 273843},
+    {"Glowing Thresher Cape", "Old Serra'kis", "Back", 6901},
+    {"Bands of Serra'kis", "Old Serra'kis", "Wrist", 6902},
+    {"Gaze Dreamer Pants", "Twilight Lord Kelris", "Legs", 6903},
+    {"Twilight Lord Girdle", "Twilight Lord Kelris", "Waist", 273846},
+    {"Rod of the Sleepwalker", "Twilight Lord Kelris", "Two-Hand", 1155},
+    {"Leech Pants", "Aku'mai", "Legs", 6910},
+    {"Moss Cinch", "Aku'mai", "Waist", 6911},
+    {"Strike of the Hydra", "Aku'mai", "Two-Hand", 6909},
+  }},
+  {"City of Dalaran", "city-of-dalaran", {
+    {"Graveweave Bindings", "Atrexis the Grave Knight", "Wrist", 273036},
+    {"Bonebinder's Signet", "Atrexis the Grave Knight", "Finger", 273032},
+    {"Gravespike Repeater", "Atrexis the Grave Knight", "Ranged", 273033},
+    {"Cartilage Shapers", "Lyn the Ignored", "Hands", 273054},
+    {"Bonepile Gaze", "Lyn the Ignored", "Off Hand", 273055},
+    {"Ephemeral Grips", "Arcane Anomaly", "Hands", 273034},
+    {"Mana-Warped Chain Shirt", "Arcane Anomaly", "Chest", 273035},
+    {"Runemender's Seal", "Arcane Anomaly", "Finger", 273031},
+    {"Blightleaf Rope", "Fel Ancient", "Waist", 273039},
+    {"Garb of Fallen Felbark", "Fel Ancient", "Chest", 273038},
+    {"Felbough Arm", "Fel Ancient", "Two-Hand", 273037},
+    {"Unstable Crystalline Shoulderpads", "Unstable Sentinel", "Shoulder", 273047},
+    {"Refractory Scaleguards", "Unstable Sentinel", "Legs", 273048},
+    {"Slitherwrap Girdle", "Mana Devourer", "Waist", 273041},
+    {"Manascale Treads", "Mana Devourer", "Feet", 273042},
+    {"Spine of the Devourer", "Mana Devourer", "Two-Hand", 273040},
+    {"Violet Sorcerer's Robes", "Arcanic Enigma", "Chest", 273044},
+    {"Drape of Shifting Energy", "Arcanic Enigma", "Back", 273045},
+    {"Wand of Mana Concentration", "Arcanic Enigma", "Ranged", 273043},
+    {"Violet Sorcerer's Mantle", "Shade of the Archmage", "Shoulder", 273051},
+    {"Archmagister's Faceted Pendant", "Shade of the Archmage", "Neck", 273049},
+    {"Ponderous Orb", "Shade of the Archmage", "Off Hand", 273052},
+  }},
+  {"Excavation Site: Wetlands", "excavation-site-wetlands", {
+    {"Glinteye Slippers", "Saltspine", "Feet", 273024},
+    {"Supple Bellyskin Leggings", "Saltspine", "Legs", 273022},
+    {"Saltscale Girdle", "Saltspine", "Waist", 273023},
+    {"Garb of Florid Feathers", "Shadetooth", "Chest", 273026},
+    {"Raptorclaw Greaves", "Shadetooth", "Feet", 273025},
+    {"Raptor's Gaze", "Shadetooth", "Off Hand", 273027},
+    {"Reliquary Mantle", "Relic Guardian", "Shoulder", 273028},
+    {"Ring of Power Regulation", "Relic Guardian", "Finger", 273030},
+    {"Golemsight Long Gun", "Relic Guardian", "Ranged", 273029},
+  }},
+  {"Ragefire Chasm", "ragefire-chasm", {
+    {"Barbaric Crossbow", "Oggleflint", "Ranged", 272999},
+    {"Trogg Scepter", "Oggleflint", "One-Hand", 272996},
+    {"Subterranean Cape", "Taragaman the Hungerer", "Back", 14149},
+    {"Crystalline Cuffs", "Taragaman the Hungerer", "Wrist", 14148},
+    {"Cursed Felblade", "Taragaman the Hungerer", "One-Hand", 14145},
+    {"Robe of Evocation", "Jergosh the Invoker", "Chest", 14150},
+    {"Cavedweller Bracers", "Jergosh the Invoker", "Wrist", 14147},
+    {"Satyrskin Cloak", "Bazzalan", "Back", 273005},
+    {"Chasm Walkers", "Bazzalan", "Feet", 273007},
+  }},
+  {"Ruins of Lordaeron", "ruins-of-lordaeron", {
+    {"Witherbite Bracers", "Witherfang", "Wrist", 271202},
+    {"Atrophic Girdle", "Witherfang", "Waist", 271201},
+    {"Segmented Spider Leg", "Witherfang", "Two-Hand", 271203},
+    {"Leftover Abomination Skin", "The Baron", "Chest", 271206},
+    {"Abomination Bones", "The Baron", "Chest", 271205},
+    {"Bloodied Chestwraps", "Viktor the Vile", "Chest", 271212},
+    {"Vilewalkers", "Viktor the Vile", "Feet", 271211},
+    {"Vileblood Scimitar", "Viktor the Vile", "One-Hand", 271218},
+    {"Rotmender's Leggings", "The Abandoned", "Legs", 271207},
+    {"Grip of Fear", "The Abandoned", "Hands", 271208},
+    {"Scepter of the Abandoned", "The Abandoned", "One-Hand", 271216},
+    {"Tuskwrap Belt", "Bjork", "Waist", 271210},
+    {"Bonerust Leggings", "Bjork", "Legs", 271209},
+    {"Corpse Chopper", "Bjork", "Two-Hand", 271217},
+    {"Rotmender's Treads", "Rath'mael", "Feet", 271214},
+    {"Mirror of Rath'mael", "Rath'mael", "Off Hand", 271213},
+    {"Coldspire Staff", "Rath'mael", "Two-Hand", 271215},
+  }},
+  {"Shadowfang Keep", "shadowfang-keep", {
+    {"Rugged Spaulders", "Rethilgore", "Shoulder", 5254},
+    {"Sorcerer Collar", "Rethilgore", "Neck", 273457},
+    {"Eerie Stable Lantern", "Fel Steed", "Off Hand", 6341},
+    {"Bloody Apron", "Razorclaw the Butcher", "Chest", 6226},
+    {"Butcher's Cleaver", "Razorclaw the Butcher", "One-Hand", 1292},
+    {"Butcher's Slicer", "Razorclaw the Butcher", "One-Hand", 6633},
+    {"Silverlaine's Family Seal", "Baron Silverlaine", "Finger", 6321},
+    {"Baron's Scepter", "Baron Silverlaine", "One-Hand", 6323},
+    {"Blade of Silverlaine", "Baron Silverlaine", "One-Hand", 273637},
+    {"Commander's Crest", "Commander Springvale", "Off Hand", 6320},
+    {"Arced War Axe", "Commander Springvale", "Two-Hand", 3191},
+    {"Worgenbane Talisman", "Commander Springvale", "Trinket", 273643},
+    {"Blindwatcher's Sight", "Odo the Blindwatcher", "Head", 273645},
+    {"Girdle of the Blindwatcher", "Odo the Blindwatcher", "Waist", 6319},
+    {"Odo's Ley Staff", "Odo the Blindwatcher", "Two-Hand", 6318},
+    {"Fenrus' Hide", "Fenrus the Devourer", "Back", 6340},
+    {"Black Wolf Bracers", "Fenrus the Devourer", "Wrist", 3230},
+    {"Half-Eaten Boots", "Fenrus the Devourer", "Feet", 273646},
+    {"Wolfmaster Cape", "Wolf Master Nandos", "Back", 6314},
+    {"Feline Mantle", "Wolf Master Nandos", "Shoulder", 3748},
+    {"Worgpelt Leggings", "Wolf Master Nandos", "Legs", 273647},
+    {"Robes of Arugal", "Archmage Arugal", "Chest", 6324},
+    {"Belt of Arugal", "Archmage Arugal", "Waist", 6392},
+  }},
+}
+for _,group in ipairs(extraDrops) do
+  local encounterSource="https://www.icy-veins.com/wow-forever/"..group[2].."-guide"
+  for _,entry in ipairs(group[3]) do
+    Loot.Add({item=entry[1],dungeon=group[1],boss=entry[2],slot=entry[3],itemID=entry[4],
+      status="Forever guide reference",source="https://db.icy-veins.com/wow-forever/items/"..entry[4],
+      encounterSource=encounterSource})
+  end
+end
+
 function Loot.ShowItemTooltip(owner,record)
   if not record or not GameTooltip then return end
   GameTooltip:SetOwner(owner,"ANCHOR_RIGHT")
@@ -182,7 +307,7 @@ function Loot.RecommendationSummary(classToken,role)
 end
 function Loot.Search(query)
   local results={}
-  local term=type(query)=="string" and query:lower() or ""
+  local term=type(query)=="string" and query:lower():match("^%s*(.-)%s*$") or ""
   for _,record in ipairs(Loot.records) do
     if term=="" or tostring(record.item):lower():find(term,1,true)
       or tostring(record.boss):lower():find(term,1,true)
@@ -204,6 +329,7 @@ function Loot.Detail(record,db)
     "Wishlist: "..(saved and "Saved" or "Not saved"),
     "Obtained (manual note): "..(Loot.Obtained(db,record.item) and "Yes" or "Not marked").."; not checked against inventory.",
   }
+  if clean(record.encounterSource) then lines[#lines+1]="Encounter reference: "..record.encounterSource end
   if clean(record.slot) then lines[#lines+1]="Equipment slot: "..record.slot end
   if type(record.itemLevel)=="number" then lines[#lines+1]="Item level: "..record.itemLevel end
   if clean(record.rarity) then lines[#lines+1]="Rarity: "..record.rarity end

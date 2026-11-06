@@ -105,7 +105,9 @@ function W.Render(tab,db,matches)
  if count==0 then empty:Show() else empty:Hide() end
  detail:SetText(selected and table.concat({
   selected.item,selected.boss.." / "..selected.dungeon,selected.status,
-  "Item ID: "..tostring(selected.itemID or "Unknown"),"Hover the item for stats."
+  "Item ID: "..tostring(selected.itemID or "Unknown"),
+  "Source: "..(selected.encounterSource and "Icy Veins Forever" or "Wowhead Forever"),
+  "Hover the item for stats."
  },"\n\n") or "Clear filters to browse loot.")
  local height=math.max(370,detail:GetStringHeight()+65)
  detail:SetHeight(height-58)

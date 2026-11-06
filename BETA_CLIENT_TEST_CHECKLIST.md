@@ -1,16 +1,17 @@
 # Forever Companion — Hands-on beta acceptance sheet
 
-**Target:** November 4, 2026. **Branch:** develop only. **Do not publish or merge** until this checklist is completed in the actual WoW Forever client.
+**Branch:** develop only. Complete this checklist in the actual WoW Forever client before public submission.
 
-## 1. Get the exact CI build
-1. Open GitHub Actions > latest **successful** "Validate and package addon" run on develop.
-2. Download the `ForeverCompanion` artifact containing `ForeverCompanion.zip` and `beta-build-manifest.json`.
-3. Verify the manifest SHA256 against the ZIP; use only files from the same run. Record the tested commit below.
+## 1. Get the exact candidate build
+1. Obtain the versioned addon ZIP and its `release-audit.json` from the same candidate kit or successful **CurseForge beta package audit** run on `develop`.
+2. Verify the ZIP SHA-256 against the audit report. Record the candidate commit below.
+3. Keep the ZIP you test so the later upload uses identical bytes.
 4. Unzip into the active WoW Forever installation's `Interface/AddOns` directory. The final layout must contain `Interface/AddOns/ForeverCompanion/ForeverCompanion.toc` (not two nested ForeverCompanion folders).
 5. On the character selection screen, open AddOns and enable Forever Companion. Do not rely on "Load out of date AddOns" as proof of interface compatibility.
 
 ## 2. Five-minute startup gate
-- [ ] The addon appears in the AddOns list and loads without a Lua error.
+- [ ] Enable Lua errors with `/console scriptErrors 1`. The addon appears in the AddOns list and loads without a Lua error.
+- [ ] Run `/fcdiag` and record the client build and interface match.
 - [ ] The title and sidebar are readable at normal UI scale.
 - [ ] The compact and normal sizes preserve readable headings and buttons.
 - [ ] Every tab opens without errors: Leveling, Class, Quests, Dungeons, PvP, Professions, Settings.
@@ -21,6 +22,8 @@
 ## 3. Guide safety and data gate
 - [ ] Select at least two specialization paths on a character; the five-step playbook and its priority explanation change together.
 - [ ] Open Class Guides → Talents. Compare three tree tabs, icons, tooltips and rank limits with the live class talent window. Scroll to the source footer in normal and compact modes.
+- [ ] Preview a Recommended Build and switch trees. Copy it into an empty draft and confirm an existing draft is preserved.
+- [ ] In Gear & Loot, search for Barbaric Crossbow, hover for the item tooltip, then open the selected boss research and confirm Oggleflint in Ragefire Chasm.
 - [ ] Load the suggested opening into an empty draft. Add and refund a rank, try refunding a prerequisite, change the plan level and check that a draft survives `/reload`. Confirm the live character's talents never change.
 - [ ] Verify recommended talents and spells against the character's real spellbook. Missing or inaccessible data is labeled **unconfirmed**, not **unlearned**.
 - [ ] Check a low-level character: high-level abilities must not be described as immediately available.
