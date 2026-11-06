@@ -156,7 +156,10 @@ local function showServices(canvas,mapID,scale)
   local essential=point.symbol=="B" or point.symbol=="AH"
    or point.symbol=="F" or point.symbol=="M" or point.symbol=="I"
   if detailed or essential then
-   local key=point.symbol..":"..math.floor(point.x*width/radius+.5)..":"..math.floor(point.y*height/radius+.5)
+   -- At close zoom, retain each known NPC rather than collapsing nearby
+   -- vendors into one icon. Broad zoom still groups by service and location.
+   local key=detailed and (point.symbol..":"..point.label..":"..string.format("%.5f",point.x)..":"..string.format("%.5f",point.y))
+    or (point.symbol..":"..math.floor(point.x*width/radius+.5)..":"..math.floor(point.y*height/radius+.5))
    local group=groups[key]
    if not group then group={point};groups[key]=group;ordered[#ordered+1]=group
    else group[#group+1]=point end
