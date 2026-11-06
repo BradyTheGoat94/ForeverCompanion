@@ -346,12 +346,12 @@ function M.Refresh()
   local entry=availableHistory()[pastIndex]
   local title=type(entry)=="table" and entry.name
   if not (issecretvalue and issecretvalue(title)) and type(title)=="string" and title~="" then
-   notice:SetText(title)
+   notice:SetText(title:sub(1,36))
   else
    notice:SetText("Past fight "..pastIndex.." | Native history")
   end
  else
-  notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  |  Experimental")
+  notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native data  |  Experimental")
  end
 end
 function M.SelectedRow()
