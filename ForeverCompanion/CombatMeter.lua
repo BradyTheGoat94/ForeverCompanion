@@ -154,7 +154,18 @@ local function build()
   local amount=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   amount:SetPoint("RIGHT",row,"RIGHT",-5,0)
   amount:SetJustifyH("RIGHT")
-  rows[i]={frame=row,fill=fill,name=name,amount=amount}
+  local accent=row:CreateTexture(nil,"OVERLAY")
+  accent:SetPoint("LEFT",row,"LEFT",0,0)
+  accent:SetSize(2,21)
+  accent:SetColorTexture(.86,.65,.35,1)
+  local hover=row:CreateTexture(nil,"OVERLAY")
+  hover:SetAllPoints(row)
+  hover:SetColorTexture(1,1,1,.07)
+  hover:Hide()
+  row:EnableMouse(true)
+  row:SetScript("OnEnter",function() hover:Show() end)
+  row:SetScript("OnLeave",function() hover:Hide() end)
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent}
   if i>rowCount then row:Hide() end
  end
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
@@ -207,8 +218,13 @@ function M.Refresh()
    local class=source.classFilename
    local color
    if not (issecretvalue and issecretvalue(class)) and type(class)=="string" then color=colors[class] end
-   if color then row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
-   else row.fill:SetStatusBarColor(.85,.65,.32,.78) end
+   if color then
+    row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
+    row.accent:SetColorTexture(color.r,color.g,color.b,1)
+   else
+    row.fill:SetStatusBarColor(.85,.65,.32,.78)
+    row.accent:SetColorTexture(.86,.65,.35,1)
+   end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
    local okMax=pcall(row.fill.SetMinMaxValues,row.fill,0,data.maxAmount)
    if not okMax then row.fill:SetMinMaxValues(0,1) end
