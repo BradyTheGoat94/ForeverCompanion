@@ -106,6 +106,13 @@ C_QuestLog.GetQuestLogQuests=function()
 end
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"full quest log scan")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),2,"collapsed quests included")
+local oldCount,oldInfo=C_QuestLog.GetNumQuestLogEntries,C_QuestLog.GetInfo
+C_QuestLog.GetNumQuestLogEntries=nil
+C_QuestLog.GetInfo=nil
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"full list without indexed API")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),2,"full list preserves hidden quest")
+C_QuestLog.GetNumQuestLogEntries=oldCount
+C_QuestLog.GetInfo=oldInfo
 C_QuestLog.GetQuestLogQuests=nil
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"indexed quest log fallback")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"indexed quest count restored")
