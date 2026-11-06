@@ -5,6 +5,7 @@ ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
 local rowCount=8
+local windowWidth=290
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
@@ -72,7 +73,8 @@ local function build()
  end
  local db=saved()
  if type(db.rows)=="number" and db.rows==db.rows then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
- frame:SetHeight(110+rowCount*24)
+ if type(db.width)=="number" and db.width==db.width then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
+ frame:SetSize(windowWidth,110+rowCount*24)
  if type(db.position)=="table" and type(db.position.x)=="number" and type(db.position.y)=="number" then
   frame:ClearAllPoints()
   frame:SetPoint(db.position.point or "CENTER",UIParent,db.position.relative or "CENTER",db.position.x,db.position.y)
@@ -129,7 +131,7 @@ local function build()
  rows={}
  for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
-  row:SetSize(264,21)
+  row:SetSize(windowWidth-26,21)
   row:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-72-(i-1)*24)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row)
@@ -147,7 +149,7 @@ local function build()
   rank:SetText(i)
   local name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   name:SetPoint("LEFT",row,"LEFT",25,0)
-  name:SetWidth(145)
+  name:SetWidth(windowWidth-145)
   name:SetJustifyH("LEFT")
   local amount=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   amount:SetPoint("RIGHT",row,"RIGHT",-5,0)
@@ -157,7 +159,7 @@ local function build()
  end
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,12)
- notice:SetWidth(190)
+ notice:SetWidth(windowWidth-100)
  notice:SetTextColor(.65,.76,.84)
  frame:SetScript("OnUpdate",function(_,dt)
   elapsed=elapsed+dt
@@ -233,6 +235,21 @@ end
 function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
 end
+function M.SetWidth(width)
+ if type(width)~="number" or width~=width or width~=math.floor(width) or width<260 or width>440 then return false end
+ saved().width=width
+ windowWidth=width
+ if frame then
+  frame:SetWidth(width)
+  notice:SetWidth(width-100)
+  for _,row in ipairs(rows) do
+   row.frame:SetWidth(width-26)
+   row.name:SetWidth(width-145)
+  end
+ end
+ M.Refresh()
+ return true
+end
 function M.SetRows(count)
  if type(count)~="number" or count~=count or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
@@ -263,6 +280,9 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="resetpos" then
   saved().position=nil
   if frame then frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0) end
+ elseif msg:match("^width%s+%d+$") then
+  M.SetWidth(tonumber(msg:match("%d+")))
+  M.Show()
  elseif msg:match("^rows%s+%d+$") then
   M.SetRows(tonumber(msg:match("%d+")))
   M.Show()
