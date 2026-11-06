@@ -1022,6 +1022,13 @@ do
  assertEqual(meter.Available(),false,"meter safely detects missing Blizzard API")
  C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={}} end}
  assertEqual(meter.Available(),true,"meter detects native API")
+ C_DamageMeter.IsDamageMeterAvailable=function() return false,"disabled" end
+ assertEqual(meter.Available(),false,"meter respects native disabled state")
+ C_DamageMeter.IsDamageMeterAvailable=function() return true end
+ assertEqual(meter.Available(),true,"meter accepts native enabled state")
+ C_DamageMeter.IsDamageMeterAvailable=function() error("unavailable") end
+ assertEqual(meter.Available(),false,"meter handles native availability API failure")
+ C_DamageMeter.IsDamageMeterAvailable=nil
  assertEqual(type(meter.Toggle),"function","meter exposes dashboard toggle")
  assertEqual(type(meter.SelectedSource),"function","meter exposes safe selection state")
  assertEqual(meter.SelectedSource(),nil,"meter starts with no selected player")
