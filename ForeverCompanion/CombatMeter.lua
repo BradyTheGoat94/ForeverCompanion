@@ -7,18 +7,22 @@ local pastIndex=1
 local rowCount=8
 local windowWidth=290
 local selectedRow=nil
+local detailOpen=false
+local detailRows={}
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
 local elapsed=0
-local function historyCount()
+local function availableHistory()
  local api=C_DamageMeter
- if not api or type(api.GetNumCombatSessions)~="function" then return 0 end
- local ok,count=pcall(api.GetNumCombatSessions)
- if not ok then return 0 end
- if type(count)=="number" and count>=0 then return math.floor(count) end
- return 0
+ if not api or type(api.GetAvailableCombatSessions)~="function" then return {} end
+ local ok,result=pcall(api.GetAvailableCombatSessions)
+ if ok and type(result)=="table" then return result end
+ return {}
+end
+local function historyCount()
+ return #availableHistory()
 end
 local function read(fn,...)
  if type(fn)~="function" then return end
@@ -198,7 +202,7 @@ function M.Refresh()
  local isPast=sessionIndex==2
  previousButton:SetShown(isPast)
  nextButton:SetShown(isPast)
- previousButton:SetEnabled(isPast and type(C_DamageMeter)=="table" and type(C_DamageMeter.GetCombatSessionIDs)=="function" and pastIndex<historyCount())
+ previousButton:SetEnabled(isPast and type(C_DamageMeter)=="table" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" and pastIndex<historyCount())
  nextButton:SetEnabled(isPast and pastIndex>1)
  if not M.Available() then
   for _,row in ipairs(rows) do row.frame:Hide() end
@@ -225,10 +229,8 @@ function M.Refresh()
    else row.background:SetColorTexture(i%2==0 and .085 or .11,i%2==0 and .13 or .17,i%2==0 and .19 or .24,.97) end
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
-   local okName=pcall(row.name.SetText,row.name,source.name)
-   if not okName then row.name:SetText("Player") end
-   local okAmount=pcall(row.amount.SetText,row.amount,(metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps") and source.amountPerSecond or source.totalAmount)
-   if not okAmount then row.amount:SetText("--") end
+   row.name:SetText(source.name)
+   row.amount:SetText((metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps") and source.amountPerSecond or source.totalAmount)
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
    local color
@@ -241,17 +243,14 @@ function M.Refresh()
     row.accent:SetColorTexture(.86,.65,.35,1)
    end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
-   local okMax=pcall(row.fill.SetMinMaxValues,row.fill,0,data.maxAmount)
-   if not okMax then row.fill:SetMinMaxValues(0,1) end
-   local okRatio=pcall(row.fill.SetValue,row.fill,source.totalAmount)
-   if not okRatio then row.fill:SetValue(0) end
+   row.fill:SetMinMaxValues(0,data.maxAmount)
+   row.fill:SetValue(source.totalAmount)
   else row.frame:Hide() end
  end
  if selectedRow then
   local selected=sources[selectedRow]
   if type(selected)=="table" then
-   local ok=pcall(detailLabel.SetText,detailLabel,selected.name)
-   if not ok then detailLabel:SetText("Selected player") end
+   detailLabel:SetText(selected.name)
   else selectedRow=nil;detailLabel:SetText("Select a player row for details") end
  else selectedSource=nil;detailLabel:SetText("Select a player row for details") end
  if isPast then
