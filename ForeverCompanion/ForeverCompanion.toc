@@ -49,6 +49,7 @@ QuestDirection.lua
 QuestWaypoints.lua
 QuestMap.lua
 PartyMap.lua
+PartyMinimap.lua
 Journey.lua
 BankView.lua
 Diagnostics.lua
