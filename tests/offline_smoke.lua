@@ -1037,6 +1037,16 @@ do
  assertEqual(meter.SetSession("past"),true,"past combat session selection")
  assertEqual(meter.SetSession("overall"),true,"overall combat session selection")
  assertEqual(meter.SetSession("invalid"),false,"invalid session rejected")
+ local nativeTypes=Enum.DamageMeterType
+ local nativeSessions=Enum.DamageMeterSessionType
+ Enum.DamageMeterType={Dps=1}
+ assertEqual(meter.SetMode("healing"),false,"unavailable native metric rejected")
+ assertEqual(meter.SetMode("dps"),true,"available native metric accepted")
+ Enum.DamageMeterType=nativeTypes
+ Enum.DamageMeterSessionType={Current=1}
+ assertEqual(meter.SetSession("past"),false,"unavailable native session rejected")
+ assertEqual(meter.SetSession("current"),true,"available native session accepted")
+ Enum.DamageMeterSessionType=nativeSessions
  assertEqual(meter.SetWidth(260),true,"minimum combat meter width")
  assertEqual(meter.SetWidth(440),true,"maximum combat meter width")
  assertEqual(meter.SetWidth(259),false,"reject narrow combat meter")
