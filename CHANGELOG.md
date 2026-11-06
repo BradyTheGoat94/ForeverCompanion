@@ -1,3 +1,9 @@
+## 3.25.0-beta
+
+- Track active quests as you accept them. Auto focus follows new quests while you can lock focus by choosing or pinning a quest.
+- Mark active objectives, ready turn-ins and your focused quest on the world map. The focus area uses the Forever client’s quest boundaries where available.
+- Keep the direction arrow under Show on map, so journal and map updates leave your waypoint alone.
+
 ## 3.24.0-beta
 
 - Show a map pin and native direction arrow on demand for quests with a usable location. Use WoW quest data first, with an optional standalone Forever QuestieDB fallback for unambiguous turn-ins.

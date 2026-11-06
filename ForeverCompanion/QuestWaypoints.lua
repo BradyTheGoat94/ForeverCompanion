@@ -16,28 +16,42 @@ local function point(map,x,y,source)
  return {map=map,x=x,y=y,source=source}
 end
 
-local function clientLocation(id)
+local function mapPoints(map)
+ local records=type(C_QuestLog)=="table" and read(C_QuestLog.GetQuestsOnMap,map)
+ local points={}
+ if type(records)~="table" then return points end
+ for _,entry in ipairs(records) do
+  local id,candidate=read(function()
+   if type(entry.questID)=="number" and entry.questID>0 and entry.mapID==map and entry.isQuestStart==false then
+    return entry.questID,point(map,entry.x,entry.y,"WoW quest map")
+   end
+  end)
+  if candidate then
+   local locations=points[id] or {}
+   points[id]=locations
+   locations[candidate.x..":"..candidate.y]=candidate
+  end
+ end
+ return points
+end
+
+local function nextWaypoint(id)
  if type(C_QuestLog)~="table" then return end
  local map,x,y=read(C_QuestLog.GetNextWaypoint,id)
- local waypoint=point(map,x,y,"WoW quest log")
+ return point(map,x,y,"WoW quest log")
+end
+
+local function clientLocation(id)
+ local waypoint=read(nextWaypoint,id)
  if waypoint then return waypoint end
  -- The requested map is the coordinate frame for these POIs.
  if type(C_Map)~="table" then return end
  local current=read(C_Map.GetBestMapForUnit,"player")
  if type(current)~="number" or current<=0 then return end
- local records=read(C_QuestLog.GetQuestsOnMap,current)
- if type(records)~="table" then return end
- local found
- for _,entry in ipairs(records) do
-  if type(entry)=="table" and entry.questID==id and entry.mapID==current and entry.isQuestStart==false then
-   local candidate=point(current,entry.x,entry.y,"WoW quest map")
-   if candidate then
-    if found and (found.x~=candidate.x or found.y~=candidate.y) then return end
-    found=candidate
-   end
-  end
- end
- return found
+ local locations=mapPoints(current)[id]
+ if not locations then return end
+ local key,found=next(locations)
+ if key and not next(locations,key) then return found end
 end
 
 -- Optional public QuestieDB consumer API. Require the Forever flavor and
@@ -79,6 +93,27 @@ function W.Location(quest)
  if type(quest)~="table" or type(quest.id)~="number" or quest.id<=0 then return end
  -- Some client builds restrict quest fields. Treat inaccessible values as missing.
  return read(function() return clientLocation(quest.id) or referenceTurnIn(quest) end)
+end
+
+-- Show every reported point on the displayed map. A single direction arrow
+-- still requires an unambiguous destination.
+function W.MapLocations(map,quests)
+ local points=mapPoints(map)
+ local result={}
+ for _,quest in ipairs(quests) do
+  if type(quest.id)=="number" and quest.id>0 then
+   local locations=points[quest.id]
+   if locations then
+    for _,target in pairs(locations) do
+     result[#result+1]={quest=quest,target=target}
+    end
+   else
+    local target=read(nextWaypoint,quest.id) or read(referenceTurnIn,quest)
+    if target and target.map==map then result[#result+1]={quest=quest,target=target} end
+   end
+  end
+ end
+ return result
 end
 
 local function sameWaypoint(wanted)

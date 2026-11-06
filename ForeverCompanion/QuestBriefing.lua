@@ -2,7 +2,7 @@
 -- Navigation changes only the user waypoint when the player clicks.
 local B={}
 ForeverCompanionQuestBriefing=B
-local root, values, fill, mapButton, clearPin
+local root, values, fill, mapButton, clearPin, autoFocusButton
 local shownQuest, shownComplete, mapMessage
 local BAR_WIDTH=320
 local function paint(t,r,g,b,a)
@@ -59,6 +59,13 @@ function B.Create(parent)
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
   values.zone=label(summary,16,-75,344,"Zone data unavailable","GameFontHighlightSmall",{0.68,0.75,0.82})
   values.status=label(summary,16,-124,344,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
+  autoFocusButton=CreateFrame("Button",nil,summary,"UIPanelButtonTemplate")
+  autoFocusButton:SetSize(106,22);autoFocusButton:SetPoint("TOPRIGHT",summary,"TOPRIGHT",-12,-9)
+  autoFocusButton:SetScript("OnClick",function()
+    local planner=ForeverCompanionQuestPlanner
+    planner.SetAutoFocus(not planner.IsAutoFocus())
+    B.Render()
+  end)
   local track=summary:CreateTexture(nil,"ARTWORK")
   track:SetPoint("TOPLEFT",summary,"TOPLEFT",16,-103)
   track:SetSize(BAR_WIDTH,9)
@@ -89,7 +96,7 @@ function B.Create(parent)
     if ForeverCompanionQuestWaypoints.Clear() then mapMessage="Map pin cleared." end
     B.Render()
   end)
-  B.mapButton=mapButton;B.clearPin=clearPin
+  B.mapButton=mapButton;B.clearPin=clearPin;B.autoFocusButton=autoFocusButton
   root:Hide()
   return root
 end
@@ -107,12 +114,13 @@ function B.Render()
   local ready=report and report.ready or 0
   local valid=report and report.supported
   local stale=report and report.stale
+  autoFocusButton:SetText(planner.IsAutoFocus() and "Auto focus: On" or "Auto focus: Off")
   if not report or not report.scanned then
     values.count:SetText("Waiting for first quest-log scan")
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
     values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
-    values.status:SetText("From your quest log")
+    values.status:SetText("Map:  > Focus    ! Objective    ? Turn-in")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
     values.status:SetText("Cached. Check your quest log.")

@@ -149,7 +149,7 @@ end
 toc:close()
 local addonFrame
 for _,f in ipairs(frames) do
- if f.events and f.events.ADDON_LOADED then addonFrame=f;break end
+ if f.events and f.events.ADDON_LOADED and not f.events.QUEST_POI_UPDATE then addonFrame=f;break end
 end
 assert(addonFrame and addonFrame.OnEvent,"addon loaded handler missing")
 ForeverCompanionDB={role={},professions=false,position=true,checks={Dungeons=3,Legacy={true}}}
@@ -398,6 +398,101 @@ do
  LibQuestieDB.Npc.spawns=function() return {[12]={{47,68},{49,63}}} end
  assert(navigation.Location(selected)==nil,"ambiguous optional coordinates must be skipped")
  C_Map,UiMapPoint,C_SuperTrack,LibQuestieDB,C_AddOns=priorMap,priorPoint,priorTrack,priorDb,priorAddons
+end
+do
+ local planner=ForeverCompanionQuestPlanner
+ local briefing=ForeverCompanionQuestBriefing
+ local originalInfo,originalCount=C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries
+ local originalMap,originalUtil,originalCVar=C_Map,MapUtil,GetCVarBool
+ local canvas=CreateFrame("Frame")
+ canvas:SetSize(800,500)
+ function canvas:GetFrameLevel() return 1 end
+ local mapID,provider,area=1429
+ local create=CreateFrame
+ CreateFrame=function(kind,...)
+  local frame=create(kind,...)
+  function frame:SetFrameLevel(level) self.frameLevel=level end
+  if kind=="QuestPOIFrame" then
+   area=frame
+   function frame:SetMapID(map) self.map=map end
+   function frame:DrawNone() self.quest=nil end
+   function frame:DrawBlob(id) self.quest=id end
+   for _,method in ipairs({"SetFillTexture","SetBorderTexture","SetFillAlpha","SetBorderAlpha","SetBorderScalar"}) do
+    frame[method]=function() end
+   end
+  end
+  return frame
+ end
+ WorldMapFrame={IsShown=function() return true end,GetMapID=function() return mapID end,
+  GetCanvas=function() return canvas end,AddDataProvider=function(_,value) provider=value end}
+ MapCanvasDataProviderMixin={}
+ CreateFromMixins=function() return {} end
+ MapUtil={ShouldMapTypeShowQuests=function(kind) return kind==3 end}
+ GetCVarBool=function() return true end
+ C_Map={GetMapInfo=function() return {mapType=3} end}
+ C_QuestLog.GetQuestsOnMap=function()
+  return {{questID=101,mapID=1429,isQuestStart=false,x=.21,y=.42},
+          {questID=102,mapID=1429,isQuestStart=false,x=.28,y=.4},
+          {questID=104,mapID=1429,isQuestStart=false,x=.5,y=.6},
+          {questID=104,mapID=1429,isQuestStart=false,x=.5,y=.6},
+          {questID=104,mapID=1429,isQuestStart=false,x=.7,y=.7},
+          {questID=104,mapID=1429,isQuestStart=true,x=.1,y=.1},
+          {questID=999,mapID=1429,isQuestStart=false,x=.8,y=.8},
+          {questID=101,mapID=1415,isQuestStart=false,x=.2,y=.2}}
+ end
+ C_QuestLog.GetNumQuestLogEntries=function() return 4 end
+ C_QuestLog.GetInfo=function(i)
+  return i==4 and {title="New quest",questID=104,zoneName="Elwynn Forest"} or originalInfo(i)
+ end
+ planner.Select(1)
+ assert(not planner.IsAutoFocus() and briefing.autoFocusButton.text=="Auto focus: Off")
+ briefing.autoFocusButton:OnClick()
+ assert(planner.IsAutoFocus() and planner.Sync() and planner.GetSelected().id==104,"new quest should gain automatic focus")
+ for _,frame in ipairs(frames) do
+  if frame.events and frame.events.QUEST_POI_UPDATE and frame.events.ADDON_LOADED then
+   frame:OnEvent("ADDON_LOADED","Blizzard_WorldMap")
+   break
+  end
+ end
+ assert(provider and area.visible and area.map==1429 and area.quest==104,"world map draws the focused quest's native boundary")
+ local function visiblePins()
+  local count,focused,ready,active=0,0,0,0
+  for _,frame in ipairs(frames) do
+   if frame.parent==canvas.id and frame.symbol and frame.visible then
+    count=count+1
+    if frame.symbol.text==">" then focused=focused+1 end
+    if frame.symbol.text=="?" then ready=ready+1 end
+    if frame.symbol.text=="!" then active=active+1 end
+   end
+  end
+  return count,focused,ready,active
+ end
+ local count,focused,ready,active=visiblePins()
+ assert(count==4 and focused==2 and ready==1 and active==1,"draw active pins only, with distinct focus, objective and turn-in markers")
+ planner.Select(1)
+ assert(not planner.IsAutoFocus() and area.quest==101,"manual selection updates the area and pauses auto focus")
+ C_QuestLog.GetNumQuestLogEntries=function() return 5 end
+ local four=C_QuestLog.GetInfo
+ C_QuestLog.GetInfo=function(i)
+  return i==5 and {title="Other new quest",questID=105} or four(i)
+ end
+ assert(planner.Sync() and planner.GetSelected().id==101,"new quests must not steal manual focus")
+ mapID=1429+1
+ provider:OnMapChanged()
+ assert(visiblePins()==0 and area.map==mapID,"changing map clears old markers and uses new map for area geometry")
+ mapID=1429
+ provider:OnMapChanged()
+ assert(visiblePins()==4,"returning to a map restores its quest pins")
+ C_QuestLog.GetNumQuestLogEntries=function() error("quest log unavailable") end
+ assert(not planner.Sync() and visiblePins()==0 and not area.visible,"stale quest data must hide map markers and area")
+ C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries=originalInfo,originalCount
+ C_QuestLog.GetQuestsOnMap=nil
+ assert(planner.Sync())
+ provider:OnHide()
+ assert(visiblePins()==0 and not area.visible)
+ WorldMapFrame.IsShown=function() return false end
+ WorldMapFrame,MapCanvasDataProviderMixin,CreateFromMixins=nil,nil,nil
+ C_Map,MapUtil,GetCVarBool,CreateFrame=originalMap,originalUtil,originalCVar,create
 end
 local originalComplete=C_QuestLog.IsComplete
 C_QuestLog.IsComplete=function() return false end

@@ -168,27 +168,51 @@ local function questRows()
   end
   return rows,false
 end
+local function refresh()
+  if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+end
+
+function Planner.IsAutoFocus()
+  ensure()
+  return db.questAutoFocus~=false
+end
+
+function Planner.SetAutoFocus(enabled)
+  ensure()
+  db.questAutoFocus=enabled==true
+  refresh()
+end
+
+local function questKey(quest)
+  return quest.id or (quest.zone.."\n"..quest.title)
+end
+
 function Planner.Sync()
   local rows,supported=questRows()
   auto.supported=supported
   auto.scanned=true
   if not supported then
     -- Preserve last successful snapshot if the client temporarily cannot provide quest data.
-    if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+    refresh()
     return false
   end
-  local old=auto.entries[auto.selected]
+  local previous=auto.entries
+  local old=previous[auto.selected]
+  local oldKey=old and questKey(old)
+  local known={}
+  for _,quest in ipairs(previous) do known[questKey(quest)]=true end
+  local firstNew,matched
+  for i,quest in ipairs(rows) do
+    local key=questKey(quest)
+    if oldKey==key then matched=i end
+    if not firstNew and not known[key] then firstNew=i end
+  end
   auto.entries=rows
   auto.lastCount=#rows
-  if old then
-    local matched=false
-    for i,q in ipairs(rows) do
-      if (old.id and q.id==old.id) or (not old.id and q.title==old.title) then auto.selected=i; matched=true; break end
-    end
-    if not matched then auto.selected=1 end
-  end
-  if auto.selected>#rows then auto.selected=1 end
-  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  local followNew=Planner.IsAutoFocus() and not (old and Planner.IsPinned(old) and matched)
+  auto.selected=(followNew and firstNew) or matched or 1
+  refresh()
   return true
 end
 -- Pins are addon-only, per-character planning metadata. They never change the
@@ -334,22 +358,18 @@ function Planner.GetSelected()
 end
 function Planner.Select(index)
   index=tonumber(index)
-  if not index or index<1 or index>#auto.entries then return false end
+  if not index or not auto.entries[index] then return false end
   auto.selected=index
-  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  Planner.SetAutoFocus(false)
   return true
 end
 function Planner.Next()
   if #auto.entries==0 then return false end
-  auto.selected=(auto.selected % #auto.entries)+1
-  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
-  return true
+  return Planner.Select((auto.selected % #auto.entries)+1)
 end
 function Planner.Previous()
   if #auto.entries==0 then return false end
-  auto.selected=((auto.selected-2) % #auto.entries)+1
-  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
-  return true
+  return Planner.Select(((auto.selected-2) % #auto.entries)+1)
 end
 function Planner.Recommend()
   if not auto.supported then return "Quest data unavailable; last known quests may be outdated. Check the in-game quest log." end

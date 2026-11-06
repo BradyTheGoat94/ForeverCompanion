@@ -31,6 +31,8 @@
 - [ ] Verify a profession tab with and without a learned profession.
 - [ ] Confirm guide interactions never automatically cast, target, craft, buy, or accept quests.
 
+- [ ] Accept a quest with **Auto focus: On**. Confirm the journal focuses it and the world map shows a cyan focus marker and the client objective area when available. Switch maps and zoom. Verify turn-ins and objectives remain distinct and the existing user waypoint is untouched.
+- [ ] Select another quest manually and accept one more. The chosen focus should stay until re-enabling Auto Focus or removing the selected quest. Hover a map marker for quest details.
 - [ ] Focus an active quest with a known location and click **Show on map**. Check the map pin and native arrow. **Clear pin** should remove the addon’s waypoint only. Repeat with a quest lacking coordinates and verify no waypoint is created.
 - [ ] With the standalone Forever QuestieDB installed, verify a completed quest with a single fixed turn-in. Compare the marker to the in-game location.
 
