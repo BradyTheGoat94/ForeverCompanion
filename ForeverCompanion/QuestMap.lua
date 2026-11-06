@@ -1,4 +1,5 @@
--- Companion-owned map artwork. Never changes Blizzard's watched quests or waypoints.
+-- Blizzard-native map artwork with a Companion overlay. Never replaces map tiles,
+-- changes watched quests, or modifies Blizzard waypoints.
 local M={}
 ForeverCompanionQuestMap=M
 
@@ -16,6 +17,12 @@ local function atlasStyle()
  return not ForeverCompanionDB or ForeverCompanionDB.questMapOriginalTerrain~=true
 end
 
+local function sharpenOverlay(texture)
+ -- Pixel-align thin overlays without modifying Blizzard map tiles or artwork.
+ if texture and texture.SetSnapToPixelGrid then texture:SetSnapToPixelGrid(true) end
+ if texture and texture.SetTexelSnappingBias then texture:SetTexelSnappingBias(0) end
+end
+
 local function showTerrain(canvas)
  if not terrain then
   terrain=CreateFrame("Frame",nil,canvas)
@@ -24,20 +31,25 @@ local function showTerrain(canvas)
   terrain:EnableMouse(false)
   local tint=terrain:CreateTexture(nil,"BACKGROUND")
   tint:SetAllPoints(terrain)
-  tint:SetColorTexture(.14,.20,.25,.13)
+  tint:SetColorTexture(.08,.15,.22,.065)
+  sharpenOverlay(tint)
   for i=1,9 do
    local vertical=terrain:CreateTexture(nil,"ARTWORK")
    vertical:SetWidth(1)
-   vertical:SetColorTexture(.03,.11,.17,i==5 and .19 or .10)
+   vertical:SetColorTexture(.25,.56,.69,i==5 and .16 or .07)
+   sharpenOverlay(vertical)
    local horizontal=terrain:CreateTexture(nil,"ARTWORK")
    horizontal:SetHeight(1)
-   horizontal:SetColorTexture(.03,.11,.17,i==5 and .19 or .10)
+   horizontal:SetColorTexture(.25,.56,.69,i==5 and .16 or .07)
+   sharpenOverlay(horizontal)
    terrain[i]={vertical,horizontal}
   end
  end
  local width,height=canvas:GetWidth(),canvas:GetHeight()
  for i,lines in ipairs(terrain) do
   local x,y=width*i/10,-height*i/10
+  lines[1]:ClearAllPoints()
+  lines[2]:ClearAllPoints()
   lines[1]:SetPoint("TOP",terrain,"TOPLEFT",x,0)
   lines[1]:SetPoint("BOTTOM",terrain,"BOTTOMLEFT",x,0)
   lines[2]:SetPoint("LEFT",terrain,"TOPLEFT",0,y)
@@ -62,10 +74,13 @@ local function createPin(canvas)
  pin.ring:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\QuestLocationRing")
  pin.ring:SetPoint("CENTER")
  pin.ring:SetVertexColor(.22,.91,1,.95)
+ sharpenOverlay(pin.ring)
  local outline=pin:CreateTexture(nil,"BACKGROUND")
  outline:SetAllPoints(pin)
  outline:SetColorTexture(.03,.08,.11,1)
+ sharpenOverlay(outline)
  pin.badge=pin:CreateTexture(nil,"ARTWORK")
+ sharpenOverlay(pin.badge)
  pin.badge:SetPoint("TOPLEFT",2,-2)
  pin.badge:SetPoint("BOTTOMRIGHT",-2,2)
  pin.symbol=pin:CreateFontString(nil,"OVERLAY","GameFontNormal")
