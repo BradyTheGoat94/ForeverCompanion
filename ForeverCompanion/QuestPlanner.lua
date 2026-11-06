@@ -78,11 +78,61 @@ local function questRows()
   if type(modern)=="table" and type(modern.GetNumQuestLogEntries)=="function" and type(modern.GetInfo)=="function" then
     local ok,count=pcall(modern.GetNumQuestLogEntries)
     if not ok or type(count)~="number" or count<0 or count>1000 then return rows,false end
+    -- Some clients hide entries beneath collapsed headers in the indexed log.
+    -- Prefer the read-only full quest list when available, without expanding
+    -- the player's headers or changing Blizzard's watched quest state.
+    if type(modern.GetQuestLogQuests)=="function" then
+      local allOK,all=pcall(modern.GetQuestLogQuests)
+      if allOK and type(all)=="table" and #all>0 then
+        local seen={}
+        local result={}
+        for _,info in ipairs(all) do
+          if type(info)=="table" and type(info.title)=="string" and info.title~="" then
+            local id=info.questID
+            local key=type(id)=="number" and ("id:"..id) or ("title:"..info.title)
+            if not seen[key] then
+              seen[key]=true
+              local completed=info.isComplete==true
+              if type(id)=="number" and type(modern.IsComplete)=="function" then
+                local done,value=pcall(modern.IsComplete,id)
+                if done and type(value)=="boolean" then completed=value end
+              end
+              local objectives,objectiveStates={},{}
+              if type(id)=="number" and type(modern.GetQuestObjectives)=="function" then
+                local got,items=pcall(modern.GetQuestObjectives,id)
+                if got and type(items)=="table" then
+                  for _,obj in ipairs(items) do
+                    if type(obj)=="table" and type(obj.text)=="string" then
+                      objectives[#objectives+1]=clean(obj.text,140)
+                      local known,done=false,false
+                      local stateOK,stateKnown,stateDone=pcall(function()
+                        if type(obj.finished)=="boolean" then return true,obj.finished end
+                        if type(obj.isComplete)=="boolean" then return true,obj.isComplete end
+                        local current,required=tonumber(obj.numFulfilled),tonumber(obj.numRequired)
+                        if current and required and required>0 then return true,current>=required end
+                        return false,false
+                      end)
+                      if stateOK then known,done=stateKnown,stateDone end
+                      objectiveStates[#objectiveStates+1]={known=known,done=done}
+                    end
+                  end
+                end
+              end
+              local zone=type(info.zoneName)=="string" and info.zoneName or nil
+              result[#result+1]={id=id,title=clean(info.title,100),
+                zone=zone and clean(zone,70) or "Unspecified zone",zoneKnown=zone~=nil,
+                complete=completed,objectives=objectives,objectiveStates=objectiveStates}
+            end
+          end
+        end
+        if #result>=count then return result,true end
+      end
+    end
     local header="Quest log"
     local headerKnown=false
     for i=1,count do
       local good,info=pcall(modern.GetInfo,i)
-      if not good then return {},false end
+      if not good then info=nil end
       if type(info)=="table" then
         if info.isHeader then
           if type(info.title)=="string" and info.title~="" then
