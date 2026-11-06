@@ -199,6 +199,13 @@ end
 local function createGuide(map)
  local bar=CreateFrame("Frame",nil,map)
  bar:SetSize(451,68)
+ -- Keep controls inside narrow maps without shrinking the text independently.
+ if map.GetWidth then
+  local width=map:GetWidth()
+  if type(width)=="number" and width>0 and width<480 then
+   bar:SetScale(math.max(.72,width/480))
+  end
+ end
  bar:SetPoint("TOP",map,"TOP",0,-38)
  bar:SetFrameLevel(map:GetFrameLevel()+200)
  local bg=bar:CreateTexture(nil,"BACKGROUND")
