@@ -86,6 +86,8 @@ local function widget(kind)
  function w:StartMoving() end
  function w:StopMovingOrSizing() end
  function w:EnableMouse() end
+ function w:RegisterForClicks() end
+ function w:SetVertexColor(...) self.vertexColor={...} end
  function w:RegisterForDrag() end
  function w:SetMovable() end
  function w:SetClampedToScreen() end
@@ -344,7 +346,7 @@ do
  end
  C_Map={
   CanSetUserWaypointOnMap=function(map) return map==1429 end,
-  GetMapInfo=function(map) if map==1429 then return {name="Elwynn Forest"} end end,
+  GetMapInfo=function(map) if map==1429 then return {name="Elwynn Forest",mapType=3} end end,
   SetUserWaypoint=function(p) marker=p;writes=writes+1 end,
   GetUserWaypoint=function() return marker end,
   ClearUserWaypoint=function() marker=nil end,
@@ -423,7 +425,7 @@ do
   end
   return frame
  end
- WorldMapFrame={IsShown=function() return true end,GetMapID=function() return mapID end,
+ WorldMapFrame={IsShown=function() return true end,GetMapID=function() return mapID end,GetFrameLevel=function() return 1 end,
   GetCanvas=function() return canvas end,AddDataProvider=function(_,value) provider=value end}
  MapCanvasDataProviderMixin={}
  CreateFromMixins=function() return {} end
@@ -469,6 +471,26 @@ do
  end
  local count,focused,ready,active=visiblePins()
  assert(count==4 and focused==2 and ready==1 and active==1,"draw active pins only, with distinct focus, objective and turn-in markers")
+ local activePin
+ for _,frame in ipairs(frames) do
+  if frame.parent==canvas.id and frame.symbol and frame.visible and frame.symbol.text=="!" then activePin=frame end
+ end
+ assert(activePin and activePin.OnClick and activePin.ring and not activePin.ring.visible)
+ activePin:OnClick()
+ for _,frame in ipairs(frames) do
+  if frame.parent==canvas.id and frame.symbol and frame.visible and frame.symbol.text==">" then activePin=frame end
+ end
+ assert(planner.GetSelected().id==101 and activePin.ring.visible,"map click focuses the quest and highlights its destination")
+ local originalWaypoint,originalShift=UiMapPoint,IsShiftKeyDown
+ local destination
+ UiMapPoint={CreateFromCoordinates=function(map,x,y) return {uiMapID=map,position={x=x,y=y}} end}
+ C_Map.SetUserWaypoint=function(value) destination=value end
+ C_Map.GetUserWaypoint=function() return destination end
+ IsShiftKeyDown=function() return true end
+ activePin:OnClick()
+ assert(destination and destination.uiMapID==1429 and destination.position.x==.21,"Shift-click sets the native waypoint at the selected marker")
+ UiMapPoint,IsShiftKeyDown=originalWaypoint,originalShift
+
  planner.Select(1)
  assert(not planner.IsAutoFocus() and area.quest==101,"manual selection updates the area and pauses auto focus")
  C_QuestLog.GetNumQuestLogEntries=function() return 5 end
@@ -827,11 +849,11 @@ for i,token in ipairs(classTokens) do
  ForeverCompanionClassGuide.SelectView("Rotations")
  for _,contextButton in ipairs(ForeverCompanionRotationWorkspace.buttons) do
   contextButton.OnClick()
-  local reference,_,_,_,primary=ForeverCompanionVisiblePriority(token,contextButton.mode,60,nil,ForeverCompanionRotations[token][contextButton.mode])
-  for index,step in ipairs(workspace.Plan(reference,primary,"WARRIOR",token)) do
+  local reference,_,_,_,primary,summary=ForeverCompanionVisiblePriority(token,contextButton.mode,60,nil,ForeverCompanionRotations[token][contextButton.mode])
+  for index,step in ipairs(workspace.Plan(reference,primary,"WARRIOR",token,summary)) do
    local row=workspace.rows[index]
    assert(row and row.visible and row.parent==workspace.panel.id,"all steps must be shown inside the priority panel")
-   assert(row.caption.text==step.text,"row must show the complete instruction")
+   assert(row.instruction==step.text,"row must show the complete instruction")
   end
   for index=#reference+1,#workspace.rows do assert(not workspace.rows[index].visible,"stale priority row") end
  end
@@ -880,8 +902,15 @@ exportNative("ui_long_priority_native.json")
 row.caption.GetStringHeight=originalMeasure
 workspace.buttons[1].OnClick()
 assert(workspace.GetHeight()==shortWorkspaceHeight,"short content shrinks after expansion")
+local savedPaladinSpec=ForeverCompanionDB.specSelections.PALADIN
+ForeverCompanionDB.specSelections.PALADIN=2
 local early,_,_,_,earlyPrimary=ForeverCompanionVisiblePriority("PALADIN","boss",11,"Tank",{})
-assert(#early==4 and early[3]:find("Holy Strike",1,true) and not table.concat(early):find("Consecration",1,true))
+assert(#early==3 and earlyPrimary[1]=="Seal of Fury" and earlyPrimary[3]=="Holy Strike")
+assert(not table.concat(early):find("Consecration",1,true))
+ForeverCompanionDB.specSelections.PALADIN=3
+local ret=ForeverCompanionVisiblePriority("PALADIN","boss",11,"Damage",{})
+assert(table.concat(ret):find("Seal of Righteousness",1,true) and not table.concat(ret):find("Seal of Fury",1,true))
+ForeverCompanionDB.specSelections.PALADIN=savedPaladinSpec
 local savedSpell=C_Spell
 C_Spell={GetSpellInfo=function(name)
  if name=="Holy Strike" then return {name="Holy Strike",spellID=680,iconID=12345} end
@@ -932,6 +961,10 @@ for class,choices in pairs(ForeverCompanionSpecs) do
  for i,choice in ipairs(choices) do
   ForeverCompanionDB.specSelections[class]=i
   local overview=table.concat(guide.TopicLines(class,"Overview")," ")
+  for _,mode in ipairs({"leveling","dungeon","boss","aoe","pvp"}) do
+   local steps,title,_,_,_,summary=ForeverCompanionVisiblePriority(class,mode,60,nil,{})
+   assert(#steps>=3 and title:find(choice[1],1,true) and summary and summary.opener,choice[1]..": missing "..mode.." instructions")
+  end
   assert(overview:find(choice[1],1,true) and overview:find("3 BEGINNER ACTIONS",1,true))
   if choice[1]=="Guardian / Bear" then
    assert(overview:find("No published Forever priority",1,true))

@@ -71,3 +71,6 @@ detail, depth and atmosphere. It should feel elegant and heroic, not cartoonish.
 No text, no lettering, no frames, no UI, no badges, no trademarks, no logos, no
 watermark. Original fictional character and original armor, not an existing named
 character. Compose for a shallow wide class banner crop.
+
+- `ForeverCompanion/Media/QuestLocationRing.tga` is an original geometric
+  ring and gradient drawn from a mathematical radial alpha profile.

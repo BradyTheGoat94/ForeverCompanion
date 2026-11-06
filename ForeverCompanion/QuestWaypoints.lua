@@ -54,66 +54,67 @@ local function clientLocation(id)
  if key and not next(locations,key) then return found end
 end
 
--- Optional public QuestieDB consumer API. Require the Forever flavor and
--- a single fixed turn-in location. Never execute the provider's map strings.
-local function referenceTurnIn(quest)
- local db=LibQuestieDB
- if not quest.complete or type(db)~="table" then return end
- local status=db.ModeIndicator and read(db.ModeIndicator.GetStatus)
- local flavor=type(status)=="table" and status.expansion
- -- Baked QuestieDB releases advertise their flavor in TOC metadata.
- if not flavor then
-  local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
-  flavor=read(metadata,"QuestieDB","X-Flavor")
+local function referenceLocations(quest)
+ return read(ForeverCompanionQuestLocations.ForQuest,quest) or {}
+end
+
+local function uniqueReference(quest)
+ local target
+ for _,candidate in ipairs(referenceLocations(quest)) do
+  if target and (target.map~=candidate.map or target.x~=candidate.x or target.y~=candidate.y) then return end
+  target=candidate
  end
- if type(flavor)~="string" or flavor:lower()~="forever" or read(db.RequireContract,1)~=true then return end
- local qdb=db.Quest
- if type(qdb)~="table" or read(qdb.name,quest.id)~=quest.title then return end
- local ends=read(qdb.finishedBy,quest.id)
- if type(ends)~="table" then return end
- local kind,ids=next(ends)
- if not kind or next(ends,kind) or type(ids)~="table" or #ids~=1 then return end
- local entity=kind==1 and db.Npc or (kind==2 and db.Object)
- local spawns=entity and read(entity.spawns,ids[1])
- if type(spawns)~="table" then return end
- local area,coords=next(spawns)
- if type(area)~="number" or area%1~=0 or next(spawns,area)
-  or type(coords)~="table" or #coords~=1 or type(coords[1])~="table" then return end
- local x,y,phase=coords[1][1],coords[1][2],coords[1][3]
- if type(x)~="number" or type(y)~="number" or (phase and phase~=0) then return end
- local zones=db.Support and read(db.Support.Get,"ZoneDB")
- local mapList=zones and zones.private and zones.private.areaIdToUiMapId
- if type(mapList)~="string" then return end
- local map=tonumber(mapList:match("%["..area.."%]%s*=%s*(%d+)%s*[,}]"))
- local candidate=point(map,x/100,y/100,"QuestieDB turn-in")
- if candidate and C_Map and type(read(C_Map.GetMapInfo,map))=="table" then return candidate end
+ return target
 end
 
 function W.Location(quest)
  if type(quest)~="table" or type(quest.id)~="number" or quest.id<=0 then return end
- -- Some client builds restrict quest fields. Treat inaccessible values as missing.
- return read(function() return clientLocation(quest.id) or referenceTurnIn(quest) end)
+ return read(clientLocation,quest.id) or uniqueReference(quest)
 end
 
--- Show every reported point on the displayed map. A single direction arrow
--- still requires an unambiguous destination.
 function W.MapLocations(map,quests)
  local points=mapPoints(map)
  local result={}
- for _,quest in ipairs(quests) do
+ for index,quest in ipairs(quests) do
   if type(quest.id)=="number" and quest.id>0 then
-   local locations=points[quest.id]
-   if locations then
-    for _,target in pairs(locations) do
-     result[#result+1]={quest=quest,target=target}
+   local locations=points[quest.id] or {}
+   local waypoint=read(nextWaypoint,quest.id)
+   if not next(locations) and waypoint and waypoint.map==map then
+    locations[waypoint.x..":"..waypoint.y]=waypoint
+   end
+   for _,target in ipairs(referenceLocations(quest)) do
+    if target.map==map then
+     local key=target.x..":"..target.y
+     if not locations[key] then locations[key]=target end
     end
-   else
-    local target=read(nextWaypoint,quest.id) or read(referenceTurnIn,quest)
-    if target and target.map==map then result[#result+1]={quest=quest,target=target} end
+   end
+   for _,target in pairs(locations) do
+    result[#result+1]={quest=quest,target=target,index=index}
    end
   end
  end
+ table.sort(result,function(a,b)
+  if a.index~=b.index then return a.index<b.index end
+  if a.target.x~=b.target.x then return a.target.x<b.target.x end
+  return a.target.y<b.target.y
+ end)
  return result
+end
+
+local function openMap(map)
+ local open=(C_Map and C_Map.OpenWorldMap) or OpenWorldMap
+ return type(open)=="function" and pcall(open,map)
+end
+
+local function referenceMap(quest)
+ local first,ambiguous
+ local current=C_Map and read(C_Map.GetBestMapForUnit,"player")
+ for _,target in ipairs(referenceLocations(quest)) do
+  if target.map==current then return current end
+  if first and target.map~=first then ambiguous=true end
+  first=first or target.map
+ end
+ if not ambiguous then return first end
 end
 
 local function sameWaypoint(wanted)
@@ -139,8 +140,7 @@ function W.Clear()
  return true
 end
 
-function W.Show(quest)
- local target=W.Location(quest)
+function W.Navigate(target,showMap)
  if not target then return "No map location for this quest." end
  if not C_Map or type(C_Map.SetUserWaypoint)~="function"
   or not UiMapPoint or type(UiMapPoint.CreateFromCoordinates)~="function" then
@@ -159,8 +159,27 @@ function W.Show(quest)
  local arrow=type(track)=="function" and pcall(track,true)
  local tracking=C_SuperTrack and C_SuperTrack.IsSuperTrackingUserWaypoint
  if arrow and type(tracking)=="function" then arrow=read(tracking)==true end
- local open=C_Map.OpenWorldMap or OpenWorldMap
- local opened=type(OpenMapToUserWaypoint)=="function" and W.HasOwnPin() and pcall(OpenMapToUserWaypoint)
- if not opened and type(open)=="function" then pcall(open,target.map) end
+ if showMap then
+  local opened=type(OpenMapToUserWaypoint)=="function" and W.HasOwnPin() and pcall(OpenMapToUserWaypoint)
+  if not opened then openMap(target.map) end
+ end
  return (arrow and "Pin and arrow set" or "Map pin set").."  •  "..target.source
+end
+
+
+function W.Show(quest)
+ local target=W.Location(quest)
+ if target then
+  local message=W.Navigate(target,true)
+  if not W.HasOwnPin() then openMap(target.map) end
+  return message
+ end
+ local map=referenceMap(quest)
+ if map and openMap(map) then return "Shift-click a map marker for an arrow." end
+ local current=C_Map and read(C_Map.GetBestMapForUnit,"player")
+ if current and #W.MapLocations(current,{quest})>0 and openMap(current) then
+  return "Shift-click a map marker for an arrow."
+ end
+ if #referenceLocations(quest)>0 then return "Open a zone map to choose a marker." end
+ return "No map location for this quest."
 end

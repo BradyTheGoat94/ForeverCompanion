@@ -33,3 +33,39 @@ The addon includes a small, explicitly provisional set of level-aware class chan
 3. Never turn a missing source row or unavailable API into a claim that content does not exist.
 4. Recheck changed mechanics after the launch client is available.
 5. Keep all guide controls read-only with respect to gameplay actions.
+
+### Quest map and objective locations
+
+The Blizzard world map can expose a next waypoint, quest POIs and native objective
+boundaries independently. Companion draws the client boundary when available and
+uses a ring to distinguish a reported destination point. A ring does not encode
+an objective radius, NPC path or official quest boundary.
+
+The optional [Forever QuestieDB](https://www.curseforge.com/wow/addons/questiedb)
+is read at runtime through its [documented API](https://github.com/Questie/QuestieDB/blob/master/docs/api.md).
+Only active quest records with matching titles are joined. Unfinished NPC,
+object and item objectives must match the live objective type and text. Item
+locations are from the provider's NPC and object drop relationships, without
+drop rates. Unconfirmed phases, unsupported instance maps and unknown coordinates
+are skipped. Forever-only quests missing provider locations rely on Blizzard
+data. Neither QuestieDB nor its data is redistributed with Companion.
+
+For developer reference, compare the Forever client
+[quest API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/QuestLogDocumentation.lua),
+[native map boundary renderer](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_SharedMapDataProviders/QuestBlobDataProvider.lua)
+and [QuestieDB Forever coverage notes](https://github.com/Questie/QuestieDB/blob/master/docs/forever-data.md).
+
+### Rotation refresh
+
+The spec-specific Dungeon and Boss cards retain their individual published
+references in the guide notes. Leveling, AoE and PvP use practical conditional
+instructions rather than claiming a single optimal build or fixed PvP sequence.
+The game client supplies spell names, artwork and tooltips when available.
+
+For Paladin, cross-check [Blizzard's Forever class overview](https://worldofwarcraft.blizzard.com/en-us/news/24303313),
+[Wowhead Retribution](https://www.wowhead.com/forever/guide/classes/paladin/retribution/rotation-cooldowns-pve-dps)
+and [Icy Veins Protection](https://www.icy-veins.com/wow-forever/protection-paladin-tank-pve-rotation-cooldowns-abilities).
+The Protection card separates the long Righteous Fury threat buff from the
+short Seal of Fury and explicitly identifies Judgement with that seal as a
+taunt. The Retribution card labels the Unsealed Wrath swap as talent and
+weapon dependent.

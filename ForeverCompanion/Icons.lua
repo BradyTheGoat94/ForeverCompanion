@@ -41,16 +41,20 @@ function I.ApplyRotation(texture,class,mode,index)
 end
 
 -- Read spell identity and artwork together from the active client.
-function I.SpellDetails(name)
+function I.SpellDetails(name,referenceID)
  if type(name)~="string" then return nil end
  local api=type(C_Spell)=="table" and C_Spell.GetSpellInfo
  if type(api)~="function" then return nil end
  local query=(name:gsub("’","'"))
+ local function valid(spell)
+  return type(spell)=="table" and type(spell.name)=="string"
+   and type(spell.spellID)=="number" and spell.spellID>0
+   and type(spell.iconID)=="number" and spell.iconID>0
+ end
  local ok,spell=pcall(api,query)
- if ok and type(spell)=="table" and type(spell.name)=="string"
-  and (spell.name:gsub("’","'")):lower()==query:lower()
-  and type(spell.spellID)=="number" and spell.spellID>0
-  and type(spell.iconID)=="number" and spell.iconID>0 then
-  return spell
+ if ok and valid(spell) and spell.name:gsub("’","'"):lower()==query:lower() then return spell end
+ if referenceID then
+  ok,spell=pcall(api,referenceID)
+  if ok and valid(spell) and spell.spellID==referenceID then return spell end
  end
 end

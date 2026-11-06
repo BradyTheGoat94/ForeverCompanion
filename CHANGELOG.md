@@ -1,3 +1,11 @@
+## 3.26.0-beta
+
+- Give all 27 specs a setup and a spec-specific rotation view across Leveling, Dungeon, Boss, AoE and PvP. Separate spell names from the instructions and keep the priority order stable.
+- Separate Protection and Retribution Paladin from the first trained seal onward. Cover Righteous Fury, Seal of Fury and the taunt interaction for tanks, and damage seals, Holy Strike and optional Unsealed Wrath swaps for Ret.
+- Import location data at runtime from the separately installed Forever QuestieDB. Show known locations for unfinished NPC, object, item and supported exploration objectives, plus turn-ins.
+- Put a focused-quest card and destination highlights on the Blizzard world map. Click a marker to focus it or Shift-click to request the native navigation arrow.
+- Keep Blizzard objective boundaries when available. Destination rings identify reported points and do not imply an official boundary.
+
 ## 3.25.0-beta
 
 - Track active quests as you accept them. Auto focus follows new quests while you can lock focus by choosing or pinning a quest.

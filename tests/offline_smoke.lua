@@ -815,7 +815,7 @@ ForeverCompanionDB.specSelections={}
 selectSpec("MAGE","Frost")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("MAGE")," "):find("8-second cooldown",1,true),"Frost Ice Lance hotfix cooldown missing")
 selectSpec("PALADIN","Protection")
-assert(table.concat(ForeverCompanionSourcedPriorityLines("PALADIN")," "):find("reduces Holy Shield damage",1,true),"Holy Shield tuning note missing")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PALADIN")," "):find("Judgement taunts with Seal of Fury",1,true),"Protection taunt guidance missing")
 selectSpec("DRUID","Restoration")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("DRUID")," "):find("your own Regrowth or Rejuvenation",1,true),"Swiftmend HoT requirement missing")
 ForeverCompanionDB.specSelections={}

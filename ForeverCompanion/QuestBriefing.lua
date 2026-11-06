@@ -41,7 +41,7 @@ local function card(parent,x,w,heading)
   right:SetPoint("TOPRIGHT",frame,"TOPRIGHT",0,0)
   right:SetSize(1,151)
   paint(right,0.35,0.29,0.20,1)
-  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Inlay(frame,w,151); ForeverCompanionOrnaments.Hero(frame,w,151) end
+  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Inlay(frame,w,151) end
   label(frame,15,-14,w-30,heading,"GameFontNormal",{0.96,0.76,0.39})
   return frame
 end
@@ -57,7 +57,7 @@ function B.Create(parent)
   values={}
   local summary=card(root,0,376,"JOURNAL AT A GLANCE")
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
-  values.zone=label(summary,16,-75,344,"Zone data unavailable","GameFontHighlightSmall",{0.68,0.75,0.82})
+  values.zone=label(summary,16,-75,344,"Quest locations","GameFontHighlightSmall",{0.68,0.75,0.82})
   values.status=label(summary,16,-124,344,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
   autoFocusButton=CreateFrame("Button",nil,summary,"UIPanelButtonTemplate")
   autoFocusButton:SetSize(106,22);autoFocusButton:SetPoint("TOPRIGHT",summary,"TOPRIGHT",-12,-9)
@@ -128,8 +128,8 @@ function B.Render()
     values.count:SetText("Quest-log API unavailable")
     values.status:SetText("Manual quest notes remain available")
   end
-  local top=report and report.zones and report.zones[1]
-  values.zone:SetText(top and ("Top zone: "..shorten(top.zone,31).." ("..top.count..")") or "No quest-zone information")
+  local reference=ForeverCompanionQuestLocations.IsAvailable()
+  values.zone:SetText(reference and "Map data  ·  Blizzard + Forever QuestieDB" or "Map data  ·  Blizzard client")
   fill:SetWidth(valid and count>0 and math.max(1,math.floor(BAR_WIDTH*ready/count)) or 1)
   local selected=planner.GetSelected and planner.GetSelected() or nil
   local questKey=selected and (selected.id or selected.title)

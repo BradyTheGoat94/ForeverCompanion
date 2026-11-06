@@ -1,7 +1,7 @@
 -- Read-only rotation priorities. Clicking a row never invokes a game action.
 local W={}
 ForeverCompanionRotationWorkspace=W
-local root,heading,notice,sourceLabel,buttons,prioritiesPanel,showReference
+local root,heading,notice,opener,sourceLabel,buttons,prioritiesPanel,showReference
 local modes={"leveling","dungeon","boss","aoe","pvp"}
 local names={"Leveling Rotation","Dungeon Rotation","Boss Rotation","AoE Rotation","PvP Rotation"}
 local captions={"Solo practice","Group preparation","Single target","Multiple enemies","Player combat"}
@@ -41,6 +41,8 @@ function W.Create(parent,selectMode)
  heading=text(prioritiesPanel,14,-44,550,"",14)
  notice=text(prioritiesPanel,14,-66,550,"",11)
  notice:SetTextColor(.78,.82,.88)
+ opener=text(prioritiesPanel,14,-87,550,"",11)
+ opener:SetTextColor(.55,.84,.95)
  sourceLabel=text(prioritiesPanel,14,-105,550,"",10)
  sourceLabel:SetTextColor(.70,.75,.82)
  W.heading=heading;W.notice=notice;W.rows={};W.panel=prioritiesPanel
@@ -75,6 +77,8 @@ local function priorityRow(index)
  row.number:SetTextColor(.96,.80,.48)
  row.caption=text(row,65,-8,473,"",12)
  row.caption:SetJustifyV("TOP")
+ row.action=text(row,65,-7,473,"",12)
+ row.action:SetTextColor(.96,.82,.52)
  row.status=text(row,65,-26,473,"",10)
  W.rows[index]=row
  return row
@@ -82,15 +86,17 @@ end
 
 -- Preserve source order within each group. Use name matches from the
 -- spellbook so a different trained rank does not look unavailable.
-function W.Plan(instructions,primary,playerClass,shownClass)
+function W.Plan(instructions,primary,playerClass,shownClass,summary)
  local available,uncertain,missing={},{},{}
  local sameClass=playerClass==shownClass
  local spellbook=ForeverCompanionSpellbook
  local scan=sameClass and spellbook.Scan()
+ local preserve=summary and summary.keepOrder
+ local ids=summary and summary.spellIDs
  local learnedCount=0
  for i,instruction in ipairs(instructions) do
   local name=primary and primary[i]
-  local spell=ForeverCompanionIcons.SpellDetails(name)
+  local spell=ForeverCompanionIcons.SpellDetails(name,ids and ids[i])
   local row={text=instruction:gsub("^%d+%.%s+",""),spell=spell}
   local bucket=available
   if name then
@@ -101,16 +107,20 @@ function W.Plan(instructions,primary,playerClass,shownClass)
     learnedCount=learnedCount+1
    elseif spellbook.CanCheckEnglishNames(scan) then
     row.status="Primary spell not found · check talents or training"
-    bucket=missing
+    missing[#missing+1]=row
+    if not preserve then bucket=nil end
    else
     row.status="Training unconfirmed"
-    bucket=uncertain
+    uncertain[#uncertain+1]=row
+    if not preserve then bucket=nil end
    end
   end
-  bucket[#bucket+1]=row
+  if bucket then bucket[#bucket+1]=row end
  end
- for _,row in ipairs(uncertain) do available[#available+1]=row end
- for _,row in ipairs(missing) do available[#available+1]=row end
+ if not preserve then
+  for _,row in ipairs(uncertain) do available[#available+1]=row end
+  for _,row in ipairs(missing) do available[#available+1]=row end
+ end
  return available,learnedCount,#missing
 end
 
@@ -119,21 +129,32 @@ function W.Render(tab,class,mode,level,role,fallback,playerClass)
  if tab~="Leveling" then root:Hide();return end
  root:Show()
  W.reference:SetText(showReference and "Hide guide notes" or "More guide notes")
- local instructions,title,hint,source,primary=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
- local steps,learned,missing=W.Plan(instructions,primary,playerClass,class)
+ local instructions,title,hint,source,primary,summary=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ local steps,learned,missing=W.Plan(instructions,primary,playerClass,class,summary)
  heading:SetText(title)
  if playerClass~=class then
   hint=hint.." Class preview."
  elseif missing>0 and learned==0 and mode~="leveling" then
   hint="No primary spells matched your spellbook. Try Leveling for earlier abilities."
- elseif missing>0 and learned>0 then
+ elseif missing>0 and learned>0 and not (summary and summary.keepOrder) then
   hint=hint.." Learned spells are listed first."
  end
  notice:SetText(hint)
  local y=72+notice:GetStringHeight()
+ local setup=summary and summary.opener
+ opener:ClearAllPoints()
+ opener:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-y)
+ opener:SetText(setup and ("Before the pull  ·  "..setup) or "")
+ if setup then y=y+opener:GetStringHeight()+10 end
  for i,step in ipairs(steps) do
   local row=priorityRow(i)
-  row.caption:SetText(step.text)
+  local action,explanation=step.text:match("^(.-) — (.+)$")
+  row.instruction=step.text
+  row.action:SetText(action or "")
+  row.caption:SetText(explanation or step.text)
+  local captionY=action and 22 or 8
+  row.caption:ClearAllPoints()
+  row.caption:SetPoint("TOPLEFT",row,"TOPLEFT",65,-captionY)
   local spell=step.spell
   row.spellID=spell and spell.spellID
   row.spellName=spell and spell.name
@@ -149,9 +170,9 @@ function W.Render(tab,class,mode,level,role,fallback,playerClass)
   if status=="In your spellbook" or status=="Class preview" then status=nil end
   row.status:SetText(status or "")
   row.status:ClearAllPoints()
-  row.status:SetPoint("TOPLEFT",row,"TOPLEFT",65,-(10+captionHeight))
+  row.status:SetPoint("TOPLEFT",row,"TOPLEFT",65,-(captionY+captionHeight+2))
   row.status:SetTextColor(.72,.77,.83)
-  local height=math.max(31,captionHeight+16+(status and row.status:GetStringHeight()+2 or 0))
+  local height=math.max(31,captionHeight+captionY+8+(status and row.status:GetStringHeight()+2 or 0))
   row:SetSize(550,height)
   row:ClearAllPoints()
   row:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-y)

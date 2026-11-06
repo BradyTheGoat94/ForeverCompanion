@@ -34,6 +34,7 @@
 - [ ] Accept a quest with **Auto focus: On**. Confirm the journal focuses it and the world map shows a cyan focus marker and the client objective area when available. Switch maps and zoom. Verify turn-ins and objectives remain distinct and the existing user waypoint is untouched.
 - [ ] Select another quest manually and accept one more. The chosen focus should stay until re-enabling Auto Focus or removing the selected quest. Hover a map marker for quest details.
 - [ ] Focus an active quest with a known location and click **Show on map**. Check the map pin and native arrow. **Clear pin** should remove the addon’s waypoint only. Repeat with a quest lacking coordinates and verify no waypoint is created.
+- [ ] Test an unfinished kill or collection quest without a Blizzard boundary. With Forever QuestieDB enabled, compare the destination rings and marker tooltips to known spawn locations. Complete one objective and verify its markers disappear. Shift-click a remaining marker to choose the native arrow destination.
 - [ ] With the standalone Forever QuestieDB installed, verify a completed quest with a single fixed turn-in. Compare the marker to the in-game location.
 
 ## 4. Visual review and screenshots
@@ -53,3 +54,5 @@ Capture screenshots from the **actual client** at normal and compact sizes: home
 - User approval for CurseForge upload: **PENDING**
 
 **Stop-ship:** broken addon loading, unverified interface version, severe unreadable UI, protected-action automation, failed CI, invalid ZIP/hash, or missing user approval. Offline mocks are not live-client evidence.
+
+- [ ] Compare Protection and Retribution Paladin at levels 10–19 and at level cap. Confirm only the tank guide recommends Seal of Fury, and that spell tooltips, role, and unlock cues match the active build.

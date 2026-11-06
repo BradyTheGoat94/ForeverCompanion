@@ -113,7 +113,11 @@ local function questRows()
                     return false,false
                   end)
                   if stateOK then known,done=stateKnown,stateDone end
-                  objectiveStates[#objectiveStates+1]={known=known,done=done}
+                  local detailsOK,kind,required=pcall(function()
+                    return type(obj.type)=="string" and obj.type or nil,tonumber(obj.numRequired)
+                  end)
+                  objectiveStates[#objectiveStates+1]={known=known,done=done,
+                    kind=detailsOK and kind or nil,required=detailsOK and required or nil}
                 end
               end
             end
