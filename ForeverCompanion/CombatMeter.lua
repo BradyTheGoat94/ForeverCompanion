@@ -88,8 +88,12 @@ local function build()
  frame:SetFrameStrata("MEDIUM")
  frame:SetClampedToScreen(true)
  frame:SetMovable(true)
- frame:SetResizable(true)
- frame:SetResizeBounds(260,104+4*21,440,104+12*21)
+ if frame.SetResizable then frame:SetResizable(true) end
+ if frame.SetResizeBounds then frame:SetResizeBounds(260,104+4*21,440,104+12*21)
+ elseif frame.SetMinResize and frame.SetMaxResize then
+  frame:SetMinResize(260,104+4*21)
+  frame:SetMaxResize(440,104+12*21)
+ end
  frame:EnableMouse(true)
  frame:RegisterForDrag("LeftButton")
  frame:SetScript("OnDragStart",function(self)
@@ -134,10 +138,10 @@ local function build()
  gripText:SetTextColor(.55,.82,.92)
  resizeGrip:RegisterForDrag("LeftButton")
  resizeGrip:SetScript("OnDragStart",function()
-  if not saved().locked then frame:StartSizing("BOTTOMRIGHT") end
+  if not saved().locked and frame.StartSizing then frame:StartSizing("BOTTOMRIGHT") end
  end)
  resizeGrip:SetScript("OnDragStop",function()
-  frame:StopMovingOrSizing()
+  if frame.StopMovingOrSizing then frame:StopMovingOrSizing() end
   local width,height=frame:GetWidth(),frame:GetHeight()
   if safeNumber(width) and safeNumber(height) then
    M.SetWidth(math.max(260,math.min(440,math.floor(width+.5))))
