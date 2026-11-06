@@ -1,8 +1,9 @@
 -- Native quest journal briefing; strictly reads the addon's cached quest-log snapshot.
--- Does not change quest selection in the game, accept quests, or turn in quests.
+-- Navigation changes only the user waypoint when the player clicks.
 local B={}
 ForeverCompanionQuestBriefing=B
-local root, values, fill
+local root, values, fill, mapButton, clearPin
+local shownQuest, shownComplete, mapMessage
 local BAR_WIDTH=320
 local function paint(t,r,g,b,a)
   if t.SetColorTexture then t:SetColorTexture(r,g,b,a or 1)
@@ -70,7 +71,25 @@ function B.Create(parent)
   values.title=label(focus,15,-47,351,"No quest selected","GameFontHighlight",{0.93,0.90,0.82})
   values.location=label(focus,15,-74,351,"Choose a quest below","GameFontHighlightSmall",{0.72,0.78,0.84})
   values.objective=label(focus,15,-101,351,"Objective information will appear here","GameFontHighlightSmall",{0.89,0.74,0.48})
-  values.hint=label(focus,15,-125,351,"Guidance only; no automated route","GameFontHighlightSmall",{0.62,0.70,0.76})
+  values.hint=label(focus,15,-125,282,"","GameFontHighlightSmall",{0.77,0.76,0.66})
+  mapButton=CreateFrame("Button",nil,focus,"UIPanelButtonTemplate")
+  mapButton:SetSize(119,22);mapButton:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-9)
+  mapButton:SetText("Show on map")
+  mapButton:SetScript("OnClick",function()
+    local planner=ForeverCompanionQuestPlanner
+    if planner.IsSupported() then
+      mapMessage=ForeverCompanionQuestWaypoints.Show(planner.GetSelected())
+      B.Render()
+    end
+  end)
+  clearPin=CreateFrame("Button",nil,focus,"UIPanelButtonTemplate")
+  clearPin:SetSize(66,20);clearPin:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-118)
+  clearPin:SetText("Clear pin")
+  clearPin:SetScript("OnClick",function()
+    if ForeverCompanionQuestWaypoints.Clear() then mapMessage="Map pin cleared." end
+    B.Render()
+  end)
+  B.mapButton=mapButton;B.clearPin=clearPin
   root:Hide()
   return root
 end
@@ -105,18 +124,33 @@ function B.Render()
   values.zone:SetText(top and ("Top zone: "..shorten(top.zone,31).." ("..top.count..")") or "No quest-zone information")
   fill:SetWidth(valid and count>0 and math.max(1,math.floor(BAR_WIDTH*ready/count)) or 1)
   local selected=planner.GetSelected and planner.GetSelected() or nil
+  local questKey=selected and (selected.id or selected.title)
+  local complete=selected and selected.complete
+  if shownQuest~=questKey or shownComplete~=complete or not valid then mapMessage=nil end
+  shownQuest=questKey;shownComplete=complete
+  mapButton:SetEnabled(valid and selected~=nil)
+  clearPin:SetEnabled(ForeverCompanionQuestWaypoints.HasOwnPin())
   if selected then
     values.title:SetText((planner.IsPinned and planner.IsPinned(selected) and "[PINNED] " or "")..shorten(selected.title,38))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))
-    values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "No objective details available",48))
+    local objective
+    if not selected.complete then
+      for i,step in ipairs(selected.objectives or {}) do
+        local state=selected.objectiveStates and selected.objectiveStates[i]
+        if not state or not state.done then objective=step;break end
+      end
+    end
+    values.objective:SetText(shorten(objective or (selected.complete and "Next: turn in this quest." or "Check the quest log for details."),48))
     local done,known
     if type(planner.ObjectiveProgress)=="function" then done,known=planner.ObjectiveProgress(selected) end
     if stale then
-      values.hint:SetText("Cached objective - verify in game")
+      values.hint:SetText("Cached objective. Check your quest log.")
+    elseif mapMessage then
+      values.hint:SetText(mapMessage)
     elseif known then
-      values.hint:SetText("Known objectives: "..done.."/"..known.." | addon focus only")
+      values.hint:SetText(done.." / "..known.." objectives complete")
     else
-      values.hint:SetText("Pin to keep this quest in focus.")
+      values.hint:SetText("")
     end
   else
     values.title:SetText("No focused quest")

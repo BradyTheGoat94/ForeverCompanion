@@ -31,6 +31,9 @@
 - [ ] Verify a profession tab with and without a learned profession.
 - [ ] Confirm guide interactions never automatically cast, target, craft, buy, or accept quests.
 
+- [ ] Focus an active quest with a known location and click **Show on map**. Check the map pin and native arrow. **Clear pin** should remove the addon’s waypoint only. Repeat with a quest lacking coordinates and verify no waypoint is created.
+- [ ] With the standalone Forever QuestieDB installed, verify a completed quest with a single fixed turn-in. Compare the marker to the in-game location.
+
 ## 4. Visual review and screenshots
 Capture screenshots from the **actual client** at normal and compact sizes: home/leveling, class rotation tiles, quests, professions, dungeons, PvP, settings. Compare to the approved visual reference; note clipping, contrast, font scale, icon gaps, and scroll behavior.
 

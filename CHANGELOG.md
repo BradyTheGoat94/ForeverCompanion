@@ -1,3 +1,8 @@
+## 3.24.0-beta
+
+- Show a map pin and native direction arrow on demand for quests with a usable location. Use WoW quest data first, with an optional standalone Forever QuestieDB fallback for unambiguous turn-ins.
+- Show the next unfinished objective in the quest focus card. Keep location writes behind an explicit click and skip stale quest snapshots.
+
 ## 3.23.0-beta
 
 - Choose dungeons, bosses and drops in one journal. Open an item’s loot card or jump to preparation and notes.

@@ -331,9 +331,74 @@ assert(readyRow.title.text:find("[PIN]",1,true),"journal row should show pinned 
 assert(ForeverCompanionQuestPlanner.Overview().pinned==1,"journal overview must count pinned quests")
 local knownObjective=false
 for _,w in ipairs(frames) do
- if w.text=="Known objectives: 1/1 | addon focus only" then knownObjective=true end
+ if w.text=="1 / 1 objectives complete" then knownObjective=true end
 end
 assert(knownObjective,"quest focus card should show verified objective progress")
+do
+ local priorMap,priorPoint,priorTrack,priorDb,priorAddons=C_Map,UiMapPoint,C_SuperTrack,LibQuestieDB,C_AddOns
+ local marker,writes,opens,tracked=nil,0,0,false
+ local selected=ForeverCompanionQuestPlanner.GetSelected()
+ C_QuestLog.GetNextWaypoint=function(id)
+  assert(id==selected.id)
+  return 1429,.43,.61
+ end
+ C_Map={
+  CanSetUserWaypointOnMap=function(map) return map==1429 end,
+  GetMapInfo=function(map) if map==1429 then return {name="Elwynn Forest"} end end,
+  SetUserWaypoint=function(p) marker=p;writes=writes+1 end,
+  GetUserWaypoint=function() return marker end,
+  ClearUserWaypoint=function() marker=nil end,
+  OpenWorldMap=function(map) assert(map==1429);opens=opens+1 end,
+ }
+ UiMapPoint={CreateFromCoordinates=function(map,x,y)
+  return {uiMapID=map,position={GetXY=function() return x,y end}}
+ end}
+ C_SuperTrack={
+  SetSuperTrackedUserWaypoint=function(value) tracked=value end,
+  IsSuperTrackingUserWaypoint=function() return tracked end,
+ }
+ local briefing=ForeverCompanionQuestBriefing
+ local navigation=ForeverCompanionQuestWaypoints
+ briefing.Render()
+ assert(briefing.mapButton.enabled and writes==0 and opens==0,"render never changes the user's map")
+ briefing.mapButton:OnClick()
+ assert(writes==1 and opens==1 and tracked and briefing.clearPin.enabled,"one click sets pin and starts arrow")
+ marker=UiMapPoint.CreateFromCoordinates(1429,.18,.37)
+ assert(not navigation.Clear() and marker,"must preserve a waypoint the player set afterward")
+ briefing.mapButton:OnClick()
+ briefing.clearPin:OnClick()
+ assert(not marker and not briefing.clearPin.enabled,"clear removes the addon waypoint")
+ C_QuestLog.GetNextWaypoint=nil
+ C_Map.GetBestMapForUnit=function() return 1429 end
+ C_QuestLog.GetQuestsOnMap=function()
+  return {{questID=selected.id,mapID=1429,isQuestStart=true,x=.1,y=.3},
+          {questID=selected.id,mapID=1429,isQuestStart=false,x=.4,y=.6}}
+ end
+ assert(navigation.Location(selected).x==.4,"map POIs must ignore quest-start locations")
+ C_QuestLog.GetQuestsOnMap=nil
+ assert(navigation.Location(selected)==nil,"missing data must not invent a marker")
+ LibQuestieDB={
+  ModeIndicator={GetStatus=function() return {expansion="Forever"} end},
+  RequireContract=function(v) return v==1 end,
+  Quest={name=function() return selected.title end,finishedBy=function() return {{42}} end},
+  Npc={spawns=function() return {[12]={{47,68}}} end},
+  Support={Get=function() return {private={areaIdToUiMapId="return {[12] = 1429,}"}} end},
+ }
+ local candidate=navigation.Location(selected)
+ assert(candidate and candidate.source=="QuestieDB turn-in" and candidate.y==.68,"optional provider uses known turn-in spawn")
+ LibQuestieDB.ModeIndicator.GetStatus=function() return {mode="baked"} end
+ C_AddOns={GetAddOnMetadata=function(addon,key)
+  assert(addon=="QuestieDB" and key=="X-Flavor")
+  return "Forever"
+ end}
+ assert(navigation.Location(selected).source=="QuestieDB turn-in","baked provider reads the TOC flavor")
+ C_AddOns.GetAddOnMetadata=function() return "Vanilla" end
+ assert(navigation.Location(selected)==nil,"other flavors cannot provide markers")
+ C_AddOns.GetAddOnMetadata=function() return "Forever" end
+ LibQuestieDB.Npc.spawns=function() return {[12]={{47,68},{49,63}}} end
+ assert(navigation.Location(selected)==nil,"ambiguous optional coordinates must be skipped")
+ C_Map,UiMapPoint,C_SuperTrack,LibQuestieDB,C_AddOns=priorMap,priorPoint,priorTrack,priorDb,priorAddons
+end
 local originalComplete=C_QuestLog.IsComplete
 C_QuestLog.IsComplete=function() return false end
 assert(ForeverCompanionQuestPlanner.Sync(),"non-ready quest fixture should sync")
