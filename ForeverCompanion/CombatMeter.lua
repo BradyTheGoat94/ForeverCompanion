@@ -131,8 +131,8 @@ local function build()
   detailOpen=false
   M.Refresh()
  end)
- previousButton=button(frame,"<",27,-63,function() pastIndex=pastIndex+1;M.Refresh() end)
- nextButton=button(frame,">",27,-35,function() pastIndex=math.max(1,pastIndex-1);M.Refresh() end)
+ previousButton=button(frame,"<",27,-63,function() pastIndex=math.min(historyCount(),pastIndex+1);selectedRow=nil;detailOpen=false;M.Refresh() end)
+ nextButton=button(frame,">",27,-35,function() pastIndex=math.max(1,pastIndex-1);selectedRow=nil;detailOpen=false;M.Refresh() end)
  previousButton:ClearAllPoints()
  previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-45,8)
  nextButton:ClearAllPoints()
@@ -237,9 +237,9 @@ function M.Refresh()
   return
  end
  local data
- if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetCombatSessionIDs)=="function" then
-  local ids=read(C_DamageMeter.GetCombatSessionIDs)
-  local id=type(ids)=="table" and ids[pastIndex]
+ if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" then
+  local entry=availableHistory()[pastIndex]
+  local id=type(entry)=="table" and entry.sessionID
   if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
   if data==nil and pastIndex==1 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
  else
