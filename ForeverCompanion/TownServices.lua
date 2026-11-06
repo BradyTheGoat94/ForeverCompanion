@@ -9,6 +9,10 @@ local services={
  {"INNKEEPER","Inn","I"},
  {"REPAIR","Repairs","R"},
  {"VENDOR","Vendor","V"},
+ {"TRAINER","Trainer","T"},
+ {"CLASS_TRAINER","Class trainer","T"},
+ {"PROFESSION_TRAINER","Profession trainer","T"},
+ {"MAILBOX","Mailbox","M"},
 }
 local database,faction,byMap,loaded
 local function read(fn,...)
@@ -24,16 +28,19 @@ end
 local function indexNpc(db,id,flags,maps,side,results)
  local value=read(db.Npc.npcFlags,id)
  if type(value)~="number" or value<=0 then return end
- local service
+ local matched,seen={},{}
  for _,candidate in ipairs(services) do
-  if has(value,flags[candidate[1]]) then service=candidate;break end
+  if has(value,flags[candidate[1]]) and not seen[candidate[2]] then
+   matched[#matched+1]=candidate
+   seen[candidate[2]]=true
+  end
  end
- if not service then return end
+ if #matched==0 then return end
  local friendly=read(db.Npc.friendlyToFaction,id)
  if type(friendly)~="string" or not friendly:find(side,1,true) then return end
  local spawns=read(db.Npc.spawns,id)
  if type(spawns)~="table" then return end
- local name=read(db.Npc.name,id) or service[2]
+ local name=read(db.Npc.name,id) or matched[1][2]
  for area,points in pairs(spawns) do
   local map=maps[area]
   if map and map>0 and type(points)=="table" then
@@ -42,7 +49,9 @@ local function indexNpc(db,id,flags,maps,side,results)
     if type(x)=="number" and type(y)=="number" and x>=0 and x<=100 and y>=0 and y<=100 and (not phase or phase==0) then
      local entries=results[map]
      if not entries then entries={};results[map]=entries end
-     entries[#entries+1]={map=map,x=x/100,y=y/100,label=name,service=service[2],symbol=service[3]}
+     for _,service in ipairs(matched) do
+      entries[#entries+1]={map=map,x=x/100,y=y/100,label=name,service=service[2],symbol=service[3]}
+     end
     end
    end
   end
@@ -73,7 +82,10 @@ end
 function S.ForMap(map)
  local db=ForeverCompanionQuestLocations.Provider()
  local side=read(UnitFactionGroup,"player")
- if not db or (side~="Alliance" and side~="Horde") then return {}, "QuestieDB needed for town pins" end
+ if not db or (side~="Alliance" and side~="Horde") then
+  database,faction,byMap,loaded=nil,nil,nil,nil
+  return {}, "QuestieDB needed for town pins"
+ end
  side=side:sub(1,1)
  if database~=db or faction~=side then start(db,side) end
  if database~=db or faction~=side then return {}, "Town service data unavailable" end
