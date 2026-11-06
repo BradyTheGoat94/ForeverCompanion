@@ -100,25 +100,25 @@ local function build()
  if frame.SetBackdrop then
   frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
   frame:SetBackdropColor(.018,.031,.051,.97)
-  frame:SetBackdropBorderColor(.13,.59,.73,1)
+  frame:SetBackdropBorderColor(.18,.23,.29,1)
  end
  local db=saved()
  if safeNumber(db.rows) then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
  if safeNumber(db.width) then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
- frame:SetSize(windowWidth,110+rowCount*24)
+ frame:SetSize(windowWidth,104+rowCount*21)
  if type(db.position)=="table" and safeNumber(db.position.x) and safeNumber(db.position.y) then
   frame:ClearAllPoints()
   frame:SetPoint("CENTER",UIParent,"CENTER",db.position.x,db.position.y)
  end
  local trim=frame:CreateTexture(nil,"ARTWORK")
- trim:SetColorTexture(.18,.83,.96,1)
+ trim:SetColorTexture(.94,.64,.20,1)
  trim:SetPoint("TOPLEFT",1,-1)
  trim:SetPoint("TOPRIGHT",-1,-1)
  trim:SetHeight(3)
  heading=frame:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
  heading:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-11)
  heading:SetTextColor(.91,.97,1)
- heading:SetText("COMPANION  /  COMBAT")
+ heading:SetText("Forever  |  Damage Meter")
  local headerDivider=frame:CreateTexture(nil,"ARTWORK")
  headerDivider:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-46)
  headerDivider:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-13,-46)
@@ -127,7 +127,7 @@ local function build()
  local subtitle=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  subtitle:SetPoint("TOPLEFT",frame,"TOPLEFT",14,-29)
  subtitle:SetTextColor(.56,.83,.90)
- subtitle:SetText("NATIVE METER  |  EXPERIMENTAL")
+ subtitle:SetText("LIVE COMBAT  •  BLIZZARD DATA")
  -- Drag by the header as well as the body; do not drag on controls.
  dragHandle=CreateFrame("Frame",nil,frame)
  dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",4,-4)
@@ -168,8 +168,8 @@ local function build()
  rows={}
  for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
-  row:SetSize(windowWidth-26,21)
-  row:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-72-(i-1)*24)
+  row:SetSize(windowWidth-18,19)
+  row:SetPoint("TOPLEFT",frame,"TOPLEFT",9,-68-(i-1)*21)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row)
   bg:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97)
@@ -187,16 +187,21 @@ local function build()
   rank:SetWidth(18)
   rank:SetTextColor(.55,.84,.92)
   rank:SetText(i)
+  local classIcon=row:CreateTexture(nil,"OVERLAY")
+  classIcon:SetSize(15,15)
+  classIcon:SetPoint("LEFT",row,"LEFT",24,0)
+  classIcon:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes")
+  classIcon:Hide()
   local name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  name:SetPoint("LEFT",row,"LEFT",25,0)
-  name:SetWidth(windowWidth-145)
+  name:SetPoint("LEFT",row,"LEFT",42,0)
+  name:SetWidth(windowWidth-158)
   name:SetJustifyH("LEFT")
   local amount=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   amount:SetPoint("RIGHT",row,"RIGHT",-5,0)
   amount:SetJustifyH("RIGHT")
   local accent=row:CreateTexture(nil,"OVERLAY")
   accent:SetPoint("LEFT",row,"LEFT",0,0)
-  accent:SetSize(3,21)
+  accent:SetSize(2,19)
   accent:SetColorTexture(.18,.83,.96,1)
   local hover=row:CreateTexture(nil,"OVERLAY")
   hover:SetAllPoints(row)
@@ -212,17 +217,17 @@ local function build()
   end)
   name:SetTextColor(.92,.97,1)
   amount:SetTextColor(.85,.94,.98)
-  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg}
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon}
   if i>rowCount then row:Hide() end
  end
  detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,29)
+ detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,29)
  detailLabel:SetWidth(windowWidth-26)
  detailLabel:SetJustifyH("LEFT")
  detailLabel:SetTextColor(.98,.78,.45)
  detailLabel:SetText("Select a player row for details")
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,12)
+ notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,12)
  notice:SetWidth(windowWidth-100)
  notice:SetTextColor(.65,.76,.84)
  frame:SetScript("OnUpdate",function(_,dt)
@@ -317,6 +322,13 @@ function M.Refresh()
    end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
+   local icon=row.classIcon
+   local coords=not (issecretvalue and issecretvalue(class)) and type(class)=="string"
+    and CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[class]
+   if coords then
+    icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
+    icon:Show()
+   else icon:Hide() end
    local color
    if not (issecretvalue and issecretvalue(class)) and type(class)=="string" then color=colors[class] end
    if color then
@@ -440,8 +452,8 @@ function M.SetWidth(width)
   frame:SetWidth(width)
   notice:SetWidth(width-100)
   for _,row in ipairs(rows) do
-   row.frame:SetWidth(width-26)
-   row.name:SetWidth(width-145)
+   row.frame:SetWidth(width-18)
+   row.name:SetWidth(width-158)
   end
   if detailLabel then detailLabel:SetWidth(width-26) end
 
@@ -455,7 +467,7 @@ function M.SetRows(count)
  saved().rows=count
  rowCount=count
  if selectedRow and selectedRow>rowCount then selectedRow=nil;detailOpen=false end
- if frame then frame:SetHeight(110+rowCount*24) end
+ if frame then frame:SetHeight(104+rowCount*21) end
  M.Refresh()
  return true
 end
