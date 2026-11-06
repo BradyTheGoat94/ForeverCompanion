@@ -330,6 +330,22 @@ function M.Refresh()
  else detailLabel:SetText("Select a player row for details") end
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if detailPanel and detailOpen and selectedRow then
+  -- Keep the details readable when the meter is docked near the right edge.
+  if not (InCombatLockdown and InCombatLockdown()) and frame.GetRight and UIParent and UIParent.GetRight then
+   local right,screenRight=frame:GetRight(),UIParent:GetRight()
+   if safeNumber(right) and safeNumber(screenRight) then
+    local side=(screenRight-right)<300 and "LEFT" or "RIGHT"
+    if detailPanel.anchorSide~=side then
+     detailPanel:ClearAllPoints()
+     if side=="LEFT" then
+      detailPanel:SetPoint("TOPRIGHT",frame,"TOPLEFT",-5,0)
+     else
+      detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
+     end
+     detailPanel.anchorSide=side
+    end
+   end
+  end
   local selected=sources[selectedRow]
   local safeToInspect=not (InCombatLockdown and InCombatLockdown())
   local breakdown
