@@ -97,6 +97,18 @@ assertEqual(ForeverCompanionQuestPlanner.Summary(),0,"valid entries remain unfin
 ForeverCompanionDB.quests={}
 assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"quest scan")
 assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"quest count")
+-- A full read-only quest list can expose entries hidden by collapsed headers.
+C_QuestLog.GetQuestLogQuests=function()
+ return {
+  {questID=42,title="Sample Quest",zoneName="Test Zone"},
+  {questID=43,title="Collapsed Header Quest",zoneName="Hidden Zone"},
+ }
+end
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"full quest log scan")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),2,"collapsed quests included")
+C_QuestLog.GetQuestLogQuests=nil
+assertEqual(ForeverCompanionQuestPlanner.Sync(),true,"indexed quest log fallback")
+assertEqual(ForeverCompanionQuestPlanner.AutoCount(),1,"indexed quest count restored")
 assertEqual(ForeverCompanionQuestPlanner.ReadyCount(),1,"quest completion")
 local objectiveDone,objectiveKnown=ForeverCompanionQuestPlanner.ObjectiveProgress()
 assertEqual(objectiveDone,1,"modern objective completion")
