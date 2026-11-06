@@ -522,7 +522,12 @@ local function render()
       local selected=selectedIndex==absoluteIndex
       btn.title:SetText((selected and "> " or "  ")..(ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "")..clipText(q.title,47))
       btn.zone:SetText(clipText(q.zone or "Zone unavailable",23))
-      btn.status:SetText(q.complete and "READY" or "ACTIVE")
+      local total=#(q.objectives or {})
+      local finished=0
+      for _,objective in ipairs(q.objectiveStates or {}) do
+        if objective.known and objective.done then finished=finished+1 end
+      end
+      btn.status:SetText(q.complete and "READY" or (total>0 and (finished.."/"..total.." OBJECTIVES") or "ACTIVE"))
       btn.status:SetTextColor(q.complete and 0.48 or 0.77,q.complete and 0.88 or 0.76,q.complete and 0.53 or 0.70)
       colorTexture(btn.bg,selected and 0.24 or 0.085,selected and 0.20 or 0.11,selected and 0.13 or 0.15,1)
       colorTexture(btn.trim,selected and 0.98 or 0.30,selected and 0.75 or 0.28,selected and 0.33 or 0.21,1)
@@ -534,8 +539,10 @@ local function render()
           GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
           GameTooltip:SetText(q.title or "Quest",1,0.8,0.3)
           if q.zone then GameTooltip:AddLine(q.zone,0.8,0.8,0.8) end
-          for j=1,math.min(3,#(q.objectives or {})) do
-            GameTooltip:AddLine(q.objectives[j],1,1,1,true)
+          for j=1,math.min(12,#(q.objectives or {})) do
+            local state=q.objectiveStates and q.objectiveStates[j]
+            local done=state and state.known and state.done
+            GameTooltip:AddLine((done and "✓ " or "• ")..q.objectives[j],done and .43 or 1,done and .9 or 1,done and .58 or 1,true)
           end
           GameTooltip:Show()
         end
