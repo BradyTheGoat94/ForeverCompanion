@@ -1,7 +1,7 @@
 # CurseForge Beta submission — operator handoff
 
 **Project:** Brady's Forever Companion
-**Version:** 3.19.0-beta
+**Version:** 3.20.0-beta
 **Release channel:** Beta
 **Repository branch:** develop only
 **Verification:** Use successful push runs for the exact candidate commit on `develop`. The prior baseline passed [Actions #1918](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41768040824) at `2433b6d`.
@@ -30,14 +30,15 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 2. Extract the GitHub artifact wrapper. The versioned addon ZIP inside is the upload file; keep `release-audit.json` beside it for review.
 3. Compare the ZIP's SHA-256 to the report and verify that it contains `ForeverCompanion/ForeverCompanion.toc`. For manual installation, extract the addon folder into the Forever client's `Interface/AddOns/` directory. Launch the game, enable the addon and run `/fc` and `/fcdiag`.
 4. In CurseForge, choose the **actual supported Forever game/version** shown by the publisher UI. Do not guess a game version from `## Interface: 16001`.
-5. Select **Beta**, not Release; version label **3.19.0-beta**.
+5. Select **Beta**, not Release; version label **3.20.0-beta**.
 6. Upload an original logo and truthful screenshots. Label offline UI mockups as previews, not game captures.
 7. Choose a license **only after the owner explicitly decides** whether others may modify or redistribute the original code. Review ownership of bundled assets first.
 8. After explicit owner approval, submit for moderation and record the resulting project and file IDs when confirmed.
 
 ## Changelog (paste into CurseForge)
 
-**3.19.0-beta**
+**3.20.0-beta**
+- Added an interactive talent planner with 467 talents across all 27 trees, loadable leveling openings, build milestones, client icons and spell tooltips, and saved drafts. Base talent rules are from Forever build 1.60.1.70790. Talent grid adapted from [Zephras](https://zephras.com/data/) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Names and icon references belong to Blizzard.
 - Tagged primary abilities for all 27 standard specs and all nine class practice guides. The rotation panel checks your spellbook, promotes learned actions, and flags unconfirmed or missing primary spells. Icons and tooltips use the chosen ability’s client data.
 - Put numbered press priorities in the rotation window for all nine classes, with published dungeon and boss priorities for 27 standard specs. Extra notes are collapsed by default.
 - Added native spell and item hover tooltips, a 27-item Forever loot catalog across three dungeons, and a quest footer that keeps Previous and Next outside the scroll viewport.
@@ -53,7 +54,7 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 | Gate | Status |
 | --- | --- |
 | Automated build and package integrity | Confirm on exact candidate commit |
-| Correct project title/version in TOC | PASS — 3.19.0-beta |
+| Correct project title/version in TOC | PASS — 3.20.0-beta |
 | License choice and third-party asset review | BLOCKED — owner decision/review |
 | Original logo and truthful showcase images | NEEDS REVIEW |
 | Correct CurseForge game/version selection | NEEDS PUBLISHER UI |

@@ -20,6 +20,8 @@
 
 ## 3. Guide safety and data gate
 - [ ] Select at least two specialization paths on a character; the five-step playbook and its priority explanation change together.
+- [ ] Open Class Guides → Talents. Compare three tree tabs, icons, tooltips and rank limits with the live class talent window. Scroll to the source footer in normal and compact modes.
+- [ ] Load the suggested opening into an empty draft. Add and refund a rank, try refunding a prerequisite, change the plan level and check that a draft survives `/reload`. Confirm the live character's talents never change.
 - [ ] Verify recommended talents and spells against the character's real spellbook. Missing or inaccessible data is labeled **unconfirmed**, not **unlearned**.
 - [ ] Check a low-level character: high-level abilities must not be described as immediately available.
 - [ ] Check November tuning warnings for affected classes; reported changes are not represented as official confirmations.

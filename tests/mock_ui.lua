@@ -34,7 +34,7 @@ local function exportNative(path)
  local records={}
  for _,f in ipairs(frames) do
   local values={id=f.id,kind=f.kind,parent=f.parent,name=f.name,visible=f.visible,width=f.width,height=f.height,
-   text=f.text,texture=type(f.texture)=="string" and f.texture or nil,color=f.color,textColor=f.textColor,
+   text=f.text,texture=type(f.texture)=="string" and f.texture or nil,textureId=type(f.texture)=="number" and f.texture or nil,color=f.color,textColor=f.textColor,
    layer=f.layer,font=f.font,alpha=f.alpha,crop=f.texCoord,all=f.all,template=f.template,justify=f.justify}
   local points={}
   for _,p in ipairs(f.points or {}) do
@@ -505,7 +505,9 @@ for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
  assert(ForeverCompanionClassGuide.GetView()==button.view,"topic selection must persist")
  assert(classScroll:GetVerticalScroll()==0,"switching guide topics returns to the heading")
  assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
- if button.view~="Rotations" then
+ if button.view=="Talents" then
+  assert(ForeverCompanionTalentWorkspace.root:IsShown(),"talent planner visibility")
+ elseif button.view~="Rotations" then
   assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or (button.view=="Overview" and "SELECTED SPEC" or "GENERAL REFERENCE"),1,true),"topic evidence notice")
  end
 end
@@ -513,6 +515,66 @@ ForeverCompanionClassGuide.SelectView("Gear & Stats")
 exportNative("ui_gear_native.json")
 ForeverCompanionClassGuide.SelectView("Talents")
 exportNative("ui_topic_native.json")
+do
+ local model=ForeverCompanionTalentPlanner
+ local talents=ForeverCompanionTalentData
+ local planner=ForeverCompanionTalentWorkspace
+ local count,trees=0,0
+ assert(model.Budget(9)==0 and model.Budget(10)==1 and model.Budget(60)==51)
+ for class,data in pairs(talents.classes) do
+  local positions={}
+  for _,node in ipairs(data.nodes) do
+   local position=table.concat({node[2],node[3],node[4]},":")
+   assert(not positions[position] and node[7]>0 and node[8]>0,node[9])
+   positions[position]=true
+   count=count+1
+  end
+  for tree=1,3 do
+   local spec=ForeverCompanionSpecs[class][tree][1]
+   local opening=model.Opening(class,tree,spec)
+   assert(#opening>=2 and #model.Goals(class,tree,spec)==3,spec)
+   local draft={}
+   assert(model.LoadOpening(class,tree,spec,draft,11),spec)
+   assert(model.Rank(draft,opening[1])==opening[1][6],opening[1][9])
+   assert(not model.LoadOpening(class,tree,spec,draft,51),"opening must preserve existing drafts")
+   local first={}
+   assert(model.LoadOpening(class,tree,spec,first,1) and model.Total(class,first)==1,spec)
+   trees=trees+1
+  end
+ end
+ assert(count==467 and trees==27)
+ local warrior=talents.classes.WARRIOR.nodes
+ local arms={}
+ assert(not model.Change("WARRIOR",arms,warrior[4],1,51),"tier gate")
+ for _=1,5 do assert(model.Change("WARRIOR",arms,warrior[2],1,51)) end
+ assert(not model.Change("WARRIOR",arms,warrior[2],1,51),"rank cap")
+ assert(model.Change("WARRIOR",arms,warrior[4],1,51))
+ assert(not model.Change("WARRIOR",arms,warrior[2],-1,51),"refund cannot break tier")
+ assert(model.Rank(arms,warrior[2])==5)
+ local second={}
+ for _,index in ipairs({2,3,5}) do
+  for _=1,warrior[index][6] do assert(model.Change("WARRIOR",second,warrior[index],1,51)) end
+ end
+ assert(model.Change("WARRIOR",second,warrior[8],1,51))
+ assert(not model.Change("WARRIOR",second,warrior[3],-1,51),"refund cannot break direct prerequisite")
+ local allocation=model.Load("WARRIOR","Arms")
+ local other=model.Load("WARRIOR","Fury")
+ planner.buttons[1]:OnClick("LeftButton")
+ assert(model.Rank(allocation,planner.buttons[1].node)==1 and model.Total("WARRIOR",other)==0)
+ planner.buttons[1]:OnClick("RightButton")
+ assert(model.Total("WARRIOR",allocation)==0)
+ planner.buildButton:OnClick()
+ assert(model.Total("WARRIOR",allocation)>0 and model.Load("WARRIOR","Arms")==allocation)
+ planner.tabs[2]:OnClick()
+ assert(planner.buttons[1].node[2]==2)
+ planner.tabs[1]:OnClick()
+ planner.lowerLevel:OnClick()
+ planner.raiseLevel:OnClick()
+ planner.resetButton:OnClick()
+ assert(model.Total("WARRIOR",allocation)>0,"reset needs confirmation")
+ planner.resetButton:OnClick()
+ assert(model.Total("WARRIOR",allocation)==0,"confirmed reset clears draft")
+end
 assert(not ForeverCompanionClassGuide.SelectView("Not a topic"),"invalid topic must be rejected")
 ForeverCompanionDB.classGuideView="malformed saved view"
 assert(ForeverCompanionClassGuide.GetView()=="Rotations","invalid saved topic must recover to rotation view")
@@ -655,7 +717,7 @@ assert(specCount==27)
 ForeverCompanionDB.specSelections=priorSelections
 local originalTopicMeasure=ForeverCompanionClassGuide.topicBody.GetStringHeight
 ForeverCompanionClassGuide.topicBody.GetStringHeight=function() return 480 end
-ForeverCompanionClassGuide.SelectView("Talents")
+ForeverCompanionClassGuide.SelectView("Leveling")
 assert(ForeverCompanionClassGuide.topicBody.height>=492,"long topic needs measured body space")
 assert(ForeverCompanionClassGuide.GetTopicHeight()>=602,"topic frame must expand with body")
 ForeverCompanionClassGuide.topicBody.GetStringHeight=originalTopicMeasure
@@ -996,7 +1058,7 @@ assert(practice and practice.total>=3)
 exportSnapshot("ui_practice_snapshot.txt")
 exportNative("ui_practice_native.json")
 for _,w in ipairs(frames) do
- if w.texture then assert(not w.texture:find("\\\\",1,true),"over-escaped texture path: "..w.texture) end
+ if type(w.texture)=="string" then assert(not w.texture:find("\\\\",1,true),"over-escaped texture path: "..w.texture) end
 end
 overviewButton.OnClick(overviewButton)
 if ForeverCompanionDB.compact then ForeverCompanionUIState.compactButton.OnClick() end

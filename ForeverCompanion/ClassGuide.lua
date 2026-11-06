@@ -66,6 +66,7 @@ function Guide.Create(parent,openPage)
  topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetJustifyV("TOP")
  topicLink=CreateFrame("Button",nil,topicPanel,"UIPanelButtonTemplate");topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
  topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
+ ForeverCompanionTalentWorkspace.Create(topicPanel)
  Guide.topicPanel=topicPanel;Guide.topicBody=topicBody
  topicPanel:Hide();root:Hide()
 end
@@ -97,10 +98,6 @@ function Guide.TopicLines(class,view,role)
   for _,line in ipairs(sourceLines) do lines[#lines+1]=line end
   if #sourceLines==0 then lines[#lines+1]="No published Forever priority is attached to this planner selection." end
   for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
- elseif view=="Talents" then
-  lines[#lines+1]=ForeverCompanionSpecPlanner.Format(class,"leveling")
-  lines[#lines+1]=ForeverCompanionSpecPlanner.Evidence(class)
-  lines[#lines+1]="Use the Spec selector to preview another build. The addon does not spend talent points."
  elseif view=="Leveling" then
   lines[#lines+1]=entry.leveling or "Train abilities and review your current class resources."
   lines[#lines+1]=coach.first or "Check trained spells before pulling."
@@ -147,7 +144,23 @@ function Guide.Render(class,label,level,role,mode)
   b.bg:SetColorTexture(active and .06 or .025,active and .17 or .028,active and .30 or .034,1)
   b.rail:SetColorTexture(active and .95 or .38,active and .76 or .32,active and .38 or .23,1)
  end
+ if view=="Talents" then
+  topicTitle:Hide();topicBody:Hide();topicLink:Hide()
+  ForeverCompanionTalentWorkspace.Render(class,selected)
+  if ForeverCompanionTalentWorkspace.root:IsShown() then
+   ForeverCompanionVisualTheme.ResizePanel(topicPanel,ForeverCompanionTalentWorkspace.root:GetHeight()+8)
+  else
+   topicTitle:SetText("Talent planner")
+   topicBody:SetText("Choose a supported class to view its talent trees.")
+   topicTitle:Show();topicBody:Show()
+   ForeverCompanionVisualTheme.ResizePanel(topicPanel,352)
+  end
+  topicPanel:Show()
+  return
+ end
+ ForeverCompanionTalentWorkspace.Hide()
  if view=="Rotations" then topicPanel:Hide() else
+  topicTitle:Show();topicBody:Show()
   topicTitle:SetText(label.." / "..view)
   topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),view=="Overview" and "\n" or "\n\n"))
   local bodyHeight=math.max(242,topicBody:GetStringHeight()+12)

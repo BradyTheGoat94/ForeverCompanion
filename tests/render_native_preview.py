@@ -79,6 +79,11 @@ def render(source,output,workspace=False):
         bx,by,bw,bh=box(target['id'])
         offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
         start=target['id']
+    elif workspace=='talents':
+        target=next(n for n in records if n.get('name')=='ForeverCompanionTalentPlannerFrame')
+        bx,by,bw,bh=box(target['id'])
+        offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
+        start=target['id']
     elif workspace=='loot':
         target=next(n for n in records if n.get('name')=='ForeverCompanionLootCatalog')
         bx,by,bw,bh=box(target['id'])
@@ -119,7 +124,7 @@ def render(source,output,workspace=False):
                 art=art.resize((iw,ih),Image.Resampling.LANCZOS)
                 if n.get('alpha') is not None: art.putalpha(art.getchannel('A').point(lambda a:round(a*n['alpha'])))
                 layer.alpha_composite(art)
-            elif texture and ('\\Icons\\' in texture or texture.endswith('UI-CharacterCreate-Classes')):
+            elif n.get('textureId') or (texture and ('\\Icons\\' in texture or texture.endswith('UI-CharacterCreate-Classes'))):
                 d.rectangle((0,0,iw-1,ih-1),fill=(43,40,32),outline=(146,117,65))
                 d.line((3,ih-4,iw-4,3),fill=(202,169,91),width=max(1,iw//12))
         elif n['kind']=='FontString':
@@ -128,7 +133,7 @@ def render(source,output,workspace=False):
             for i,line in enumerate(lines):
                 px=(iw-d.textlength(line,font=f))/2 if n.get('justify')=='CENTER' else (iw-d.textlength(line,font=f) if n.get('justify')=='RIGHT' else 0)
                 d.text((px,i*(size+2)-2),line,font=f,fill=rgba(n.get('textColor')))
-        elif n['kind']=='Button' and n.get('template')=='UIPanelButtonTemplate':
+        elif n['kind']=='EditBox' or (n['kind']=='Button' and n.get('template')=='UIPanelButtonTemplate'):
             d.rectangle((0,0,iw-1,ih-1),fill=(28,29,32),outline=(134,110,62))
             f=ImageFont.truetype(FONT_ROOT+'DejaVuSerif.ttf',11)
             d.text((6,4),n.get('text',''),font=f,fill=(231,211,164))
@@ -166,7 +171,7 @@ def render(source,output,workspace=False):
 render('ui_dashboard_native.json','ui_dashboard_native.png')
 render('ui_class_native.json','ui_class_native.png')
 render('ui_class_native.json','ui_rotation_native.png',True)
-render('ui_topic_native.json','ui_topic_native.png')
+render('ui_topic_native.json','ui_topic_native.png','talents')
 render('ui_gear_native.json','ui_gear_native.png')
 render('ui_loot_native.json','ui_loot_native.png','loot')
 render('ui_long_priority_native.json','ui_long_priority_native.png',True)

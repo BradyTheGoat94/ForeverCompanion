@@ -1,3 +1,11 @@
+## 3.20.0-beta
+
+- Rebuilt Class Guides → Talents into a grid of 467 talents across all nine classes and 27 trees, with Blizzard client icon and tooltip references.
+- Added loadable opening ranks and three build milestones per tree. Druid has a separate Bear draft and opening within Feral.
+- Save one draft per class and spec. Plan across all three trees with rank, tier, prerequisite and base point budget checks.
+- Talent grid adapted from [Zephras](https://zephras.com/data/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), Forever build 1.60.1.70790. Names and icon references belong to Blizzard. The addon does not apply talents.
+- Includes the 3.19.0-beta update with explicit spell icons and learned-spell-aware rotation priorities across every class.
+
 ## 3.18.0-beta — November 2, 2026 (develop)
 
 - Added source-reviewed Forever beta PvE stat references for all 27 standard specializations, with separate Bear-tank guidance under the conditional planner label. Included source URLs, practical caveats, conditional target references, and explicit uncertainty where sources conflict.
