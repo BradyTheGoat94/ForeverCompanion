@@ -2,11 +2,20 @@
 -- No combat log listeners, gameplay automation, or arithmetic on secret values.
 local M={}
 ForeverCompanionCombatMeter=M
-local frame,rows,heading,notice,modeButton,sessionButton
+local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
+local pastIndex=1
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
-local sessions={{"Current","Current"},{"Expired","Expired"},{"Overall","Overall"}}
+local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
 local elapsed=0
+local function historyCount()
+ local api=C_DamageMeter
+ if not api or type(api.GetNumCombatSessions)~="function" then return 0 end
+ local ok,count=pcall(api.GetNumCombatSessions)
+ if not ok then return 0 end
+ if type(count)=="number" and count>=0 then return math.floor(count) end
+ return 0
+end
 local function read(fn,...)
  if type(fn)~="function" then return end
  local ok,value=pcall(fn,...)
@@ -74,6 +83,18 @@ local function build()
  heading:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-11)
  heading:SetTextColor(1,.82,.51)
  heading:SetText("COMPANION  /  COMBAT")
+ -- Drag by the header as well as the body; do not drag on controls.
+ dragHandle=CreateFrame("Frame",nil,frame)
+ dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",4,-4)
+ dragHandle:SetSize(238,29)
+ dragHandle:EnableMouse(true)
+ dragHandle:RegisterForDrag("LeftButton")
+ dragHandle:SetScript("OnDragStart",function() if not saved().locked then frame:StartMoving() end end)
+ dragHandle:SetScript("OnDragStop",function()
+  frame:StopMovingOrSizing()
+  local point,_,relative,x,y=frame:GetPoint()
+  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative=relative,x=x,y=y} end
+ end)
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
  close:SetScript("OnClick",function() M.Hide() end)
@@ -89,8 +110,11 @@ local function build()
    sessionIndex=sessionIndex%#sessions+1
    if sessionType()~=nil then break end
   end
+  pastIndex=1
   M.Refresh()
  end)
+ previousButton=button(frame,"<",27,-63,function() pastIndex=pastIndex+1;M.Refresh() end)
+ nextButton=button(frame,">",27,-35,function() pastIndex=math.max(1,pastIndex-1);M.Refresh() end)
  rows={}
  for i=1,8 do
   local row=CreateFrame("Frame",nil,frame)
@@ -128,12 +152,24 @@ function M.Refresh()
  if not frame or not frame:IsShown() then return end
  modeButton:SetText(metrics[metricIndex][1])
  sessionButton:SetText(sessions[sessionIndex][1])
+ local isPast=sessionIndex==2
+ previousButton:SetShown(isPast)
+ nextButton:SetShown(isPast)
+ previousButton:SetEnabled(isPast and pastIndex<historyCount())
+ nextButton:SetEnabled(isPast and pastIndex>1)
  if not M.Available() then
   for _,row in ipairs(rows) do row.frame:Hide() end
   notice:SetText("Blizzard combat meter API unavailable")
   return
  end
- local data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
+ local data
+ if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetCombatSessionIDs)=="function" then
+  local ids=read(C_DamageMeter.GetCombatSessionIDs)
+  local id=type(ids)=="table" and ids[pastIndex]
+  if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
+ else
+  data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
+ end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
  local colors=RAID_CLASS_COLORS or {}
@@ -153,11 +189,17 @@ function M.Refresh()
    if color then row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
    else row.fill:SetStatusBarColor(.85,.65,.32,.78) end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
-   local okRatio=pcall(row.fill.SetValue,row.fill,source.relativeAmount)
+   local okMax=pcall(row.fill.SetMinMaxValues,row.fill,0,data.maxAmount)
+   if not okMax then row.fill:SetMinMaxValues(0,1) end
+   local okRatio=pcall(row.fill.SetValue,row.fill,source.totalAmount)
    if not okRatio then row.fill:SetValue(0) end
   else row.frame:Hide() end
  end
- notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  •  Experimental")
+ if isPast then
+  notice:SetText("Past fight "..pastIndex.."  |  Native session history")
+ else
+  notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  |  Experimental")
+ end
 end
 function M.Show()
  if not frame then build() end
@@ -172,6 +214,12 @@ end
 function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
 end
+function M.SetSession(mode)
+ for i,item in ipairs(sessions) do
+  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;M.Refresh();return true end
+ end
+ return false
+end
 function M.SetMode(mode)
  for i,item in ipairs(metrics) do
   if item[1]:lower()==tostring(mode):lower() then metricIndex=i;M.Refresh();return true end
@@ -185,7 +233,7 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="show" or msg=="on" then M.Show()
  elseif msg=="lock" then saved().locked=true
  elseif msg=="unlock" then saved().locked=false
- elseif M.SetMode(msg) then M.Show()
+ elseif M.SetSession(msg) or M.SetMode(msg) then M.Show()
  else M.Toggle() end
 end
 local events=CreateFrame("Frame")
