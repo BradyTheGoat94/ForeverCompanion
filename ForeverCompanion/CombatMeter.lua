@@ -7,7 +7,6 @@ local pastIndex=1
 local rowCount=8
 local windowWidth=290
 local selectedRow=nil
-local selectedSource=nil
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -251,10 +250,9 @@ function M.Refresh()
  if selectedRow then
   local selected=sources[selectedRow]
   if type(selected)=="table" then
-   selectedSource=selected
    local ok=pcall(detailLabel.SetText,detailLabel,selected.name)
    if not ok then detailLabel:SetText("Selected player") end
-  else selectedRow=nil;selectedSource=nil;detailLabel:SetText("Select a player row for details") end
+  else selectedRow=nil;detailLabel:SetText("Select a player row for details") end
  else selectedSource=nil;detailLabel:SetText("Select a player row for details") end
  if isPast then
   notice:SetText("Past fight "..pastIndex.." | Native history")
