@@ -136,22 +136,19 @@ function M.Refresh()
   if type(source)=="table" then
    row.frame:Show()
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
-   row.name:SetText(source.name or source.sourceName or "Unknown")
-   local amount=source.amountPerSecond or source.totalAmount
-   if amount~=nil then
-    -- SetText accepts native secret text/number values; no string concatenation.
-    row.amount:SetText(amount)
-   else row.amount:SetText("--") end
+   -- No Lua boolean tests, comparisons or formatting on secret source values.
+   local okName=pcall(row.name.SetText,row.name,source.name)
+   if not okName then row.name:SetText("Player") end
+   local okAmount=pcall(row.amount.SetText,row.amount,source.amountPerSecond)
+   if not okAmount then row.amount:SetText("--") end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
    local color=type(class)=="string" and colors[class]
    if color then row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
    else row.fill:SetStatusBarColor(.85,.65,.32,.78) end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
-   local ratio=source.relativeAmount
-   if ratio~=nil then
-    row.fill:SetValue(ratio)
-   else row.fill:SetValue(0) end
+   local okRatio=pcall(row.fill.SetValue,row.fill,source.relativeAmount)
+   if not okRatio then row.fill:SetValue(0) end
   else row.frame:Hide() end
  end
  notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  •  Experimental")
