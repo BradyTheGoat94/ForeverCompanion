@@ -106,6 +106,8 @@ local function openMap(map)
  return type(open)=="function" and pcall(open,map)
 end
 
+W.OpenMap=openMap
+
 local function referenceMap(quest)
  local first,ambiguous
  local current=C_Map and read(C_Map.GetBestMapForUnit,"player")
@@ -133,52 +135,58 @@ function W.HasOwnPin()
  return read(sameWaypoint,owned)==true
 end
 
-function W.Clear()
- if not W.HasOwnPin() or type(C_Map.ClearUserWaypoint)~="function" then return false end
- if not pcall(C_Map.ClearUserWaypoint) or W.HasOwnPin() then return false end
- owned=nil
- return true
+function W.HasNavigation()
+ return ForeverCompanionQuestDirection.IsActive() or W.HasOwnPin()
 end
 
-function W.Navigate(target,showMap)
+function W.Clear()
+ local stopped=ForeverCompanionQuestDirection.Stop()
+ if W.HasOwnPin() and type(C_Map.ClearUserWaypoint)=="function"
+  and pcall(C_Map.ClearUserWaypoint) and not W.HasOwnPin() then
+  owned=nil
+  return true
+ end
+ return stopped
+end
+
+function W.Navigate(target,showMap,label)
  if not target then return "No map location for this quest." end
- if not C_Map or type(C_Map.SetUserWaypoint)~="function"
-  or not UiMapPoint or type(UiMapPoint.CreateFromCoordinates)~="function" then
-  return "This client can’t set a map pin."
+ local direction=ForeverCompanionQuestDirection
+ direction.Stop()
+ local hud=direction.Start(target,label)
+ local pinned=false
+ if C_Map and type(C_Map.SetUserWaypoint)=="function"
+  and UiMapPoint and type(UiMapPoint.CreateFromCoordinates)=="function"
+  and (type(C_Map.CanSetUserWaypointOnMap)~="function" or read(C_Map.CanSetUserWaypointOnMap,target.map)==true) then
+  local marker=read(UiMapPoint.CreateFromCoordinates,target.map,target.x,target.y)
+  pinned=marker and pcall(C_Map.SetUserWaypoint,marker)
+   and (type(C_Map.GetUserWaypoint)~="function" or read(sameWaypoint,target)==true)
+  if pinned then owned=target end
  end
- if type(C_Map.CanSetUserWaypointOnMap)=="function" and read(C_Map.CanSetUserWaypointOnMap,target.map)~=true then
-  return "This map doesn’t support pins."
+ if showMap then
+  local opened=type(OpenMapToUserWaypoint)=="function" and pinned and pcall(OpenMapToUserWaypoint)
+  if not opened then openMap(target.map) end
  end
- local marker=read(UiMapPoint.CreateFromCoordinates,target.map,target.x,target.y)
- if not marker or not pcall(C_Map.SetUserWaypoint,marker)
-  or (type(C_Map.GetUserWaypoint)=="function" and read(sameWaypoint,target)~=true) then
-  return "Couldn’t set the map pin."
- end
- owned=target
+ if hud then return "On-screen arrow active" end
+ if not pinned then return "Navigation unavailable for this map." end
  local track=C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint
  local arrow=type(track)=="function" and pcall(track,true)
  local tracking=C_SuperTrack and C_SuperTrack.IsSuperTrackingUserWaypoint
  if arrow and type(tracking)=="function" then arrow=read(tracking)==true end
- if showMap then
-  local opened=type(OpenMapToUserWaypoint)=="function" and W.HasOwnPin() and pcall(OpenMapToUserWaypoint)
-  if not opened then openMap(target.map) end
- end
- return (arrow and "Pin and arrow set" or "Map pin set").."  •  "..target.source
+ return arrow and "Blizzard waypoint arrow active" or "Map pin set"
 end
 
 
 function W.Show(quest)
  local target=W.Location(quest)
  if target then
-  local message=W.Navigate(target,true)
-  if not W.HasOwnPin() then openMap(target.map) end
-  return message
+  return W.Navigate(target,true,quest.title)
  end
  local map=referenceMap(quest)
- if map and openMap(map) then return "Shift-click a map marker for an arrow." end
+ if map and openMap(map) then return "Click a highlighted marker to start the arrow." end
  local current=C_Map and read(C_Map.GetBestMapForUnit,"player")
  if current and #W.MapLocations(current,{quest})>0 and openMap(current) then
-  return "Shift-click a map marker for an arrow."
+  return "Click a highlighted marker to start the arrow."
  end
  if #referenceLocations(quest)>0 then return "Open a zone map to choose a marker." end
  return "No map location for this quest."

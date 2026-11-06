@@ -120,7 +120,7 @@ function B.Render()
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
     values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
-    values.status:SetText("Map:  > Focus    ! Objective    ? Turn-in")
+    values.status:SetText("Map: Focus hides other Companion quests")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
     values.status:SetText("Cached. Check your quest log.")
@@ -137,7 +137,7 @@ function B.Render()
   if shownQuest~=questKey or shownComplete~=complete or not valid then mapMessage=nil end
   shownQuest=questKey;shownComplete=complete
   mapButton:SetEnabled(valid and selected~=nil)
-  clearPin:SetEnabled(ForeverCompanionQuestWaypoints.HasOwnPin())
+  clearPin:SetEnabled(ForeverCompanionQuestWaypoints.HasNavigation())
   if selected then
     values.title:SetText((planner.IsPinned and planner.IsPinned(selected) and "[PINNED] " or "")..shorten(selected.title,38))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))

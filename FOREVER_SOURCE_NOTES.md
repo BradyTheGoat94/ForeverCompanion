@@ -69,3 +69,23 @@ The Protection card separates the long Righteous Fury threat buff from the
 short Seal of Fury and explicitly identifies Judgement with that seal as a
 taunt. The Retribution card labels the Unsealed Wrath swap as talent and
 weapon dependent.
+
+### Leveling route and direction display
+
+The route is a list of suggested zones and level bands, independent of live quest
+eligibility. Blizzard confirms the Zephras Isle and Riverglades ranges. The
+remaining route choices were compared with Forever leveling references.
+The live next step comes from the character's own quest log and known map
+locations. A zone recommendation never sets a waypoint automatically.
+
+- [Blizzard's Forever starter guide](https://worldofwarcraft.blizzard.com/en-us/news/24315280/)
+- [Blizzard's Forever zone recap](https://worldofwarcraft.blizzard.com/en-us/news/24303862/)
+- [The Forever Era leveling zones](https://theforeverera.com/en/guides/leveling/)
+- [TopBuilds Forever leveling routes](https://topbuilds.gg/wow-forever/leveling/)
+- [ForeverDB leveling guide](https://foreverdb.net/guide/leveling)
+- [Forever map IDs in QuestieDB](https://github.com/Questie/QuestieDB/blob/master/support/Forever/Zones/areaIdToUiMapId.lua)
+
+Navigation uses the Forever client map-position conversion and player-facing
+APIs to draw a straight-line bearing. The overlay pauses when those values
+cannot be read, and native map zoom preserves the original terrain artwork.
+See Blizzard's [UI Add-On Development Policy](https://eu.forums.blizzard.com/en/wow/t/wow-user-interface-add-on-development-policy/1642).

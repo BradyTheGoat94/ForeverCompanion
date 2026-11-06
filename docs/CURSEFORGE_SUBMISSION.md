@@ -1,7 +1,7 @@
 # CurseForge Beta submission — operator handoff
 
 **Project:** Brady's Forever Companion
-**Version:** 3.26.0-beta
+**Version:** 3.27.0-beta
 **Release channel:** Beta
 **Repository branch:** develop only
 **Verification:** Use successful workflow runs for the exact candidate commit on `develop`. The prior baseline passed [Actions #1918](https://github.com/BradyTheGoat94/ForeverCompanion/actions/runs/41768040824) at `2433b6d`.
@@ -17,7 +17,7 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 - **Class guides:** beginner-friendly priorities, rotation explanations, cooldown reminders, and spell artwork with safe fallback when an icon cannot be resolved.
 - **Gear and stats:** specialization-specific reference priorities, practical comparisons, and clear caveats where live Forever benchmarks are unavailable.
 - **Dungeons and loot:** 127 source-attributed equipment entries across nine dungeons, with boss search, item tooltips, a wishlist, and manual acquisition marks. Coverage is partial and drop rates remain unverified.
-- **Progression:** leveling, Legacy and alternate-character planning, plus profession and crafting references.
+- **Progression:** live quest priorities, leveling routes, map highlights, a player-started arrow, Legacy and alternate-character planning, plus profession and crafting references.
 - **Safety:** informational tools only; no automated spellcasting, targeting, or combat execution.
 
 **Beta notice:** The addon has passed automated Lua, mock-client, content and package checks. It has not yet been certified in the final Forever client. Some guidance is sourced from historical or general WoW references and is explicitly labeled where Forever-specific confirmation is pending. No DPS guarantee, verified BiS claim, or drop-rate guarantee is made.
@@ -30,14 +30,15 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 2. Extract the GitHub artifact wrapper. The versioned addon ZIP inside is the upload file; keep `release-audit.json` beside it for review.
 3. Compare the ZIP's SHA-256 to the report and verify that it contains `ForeverCompanion/ForeverCompanion.toc`. For manual installation, extract the addon folder into the Forever client's `Interface/AddOns/` directory. Launch the game, enable the addon and run `/fc` and `/fcdiag`.
 4. In the publisher UI, select **World of Warcraft → Addons → Forever**. Existing Forever projects list **1.60.1**. Confirm that the tested client and the publisher version selector agree before uploading.
-5. Select **Beta**, not Release; version label **3.26.0-beta**.
+5. Select **Beta**, not Release; version label **3.27.0-beta**.
 6. Use the original square PNG project crest from the candidate kit. Capture actual screenshots after the live test and label offline UI renders as previews. [CurseForge project submission guide](https://support.curseforge.com/support/solutions/articles/9000199552)
 7. Choose a license **only after the owner explicitly decides** whether others may modify or redistribute the original code. Review ownership of bundled assets first.
 8. After explicit owner approval, submit for moderation and record the resulting project and file IDs when confirmed.
 
 ## Changelog (paste into CurseForge)
 
-**3.26.0-beta**
+**3.27.0-beta**
+- Added a faction-aware Leveling Route, a simpler quest map with Focus, All and Off modes, and a player-started on-screen navigation arrow.
 - Added spec-specific rotation cards across all five practice modes, with a distinct Protection and Retribution Paladin progression.
 - Add interactive world-map markers and destination highlights. The optional Forever edition of QuestieDB supplies additional objective locations at runtime, without bundling its database.
 - Automatically add active quests to the journal and world map. High-contrast markers distinguish objectives, turn-ins and the focused quest. Highlight the focused objective area when the client provides its boundary.
@@ -63,7 +64,7 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 | Gate | Status |
 | --- | --- |
 | Automated build and package integrity | Confirm on exact candidate commit |
-| Correct project title/version in TOC | PASS — 3.26.0-beta |
+| Correct project title/version in TOC | PASS — 3.27.0-beta |
 | License choice and third-party asset review | BLOCKED — owner decision/review |
 | Original logo and truthful showcase images | Square crest prepared. Live screenshots pending. |
 | Correct CurseForge game/version selection | NEEDS PUBLISHER UI |

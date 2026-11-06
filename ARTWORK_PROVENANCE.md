@@ -74,3 +74,6 @@ character. Compose for a shallow wide class banner crop.
 
 - `ForeverCompanion/Media/QuestLocationRing.tga` is an original geometric
   ring and gradient drawn from a mathematical radial alpha profile.
+
+- `ForeverCompanion/Media/QuestDirectionArrow.tga` is an original chevron drawn
+  from simple polygons for the player's direction display.

@@ -310,10 +310,10 @@ function D.Create(parent,openPage,ctx)
   values.professions=text(character,character,16,-125,236,"","GameFontHighlightSmall",MUTED)
   local quick=panel(275,-108,306,176,"QUICK ACTIONS","Interface\\Icons\\INV_Misc_Map_01")
   -- Icon-first tiles mirror the reference; each remains an explicit page action.
-  local shortcuts={{"Leveling","INV_Misc_Book_09"},{"Quests","INV_Misc_Note_01"},{"Professions","Trade_BlackSmithing"},{"Dungeons","INV_Weapon_ShortBlade_01"},{"Legacy","INV_Misc_Book_11"},{"Alts","INV_Misc_GroupNeedMore"}}
+  local shortcuts={{"Journey","INV_Misc_Map_01","Leveling Route"},{"Quests","INV_Misc_Note_01"},{"Professions","Trade_BlackSmithing"},{"Dungeons","INV_Weapon_ShortBlade_01"},{"Legacy","INV_Misc_Book_11"},{"Alts","INV_Misc_GroupNeedMore"}}
   for i,entry in ipairs(shortcuts) do
     local target=entry[1]
-    local b=action(quick,12+((i-1)%3)*96,-44-math.floor((i-1)/3)*63,90,target,nil,function() navigate(target) end,57)
+    local b=action(quick,12+((i-1)%3)*96,-44-math.floor((i-1)/3)*63,90,entry[3] or target,nil,function() navigate(target) end,57)
     local icon=b:CreateTexture(nil,"ARTWORK");icon:SetPoint("TOP",b,"TOP",0,-5);icon:SetSize(27,27);icon:SetTexture("Interface\\Icons\\"..entry[2])
     b.caption:ClearAllPoints();b.caption:SetPoint("BOTTOM",b,"BOTTOM",0,5);b.caption:SetWidth(86);b.caption:SetJustifyH("CENTER")
     if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.caption,10) end

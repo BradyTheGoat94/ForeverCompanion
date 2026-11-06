@@ -77,6 +77,8 @@ local function widget(kind)
  function w:GetWidth() return self.width end
  function w:GetHeight() return self.height end
  function w:SetScale(value) self.scale=value end
+ function w:SetFrameStrata(value) self.strata=value end
+ function w:SetRotation(value) self.rotation=value end
  function w:SetEnabled(value) self.enabled=value end
  function w:LockHighlight() end
  function w:UnlockHighlight() end
@@ -464,16 +466,27 @@ do
     count=count+1
     if frame.symbol.text==">" then focused=focused+1 end
     if frame.symbol.text=="?" then ready=ready+1 end
-    if frame.symbol.text=="!" then active=active+1 end
+    if frame.symbol.text=="" then active=active+1 end
    end
   end
   return count,focused,ready,active
  end
  local count,focused,ready,active=visiblePins()
- assert(count==4 and focused==2 and ready==1 and active==1,"draw active pins only, with distinct focus, objective and turn-in markers")
+ assert(count==2 and focused==2 and ready==0 and active==0,"Focus should hide markers for other quests")
+ local function mapModeButton(text)
+  for _,frame in ipairs(frames) do if frame.OnClick and frame.text==text then return frame end end
+ end
+ local modeButton=assert(mapModeButton("Map: Focus"))
+ modeButton:OnClick()
+ count,focused,ready,active=visiblePins()
+ assert(count==4 and focused==2 and ready==1 and active==1,"All shows one marker per other quest")
+ modeButton:OnClick()
+ assert(visiblePins()==0 and not area.visible,"Off hides Companion overlays")
+ modeButton:OnClick()
+ modeButton:OnClick()
  local activePin
  for _,frame in ipairs(frames) do
-  if frame.parent==canvas.id and frame.symbol and frame.visible and frame.symbol.text=="!" then activePin=frame end
+  if frame.parent==canvas.id and frame.symbol and frame.visible and frame.symbol.text=="" then activePin=frame end
  end
  assert(activePin and activePin.OnClick and activePin.ring and not activePin.ring.visible)
  activePin:OnClick()
@@ -482,13 +495,33 @@ do
  end
  assert(planner.GetSelected().id==101 and activePin.ring.visible,"map click focuses the quest and highlights its destination")
  local originalWaypoint,originalShift=UiMapPoint,IsShiftKeyDown
+ local originalVector,originalFacing=CreateVector2D,GetPlayerFacing
  local destination
  UiMapPoint={CreateFromCoordinates=function(map,x,y) return {uiMapID=map,position={x=x,y=y}} end}
  C_Map.SetUserWaypoint=function(value) destination=value end
  C_Map.GetUserWaypoint=function() return destination end
- IsShiftKeyDown=function() return true end
+ CreateVector2D=function(x,y) return {GetXY=function() return x,y end} end
+ C_Map.GetBestMapForUnit=function() return 1429 end
+ C_Map.GetPlayerMapPosition=function() return CreateVector2D(0,0) end
+ C_Map.GetWorldPosFromMapPos=function(_,pos)
+  local x,y=pos:GetXY()
+  return 1,CreateVector2D(-y*100,-x*100)
+ end
+ GetPlayerFacing=function() return 0 end
  activePin:OnClick()
- assert(destination and destination.uiMapID==1429 and destination.position.x==.21,"Shift-click sets the native waypoint at the selected marker")
+ assert(ForeverCompanionQuestDirection.IsActive(),"a focused marker starts the companion HUD arrow")
+ local arrow,hud
+ for _,f in ipairs(frames) do
+  if f.texture and type(f.texture)=="string" and f.texture:find("QuestDirectionArrow",1,true) then arrow=f;hud=frames[f.parent] end
+ end
+ assert(arrow and arrow.visible and arrow.rotation<0,"HUD arrow points southwest from the fixture position")
+ GetPlayerFacing=function() return nil end
+ hud:OnUpdate(.11)
+ assert(not arrow.visible,"HUD hides the bearing if facing is unavailable")
+ assert(ForeverCompanionQuestWaypoints.Clear(),"active HUD can be cleared")
+ assert(not ForeverCompanionQuestDirection.IsActive() and not hud.visible)
+ CreateVector2D,GetPlayerFacing=originalVector,originalFacing
+ assert(destination and destination.uiMapID==1429 and destination.position.x==.21,"clicking the focused marker sets the native waypoint")
  UiMapPoint,IsShiftKeyDown=originalWaypoint,originalShift
 
  planner.Select(1)
@@ -504,7 +537,7 @@ do
  assert(visiblePins()==0 and area.map==mapID,"changing map clears old markers and uses new map for area geometry")
  mapID=1429
  provider:OnMapChanged()
- assert(visiblePins()==4,"returning to a map restores its quest pins")
+ assert(visiblePins()==3,"returning to a map restores a single marker per other quest")
  C_QuestLog.GetNumQuestLogEntries=function() error("quest log unavailable") end
  assert(not planner.Sync() and visiblePins()==0 and not area.visible,"stale quest data must hide map markers and area")
  C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries=originalInfo,originalCount
@@ -515,6 +548,24 @@ do
  WorldMapFrame.IsShown=function() return false end
  WorldMapFrame,MapCanvasDataProviderMixin,CreateFromMixins=nil,nil,nil
  C_Map,MapUtil,GetCVarBool,CreateFrame=originalMap,originalUtil,originalCVar,create
+end
+do
+ local journey=ForeverCompanionJourney
+ assert(journey.Route(2,15,"Alliance","Human")[1][2]==1436)
+ assert(journey.Route(2,11,"Horde","Skyborne")[1][2]==2521)
+ assert(journey.Route(2,15,"Horde","Scourge")[1][2]==1421)
+ assert(#journey.Route(2,15,nil,nil)==0)
+ local a,b={complete=true},{}
+ assert(journey.Recommend({a,b},{{quest=b}},a)==b,"prefer a nearby objective over a remote turn-in")
+ assert(journey.Recommend({a,b},{{quest=b},{quest=a}},b)==a,"turn in a nearby ready quest before a nearby objective")
+ SlashCmdList.FOREVERCOMPANION("open leveling route")
+ assert(ForeverCompanionDB.tab=="Journey","the leveling route is reachable from normal navigation")
+ local found
+ for _,frame in ipairs(frames) do
+  if frame.OnClick and frame.text=="Find on map" and frame.enabled then found=true end
+ end
+ assert(found,"leveling route shows map action for a live quest")
+ SlashCmdList.FOREVERCOMPANION("open quests")
 end
 local originalComplete=C_QuestLog.IsComplete
 C_QuestLog.IsComplete=function() return false end

@@ -8,7 +8,7 @@ local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
 local DB, window, titleText, content, currentTab, headerMeta
 ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
-local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
+local tabs = {"Overview", "Journey", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -27,6 +27,7 @@ local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButt
 local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
+  Journey="Next quest, navigation and suggested zones",
   Leveling="Class priorities, specialization reference and leveling notes",
   Legacy="Earn points and plan perks",
   Alts="Plan your next character",
@@ -38,6 +39,7 @@ local sectionDescriptions={
   Settings="Adjust your window and check client support"
 }
 local sectionIcons={
+  Journey="Interface\\Icons\\INV_Misc_Map_01",
   Leveling="Interface\\Icons\\INV_Misc_Book_09",
   Legacy="Interface\\Icons\\INV_Misc_Book_11",
   Alts="Interface\\Icons\\INV_Misc_Map_01",
@@ -125,7 +127,7 @@ local function render()
     end
   end
   local isOverview=currentTab=="Overview"
-  local isJournal=currentTab=="Dungeons" or currentTab=="Loot"
+  local isJournal=currentTab=="Dungeons" or currentTab=="Loot" or currentTab=="Journey"
   local notesButton=ForeverCompanionUIState.professionNotesButton
   if notesButton then
     if currentTab=="Professions" then
@@ -164,6 +166,7 @@ local function render()
     if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then studyTab="" end
     ForeverCompanionStudyBoard.Render(studyTab,classToken(),DB)
   end
+  if ForeverCompanionJourney then ForeverCompanionJourney.Show(currentTab=="Journey",level()) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
     ForeverCompanionProfessionBriefing.Show(currentTab=="Professions")
@@ -652,7 +655,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Loot=5,Quests=650,Professions=445,Leveling=970,Dungeons=953,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=650,Professions=445,Leveling=970,Dungeons=953,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -673,7 +676,7 @@ end
 -- Changes only the addon's current guide page, never the game quest log.
 local function openSection(name)
   if type(name)~="string" then return false end
-  local aliases={["home"]="Overview",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
+  local aliases={["home"]="Overview",["leveling route"]="Journey",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
   name=aliases[name:lower()] or name
   for _,section in ipairs(tabs) do
     if section:lower()==name:lower() then
@@ -830,6 +833,7 @@ local function createUI()
   navHeading:SetTextColor(0.95,0.72,0.32)
   local navIcons={
     "Interface\\Icons\\INV_Misc_Map_01",
+    "Interface\\Icons\\INV_Misc_Map_01",
     "Interface\\Icons\\INV_Misc_Book_09",
     "Interface\\Icons\\INV_Misc_Book_11",
     "Interface\\Icons\\INV_Misc_Map_01",
@@ -874,7 +878,7 @@ local function createUI()
     colorTexture(b.navGlow,0.08,0.18,0.36,0)
     b.navLabel=b:CreateFontString(nil,"OVERLAY","GameFontHighlight")
     b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
-    local labels={Overview="Home",Leveling="Class Guides",Quests="Quest Log",Alts="Alt Leveling",Dungeons="Dungeon Journal",Loot="Loot Catalog",PvP="PvP Guide"}
+    local labels={Overview="Home",Journey="Leveling Route",Leveling="Class Guides",Quests="Quest Log",Alts="Alt Leveling",Dungeons="Dungeon Journal",Loot="Loot Catalog",PvP="PvP Guide"}
     b.navLabel:SetText(labels[section] or section)
     b.navLabel:SetWidth(116);b.navLabel:SetJustifyH("LEFT")
     if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.navLabel,12) end
@@ -952,6 +956,7 @@ local function createUI()
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection,function() scroll:SetVerticalScroll(420) end) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
+  if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then

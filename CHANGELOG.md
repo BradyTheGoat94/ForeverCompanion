@@ -1,3 +1,9 @@
+## 3.27.0-beta
+
+- Added Leveling Route with a live next quest, map navigation, faction-aware zone choices, and a 1–60 bracket browser.
+- Simplified the quest map. Focus shows up to three highlighted destinations, All adds one small marker per nearby quest up to a map-wide limit, and Off hides Companion markers. Zoom focus uses the native map zoom.
+- Click a highlighted destination to start the on-screen arrow. It displays straight-line distance and uses Blizzard waypoint navigation when a custom bearing cannot start.
+
 ## 3.26.0-beta
 
 - Give all 27 specs a setup and a spec-specific rotation view across Leveling, Dungeon, Boss, AoE and PvP. Separate spell names from the instructions and keep the priority order stable.

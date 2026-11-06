@@ -56,3 +56,10 @@ Capture screenshots from the **actual client** at normal and compact sizes: home
 **Stop-ship:** broken addon loading, unverified interface version, severe unreadable UI, protected-action automation, failed CI, invalid ZIP/hash, or missing user approval. Offline mocks are not live-client evidence.
 
 - [ ] Compare Protection and Retribution Paladin at levels 10–19 and at level cap. Confirm only the tank guide recommends Seal of Fury, and that spell tooltips, role, and unlock cues match the active build.
+
+### Leveling route and map clarity
+
+- [ ] In Westfall with several accepted quests, open **Leveling Route**. Check the suggested quest and objective. Use **Find on map**, then click a highlighted marker.
+- [ ] Confirm **Map: Focus** shows up to three cyan destinations for the selected quest, with no numbered Companion markers. Check **All**, **Off**, and **Zoom focus**.
+- [ ] Close the map, face away from the destination, then turn toward it. The arrow should turn, the distance should decrease as you approach, and the arrow should hide near the point. Close the arrow and check that a different personal waypoint survives.
+- [ ] Test the route browser on both factions and a Skyborne character if available. Check that Open map shows the advertised zone.
