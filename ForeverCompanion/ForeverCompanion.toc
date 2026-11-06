@@ -67,6 +67,7 @@ PracticeNotes.lua
 StudyBoard.lua
 EncounterBrowser.lua
 ResearchNotebook.lua
+CombatMeter.lua
 Core.lua
 
 
