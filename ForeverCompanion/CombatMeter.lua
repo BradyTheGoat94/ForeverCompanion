@@ -280,7 +280,11 @@ function M.Refresh()
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    row.name:SetText(source.name)
-   row.amount:SetText((metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps") and source.amountPerSecond or source.totalAmount)
+   if metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps" then
+    row.amount:SetText(source.amountPerSecond)
+   else
+    row.amount:SetText(source.totalAmount)
+   end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
    local color
