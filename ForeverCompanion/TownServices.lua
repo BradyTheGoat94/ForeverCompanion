@@ -14,7 +14,7 @@ local services={
  {"PROFESSION_TRAINER","Profession trainer","T"},
  {"MAILBOX","Mailbox","M"},
 }
-local database,faction,byMap,loaded
+local database,faction,byMap,loaded,loadError
 local function read(fn,...)
  if type(fn)~="function" then return end
  local ok,value=pcall(fn,...)
@@ -60,12 +60,18 @@ end
 
 local function start(db,side)
  local flags=db.Enum and db.Enum.npcFlags
- if not flags or read(db.RequireContract,4)~=true or not db.Npc or not C_Timer or not C_Timer.After then return end
+ if not flags or read(db.RequireContract,4)~=true or not db.Npc or not C_Timer or not C_Timer.After then
+  database,faction,byMap,loaded,loadError=db,side,{},true,"Town service database contract unavailable"
+  return
+ end
  local ids=read(db.Npc.GetAllIds)
- if type(ids)~="table" then return end
+ if type(ids)~="table" then
+  database,faction,byMap,loaded,loadError=db,side,{},true,"Town service NPC index unavailable"
+  return
+ end
  local maps=ForeverCompanionQuestLocations.AreaMaps(db)
  local results,index={},1
- database,faction,byMap,loaded=db,side,results,false
+ database,faction,byMap,loaded,loadError=db,side,results,false,nil
  local function batch()
   if results~=byMap then return end
   for i=index,math.min(index+119,#ids) do indexNpc(db,ids[i],flags,maps,side,results) end
@@ -83,13 +89,14 @@ function S.ForMap(map)
  local db=ForeverCompanionQuestLocations.Provider()
  local side=read(UnitFactionGroup,"player")
  if not db or (side~="Alliance" and side~="Horde") then
-  database,faction,byMap,loaded=nil,nil,nil,nil
+  database,faction,byMap,loaded,loadError=nil,nil,nil,nil,nil
   return {}, "QuestieDB needed for town pins"
  end
  side=side:sub(1,1)
  if database~=db or faction~=side then start(db,side) end
  if database~=db or faction~=side then return {}, "Town service data unavailable" end
  if not loaded then return {}, "Loading town services…" end
+ if loadError then return {},loadError end
  local info=C_Map and read(C_Map.GetMapInfo,map)
  if type(info)~="table" or (info.mapType~=3 and info.mapType~=5) then return {} end
  return byMap[map] or {}
