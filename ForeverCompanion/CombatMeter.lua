@@ -456,6 +456,19 @@ function M.SetRows(count)
  M.Refresh()
  return true
 end
+-- Named layout presets keep the meter usable on small screens without
+-- changing the underlying Blizzard damage data or class colors.
+function M.SetLayout(layout)
+ if layout~="compact" and layout~="standard" and layout~="expanded" then return false end
+ local width,count
+ if layout=="compact" then width,count=260,4
+ elseif layout=="standard" then width,count=290,8
+ else width,count=400,12 end
+ M.SetWidth(width)
+ M.SetRows(count)
+ saved().layout=layout
+ return true
+end
 function M.SetSession(mode)
  local enums=Enum and Enum.DamageMeterSessionType
  for i,item in ipairs(sessions) do
@@ -485,6 +498,9 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="show" or msg=="on" then M.Show()
  elseif msg=="lock" then saved().locked=true
  elseif msg=="unlock" then saved().locked=false
+ elseif msg=="compact" or msg=="standard" or msg=="expanded" then
+  M.SetLayout(msg)
+  M.Show()
  elseif msg=="details" then
   if selectedRow then detailOpen=not detailOpen;M.Refresh() else M.Show() end
  elseif msg=="resetpos" then
