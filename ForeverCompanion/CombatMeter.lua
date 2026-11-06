@@ -9,6 +9,7 @@ local windowWidth=290
 local selectedRow=nil
 local detailOpen=false
 local detailRows={}
+local detailPanel,detailTitle
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -174,6 +175,7 @@ local function build()
   row:SetScript("OnLeave",function() hover:Hide() end)
   row:SetScript("OnMouseDown",function()
    selectedRow=(selectedRow==i) and nil or i
+   detailOpen=selectedRow~=nil
    M.Refresh()
   end)
   rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg}
@@ -193,6 +195,29 @@ local function build()
   elapsed=elapsed+dt
   if elapsed>=.4 then elapsed=0;M.Refresh() end
  end)
+ detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
+ detailPanel:SetSize(290,110+8*23)
+ detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
+ if detailPanel.SetBackdrop then
+  detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+  detailPanel:SetBackdropColor(.035,.055,.085,.96)
+  detailPanel:SetBackdropBorderColor(.66,.48,.23,1)
+ end
+ detailTitle=detailPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
+ detailTitle:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-12)
+ detailTitle:SetText("SPELL BREAKDOWN")
+ for i=1,8 do
+  local label=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-35-(i-1)*23)
+  label:SetWidth(175)
+  label:SetJustifyH("LEFT")
+  local value=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-35-(i-1)*23)
+  value:SetWidth(85)
+  value:SetJustifyH("RIGHT")
+  detailRows[i]={label=label,value=value}
+ end
+ detailPanel:Hide()
  frame:Hide()
 end
 function M.Refresh()
@@ -204,6 +229,7 @@ function M.Refresh()
  nextButton:SetShown(isPast)
  previousButton:SetEnabled(isPast and type(C_DamageMeter)=="table" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" and pastIndex<historyCount())
  nextButton:SetEnabled(isPast and pastIndex>1)
+ if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if not M.Available() then
   for _,row in ipairs(rows) do row.frame:Hide() end
   notice:SetText("Blizzard combat meter API unavailable")
@@ -253,6 +279,38 @@ function M.Refresh()
    detailLabel:SetText(selected.name)
   else selectedRow=nil;detailLabel:SetText("Select a player row for details") end
  else selectedSource=nil;detailLabel:SetText("Select a player row for details") end
+ if detailPanel and detailOpen and selectedRow then
+  local selected=sources[selectedRow]
+  local safeToInspect=not (InCombatLockdown and InCombatLockdown())
+  local breakdown
+  if safeToInspect and type(selected)=="table" and type(C_DamageMeter.GetCombatSessionSourceFromType)=="function" then
+   local guid=selected.sourceGUID
+   if not (issecretvalue and issecretvalue(guid)) then
+    if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
+     local entry=availableHistory()[pastIndex]
+     if type(entry)=="table" and entry.sessionID then
+      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,entry.sessionID,types(),guid)
+     end
+    else
+     breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid)
+    end
+   end
+  end
+  local spells=type(breakdown)=="table" and breakdown.combatSpells
+  detailTitle:SetText(safeToInspect and "SPELL BREAKDOWN" or "SPELLS  |  AFTER COMBAT")
+  for i,item in ipairs(detailRows) do
+   local spell=type(spells)=="table" and spells[i]
+   if type(spell)=="table" then
+    local spellID=spell.spellID
+    local info=type(spellID)=="number" and C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellID)
+    item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
+    item.value:SetText(spell.totalAmount)
+   else
+    item.label:SetText(i==1 and (safeToInspect and "No spell data available" or "Available after combat") or "")
+    item.value:SetText("")
+   end
+  end
+ end
  if isPast then
   notice:SetText("Past fight "..pastIndex.." | Native history")
  else
@@ -272,6 +330,7 @@ end
 function M.Hide()
  saved().visible=false
  if frame then frame:Hide() end
+ if detailPanel then detailPanel:Hide() end
 end
 function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
@@ -303,7 +362,7 @@ function M.SetRows(count)
 end
 function M.SetSession(mode)
  for i,item in ipairs(sessions) do
-  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;selectedRow=nil;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;selectedRow=nil;detailOpen=false;M.Refresh();return true end
  end
  return false
 end
