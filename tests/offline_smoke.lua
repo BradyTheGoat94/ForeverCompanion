@@ -1151,3 +1151,18 @@ do
  assertEqual(#ForeverCompanionPartyMap.PartyUnits(),0,"empty raid produces no markers")
  CreateFrame,IsInRaid,UnitExists,UnitIsUnit,ForeverCompanionPartyMap=oldFrame,oldRaid,oldExists,oldSame,oldParty
 end
+
+
+-- Quest direction rejects malformed and protected-like waypoint input before touching APIs.
+do
+ local oldDirection=ForeverCompanionQuestDirection
+ dofile("ForeverCompanion/QuestDirection.lua")
+ local direction=ForeverCompanionQuestDirection
+ assertEqual(direction.Start(nil),false,"direction rejects nil destination")
+ assertEqual(direction.Start({}),false,"direction rejects missing coordinates")
+ assertEqual(direction.Start({map=1,x=-.1,y=.5}),false,"direction rejects negative map coordinate")
+ assertEqual(direction.Start({map=1,x=.5,y=1.1}),false,"direction rejects oversized map coordinate")
+ assertEqual(direction.Start({map="invalid",x=.5,y=.5}),false,"direction rejects invalid map identifier")
+ assertEqual(direction.Stop(),false,"direction stop is safe without active destination")
+ ForeverCompanionQuestDirection=oldDirection
+end
