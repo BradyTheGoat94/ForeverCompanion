@@ -89,3 +89,20 @@ Navigation uses the Forever client map-position conversion and player-facing
 APIs to draw a straight-line bearing. The overlay pauses when those values
 cannot be read, and native map zoom preserves the original terrain artwork.
 See Blizzard's [UI Add-On Development Policy](https://eu.forums.blizzard.com/en/wow/t/wow-user-interface-add-on-development-policy/1642).
+
+### Town services and personal bank
+
+Town pins use Forever QuestieDB's public NPC service flags, friendly faction
+field and mapped spawn coordinates. The optional provider must expose contract
+4. The addon indexes records in batches and does not bundle its NPC data.
+- [QuestieDB NPC service flags and API](https://github.com/Questie/QuestieDB/blob/master/docs/api.md)
+- [Forever QuestieDB download](https://www.curseforge.com/wow/addons/questiedb)
+
+The map's Atlas style overlays a translucent tint and coordinate grid on the
+client's existing art. The client supplies its own terrain tile resolution.
+- [Map art layers API](https://warcraft.wiki.gg/wiki/API:C_Map.GetMapArtLayers)
+
+The Bank page reads personal bank tab data and container item information while
+at the banker and stores the last successful snapshot per character.
+- [Personal bank tab API](https://warcraft.wiki.gg/wiki/API_C_Bank.FetchPurchasedBankTabData)
+- [Container item information](https://warcraft.wiki.gg/wiki/API_C_Container.GetContainerItemInfo)

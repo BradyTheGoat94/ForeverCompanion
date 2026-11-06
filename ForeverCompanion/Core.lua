@@ -8,7 +8,7 @@ local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
 local DB, window, titleText, content, currentTab, headerMeta
 ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
-local tabs = {"Overview", "Journey", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
+local tabs = {"Overview", "Journey", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "Bank", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -28,6 +28,7 @@ local questSectionLabel
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
   Journey="Next quest, navigation and suggested zones",
+  Bank="View the last saved contents of your personal bank",
   Leveling="Class priorities, specialization reference and leveling notes",
   Legacy="Earn points and plan perks",
   Alts="Plan your next character",
@@ -40,6 +41,7 @@ local sectionDescriptions={
 }
 local sectionIcons={
   Journey="Interface\\Icons\\INV_Misc_Map_01",
+  Bank="Interface\\Icons\\INV_Misc_Bag_10",
   Leveling="Interface\\Icons\\INV_Misc_Book_09",
   Legacy="Interface\\Icons\\INV_Misc_Book_11",
   Alts="Interface\\Icons\\INV_Misc_Map_01",
@@ -166,6 +168,7 @@ local function render()
     if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then studyTab="" end
     ForeverCompanionStudyBoard.Render(studyTab,classToken(),DB)
   end
+  if ForeverCompanionBankView then ForeverCompanionBankView.Show(currentTab=="Bank") end
   if ForeverCompanionJourney then ForeverCompanionJourney.Show(currentTab=="Journey",level()) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
@@ -655,7 +658,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=650,Professions=445,Leveling=970,Dungeons=953,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=650,Professions=445,Leveling=970,Dungeons=953,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -841,6 +844,7 @@ local function createUI()
     "Interface\\Icons\\INV_Weapon_ShortBlade_01",
     "Interface\\Icons\\INV_Chest_Chain_04",
     "Interface\\Icons\\Trade_BlackSmithing",
+    "Interface\\Icons\\INV_Misc_Bag_10",
     "Interface\\Icons\\Ability_DualWield",
     "Interface\\Icons\\INV_Gizmo_02"
   }
@@ -956,6 +960,7 @@ local function createUI()
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection,function() scroll:SetVerticalScroll(420) end) end
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
+  if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end

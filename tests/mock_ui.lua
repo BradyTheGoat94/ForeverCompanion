@@ -472,18 +472,87 @@ do
   return count,focused,ready,active
  end
  local count,focused,ready,active=visiblePins()
- assert(count==2 and focused==2 and ready==0 and active==0,"Focus should hide markers for other quests")
+ assert(count==4 and focused==2 and ready==1 and active==1,"All should be the default map view")
  local function mapModeButton(text)
   for _,frame in ipairs(frames) do if frame.OnClick and frame.text==text then return frame end end
  end
- local modeButton=assert(mapModeButton("Map: Focus"))
+ local styleButton=assert(mapModeButton("Style: Atlas"))
+ local terrain
+ for _,frame in ipairs(frames) do
+  if frame.parent==canvas.id and frame[9] then terrain=frame end
+ end
+ assert(terrain and terrain.visible,"atlas style draws an independent terrain overlay")
+ styleButton:OnClick()
+ assert(not terrain.visible and visiblePins()==4,"original terrain keeps all quest markers")
+ styleButton:OnClick()
+ assert(terrain.visible,"atlas style can be restored")
+ local modeButton=assert(mapModeButton("Map: All"))
  modeButton:OnClick()
  count,focused,ready,active=visiblePins()
- assert(count==4 and focused==2 and ready==1 and active==1,"All shows one marker per other quest")
+ assert(count==2 and focused==2 and ready==0 and active==0,"Focus should hide markers for other quests")
  modeButton:OnClick()
- assert(visiblePins()==0 and not area.visible,"Off hides Companion overlays")
+ assert(visiblePins()==0 and not area.visible,"Off hides Companion quest markers and area")
  modeButton:OnClick()
- modeButton:OnClick()
+ assert(visiblePins()==4)
+ planner.SetAutoFocus(false)
+ local normalPOIs,normalInfo,normalCount=C_QuestLog.GetQuestsOnMap,C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries
+ C_QuestLog.GetNumQuestLogEntries=function() return 20 end
+ C_QuestLog.GetInfo=function(i)
+  if i<=4 then return normalInfo(i) end
+  return {title="Extra quest "..i,questID=200+i,zoneName="Elwynn Forest"}
+ end
+ C_QuestLog.GetQuestsOnMap=function()
+  local points=normalPOIs()
+  for i=5,20 do
+   local x=i<=6 and .10 or .14+(i-7)*.045
+   points[#points+1]={questID=200+i,mapID=1429,isQuestStart=false,x=x,y=.12}
+  end
+  return points
+ end
+ assert(planner.Sync())
+ local represented,shared=0,false
+ for _,frame in ipairs(frames) do
+  if frame.parent==canvas.id and frame.symbol and frame.visible and not frame.focused then
+   represented=represented+1+#frame.nearby
+   if frame.symbol.text=="+" and #frame.nearby==1 then shared=true end
+  end
+ end
+ assert(represented==18 and shared,"All must retain quests beyond the former cap, including shared destinations")
+ C_QuestLog.GetQuestsOnMap,C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries=normalPOIs,normalInfo,normalCount
+ planner.Select(4)
+ assert(planner.Sync())
+ local oldProvider,oldFaction,oldTimer=LibQuestieDB,UnitFactionGroup,C_Timer
+ UnitFactionGroup=function() return "Alliance" end
+ local scheduled
+ C_Timer={After=function(_,callback) scheduled=callback end}
+ LibQuestieDB={
+  Quest={},RequireContract=function() return true end,
+  ModeIndicator={GetStatus=function() return {expansion="Forever"} end},
+  Support={Get=function() return {private={areaIdToUiMapId="return {[12] = 1429,}"}} end},
+  Enum={npcFlags={BANKER=256,VENDOR=4}},
+  Npc={GetAllIds=function() return {1,2,3} end,npcFlags=function(id) return id==1 and 256 or 4 end,
+   friendlyToFaction=function(id) return id==3 and "H" or "A" end,
+   name=function(id) return id==1 and "Test banker" or "Test vendor" end,
+   spawns=function(id) return {[12]={{40+id*5,70}}} end},
+ }
+ provider:OnMapChanged()
+ assert(scheduled,"town services are indexed asynchronously")
+ scheduled()
+ local function townPins()
+  local count=0
+  for _,frame in ipairs(frames) do
+   if frame.parent==canvas.id and frame.locations and frame.visible then count=count+1 end
+  end
+  return count
+ end
+ assert(townPins()==2,"only friendly town service pins should be visible")
+ local townsButton=assert(mapModeButton("Towns: On"))
+ townsButton:OnClick()
+ assert(townPins()==0 and visiblePins()==4,"town services toggle independently of quests")
+ townsButton:OnClick()
+ assert(townPins()==2)
+ LibQuestieDB,UnitFactionGroup,C_Timer=oldProvider,oldFaction,oldTimer
+ provider:OnMapChanged()
  local activePin
  for _,frame in ipairs(frames) do
   if frame.parent==canvas.id and frame.symbol and frame.visible and frame.symbol.text=="" then activePin=frame end
@@ -566,6 +635,40 @@ do
  end
  assert(found,"leveling route shows map action for a live quest")
  SlashCmdList.FOREVERCOMPANION("open quests")
+end
+do
+ local originalBank,originalContainer,originalEnum,originalTime,originalDate=C_Bank,C_Container,Enum,GetServerTime,date
+ Enum={BankType={Character=0}}
+ GetServerTime=function() return 100 end
+ date=os.date
+ C_Bank={CanViewBank=function(kind) return kind==0 end,FetchPurchasedBankTabData=function()
+  return {{ID=6,name="Supplies"},{ID=7,name="Gear"}}
+ end}
+ local stacks=4
+ C_Container={GetContainerNumSlots=function() return 2 end,GetContainerItemInfo=function(id,slot)
+  if id==7 and slot==1 then return {itemID=1234,stackCount=stacks,hyperlink="|Hitem:1234|h[Sample ore]|h"} end
+ end}
+ local bankEvent
+ for _,frame in ipairs(frames) do if frame.events and frame.events.BANKFRAME_OPENED then bankEvent=frame;break end end
+ assert(bankEvent)
+ bankEvent:OnEvent("BANKFRAME_OPENED")
+ local snapshot=assert(ForeverCompanionDB.bankSnapshot)
+ assert(#snapshot.items==1 and snapshot.slots==4 and snapshot.items[1].count==4 and snapshot.items[1].tab=="Gear")
+ stacks=6
+ bankEvent:OnEvent("PLAYERBANKSLOTS_CHANGED")
+ assert(ForeverCompanionDB.bankSnapshot.items[1].count==6)
+ C_Container.GetContainerNumSlots=function() return 0 end
+ bankEvent:OnEvent("BAG_UPDATE_DELAYED")
+ assert(ForeverCompanionDB.bankSnapshot.items[1].count==6,"incomplete reads preserve the last good snapshot")
+ bankEvent:OnEvent("BANKFRAME_CLOSED")
+ C_Container.GetContainerNumSlots=function() error("must not read the bank remotely") end
+ bankEvent:OnEvent("BAG_UPDATE_DELAYED")
+ SlashCmdList.FOREVERCOMPANION("bank")
+ local found
+ for _,frame in ipairs(frames) do if frame.text=="Sample ore  ×6" then found=true end end
+ assert(ForeverCompanionDB.tab=="Bank" and found,"bank items remain viewable after leaving the banker")
+ SlashCmdList.FOREVERCOMPANION("open quests")
+ C_Bank,C_Container,Enum,GetServerTime,date=originalBank,originalContainer,originalEnum,originalTime,originalDate
 end
 local originalComplete=C_QuestLog.IsComplete
 C_QuestLog.IsComplete=function() return false end

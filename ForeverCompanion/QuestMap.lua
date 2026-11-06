@@ -2,20 +2,56 @@
 local M={}
 ForeverCompanionQuestMap=M
 
-local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton
-local pins,zoomPoint={}
+local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton,styleButton,terrain,townButton
+local pins,servicePins,zoomPoint={},{},nil
 local modeNames={focus="Focus",all="All",off="Off"}
-local nextMode={focus="all",all="off",off="focus"}
+local nextMode={all="focus",focus="off",off="all"}
 
 local function mode()
  local saved=ForeverCompanionDB and ForeverCompanionDB.questMapMode
- return modeNames[saved] and saved or "focus"
+ return modeNames[saved] and saved or "all"
+end
+
+local function atlasStyle()
+ return not ForeverCompanionDB or ForeverCompanionDB.questMapOriginalTerrain~=true
+end
+
+local function showTerrain(canvas)
+ if not terrain then
+  terrain=CreateFrame("Frame",nil,canvas)
+  terrain:SetAllPoints(canvas)
+  terrain:SetFrameLevel(canvas:GetFrameLevel()+1)
+  terrain:EnableMouse(false)
+  local tint=terrain:CreateTexture(nil,"BACKGROUND")
+  tint:SetAllPoints(terrain)
+  tint:SetColorTexture(.14,.20,.25,.13)
+  for i=1,9 do
+   local vertical=terrain:CreateTexture(nil,"ARTWORK")
+   vertical:SetWidth(1)
+   vertical:SetColorTexture(.03,.11,.17,i==5 and .19 or .10)
+   local horizontal=terrain:CreateTexture(nil,"ARTWORK")
+   horizontal:SetHeight(1)
+   horizontal:SetColorTexture(.03,.11,.17,i==5 and .19 or .10)
+   terrain[i]={vertical,horizontal}
+  end
+ end
+ local width,height=canvas:GetWidth(),canvas:GetHeight()
+ for i,lines in ipairs(terrain) do
+  local x,y=width*i/10,-height*i/10
+  lines[1]:SetPoint("TOP",terrain,"TOPLEFT",x,0)
+  lines[1]:SetPoint("BOTTOM",terrain,"BOTTOMLEFT",x,0)
+  lines[2]:SetPoint("LEFT",terrain,"TOPLEFT",0,y)
+  lines[2]:SetPoint("RIGHT",terrain,"TOPRIGHT",0,y)
+ end
+ terrain:Show()
 end
 
 local function hidePins()
  for _,pin in ipairs(pins) do pin:Hide() end
+ for _,pin in ipairs(servicePins) do pin:Hide() end
  if area then area:Hide() end
  if guide then guide:Hide() end
+ if terrain then terrain:Hide() end
 end
 
 local function createPin(canvas)
@@ -43,6 +79,9 @@ local function createPin(canvas)
   GameTooltip:AddLine(entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective"),1,1,1,true)
   GameTooltip:AddLine(entry.target.label or entry.target.source,.68,.75,.82,true)
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
+  for _,nearby in ipairs(self.nearby or {}) do
+   GameTooltip:AddLine(nearby.quest.title,.81,.87,.92,true)
+  end
   GameTooltip:AddLine(self.focused and "Click to start arrow" or "Click to focus quest",.46,.84,.96)
   GameTooltip:Show()
  end)
@@ -61,9 +100,65 @@ local function createPin(canvas)
  return pin
 end
 
+local function townsEnabled()
+ return not ForeverCompanionDB or ForeverCompanionDB.questMapHideTowns~=true
+end
+
+local function showServices(canvas,mapID,scale)
+ if not townsEnabled() then return end
+ local points,notice=ForeverCompanionTownServices.ForMap(mapID)
+ local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
+ local groups,ordered={},{}
+ for _,point in ipairs(points) do
+  local key=point.symbol..":"..math.floor(point.x*width/27+.5)..":"..math.floor(point.y*height/27+.5)
+  local group=groups[key]
+  if not group then group={point};groups[key]=group;ordered[#ordered+1]=group
+  else group[#group+1]=point end
+ end
+ for i,group in ipairs(ordered) do
+  local pin=servicePins[i]
+  if not pin then
+   pin=CreateFrame("Button",nil,canvas)
+   pin:RegisterForClicks("LeftButtonUp")
+   pin:SetSize(21,16)
+   local bg=pin:CreateTexture(nil,"BACKGROUND")
+   bg:SetAllPoints(pin);bg:SetColorTexture(.07,.21,.37,.96)
+   pin.label=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+   pin.label:SetPoint("CENTER")
+   pin:SetScript("OnEnter",function(self)
+    if not GameTooltip then return end
+    GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+    GameTooltip:SetText(self.locations[1].service)
+    local seen={}
+    for _,entry in ipairs(self.locations) do
+     if not seen[entry.label] then GameTooltip:AddLine(entry.label,.8,.9,1,true);seen[entry.label]=true end
+    end
+    GameTooltip:AddLine("QuestieDB reference  ·  Click for arrow",.65,.78,.85)
+    GameTooltip:Show()
+   end)
+   pin:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+   pin:SetScript("OnClick",function(self)
+    local target=self.locations[1]
+    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,target.label))
+   end)
+   servicePins[i]=pin
+  end
+  local point=group[1]
+  pin.locations=group
+  pin.label:SetText(point.symbol)
+  local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
+  pin:SetFrameLevel(canvas:GetFrameLevel()+priority)
+  pin:SetScale(1/scale)
+  pin:ClearAllPoints()
+  pin:SetPoint("CENTER",canvas,"TOPLEFT",point.x*width,-point.y*height)
+  pin:Show()
+ end
+ return notice
+end
+
 local function createGuide(map)
  local bar=CreateFrame("Frame",nil,map)
- bar:SetSize(338,62)
+ bar:SetSize(451,62)
  bar:SetPoint("TOP",map,"TOP",0,-38)
  bar:SetFrameLevel(map:GetFrameLevel()+200)
  local bg=bar:CreateTexture(nil,"BACKGROUND")
@@ -71,14 +166,14 @@ local function createGuide(map)
  bg:SetColorTexture(.035,.057,.088,.95)
  local title=bar:CreateFontString(nil,"OVERLAY","GameFontHighlight")
  title:SetPoint("TOP",0,-5)
- title:SetWidth(319)
+ title:SetWidth(423)
  local hint=bar:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  hint:SetPoint("TOP",0,-22)
- hint:SetWidth(319)
+ hint:SetWidth(423)
  hint:SetTextColor(.72,.86,.92)
  modeButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
  modeButton:SetSize(100,22)
- modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-56,3)
+ modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,3)
  modeButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapMode=nextMode[mode()]
@@ -86,12 +181,28 @@ local function createGuide(map)
  end)
  zoomButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
  zoomButton:SetSize(100,22)
- zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",56,3)
+ zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,3)
  zoomButton:SetText("Zoom focus")
  zoomButton:SetScript("OnClick",function()
   if zoomPoint and type(map.PanAndZoomTo)=="function" then
    map:PanAndZoomTo(zoomPoint.x,zoomPoint.y)
   end
+ end)
+ styleButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ styleButton:SetSize(112,22)
+ styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,3)
+ styleButton:SetScript("OnClick",function()
+  ForeverCompanionDB=ForeverCompanionDB or {}
+  ForeverCompanionDB.questMapOriginalTerrain=atlasStyle()
+  M.Refresh()
+ end)
+ townButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ townButton:SetSize(100,22)
+ townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,3)
+ townButton:SetScript("OnClick",function()
+  ForeverCompanionDB=ForeverCompanionDB or {}
+  ForeverCompanionDB.questMapHideTowns=townsEnabled()
+  M.Refresh()
  end)
  return bar,title,hint
 end
@@ -164,32 +275,77 @@ local function focusGroups(locations,focus,width,height)
  return groups
 end
 
+-- One destination per background quest, preferring the client POI to a
+-- reference spawn. Overlapping quests share a pin, with every title listed.
+local function addOtherQuests(groups,locations,focus,width,height)
+ local byQuest,ordered={},{}
+ for _,entry in ipairs(locations) do
+  if entry.quest~=focus then
+   local previous=byQuest[entry.quest]
+   if not previous then ordered[#ordered+1]=entry.quest end
+   if not previous or (previous.target.kind and not entry.target.kind) then byQuest[entry.quest]=entry end
+  end
+ end
+ local background={}
+ for _,quest in ipairs(ordered) do
+  local entry=byQuest[quest]
+  local point=entry.target
+  local cluster
+  for _,group in ipairs(background) do
+   local other=group.entry.target
+   if math.abs(point.x-other.x)*width<=16 and math.abs(point.y-other.y)*height<=16 then
+    cluster=group
+    break
+   end
+  end
+  if cluster then
+   cluster.nearby[#cluster.nearby+1]=entry
+  else
+   local offsetX
+   for _,group in ipairs(groups) do
+    if group.focused then
+     local other=group.entry.target
+     if math.abs(point.x-other.x)*width<=18 and math.abs(point.y-other.y)*height<=18 then
+      offsetX=point.x<.9 and 22 or -22
+      break
+     end
+    end
+   end
+   local group={entry=entry,samples=1,nearby={},offsetX=offsetX}
+   background[#background+1]=group
+   groups[#groups+1]=group
+  end
+ end
+end
+
 function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
  hidePins()
  zoomPoint=nil
  local planner=ForeverCompanionQuestPlanner
- if not planner.IsSupported() then return end
  local mapID,canvas=worldMap:GetMapID(),worldMap:GetCanvas()
  if not mapID or not canvas then return end
  local width,height=canvas:GetWidth(),canvas:GetHeight()
  if not width or not height or width<=0 or height<=0 then return end
- local focus=planner.GetSelected()
- if not focus then return end
+ local scale=canvas.GetScale and canvas:GetScale() or 1
+ if type(scale)~="number" or scale<=0 then scale=1 end
+ local focus=planner.IsSupported() and planner.GetSelected()
  local view=mode()
  if not guide then guide,guideTitle,guideHint=createGuide(worldMap) end
  modeButton:SetText("Map: "..modeNames[view])
- guideTitle:SetText(focus.title)
- guideHint:SetText(view=="off" and "Companion markers hidden" or "No destination on this map")
+ styleButton:SetText(atlasStyle() and "Style: Atlas" or "Style: Original")
+ townButton:SetText(townsEnabled() and "Towns: On" or "Towns: Off")
+ if atlasStyle() then showTerrain(canvas) end
+ local serviceNotice=showServices(canvas,mapID,scale)
+ guideTitle:SetText(focus and focus.title or "Companion map")
+ guideHint:SetText(serviceNotice or (view=="off" and "Companion quest markers hidden" or "No quest destination on this map"))
  zoomButton:SetEnabled(false)
  guide:Show()
- if view=="off" then return end
+ if view=="off" or not focus then return end
 
  pcall(drawArea,canvas,mapID,focus,width,height)
  local quests=planner.GetLive()
  local locations=ForeverCompanionQuestWaypoints.MapLocations(mapID,view=="focus" and {focus} or quests)
- local scale=canvas.GetScale and canvas:GetScale() or 1
- if type(scale)~="number" or scale<=0 then scale=1 end
  local groups=focusGroups(locations,focus,width*scale,height*scale)
  if #groups>0 then
   zoomPoint=groups[1].entry.target
@@ -199,14 +355,7 @@ function M.Refresh()
   guideHint:SetText("Click another quest marker to focus it")
  end
  if view=="all" then
-  local seen={[focus]=true}
-  for _,entry in ipairs(locations) do
-   if #groups>=12 then break end
-   if not seen[entry.quest] then
-    groups[#groups+1]={entry=entry,samples=1}
-    seen[entry.quest]=true
-   end
-  end
+  addOtherQuests(groups,locations,focus,width*scale,height*scale)
  end
 
  for i,group in ipairs(groups) do
@@ -214,8 +363,9 @@ function M.Refresh()
   pins[i]=pin
   local entry=group.entry
   local target=entry.target
-  pin.entry,pin.focused,pin.samples=entry,group.focused,group.samples
-  local size=group.focused and 22 or 13
+  pin.entry,pin.focused,pin.samples,pin.nearby=entry,group.focused,group.samples,group.nearby
+  local shared=group.nearby and #group.nearby>0
+  local size=group.focused and 22 or (shared and 17 or 13)
   if group.focused and not focus.complete then
    pin.ring:SetSize(group.radius*2,group.radius*2)
    pin.ring:Show()
@@ -228,9 +378,9 @@ function M.Refresh()
   if group.focused then pin.badge:SetColorTexture(.32,.92,1,1)
   elseif entry.quest.complete then pin.badge:SetColorTexture(.48,.91,.52,.93)
   else pin.badge:SetColorTexture(.93,.76,.40,.86) end
-  pin.symbol:SetText(entry.quest.complete and "?" or (group.focused and ">" or ""))
+  pin.symbol:SetText(shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or "")))
   pin:ClearAllPoints()
-  pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale,-target.y*height*scale)
+  pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
   pin:Show()
  end
 end

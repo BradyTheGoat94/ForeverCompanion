@@ -63,3 +63,9 @@ Capture screenshots from the **actual client** at normal and compact sizes: home
 - [ ] Confirm **Map: Focus** shows up to three cyan destinations for the selected quest, with no numbered Companion markers. Check **All**, **Off**, and **Zoom focus**.
 - [ ] Close the map, face away from the destination, then turn toward it. The arrow should turn, the distance should decrease as you approach, and the arrow should hide near the point. Close the arrow and check that a different personal waypoint survives.
 - [ ] Test the route browser on both factions and a Skyborne character if available. Check that Open map shows the advertised zone.
+
+### Atlas, town services and bank
+
+- [ ] Open the world map with many active quests. Verify **Map: All** represents every quest that has a location on the displayed map, including shared pins. Switch between **Style: Atlas** and **Style: Original**.
+- [ ] With Forever QuestieDB enabled, verify friendly vendor, bank, auction house and flight master pins in a capital. Click a service and confirm the arrow uses its location. Toggle **Towns: Off** and verify quest pins remain.
+- [ ] Visit a banker and open the Bank tab. Check items across multiple personal tabs. Change a stack, leave the banker, and reopen **/fc bank** to confirm the saved contents and timestamp.

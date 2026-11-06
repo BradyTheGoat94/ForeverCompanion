@@ -120,7 +120,7 @@ function B.Render()
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
     values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
-    values.status:SetText("Map: Focus hides other Companion quests")
+    values.status:SetText("Map: All shows active quests with locations")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
     values.status:SetText("Cached. Check your quest log.")

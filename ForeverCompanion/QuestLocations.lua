@@ -36,6 +36,9 @@ local function maps(db)
  return areaMaps
 end
 
+R.Provider=provider
+R.AreaMaps=maps
+
 local function append(result,zoneMaps,spawns,kind,name,objective)
  if type(spawns)~="table" then return end
  for area,coords in pairs(spawns) do

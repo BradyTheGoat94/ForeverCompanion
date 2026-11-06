@@ -1,3 +1,10 @@
+## 3.28.0-beta
+
+- Show all active quests with a known destination on the displayed map by default. Nearby quests share a marker and the focused quest keeps its cyan highlight.
+- Add a switchable atlas style using a subtle grid and tint over the client map.
+- Show friendly town services using Forever QuestieDB: vendors, repairs, bankers, auction houses, inns, and flight masters.
+- Save your personal bank while it is open. View the most recent snapshot from the Bank tab or /fc bank.
+
 ## 3.27.0-beta
 
 - Added Leveling Route with a live next quest, map navigation, faction-aware zone choices, and a 1–60 bracket browser.
