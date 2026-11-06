@@ -48,6 +48,7 @@ TownServices.lua
 QuestDirection.lua
 QuestWaypoints.lua
 QuestMap.lua
+PartyMap.lua
 Journey.lua
 BankView.lua
 Diagnostics.lua
