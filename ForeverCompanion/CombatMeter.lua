@@ -44,6 +44,17 @@ local function saved()
  db.combatMeter=db.combatMeter or {}
  return db.combatMeter
 end
+local function safeNumber(value)
+ return type(value)=="number" and value==value and value~=math.huge and value~=-math.huge
+end
+local function savePosition(target)
+ if not target or not UIParent or not target.GetCenter or not UIParent.GetCenter then return end
+ local x,y=target:GetCenter()
+ local parentX,parentY=UIParent:GetCenter()
+ if safeNumber(x) and safeNumber(y) and safeNumber(parentX) and safeNumber(parentY) then
+  saved().position={point="CENTER",relative="CENTER",x=x-parentX,y=y-parentY}
+ end
+end
 local function types()
  local e=Enum and Enum.DamageMeterType
  return e and e[metrics[metricIndex][2]]
@@ -83,8 +94,7 @@ local function build()
  end)
  frame:SetScript("OnDragStop",function(self)
   self:StopMovingOrSizing()
-  local point,_,relative,x,y=self:GetPoint()
-  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative="CENTER",x=x,y=y} end
+  savePosition(self)
  end)
  if frame.SetBackdrop then
   frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -95,9 +105,9 @@ local function build()
  if type(db.rows)=="number" and db.rows==db.rows and db.rows~=math.huge and db.rows~=-math.huge then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
  if type(db.width)=="number" and db.width==db.width and db.width~=math.huge and db.width~=-math.huge then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
  frame:SetSize(windowWidth,110+rowCount*24)
- if type(db.position)=="table" and type(db.position.x)=="number" and type(db.position.y)=="number" then
+ if type(db.position)=="table" and safeNumber(db.position.x) and safeNumber(db.position.y) then
   frame:ClearAllPoints()
-  frame:SetPoint(db.position.point or "CENTER",UIParent,db.position.relative or "CENTER",db.position.x,db.position.y)
+  frame:SetPoint("CENTER",UIParent,"CENTER",db.position.x,db.position.y)
  end
  local trim=frame:CreateTexture(nil,"ARTWORK")
  trim:SetColorTexture(.85,.62,.29,1)
@@ -121,8 +131,7 @@ local function build()
  dragHandle:SetScript("OnDragStart",function() if not saved().locked then frame:StartMoving() end end)
  dragHandle:SetScript("OnDragStop",function()
   frame:StopMovingOrSizing()
-  local point,_,relative,x,y=frame:GetPoint()
-  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative="CENTER",x=x,y=y} end
+  savePosition(frame)
  end)
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
