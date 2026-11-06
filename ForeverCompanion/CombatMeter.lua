@@ -6,6 +6,8 @@ local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButt
 local pastIndex=1
 local rowCount=8
 local windowWidth=290
+local selectedRow=nil
+local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
@@ -165,9 +167,19 @@ local function build()
   row:EnableMouse(true)
   row:SetScript("OnEnter",function() hover:Show() end)
   row:SetScript("OnLeave",function() hover:Hide() end)
-  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent}
+  row:SetScript("OnMouseDown",function()
+   selectedRow=(selectedRow==i) and nil or i
+   M.Refresh()
+  end)
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg}
   if i>rowCount then row:Hide() end
  end
+ detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,29)
+ detailLabel:SetWidth(windowWidth-26)
+ detailLabel:SetJustifyH("LEFT")
+ detailLabel:SetTextColor(.98,.78,.45)
+ detailLabel:SetText("Select a player row for details")
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,12)
  notice:SetWidth(windowWidth-100)
@@ -208,6 +220,8 @@ function M.Refresh()
   local source=i<=rowCount and sources[i]
   if type(source)=="table" then
    row.frame:Show()
+   if selectedRow==i then row.background:SetColorTexture(.22,.19,.12,.98)
+   else row.background:SetColorTexture(i%2==0 and .085 or .11,i%2==0 and .13 or .17,i%2==0 and .19 or .24,.97) end
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    local okName=pcall(row.name.SetText,row.name,source.name)
@@ -232,6 +246,13 @@ function M.Refresh()
    if not okRatio then row.fill:SetValue(0) end
   else row.frame:Hide() end
  end
+ if selectedRow then
+  local selected=sources[selectedRow]
+  if type(selected)=="table" then
+   local ok=pcall(detailLabel.SetText,detailLabel,selected.name)
+   if not ok then detailLabel:SetText("Selected player") end
+  else selectedRow=nil;detailLabel:SetText("Select a player row for details") end
+ else detailLabel:SetText("Select a player row for details") end
  if isPast then
   notice:SetText("Past fight "..pastIndex.." | Native history")
  else
@@ -262,6 +283,8 @@ function M.SetWidth(width)
    row.frame:SetWidth(width-26)
    row.name:SetWidth(width-145)
   end
+  if detailLabel then detailLabel:SetWidth(width-26) end
+
  end
  M.Refresh()
  return true
