@@ -1008,3 +1008,27 @@ do
  assertEqual(#services.ForMap(123),5,"reloaded faction data")
  C_Timer,C_Map,UnitFactionGroup,ForeverCompanionQuestLocations,ForeverCompanionQuestMap=oldTimer,oldMap,oldFaction,oldLocations,oldQuestMap
 end
+
+-- Combat meter must degrade safely without Blizzard's native API.
+do
+ local oldAPI,oldEnum,oldFrame=C_DamageMeter,Enum,CreateFrame
+ local oldSlash=SlashCmdList.FOREVERCOMPANIONMETER
+ local oldDB=ForeverCompanionDB
+ C_DamageMeter=nil
+ Enum={DamageMeterType={DamageDone=0,HealingDone=1,Absorbs=2},DamageMeterSessionType={Current=0,Previous=1,Overall=2}}
+ CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
+ dofile("ForeverCompanion/CombatMeter.lua")
+ local meter=ForeverCompanionCombatMeter
+ assertEqual(meter.Available(),false,"meter safely detects missing Blizzard API")
+ C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={}} end}
+ assertEqual(meter.Available(),true,"meter detects native API")
+ assertEqual(meter.SetMode("healing"),true,"meter mode selection")
+ assertEqual(meter.SetMode("invalid"),false,"meter rejects unknown modes")
+ SlashCmdList.FOREVERCOMPANIONMETER("lock")
+ assertEqual(ForeverCompanionDB.combatMeter.locked,true,"meter lock preference")
+ SlashCmdList.FOREVERCOMPANIONMETER("unlock")
+ assertEqual(ForeverCompanionDB.combatMeter.locked,false,"meter unlock preference")
+ C_DamageMeter,Enum,CreateFrame=oldAPI,oldEnum,oldFrame
+ SlashCmdList.FOREVERCOMPANIONMETER=oldSlash
+ ForeverCompanionDB=oldDB
+end
