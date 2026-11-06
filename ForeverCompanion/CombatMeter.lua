@@ -122,6 +122,7 @@ local function build()
    if sessionType()~=nil then break end
   end
   pastIndex=1
+  selectedRow=nil
   M.Refresh()
  end)
  previousButton=button(frame,"<",27,-63,function() pastIndex=pastIndex+1;M.Refresh() end)
@@ -299,13 +300,13 @@ function M.SetRows(count)
 end
 function M.SetSession(mode)
  for i,item in ipairs(sessions) do
-  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;selectedRow=nil;M.Refresh();return true end
  end
  return false
 end
 function M.SetMode(mode)
  for i,item in ipairs(metrics) do
-  if item[1]:lower()==tostring(mode):lower() then metricIndex=i;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then metricIndex=i;selectedRow=nil;M.Refresh();return true end
  end
  return false
 end
