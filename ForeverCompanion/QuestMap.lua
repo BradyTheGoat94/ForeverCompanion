@@ -376,6 +376,7 @@ function M.Refresh()
  local mapID,canvas=worldMap:GetMapID(),worldMap:GetCanvas()
  if not mapID or not canvas then return end
  local width,height=canvas:GetWidth(),canvas:GetHeight()
+ if (issecretvalue and (issecretvalue(width) or issecretvalue(height))) then return end
  if not width or not height or width<=0 or height<=0 then return end
  local scale=canvas.GetScale and canvas:GetScale() or 1
  if type(scale)~="number" or scale<=0 then scale=1 end
