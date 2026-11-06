@@ -25,6 +25,14 @@ end
 local function historyCount()
  return #availableHistory()
 end
+local function historyID(entry)
+ if issecretvalue and issecretvalue(entry) then return nil end
+ if type(entry)=="number" or type(entry)=="string" then return entry end
+ if type(entry)~="table" then return nil end
+ local id=entry.sessionID
+ if issecretvalue and issecretvalue(id) then return nil end
+ return id
+end
 local function read(fn,...)
  if type(fn)~="function" then return end
  local ok,value=pcall(fn,...)
@@ -76,7 +84,7 @@ local function build()
  frame:SetScript("OnDragStop",function(self)
   self:StopMovingOrSizing()
   local point,_,relative,x,y=self:GetPoint()
-  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative=relative,x=x,y=y} end
+  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative="CENTER",x=x,y=y} end
  end)
  if frame.SetBackdrop then
   frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -114,7 +122,7 @@ local function build()
  dragHandle:SetScript("OnDragStop",function()
   frame:StopMovingOrSizing()
   local point,_,relative,x,y=frame:GetPoint()
-  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative=relative,x=x,y=y} end
+  if type(x)=="number" and type(y)=="number" then saved().position={point=point,relative="CENTER",x=x,y=y} end
  end)
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
@@ -253,8 +261,8 @@ function M.Refresh()
  local data
  if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" then
   local entry=availableHistory()[pastIndex]
-  local id=type(entry)=="table" and entry.sessionID
-  if not (issecretvalue and issecretvalue(id)) and id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
+  local id=historyID(entry)
+  if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
   if data==nil and pastIndex==1 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
@@ -314,8 +322,8 @@ function M.Refresh()
    if not (issecretvalue and issecretvalue(guid)) and not (issecretvalue and issecretvalue(creatureID)) then
     if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
      local entry=availableHistory()[pastIndex]
-     local sessionID=type(entry)=="table" and entry.sessionID
-     if not (issecretvalue and issecretvalue(sessionID)) and sessionID~=nil then
+     local sessionID=historyID(entry)
+     if sessionID~=nil then
       breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,types(),guid,creatureID)
      end
     else
