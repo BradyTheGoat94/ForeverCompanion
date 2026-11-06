@@ -78,11 +78,17 @@ local function build()
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
  close:SetScript("OnClick",function() M.Hide() end)
  modeButton=button(frame,"Damage",91,-190,function()
-  metricIndex=metricIndex%#metrics+1
+  for _=1,#metrics do
+   metricIndex=metricIndex%#metrics+1
+   if types()~=nil then break end
+  end
   M.Refresh()
  end)
  sessionButton=button(frame,"Current",92,-91,function()
-  sessionIndex=sessionIndex%#sessions+1
+  for _=1,#sessions do
+   sessionIndex=sessionIndex%#sessions+1
+   if sessionType()~=nil then break end
+  end
   M.Refresh()
  end)
  rows={}
@@ -184,6 +190,10 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
 end
 local events=CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
+for _,event in ipairs({"DAMAGE_METER_COMBAT_SESSION_UPDATED","DAMAGE_METER_CURRENT_SESSION_UPDATED","DAMAGE_METER_RESET"}) do
+ pcall(events.RegisterEvent,events,event)
+end
 events:SetScript("OnEvent",function(_,event,name)
- if event=="ADDON_LOADED" and name=="ForeverCompanion" and saved().visible then M.Show() end
+ if event=="ADDON_LOADED" and name=="ForeverCompanion" and saved().visible then M.Show()
+ elseif event~="ADDON_LOADED" then M.Refresh() end
 end)
