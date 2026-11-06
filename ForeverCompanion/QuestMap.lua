@@ -199,13 +199,18 @@ end
 local function createGuide(map)
  local bar=CreateFrame("Frame",nil,map)
  bar:SetSize(451,68)
- -- Keep controls inside narrow maps without shrinking the text independently.
- if map.GetWidth then
+ -- Recalculate as the world-map window is resized; no external map addon.
+ local function fitToolbar()
+  if not map.GetWidth then return end
   local width=map:GetWidth()
-  if type(width)=="number" and width>0 and width<480 then
-   bar:SetScale(math.max(.72,width/480))
-  end
+  if issecretvalue and issecretvalue(width) then return end
+  if type(width)~="number" or width<=0 then return end
+  local scale=math.min(1,math.max(.65,(width-24)/451))
+  if bar:GetScale()~=scale then bar:SetScale(scale) end
  end
+ fitToolbar()
+ bar:SetScript("OnShow",fitToolbar)
+ bar:SetScript("OnSizeChanged",fitToolbar)
  bar:SetPoint("TOP",map,"TOP",0,-38)
  bar:SetFrameLevel(map:GetFrameLevel()+200)
  local bg=bar:CreateTexture(nil,"BACKGROUND")
