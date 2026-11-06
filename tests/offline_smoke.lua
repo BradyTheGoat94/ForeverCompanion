@@ -954,3 +954,57 @@ GetSpellTexture=nil
 assertEqual(ForeverCompanionIcons.Spell('Battle Shout'),nil,'missing spell texture API is safe')
 GetSpellTexture=oldLegacySpellTexture
 C_Spell=oldSpellAPI
+
+
+-- Town service coverage: multi-service NPCs, provider loss, faction switching.
+do
+ local oldTimer,oldMap,oldFaction,oldLocations,oldQuestMap=C_Timer,C_Map,UnitFactionGroup,ForeverCompanionQuestLocations,ForeverCompanionQuestMap
+ local pending={}
+ C_Timer={After=function(_,fn) pending[#pending+1]=fn end}
+ C_Map={GetMapInfo=function(id) if id==123 then return {mapType=3} end end}
+ local side="Alliance"
+ UnitFactionGroup=function() return side end
+ local flags={BANKER=1,VENDOR=2,TRAINER=4,MAILBOX=8}
+ local db={
+  Enum={npcFlags=flags},
+  RequireContract=function(version) return version==4 end,
+  Npc={
+   GetAllIds=function() return {1,2} end,
+   npcFlags=function(id) return id==1 and 15 or 2 end,
+   friendlyToFaction=function() return "AH" end,
+   spawns=function() return {[55]={{20,30,0}}} end,
+   name=function(id) return id==1 and "Multi-service NPC" or "Vendor NPC" end,
+  },
+ }
+ local available=true
+ ForeverCompanionQuestLocations={
+  Provider=function() if available then return db end end,
+  AreaMaps=function() return {[55]=123} end,
+ }
+ local refreshes=0
+ ForeverCompanionQuestMap={Refresh=function() refreshes=refreshes+1 end}
+ dofile("ForeverCompanion/TownServices.lua")
+ local services=ForeverCompanionTownServices
+ local before,notice=services.ForMap(123)
+ assertEqual(#before,0,"town services load asynchronously")
+ assert(notice~=nil,"town loading status")
+ while #pending>0 do table.remove(pending,1)() end
+ local records=services.ForMap(123)
+ local types={}
+ for _,entry in ipairs(records) do types[entry.service]=true end
+ assertEqual(#records,5,"multi-service NPC flags and second vendor")
+ assert(types.Bank and types.Vendor and types.Trainer and types.Mailbox,"multi-service categories")
+ assertEqual(refreshes,1,"town refresh on loaded data")
+ assertEqual(#services.ForMap(999),0,"reject unverified map type")
+ available=false
+ local missing,message=services.ForMap(123)
+ assertEqual(#missing,0,"provider loss clears services")
+ assert(message~=nil,"provider loss status")
+ available=true
+ side="Horde"
+ local loading=services.ForMap(123)
+ assertEqual(#loading,0,"faction switch rebuilds index")
+ while #pending>0 do table.remove(pending,1)() end
+ assertEqual(#services.ForMap(123),5,"reloaded faction data")
+ C_Timer,C_Map,UnitFactionGroup,ForeverCompanionQuestLocations,ForeverCompanionQuestMap=oldTimer,oldMap,oldFaction,oldLocations,oldQuestMap
+end
