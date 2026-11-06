@@ -166,17 +166,17 @@ local function build()
   row:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-72-(i-1)*24)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row)
-  bg:SetColorTexture(i%2==0 and .085 or .11,i%2==0 and .13 or .17,i%2==0 and .19 or .24,.97)
+  bg:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97)
   local fill=CreateFrame("StatusBar",nil,row)
   fill:SetAllPoints(row)
   fill:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
   fill:SetMinMaxValues(0,1)
   fill:SetValue(0)
-  fill:SetStatusBarColor(.85,.65,.32,.78)
+  fill:SetStatusBarColor(.18,.72,.87,.68)
   local rank=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   rank:SetPoint("LEFT",row,"LEFT",5,0)
   rank:SetWidth(18)
-  rank:SetTextColor(.75,.63,.43)
+  rank:SetTextColor(.55,.84,.92)
   rank:SetText(i)
   local name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   name:SetPoint("LEFT",row,"LEFT",25,0)
@@ -188,10 +188,10 @@ local function build()
   local accent=row:CreateTexture(nil,"OVERLAY")
   accent:SetPoint("LEFT",row,"LEFT",0,0)
   accent:SetSize(2,21)
-  accent:SetColorTexture(.86,.65,.35,1)
+  accent:SetColorTexture(.18,.83,.96,1)
   local hover=row:CreateTexture(nil,"OVERLAY")
   hover:SetAllPoints(row)
-  hover:SetColorTexture(1,1,1,.07)
+  hover:SetColorTexture(.31,.82,1,.12)
   hover:Hide()
   row:EnableMouse(true)
   row:SetScript("OnEnter",function() hover:Show() end)
@@ -201,6 +201,8 @@ local function build()
    detailOpen=selectedRow~=nil
    M.Refresh()
   end)
+  name:SetTextColor(.92,.97,1)
+  amount:SetTextColor(.85,.94,.98)
   rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg}
   if i>rowCount then row:Hide() end
  end
@@ -294,8 +296,8 @@ function M.Refresh()
   local source=i<=rowCount and sources[i]
   if type(source)=="table" then
    row.frame:Show()
-   if selectedRow==i then row.background:SetColorTexture(.22,.19,.12,.98)
-   else row.background:SetColorTexture(i%2==0 and .085 or .11,i%2==0 and .13 or .17,i%2==0 and .19 or .24,.97) end
+   if selectedRow==i then row.background:SetColorTexture(.075,.19,.23,.98)
+   else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    row.name:SetText(source.name)
@@ -312,8 +314,8 @@ function M.Refresh()
     row.fill:SetStatusBarColor(color.r,color.g,color.b,.75)
     row.accent:SetColorTexture(color.r,color.g,color.b,1)
    else
-    row.fill:SetStatusBarColor(.85,.65,.32,.78)
-    row.accent:SetColorTexture(.86,.65,.35,1)
+    row.fill:SetStatusBarColor(.18,.72,.87,.68)
+    row.accent:SetColorTexture(.18,.83,.96,1)
    end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
    -- The session may omit a maximum; only pass known-safe values to the bar.
