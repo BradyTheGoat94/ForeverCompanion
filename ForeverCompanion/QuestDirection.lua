@@ -5,6 +5,7 @@ local frame,arrow,title,status,target,elapsed,progressFill
 local atan2=math.atan2
 
 local function finite(n)
+ if issecretvalue and issecretvalue(n) then return false end
  return type(n)=="number" and n==n and math.abs(n)<math.huge
 end
 
@@ -17,6 +18,7 @@ local function worldPosition(map,position)
 end
 
 local function bearing(destination)
+ if not destination then return end
  local map=C_Map.GetBestMapForUnit("player")
  if not map then return end
  local continent,north,west=worldPosition(map,C_Map.GetPlayerMapPosition(map,"player"))
@@ -95,7 +97,11 @@ local function create()
  close:SetSize(23,23)
  close:SetPoint("BOTTOMRIGHT",0,23)
  close:SetScript("OnClick",function()
-  ForeverCompanionQuestWaypoints.Clear()
+  if ForeverCompanionQuestWaypoints and ForeverCompanionQuestWaypoints.Clear then
+   ForeverCompanionQuestWaypoints.Clear()
+  else
+   D.Stop()
+  end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
  end)
  frame:SetScript("OnUpdate",update)
@@ -103,6 +109,9 @@ local function create()
 end
 
 function D.Start(point,label)
+ if type(point)~="table" or not finite(point.x) or not finite(point.y)
+  or point.x<0 or point.x>1 or point.y<0 or point.y>1
+  or not finite(point.map) then return false end
  if not C_Map or not C_Map.GetWorldPosFromMapPos or not C_Map.GetPlayerMapPosition
   or not C_Map.GetBestMapForUnit or not CreateVector2D or not GetPlayerFacing or not atan2 then return false end
  local ok,continent,north,west=pcall(function()
@@ -127,6 +136,6 @@ function D.IsActive() return target~=nil end
 function D.Stop()
  if not target then return false end
  target=nil
- frame:Hide()
+ if frame then frame:Hide() end
  return true
 end
