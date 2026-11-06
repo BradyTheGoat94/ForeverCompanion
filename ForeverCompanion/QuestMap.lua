@@ -13,8 +13,32 @@ local function mode()
  return modeNames[saved] and saved or "all"
 end
 
-local function atlasStyle()
- return not ForeverCompanionDB or ForeverCompanionDB.questMapOriginalTerrain~=true
+local function mapStyle()
+ local db=ForeverCompanionDB
+ if db and db.questMapStyle=="clear" then return "clear" end
+ if db and db.questMapOriginalTerrain==true then return "original" end
+ return "atlas"
+end
+
+local function cycleMapStyle()
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ local current=mapStyle()
+ local nextStyle=current=="atlas" and "clear" or (current=="clear" and "original" or "atlas")
+ ForeverCompanionDB.questMapStyle=nextStyle
+ ForeverCompanionDB.questMapOriginalTerrain=(nextStyle=="original")
+ return nextStyle
+end
+
+-- Standalone presentation: native Blizzard map tiles remain the only terrain
+-- source. Clear mode displays them without tint/grid; no external map addon.
+M.MapStyle=mapStyle
+M.SetMapStyle=function(value)
+ if value~="atlas" and value~="clear" and value~="original" then return false end
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ ForeverCompanionDB.questMapStyle=value
+ ForeverCompanionDB.questMapOriginalTerrain=(value=="original")
+ if M.Refresh then M.Refresh() end
+ return true
 end
 
 local function sharpenOverlay(texture)
@@ -208,8 +232,7 @@ local function createGuide(map)
  styleButton:SetSize(112,22)
  styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,3)
  styleButton:SetScript("OnClick",function()
-  ForeverCompanionDB=ForeverCompanionDB or {}
-  ForeverCompanionDB.questMapOriginalTerrain=atlasStyle()
+  cycleMapStyle()
   M.Refresh()
  end)
  townButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
@@ -349,9 +372,10 @@ function M.Refresh()
  local view=mode()
  if not guide then guide,guideTitle,guideHint=createGuide(worldMap) end
  modeButton:SetText("Map: "..modeNames[view])
- styleButton:SetText(atlasStyle() and "Style: Atlas" or "Style: Original")
+ local style=mapStyle()
+ styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
  townButton:SetText(townsEnabled() and "Towns: On" or "Towns: Off")
- if atlasStyle() then showTerrain(canvas) end
+ if style=="atlas" then showTerrain(canvas) end
  local serviceNotice=showServices(canvas,mapID,scale)
  guideTitle:SetText(focus and focus.title or "Companion map")
  guideHint:SetText(serviceNotice or (view=="off" and "Companion quest markers hidden" or "No quest destination on this map"))
