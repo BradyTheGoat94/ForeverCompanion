@@ -315,7 +315,7 @@ function M.Refresh()
    end
   end
   local spells=type(breakdown)=="table" and breakdown.combatSpells
-  detailTitle:SetText(safeToInspect and "SPELL BREAKDOWN" or "SPELLS  |  AFTER COMBAT")
+  detailTitle:SetText(safeToInspect and "SPELL BREAKDOWN  |  BETA" or "SPELLS  |  AFTER COMBAT")
   for i,item in ipairs(detailRows) do
    local spell=type(spells)=="table" and spells[i]
    if type(spell)=="table" then
