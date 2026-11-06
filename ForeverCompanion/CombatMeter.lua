@@ -4,6 +4,7 @@ local M={}
 ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
+local rowCount=8
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
@@ -70,6 +71,8 @@ local function build()
   frame:SetBackdropBorderColor(.66,.48,.23,1)
  end
  local db=saved()
+ if type(db.rows)=="number" then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
+ frame:SetHeight(110+rowCount*24)
  if type(db.position)=="table" and type(db.position.x)=="number" and type(db.position.y)=="number" then
   frame:ClearAllPoints()
   frame:SetPoint(db.position.point or "CENTER",UIParent,db.position.relative or "CENTER",db.position.x,db.position.y)
@@ -115,8 +118,12 @@ local function build()
  end)
  previousButton=button(frame,"<",27,-63,function() pastIndex=pastIndex+1;M.Refresh() end)
  nextButton=button(frame,">",27,-35,function() pastIndex=math.max(1,pastIndex-1);M.Refresh() end)
+ previousButton:ClearAllPoints()
+ previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-45,8)
+ nextButton:ClearAllPoints()
+ nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-15,8)
  rows={}
- for i=1,8 do
+ for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
   row:SetSize(264,21)
   row:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-72-(i-1)*24)
@@ -137,10 +144,11 @@ local function build()
   amount:SetPoint("RIGHT",row,"RIGHT",-5,0)
   amount:SetJustifyH("RIGHT")
   rows[i]={frame=row,fill=fill,name=name,amount=amount}
+  if i>rowCount then row:Hide() end
  end
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- notice:SetPoint("BOTTOM",frame,"BOTTOM",0,12)
- notice:SetWidth(266)
+ notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",13,12)
+ notice:SetWidth(190)
  notice:SetTextColor(.65,.76,.84)
  frame:SetScript("OnUpdate",function(_,dt)
   elapsed=elapsed+dt
@@ -155,7 +163,7 @@ function M.Refresh()
  local isPast=sessionIndex==2
  previousButton:SetShown(isPast)
  nextButton:SetShown(isPast)
- previousButton:SetEnabled(isPast and pastIndex<historyCount())
+ previousButton:SetEnabled(isPast and type(C_DamageMeter)=="table" and type(C_DamageMeter.GetCombatSessionIDs)=="function" and pastIndex<historyCount())
  nextButton:SetEnabled(isPast and pastIndex>1)
  if not M.Available() then
   for _,row in ipairs(rows) do row.frame:Hide() end
@@ -167,6 +175,7 @@ function M.Refresh()
   local ids=read(C_DamageMeter.GetCombatSessionIDs)
   local id=type(ids)=="table" and ids[pastIndex]
   if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
+  if data==nil and pastIndex==1 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
  end
@@ -174,7 +183,7 @@ function M.Refresh()
  if type(sources)~="table" then sources={} end
  local colors=RAID_CLASS_COLORS or {}
  for i,row in ipairs(rows) do
-  local source=sources[i]
+  local source=i<=rowCount and sources[i]
   if type(source)=="table" then
    row.frame:Show()
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
@@ -196,7 +205,7 @@ function M.Refresh()
   else row.frame:Hide() end
  end
  if isPast then
-  notice:SetText("Past fight "..pastIndex.."  |  Native session history")
+  notice:SetText("Past fight "..pastIndex.." | Native history")
  else
   notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  |  Experimental")
  end
@@ -213,6 +222,14 @@ function M.Hide()
 end
 function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
+end
+function M.SetRows(count)
+ if type(count)~="number" or count~=math.floor(count) or count<4 or count>12 then return false end
+ saved().rows=count
+ rowCount=count
+ if frame then frame:SetHeight(110+rowCount*24) end
+ M.Refresh()
+ return true
 end
 function M.SetSession(mode)
  for i,item in ipairs(sessions) do
@@ -233,6 +250,12 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="show" or msg=="on" then M.Show()
  elseif msg=="lock" then saved().locked=true
  elseif msg=="unlock" then saved().locked=false
+ elseif msg=="resetpos" then
+  saved().position=nil
+  if frame then frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0) end
+ elseif msg:match("^rows%s+%d+$") then
+  M.SetRows(tonumber(msg:match("%d+")))
+  M.Show()
  elseif M.SetSession(msg) or M.SetMode(msg) then M.Show()
  else M.Toggle() end
 end
