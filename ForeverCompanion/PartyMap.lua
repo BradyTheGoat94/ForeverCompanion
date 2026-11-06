@@ -5,14 +5,23 @@ ForeverCompanionPartyMap=P
 local markers={}
 local provider,map
 local function validNumber(n)
+ if issecretvalue and issecretvalue(n) then return false end
  return type(n)=="number" and n==n and n>=0 and n<=1
+end
+local function isOtherMember(unit)
+ if not UnitExists or not UnitExists(unit) then return false end
+ if UnitIsUnit then
+  local ok,same=pcall(UnitIsUnit,unit,"player")
+  if not ok or same then return false end
+ end
+ return true
 end
 local function partyUnits()
  local units={}
  if IsInRaid and IsInRaid() then
   for i=1,40 do
    local unit="raid"..i
-   if UnitExists and UnitExists(unit) then units[#units+1]=unit end
+   if isOtherMember(unit) then units[#units+1]=unit end
   end
  else
   for i=1,4 do
@@ -60,6 +69,7 @@ function P.Refresh()
  local width,height=canvas:GetWidth(),canvas:GetHeight()
  if not width or not height or width<=0 or height<=0 then return end
  local scale=canvas.GetScale and canvas:GetScale() or 1
+ if issecretvalue and issecretvalue(scale) then return end
  if type(scale)~="number" or scale<=0 then scale=1 end
  local units=partyUnits()
  for i,unit in ipairs(units) do
@@ -85,7 +95,7 @@ function P.Refresh()
     local ok,result=pcall(UnitFacing,unit)
     if ok and not (issecretvalue and issecretvalue(result)) then facing=result end
    end
-   if type(facing)=="number" and facing==facing and marker.arrow.SetRotation then
+   if not (issecretvalue and issecretvalue(facing)) and type(facing)=="number" and facing==facing and marker.arrow.SetRotation then
     marker.arrow:SetRotation(-facing)
     marker.arrow:Show()
    else
