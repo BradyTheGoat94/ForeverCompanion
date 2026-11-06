@@ -35,23 +35,10 @@ local function facing(unit)
 end
 local function makeMarker(parent)
  local marker=CreateFrame("Frame",nil,parent)
- marker:SetSize(24,24)
- marker:SetFrameStrata("HIGH")
  marker:SetFrameLevel(parent:GetFrameLevel()+10)
  marker:EnableMouse(false)
- local bg=marker:CreateTexture(nil,"ARTWORK")
- bg:SetAllPoints(marker)
- bg:SetColorTexture(.02,.08,.13,.85)
- local dot=marker:CreateTexture(nil,"OVERLAY")
- dot:SetSize(15,15)
- dot:SetPoint("CENTER")
- dot:SetColorTexture(.20,.75,1,.98)
- local arrow=marker:CreateTexture(nil,"OVERLAY")
- arrow:SetSize(17,17)
- arrow:SetPoint("CENTER")
- arrow:SetTexture("Interface\\Minimap\\MinimapArrow")
- arrow:SetVertexColor(.25,.95,1,1)
- marker.arrow=arrow
+ local party=ForeverCompanionPartyMap
+ if party and party.StyleMarker then party.StyleMarker(marker) end
  return marker
 end
 local function hideAll()
