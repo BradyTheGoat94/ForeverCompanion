@@ -273,7 +273,7 @@ function M.Refresh()
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
    -- The session may omit a maximum; only pass known-safe values to the bar.
    local maximum=data.maxAmount
-   if maximum~=nil then
+   if (issecretvalue and issecretvalue(maximum)) or maximum~=nil then
     row.fill:SetMinMaxValues(0,maximum)
     row.fill:SetValue(source.totalAmount)
    else
