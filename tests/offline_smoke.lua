@@ -1015,7 +1015,7 @@ do
  local oldSlash=SlashCmdList.FOREVERCOMPANIONMETER
  local oldDB=ForeverCompanionDB
  C_DamageMeter=nil
- Enum={DamageMeterType={DamageDone=0,HealingDone=1,Absorbs=2},DamageMeterSessionType={Current=0,Previous=1,Overall=2}}
+ Enum={DamageMeterType={DamageDone=0,Dps=1,HealingDone=2,Hps=3,Absorbs=4},DamageMeterSessionType={Overall=0,Current=1,Expired=2}}
  CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
  dofile("ForeverCompanion/CombatMeter.lua")
  local meter=ForeverCompanionCombatMeter
