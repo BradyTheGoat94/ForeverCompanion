@@ -45,8 +45,13 @@ local function sessionType()
  return e and e[sessions[sessionIndex][2]]
 end
 function M.Available()
- return type(C_DamageMeter)=="table" and type(C_DamageMeter.GetCombatSessionFromType)=="function"
-  and types()~=nil and sessionType()~=nil
+ if type(C_DamageMeter)~="table" or type(C_DamageMeter.GetCombatSessionFromType)~="function"
+  or types()==nil or sessionType()==nil then return false end
+ if type(C_DamageMeter.IsDamageMeterAvailable)=="function" then
+  local ok,available=pcall(C_DamageMeter.IsDamageMeterAvailable)
+  if not ok or not available then return false end
+ end
+ return true
 end
 local function button(parent,label,width,x,callback)
  local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
