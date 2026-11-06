@@ -79,8 +79,8 @@ local function build()
   frame:SetBackdropBorderColor(.66,.48,.23,1)
  end
  local db=saved()
- if type(db.rows)=="number" and db.rows==db.rows then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
- if type(db.width)=="number" and db.width==db.width then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
+ if type(db.rows)=="number" and db.rows==db.rows and db.rows~=math.huge and db.rows~=-math.huge then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
+ if type(db.width)=="number" and db.width==db.width and db.width~=math.huge and db.width~=-math.huge then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
  frame:SetSize(windowWidth,110+rowCount*24)
  if type(db.position)=="table" and type(db.position.x)=="number" and type(db.position.y)=="number" then
   frame:ClearAllPoints()
@@ -355,7 +355,7 @@ function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
 end
 function M.SetWidth(width)
- if type(width)~="number" or width~=width or width~=math.floor(width) or width<260 or width>440 then return false end
+ if type(width)~="number" or width~=width or width==math.huge or width==-math.huge or width~=math.floor(width) or width<260 or width>440 then return false end
  saved().width=width
  windowWidth=width
  if frame then
@@ -372,7 +372,7 @@ function M.SetWidth(width)
  return true
 end
 function M.SetRows(count)
- if type(count)~="number" or count~=count or count~=math.floor(count) or count<4 or count>12 then return false end
+ if type(count)~="number" or count~=count or count==math.huge or count==-math.huge or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
  rowCount=count
  if frame then frame:SetHeight(110+rowCount*24) end
