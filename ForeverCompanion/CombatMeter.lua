@@ -9,7 +9,7 @@ local windowWidth=290
 local selectedRow=nil
 local detailOpen=false
 local detailRows={}
-local detailPanel,detailTitle
+local detailPanel,detailTitle,detailClose
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -207,6 +207,14 @@ local function build()
  detailTitle=detailPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  detailTitle:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-12)
  detailTitle:SetText("SPELL BREAKDOWN")
+ detailClose=CreateFrame("Button",nil,detailPanel,"UIPanelCloseButton")
+ detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",2,2)
+ detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;M.Refresh() end)
+ local detailTrim=detailPanel:CreateTexture(nil,"ARTWORK")
+ detailTrim:SetColorTexture(.85,.62,.29,1)
+ detailTrim:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",1,-1)
+ detailTrim:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-1,-1)
+ detailTrim:SetHeight(3)
  for i=1,8 do
   local label=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-35-(i-1)*23)
@@ -390,6 +398,8 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="show" or msg=="on" then M.Show()
  elseif msg=="lock" then saved().locked=true
  elseif msg=="unlock" then saved().locked=false
+ elseif msg=="details" then
+  if selectedRow then detailOpen=not detailOpen;M.Refresh() else M.Show() end
  elseif msg=="resetpos" then
   saved().position=nil
   if frame then frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0) end
