@@ -4,8 +4,8 @@ local M={}
 ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton
 local metricIndex,sessionIndex=1,1
-local metrics={{"Damage","DamageDone"},{"Healing","HealingDone"},{"Absorbs","Absorbs"}}
-local sessions={{"Current","Current"},{"Previous","Previous"},{"Overall","Overall"}}
+local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
+local sessions={{"Current","Current"},{"Expired","Expired"},{"Overall","Overall"}}
 local elapsed=0
 local function read(fn,...)
  if type(fn)~="function" then return end
@@ -139,7 +139,7 @@ function M.Refresh()
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    local okName=pcall(row.name.SetText,row.name,source.name)
    if not okName then row.name:SetText("Player") end
-   local okAmount=pcall(row.amount.SetText,row.amount,source.amountPerSecond)
+   local okAmount=pcall(row.amount.SetText,row.amount,(metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps") and source.amountPerSecond or source.totalAmount)
    if not okAmount then row.amount:SetText("--") end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
