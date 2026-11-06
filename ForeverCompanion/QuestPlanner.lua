@@ -75,9 +75,11 @@ local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=
 local function questRows()
   local rows={}
   local modern=C_QuestLog
-  if type(modern)=="table" and type(modern.GetNumQuestLogEntries)=="function" and type(modern.GetInfo)=="function" then
-    local ok,count=pcall(modern.GetNumQuestLogEntries)
-    if not ok or type(count)~="number" or count<0 or count>1000 then return rows,false end
+  if type(modern)=="table" then
+    local indexed=type(modern.GetNumQuestLogEntries)=="function" and type(modern.GetInfo)=="function"
+    local ok,count=false,0
+    if indexed then ok,count=pcall(modern.GetNumQuestLogEntries) end
+    local indexedValid=ok and type(count)=="number" and count>=0 and count<=1000
     -- Some clients hide entries beneath collapsed headers in the indexed log.
     -- Prefer the read-only full quest list when available, without expanding
     -- the player's headers or changing Blizzard's watched quest state.
@@ -128,6 +130,11 @@ local function questRows()
         if #result>0 then return result,true end
       end
     end
+    if not indexedValid then
+      -- A missing or temporarily failing indexed API must not block the
+      -- Classic-era fallback or wipe the previous successful snapshot.
+      rows=nil
+    else
     local header="Quest log"
     local headerKnown=false
     for i=1,count do
@@ -180,6 +187,7 @@ local function questRows()
       end
     end
     return rows,true
+    end
   end
   -- Some Classic-era clients expose only the legacy read-only quest-log API.
   -- Never select, accept, complete or change a quest while inspecting it.
