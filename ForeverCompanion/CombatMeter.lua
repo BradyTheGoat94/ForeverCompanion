@@ -348,10 +348,11 @@ function M.Refresh()
   notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native Blizzard combat data  |  Experimental")
  end
 end
-function M.SelectedSource()
- -- Never return protected combat data to external consumers. Expose selection state only.
+function M.SelectedRow()
+ -- Expose only the selected ranking index, never protected combat data.
  return selectedRow
 end
+M.SelectedSource=M.SelectedRow -- Compatibility with existing callers.
 function M.Show()
  if not frame then build() end
  saved().visible=true
