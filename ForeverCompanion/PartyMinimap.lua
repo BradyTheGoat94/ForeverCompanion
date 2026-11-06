@@ -4,6 +4,18 @@
 local M={}
 ForeverCompanionPartyMinimap=M
 local markers={}
+local lastStatus="Not initialized"
+function M.Status() return lastStatus end
+local function enabled()
+ return ForeverCompanionDB and ForeverCompanionDB.partyMinimapEnabled==true
+end
+function M.SetEnabled(value)
+ if type(value)~="boolean" then return false end
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ ForeverCompanionDB.partyMinimapEnabled=value
+ if not value then M.Hide() end
+ return true
+end
 local function finite(n)
  return type(n)=="number" and n==n and n~=math.huge and n~=-math.huge
 end
@@ -47,18 +59,19 @@ local function hideAll()
 end
 M.Hide=hideAll
 function M.Refresh()
+ if not enabled() then lastStatus="Off (opt-in beta)";hideAll();return end
  local minimap=Minimap
  if not minimap or not minimap.IsShown or not minimap:IsShown()
-  or type(minimap.GetViewRadius)~="function" then hideAll();return end
+  or type(minimap.GetViewRadius)~="function" then lastStatus="Native minimap radius unavailable";hideAll();return end
  local ok,radius=pcall(minimap.GetViewRadius,minimap)
- if not ok or not finite(radius) or radius<=0 then hideAll();return end
+ if not ok or not finite(radius) or radius<=0 then lastStatus="Invalid minimap radius";hideAll();return end
  local px,py,instance=position("player")
- if not px then hideAll();return end
+ if not px then lastStatus="Player coordinates unavailable";hideAll();return end
  local width,height=minimap:GetWidth(),minimap:GetHeight()
- if not finite(width) or not finite(height) or width<=0 or height<=0 then hideAll();return end
+ if not finite(width) or not finite(height) or width<=0 or height<=0 then lastStatus="Invalid minimap dimensions";hideAll();return end
  local rotate=GetCVar and GetCVar("rotateMinimap")=="1"
  local playerFacing=rotate and facing("player") or 0
- if rotate and not playerFacing then hideAll();return end
+ if rotate and not playerFacing then lastStatus="Player facing unavailable";hideAll();return end
  local shown=0
  for _,unit in ipairs(units()) do
   local x,y,unitInstance=position(unit)
@@ -88,6 +101,15 @@ function M.Refresh()
   end
  end
  for i=shown+1,#markers do markers[i]:Hide() end
+ lastStatus="Active ("..shown.." visible)"
+end
+SLASH_FOREVERCOMPANIONPARTYMAP1="/fcparty"
+SlashCmdList.FOREVERCOMPANIONPARTYMAP=function(msg)
+ msg=(msg or ""):lower():match("^%s*(.-)%s*$")
+ if msg=="on" then M.SetEnabled(true);M.Refresh()
+ elseif msg=="off" then M.SetEnabled(false)
+ elseif msg=="status" and DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage("Forever Companion party minimap: "..M.Status())
+ end
 end
 local watcher=CreateFrame("Frame")
 watcher:RegisterEvent("PLAYER_ENTERING_WORLD")
