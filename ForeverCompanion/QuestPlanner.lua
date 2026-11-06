@@ -539,10 +539,13 @@ function Planner.FormatAuto()
   return table.concat(result,"\n")
 end
 local events=CreateFrame("Frame")
-for _,event in ipairs({"PLAYER_ENTERING_WORLD","QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN"}) do
+for _,event in ipairs({"PLAYER_ENTERING_WORLD","QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN","QUEST_WATCH_UPDATE","QUEST_POI_UPDATE","UNIT_QUEST_LOG_CHANGED"}) do
   pcall(function() events:RegisterEvent(event) end)
 end
-events:SetScript("OnEvent",function() Planner.Sync() end)
+events:SetScript("OnEvent",function(_,event,unit)
+  if event=="UNIT_QUEST_LOG_CHANGED" and unit and unit~="player" then return end
+  Planner.Sync()
+end)
 
 SLASH_FOREVERCOMPANIONQUEST1="/fcq"
 SlashCmdList.FOREVERCOMPANIONQUEST=function(msg)
