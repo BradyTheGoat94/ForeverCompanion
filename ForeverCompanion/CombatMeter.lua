@@ -343,15 +343,19 @@ local function build()
  detailTrim:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-1,-1)
  detailTrim:SetHeight(3)
  for i=1,8 do
+  local icon=detailPanel:CreateTexture(nil,"ARTWORK")
+  icon:SetSize(17,17)
+  icon:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-33-(i-1)*23)
+  icon:Hide()
   local label=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-35-(i-1)*23)
-  label:SetWidth(175)
+  label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-35-(i-1)*23)
+  label:SetWidth(153)
   label:SetJustifyH("LEFT")
   local value=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-35-(i-1)*23)
   value:SetWidth(85)
   value:SetJustifyH("RIGHT")
-  detailRows[i]={label=label,value=value}
+  detailRows[i]={label=label,value=value,icon=icon}
  end
  detailPanel:Hide()
  frame:Hide()
@@ -510,10 +514,16 @@ function M.Refresh()
      info=read(C_Spell.GetSpellInfo,spellID)
     end
     item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
+    local iconID=type(info)=="table" and info.iconID
+    if not (issecretvalue and issecretvalue(iconID)) and type(iconID)=="number" and iconID>0 then
+     item.icon:SetTexture(iconID)
+     item.icon:Show()
+    else item.icon:Hide() end
     item.value:SetText(spell.totalAmount)
    else
     item.label:SetText(i==1 and (safeToInspect and "No spell data available" or "Available after combat") or "")
     item.value:SetText("")
+    item.icon:Hide()
    end
   end
  end
