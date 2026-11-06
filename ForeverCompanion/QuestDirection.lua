@@ -1,7 +1,7 @@
 -- Display a straight-line bearing to a destination chosen by the player.
 local D={}
 ForeverCompanionQuestDirection=D
-local frame,arrow,title,status,target,elapsed
+local frame,arrow,title,status,target,elapsed,progressFill
 local atan2=math.atan2
 
 local function finite(n)
@@ -37,26 +37,30 @@ local function update(_,dt)
  if not ok or not distance then
   arrow:Hide()
   status:SetText("Direction unavailable here")
+  if progressFill then progressFill:SetWidth(0.01) end
  elseif distance<=12 then
   arrow:Hide()
   status:SetText("Near your destination")
+  if progressFill then progressFill:SetWidth(221) end
  else
   arrow:SetRotation(angle)
   arrow:Show()
   status:SetText(("%d yd  ·  Straight-line direction"):format(math.floor(distance+.5)))
+  -- Decorative proximity cue, not quest completion or route progress.
+  if progressFill then progressFill:SetWidth(221*math.max(0,math.min(1,1-distance/500))) end
  end
 end
 
 local function create()
  frame=CreateFrame("Frame",nil,UIParent)
- frame:SetSize(245,88)
+ frame:SetSize(245,98)
  frame:SetPoint("TOP",UIParent,"TOP",0,-115)
  frame:SetFrameStrata("HIGH")
  frame:EnableMouse(false)
  local bg=frame:CreateTexture(nil,"BACKGROUND")
  bg:SetPoint("BOTTOMLEFT",0,0)
  bg:SetPoint("BOTTOMRIGHT",0,0)
- bg:SetHeight(39)
+ bg:SetHeight(48)
  bg:SetColorTexture(.015,.035,.055,.95)
  local top=frame:CreateTexture(nil,"BORDER")
  top:SetColorTexture(.18,.79,.92,.95)
@@ -68,6 +72,14 @@ local function create()
  footer:SetPoint("BOTTOMLEFT",bg,"BOTTOMLEFT",0,0)
  footer:SetPoint("BOTTOMRIGHT",bg,"BOTTOMRIGHT",0,0)
  footer:SetHeight(1)
+ local progressTrack=frame:CreateTexture(nil,"BORDER")
+ progressTrack:SetPoint("BOTTOM",frame,"BOTTOM",0,5)
+ progressTrack:SetSize(221,3)
+ progressTrack:SetColorTexture(.08,.20,.28,.9)
+ progressFill=frame:CreateTexture(nil,"ARTWORK")
+ progressFill:SetPoint("LEFT",progressTrack,"LEFT",0,0)
+ progressFill:SetSize(.01,3)
+ progressFill:SetColorTexture(.18,.83,.96,.95)
  arrow=frame:CreateTexture(nil,"ARTWORK")
  arrow:SetSize(68,68)
  arrow:SetPoint("TOP",0,10)
@@ -75,13 +87,13 @@ local function create()
  title=frame:CreateFontString(nil,"OVERLAY","GameFontNormal")
  title:SetWidth(207)
  title:SetTextColor(.93,.98,1)
- title:SetPoint("BOTTOM",0,20)
+ title:SetPoint("BOTTOM",0,28)
  status=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- status:SetPoint("BOTTOM",0,6)
+ status:SetPoint("BOTTOM",0,13)
  status:SetTextColor(.55,.86,.94)
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetSize(23,23)
- close:SetPoint("BOTTOMRIGHT",0,15)
+ close:SetPoint("BOTTOMRIGHT",0,23)
  close:SetScript("OnClick",function()
   ForeverCompanionQuestWaypoints.Clear()
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
