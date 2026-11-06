@@ -103,6 +103,16 @@ local function build()
   frame:SetBackdropBorderColor(.18,.23,.29,1)
  end
  local db=saved()
+ if type(db.metric)=="string" then
+  for i,item in ipairs(metrics) do
+   if item[1]==db.metric then metricIndex=i;break end
+  end
+ end
+ if type(db.session)=="string" then
+  for i,item in ipairs(sessions) do
+   if item[1]==db.session then sessionIndex=i;break end
+  end
+ end
  if safeNumber(db.rows) then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
  if safeNumber(db.width) then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
  frame:SetSize(windowWidth,104+rowCount*21)
@@ -170,6 +180,7 @@ local function build()
    metricIndex=metricIndex%#metrics+1
    if types()~=nil then break end
   end
+  saved().metric=metrics[metricIndex][1]
   M.Refresh()
  end)
  sessionButton=button(frame,"Current",92,110,function()
@@ -180,6 +191,7 @@ local function build()
   pastIndex=1
   selectedRow=nil
   detailOpen=false
+  saved().session=sessions[sessionIndex][1]
   M.Refresh()
  end)
  previousButton=button(frame,"<",27,13,function() pastIndex=math.min(historyCount(),pastIndex+1);selectedRow=nil;detailOpen=false;M.Refresh() end)
@@ -252,6 +264,7 @@ local function build()
      if types()~=nil then break end
     end
     selectedRow=nil;detailOpen=false
+    saved().metric=metrics[metricIndex][1]
    else
     selectedRow=(selectedRow==i) and nil or i
     detailOpen=selectedRow~=nil
@@ -547,7 +560,7 @@ function M.SetSession(mode)
  for i,item in ipairs(sessions) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   sessionIndex=i;pastIndex=1;selectedRow=nil;detailOpen=false;M.Refresh()
+   sessionIndex=i;pastIndex=1;selectedRow=nil;detailOpen=false;saved().session=item[1];M.Refresh()
    return true
   end
  end
@@ -558,7 +571,7 @@ function M.SetMode(mode)
  for i,item in ipairs(metrics) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   metricIndex=i;selectedRow=nil;detailOpen=false;M.Refresh()
+   metricIndex=i;selectedRow=nil;detailOpen=false;saved().metric=item[1];M.Refresh()
    return true
   end
  end
