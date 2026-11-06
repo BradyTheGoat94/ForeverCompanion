@@ -549,11 +549,11 @@ for i,token in ipairs(classTokens) do
  ForeverCompanionClassGuide.SelectView("Rotations")
  for _,contextButton in ipairs(ForeverCompanionRotationWorkspace.buttons) do
   contextButton.OnClick()
-  local reference=ForeverCompanionVisiblePriority(token,contextButton.mode,60,nil,ForeverCompanionRotations[token][contextButton.mode])
-  for index,instruction in ipairs(reference) do
+  local reference,_,_,_,primary=ForeverCompanionVisiblePriority(token,contextButton.mode,60,nil,ForeverCompanionRotations[token][contextButton.mode])
+  for index,step in ipairs(workspace.Plan(reference,primary,"WARRIOR",token)) do
    local row=workspace.rows[index]
    assert(row and row.visible and row.parent==workspace.panel.id,"all steps must be shown inside the priority panel")
-   assert(row.caption.text==instruction:gsub("^%d+%.%s+",""),"row must show the complete instruction")
+   assert(row.caption.text==step.text,"row must show the complete instruction")
   end
   for index=#reference+1,#workspace.rows do assert(not workspace.rows[index].visible,"stale priority row") end
  end
@@ -602,14 +602,28 @@ exportNative("ui_long_priority_native.json")
 row.caption.GetStringHeight=originalMeasure
 workspace.buttons[1].OnClick()
 assert(workspace.GetHeight()==shortWorkspaceHeight,"short content shrinks after expansion")
-local early=ForeverCompanionVisiblePriority("PALADIN","boss",11,"Tank",{})
+local early,_,_,_,earlyPrimary=ForeverCompanionVisiblePriority("PALADIN","boss",11,"Tank",{})
 assert(#early==4 and early[3]:find("Holy Strike",1,true) and not table.concat(early):find("Consecration",1,true))
 local savedSpell=C_Spell
 C_Spell={GetSpellInfo=function(name)
  if name=="Holy Strike" then return {name="Holy Strike",spellID=680,iconID=12345} end
 end}
-assert(ForeverCompanionIcons.PrioritySpell(early[3],"PALADIN").spellID==680)
-assert(not ForeverCompanionIcons.PrioritySpell("Holy Strikeout","PALADIN"),"do not match partial spell names")
+assert(ForeverCompanionIcons.SpellDetails(earlyPrimary[3]).spellID==680)
+assert(not ForeverCompanionIcons.SpellDetails("Holy Strikeout"),"do not match partial spell names")
+local scanSpellbook=ForeverCompanionSpellbook.Scan
+local scans=0
+ForeverCompanionSpellbook.Scan=function()
+ scans=scans+1
+ return {supported=true,complete=true,inspected=1,known={["holy strike"]=true}}
+end
+local plan=workspace.Plan(early,earlyPrimary,"PALADIN","PALADIN")
+assert(plan[1].spell.spellID==680 and plan[1].status=="In your spellbook")
+assert(plan[2].status:find("not found",1,true))
+local preview=workspace.Plan(early,earlyPrimary,"WARRIOR","PALADIN")
+assert(scans==1 and preview[1].status=="Class preview","other-class previews do not use the character's spellbook")
+ForeverCompanionSpellbook.Scan=function() return {supported=true,complete=false,inspected=1,known={}} end
+assert(workspace.Plan(early,earlyPrimary,"PALADIN","PALADIN")[1].status=="Training unconfirmed")
+ForeverCompanionSpellbook.Scan=scanSpellbook
 C_Spell=savedSpell
 local guide=ForeverCompanionClassGuide
 local priorSelections=ForeverCompanionDB.specSelections
@@ -625,8 +639,12 @@ for class,choices in pairs(ForeverCompanionSpecs) do
   else
    specCount=specCount+1
    assert(overview:find("PUBLISHED FOREVER GUIDE",1,true))
-   local boss,title=ForeverCompanionVisiblePriority(class,"boss",60,nil,{})
+   local boss,title,_,_,primary=ForeverCompanionVisiblePriority(class,"boss",60,nil,{})
    assert(#boss>=3 and title==choice[1].." / Boss","every standard spec has a boss priority in the rotation window")
+   assert(#boss==#primary,"every row has a deliberate spell or non-spell cue")
+   for index,name in ipairs(primary) do
+    if name then assert(boss[index]:lower():find(name:lower(),1,true) or (name=="Power Word: Shield" and boss[index]:find("Shield",1,true)),title..": cue must match step "..index) end
+   end
    if choice[1]=="Combat" then assert(overview:find("Blade Flurry",1,true)) end
    if choice[1]=="Beast Mastery" then assert(overview:find("Bestial Wrath",1,true)) end
    assert(overview:find("Reference: https://",1,true))

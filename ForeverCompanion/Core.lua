@@ -190,7 +190,7 @@ local function render()
   end
   if ForeverCompanionRotationWorkspace then
     local priorities=ROTATIONS and ROTATIONS[classToken()] and ROTATIONS[classToken()][rotationModes[rotationMode]] or {}
-    ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],level(),DB.role,priorities)
+    ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],level(),DB.role,priorities,actualClass())
   end
   if ForeverCompanionLootWorkspace then ForeverCompanionLootWorkspace.Render(currentTab,DB,currentTab=="Loot" and lootMatches() or {}) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
@@ -1391,9 +1391,7 @@ local function createUI()
   local footer=window:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
   ForeverCompanionUIState.footer=footer
   footer:SetPoint("BOTTOMLEFT", 20, 19)
-  local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata
-  local ok,version=pcall(metadata or GetAddOnMetadata,addonName,"Version")
-  local versionLabel=ok and type(version)=="string" and ("v"..version.."  |  ") or ""
+  local versionLabel="v"..ForeverCompanionDiagnostics.Version().."  |  "
   footer:SetText(versionLabel.."/fc help  |  Read-only advisor  |  No gameplay automation")
   currentTab = DB.tab or "Overview"
   local validTab=false

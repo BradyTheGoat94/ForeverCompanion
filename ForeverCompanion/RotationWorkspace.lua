@@ -75,24 +75,66 @@ local function priorityRow(index)
  row.number:SetTextColor(.96,.80,.48)
  row.caption=text(row,65,-8,473,"",12)
  row.caption:SetJustifyV("TOP")
+ row.status=text(row,65,-26,473,"",10)
  W.rows[index]=row
  return row
 end
 
-function W.Render(tab,class,mode,level,role,fallback)
+-- Preserve source order within each group. Use name matches from the
+-- spellbook so a different trained rank does not look unavailable.
+function W.Plan(instructions,primary,playerClass,shownClass)
+ local available,uncertain,missing={},{},{}
+ local sameClass=playerClass==shownClass
+ local scan=sameClass and ForeverCompanionSpellbook.Scan()
+ local learnedCount=0
+ for i,instruction in ipairs(instructions) do
+  local name=primary and primary[i]
+  local spell=ForeverCompanionIcons.SpellDetails(name)
+  local row={text=instruction:gsub("^%d+%.%s+",""),spell=spell}
+  local bucket=available
+  if name then
+   local key=(name:gsub("’","'")):lower()
+   if not sameClass then
+    row.status="Class preview"
+   elseif (spell and ForeverCompanionKnownSpell(spell.spellID)==true) or scan.known[key] then
+    row.status="In your spellbook"
+    learnedCount=learnedCount+1
+   elseif scan.complete and scan.inspected>0 then
+    row.status="Primary spell not found · check talents or training"
+    bucket=missing
+   else
+    row.status="Training unconfirmed"
+    bucket=uncertain
+   end
+  end
+  bucket[#bucket+1]=row
+ end
+ for _,row in ipairs(uncertain) do available[#available+1]=row end
+ for _,row in ipairs(missing) do available[#available+1]=row end
+ return available,learnedCount,#missing
+end
+
+function W.Render(tab,class,mode,level,role,fallback,playerClass)
  if not root then return end
  if tab~="Leveling" then root:Hide();return end
  root:Show()
  W.reference:SetText(showReference and "Hide guide notes" or "More guide notes")
- local instructions,title,hint,source=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ local instructions,title,hint,source,primary=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ local steps,learned,missing=W.Plan(instructions,primary,playerClass,class)
  heading:SetText(title)
+ if playerClass~=class then
+  hint=hint.." Class preview."
+ elseif missing>0 and learned==0 and mode~="leveling" then
+  hint="No primary spells matched your spellbook. Try Leveling for earlier abilities."
+ elseif missing>0 and learned>0 then
+  hint=hint.." Learned spells are listed first."
+ end
  notice:SetText(hint)
  local y=72+notice:GetStringHeight()
- for i,instruction in ipairs(instructions) do
+ for i,step in ipairs(steps) do
   local row=priorityRow(i)
-  local caption=instruction:gsub("^%d+%.%s+","")
-  row.caption:SetText(caption)
-  local spell=ForeverCompanionIcons.PrioritySpell(caption,class)
+  row.caption:SetText(step.text)
+  local spell=step.spell
   row.spellID=spell and spell.spellID
   row.spellName=spell and spell.name
   if spell then
@@ -101,15 +143,22 @@ function W.Render(tab,class,mode,level,role,fallback)
   else
    ForeverCompanionIcons.ApplyClass(row.icon,class)
   end
-  local height=math.max(31,row.caption:GetStringHeight()+16)
-  row.caption:SetHeight(height-12)
+  local captionHeight=row.caption:GetStringHeight()
+  row.caption:SetHeight(captionHeight+2)
+  local status=step.status
+  if status=="In your spellbook" or status=="Class preview" then status=nil end
+  row.status:SetText(status or "")
+  row.status:ClearAllPoints()
+  row.status:SetPoint("TOPLEFT",row,"TOPLEFT",65,-(10+captionHeight))
+  row.status:SetTextColor(.72,.77,.83)
+  local height=math.max(31,captionHeight+16+(status and row.status:GetStringHeight()+2 or 0))
   row:SetSize(550,height)
   row:ClearAllPoints()
   row:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-y)
   row:Show()
   y=y+height+4
  end
- for i=#instructions+1,#W.rows do W.rows[i]:Hide() end
+ for i=#steps+1,#W.rows do W.rows[i]:Hide() end
  sourceLabel:SetText(source and ("Source: "..source) or "")
  sourceLabel:ClearAllPoints()
  sourceLabel:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-(y+4))

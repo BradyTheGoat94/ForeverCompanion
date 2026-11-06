@@ -4,6 +4,11 @@ local D=ForeverCompanionDiagnostics
 local function available(obj,name)
  return type(obj)=="table" and type(obj[name])=="function"
 end
+function D.Version()
+ local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata
+ local ok,version=pcall(metadata or GetAddOnMetadata,"ForeverCompanion","Version")
+ return ok and type(version)=="string" and version or "3.19.0-beta"
+end
 function D.Collect()
  local rows={}
  local function add(label,ok)
@@ -14,7 +19,7 @@ function D.Collect()
   local ok,version,buildNumber,_,interface=pcall(GetBuildInfo)
   if ok then build=tostring(version or "?").." build "..tostring(buildNumber or "?").." interface "..tostring(interface or "?") end
  end
- rows[#rows+1]="Addon: Brady\'s Forever Companion 3.18.0-beta"
+ rows[#rows+1]="Addon: Brady\'s Forever Companion "..D.Version()
  rows[#rows+1]="Client: "..build
  rows[#rows+1]="Manifest interface: 16001 (documented on Forever 1.60.1; verify current patch)"
  if type(GetBuildInfo)=="function" then

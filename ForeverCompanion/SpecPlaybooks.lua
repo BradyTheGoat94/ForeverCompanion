@@ -252,6 +252,7 @@ end
 ForeverCompanionSourcedPriorities={
  DRUID={
   Restoration={
+   primary={"Rejuvenation", "Regrowth", "Wild Growth", "Swiftmend", "Nature's Swiftness", "Rejuvenation", "Innervate", false},
    source="https://www.wowhead.com/forever/guide/classes/druid/restoration/rotation-cooldowns-pve-healer",
    reviewed="Wowhead Oct 31, 2026; responsive healing",
    rules={
@@ -266,6 +267,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Feral={
+   primary={"Rake", "Rip", "Shred", "Shred", "Shifting Power", "Ferocious Bite", "Rake"},
    source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 29 guide; Oct 30 hotfix: Berserk removed from talents (not the game), Lacerate talent added",
    corroboration="https://www.wowhead.com/news/massive-talent-tree-changes-to-druids-and-paladins-class-tuning-for-wow-forever-383670",
@@ -280,6 +282,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Balance={
+   primary={"Faerie Fire", "Wrath", "Starfire", "Wrath", "Insect Swarm", "Wrath", "Hurricane"},
    source="https://www.wowhead.com/forever/guide/classes/druid/balance/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; Eclipse-cycle and Mana priority",
    rules={
@@ -295,6 +298,7 @@ ForeverCompanionSourcedPriorities={
  },
  PRIEST={
   Holy={
+   primary={"Renew", "Heal", "Flash Heal", "Prayer of Mending", "Prayer of Healing", "Holy Nova", false, false},
    source="https://www.wowhead.com/forever/guide/classes/priest/holy/rotation-cooldowns-pve-healer",
    reviewed="Wowhead Oct 31, 2026; mana-aware healing",
    rules={
@@ -309,6 +313,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Discipline={
+   primary={"Power Word: Shield", "Penance", "Renew", "Heal", "Prayer of Healing", "Inner Focus", false},
    source="https://www.wowhead.com/forever/guide/classes/priest/discipline/rotation-cooldowns-pve-healer",
    reviewed="Wowhead Oct 30, 2026",
    rules={
@@ -322,6 +327,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Shadow={
+   primary={"Mind Blast", "Shadow Word: Pain", "Devouring Plague", "Mind Blast", "Vampiric Embrace", "Mind Flay", "Shadow Word: Pain", false},
    source="https://www.wowhead.com/forever/guide/classes/shadow/priest/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/shadow-priest-ranged-dps-pve-guide/",
    reviewed="Wowhead updated Oct 30, 2026; Icy Veins level-30 beta guide",
@@ -339,6 +345,7 @@ ForeverCompanionSourcedPriorities={
  },
  WARRIOR={
   Fury={
+   primary={"Battle Shout", "Execute", "Overpower", "Heroic Strike", "Whirlwind", "Death Wish", false},
    source="https://www.wowhead.com/forever/guide/classes/warrior/fury/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 29, 2026; resource thresholds are guide-specific",
    rules={
@@ -352,6 +359,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Protection={
+   primary={"Shield Block", "Revenge", "Sunder Armor", "Battle Shout", "Heroic Strike", "Shield Wall", false},
    source="https://www.wowhead.com/forever/guide/classes/warrior/protection/rotation-cooldowns-pve-tank",
    reviewed="Wowhead Oct 29, 2026; tank survival overrides damage",
    rules={
@@ -365,6 +373,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Arms={
+   primary={"Battle Shout", "Charge", "Rend", "Overpower", false, "Sweeping Strikes"},
    source="https://www.icy-veins.com/wow-forever/arms-warrior-melee-dps-pve-guide",
    corroboration="https://www.wowhead.com/forever/guide/classes/warrior/arms/overview-pve-dps",
    reviewed="Icy Veins Oct 27 level-30 beta; Wowhead Oct 7 beta overview",
@@ -380,6 +389,7 @@ ForeverCompanionSourcedPriorities={
  },
  SHAMAN={
   Restoration={
+   primary={"Searing Totem", "Healing Wave", "Chain Heal", false, "Nature's Swiftness", "Mana Tide Totem", "Fire Nova"},
    source="https://www.wowhead.com/forever/guide/classes/shaman/restoration/rotation-cooldowns-pve-healer",
    corroboration="https://www.icy-veins.com/wow-forever/restoration-shaman-healer-pve-guide",
    reviewed="Wowhead Nov 1; Icy Veins Oct 28, 2026",
@@ -394,6 +404,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Elemental={
+   primary={"Searing Totem", "Flame Shock", "Elemental Mastery", "Lava Burst", "Lightning Bolt", "Magma Totem", false},
    source="https://www.wowhead.com/forever/guide/classes/shaman/elemental/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 29, 2026; single-target and AoE priorities",
    rules={
@@ -407,6 +418,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Enhancement={
+   primary={"Magma Totem", "Flame Shock", "Stormstrike", "Lightning Bolt", "Earth Shock", "Fire Nova"},
    source="https://www.wowhead.com/forever/guide/classes/shaman/enhancement/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/enhancement-shaman-melee-dps-pve-guide/",
    reviewed="Wowhead Oct 29 rotation; Icy Veins Oct 26 level-30 beta",
@@ -422,6 +434,7 @@ ForeverCompanionSourcedPriorities={
  },
  WARLOCK={
   Destruction={
+   primary={"Soul Fire", "Immolate", "Bane of Doom", "Conflagrate", "Incinerate", "Bane of Havoc", "Hellfire", false},
    source="https://www.wowhead.com/forever/guide/classes/warlock/destruction/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 26, 2026; talented Shadow and Flame raid build",
    rules={
@@ -436,6 +449,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Demonology={
+   primary={"Soul Link", "Searing Pain", "Immolate", "Bane of Doom", "Soul Fire", "Searing Pain", "Hellfire"},
    source="https://www.wowhead.com/forever/guide/classes/warlock/demonology/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/demonology-warlock-ranged-dps-pve-guide",
    reviewed="Wowhead Oct 26, 2026; build-dependent Fire and Shadow raid priorities",
@@ -450,6 +464,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Affliction={
+   primary={"Bane of Agony", "Corruption", "Shadow Bolt", "Life Tap", false, "Life Tap"},
    source="https://www.wowhead.com/forever/guide/classes/warlock/affliction/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/affliction-warlock-ranged-dps-pve-guide/",
    reviewed="Wowhead Forever rotation; Icy Veins Oct 26 level-30 beta",
@@ -465,6 +480,7 @@ ForeverCompanionSourcedPriorities={
  },
  PALADIN={
   Protection={
+   primary={"Righteous Fury", "Judgement", "Judgement", "Consecration", "Holy Shield", "Consecration", "Templar's Bulwark", false},
    source="https://www.wowhead.com/forever/guide/classes/paladin/protection/rotation-cooldowns-pve-tank",
    reviewed="Wowhead Oct 29, 2026; threat and survival before damage",
    rules={
@@ -479,6 +495,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Holy={
+   primary={"Oath of Light", "Holy Shock", "Flash of Light", "Holy Light", "Light’s Vigil", "Cleanse"},
    source="https://www.icy-veins.com/wow-forever/holy-paladin-healer-pve-rotation-cooldowns-abilities",
    corroboration="https://www.wowhead.com/forever/guide/classes/paladin/holy/rotation-cooldowns-pve-healer",
    reviewed="Icy Veins Nov 3, 2026; group healing",
@@ -492,6 +509,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Retribution={
+   primary={false, "Judgement", "Holy Strike", false, "Holy Shock", "Consecration"},
    source="https://www.wowhead.com/forever/guide/classes/paladin/retribution/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/retribution-paladin-leveling",
    reviewed="Wowhead Nov 4, 2026; Unsealed Wrath and Shockadin builds",
@@ -508,6 +526,7 @@ ForeverCompanionSourcedPriorities={
 
  MAGE={
   Fire={
+   primary={"Pyroblast", "Arcane Blast", "Pyroblast", "Arcane Missiles", "Scorch", "Frostfire Bolt", "Flamestrike"},
    source="https://www.wowhead.com/forever/guide/classes/mage/fire/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 31, 2026; Deep Fire and Frostfire are separate builds",
    rules={
@@ -521,6 +540,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Arcane={
+   primary={"Pyroblast", "Fire Blast", "Arcane Missiles", "Arcane Wrath", "Arcane Blast"},
    source="https://www.wowhead.com/forever/guide/classes/mage/arcane/rotation-cooldowns-pve-dps",
    reviewed="Wowhead reviewed Nov 1, 2026; Arcane/Fire talent build",
    rules={
@@ -532,6 +552,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Frost={
+   primary={"Frostbolt", "Ice Lance", "Ice Lance", "Arcane Missiles", "Cone of Cold"},
    source="https://www.icy-veins.com/wow-forever/frost-mage-ranged-dps-pve-guide",
    corroboration="https://www.wowhead.com/forever/guide/classes/mage/frost/rotation-cooldowns-pve-dps",
    reviewed="Icy Veins Oct 30 leveling update; Wowhead priority reference",
@@ -546,6 +567,7 @@ ForeverCompanionSourcedPriorities={
  },
  ROGUE={
   Assassination={
+   primary={"Instant Poison", "Slice and Dice", "Mutilate", "Eviscerate", "Blade Flurry", "Kick", false},
    source="https://www.wowhead.com/forever/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; level and talents conditional",
    rules={
@@ -559,6 +581,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Subtlety={
+   primary={"Garrote", "Slice and Dice", "Rupture", "Hemorrhage", "Vanish", "Premeditation", false},
    source="https://www.wowhead.com/forever/guide/classes/rogue/subtlety/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; capstone subject to change",
    rules={
@@ -572,6 +595,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Combat={
+   primary={false, "Sinister Strike", "Slice and Dice", "Adrenaline Rush", "Kick"},
    source="https://www.wowhead.com/forever/guide/classes/rogue/combat/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026 / beta patch 1.60.1",
    rules={
@@ -585,6 +609,7 @@ ForeverCompanionSourcedPriorities={
  },
  HUNTER={
   Survival={
+   primary={"Hunter's Mark", "Auto Shot", "Raptor Strike", "Mongoose Bite", "Strider Kick", "Immolation Trap", "Multi-Shot", "Rapid Fire", false},
    source="https://www.wowhead.com/forever/guide/classes/hunter/survival/rotation-cooldowns-pve",
    corroboration="https://www.icy-veins.com/wow-forever/survival-hunter-melee-dps-pve-guide/",
    reviewed="Wowhead Oct 30; Icy Veins level-30 beta, 2026",
@@ -601,6 +626,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Marksmanship={
+   primary={"Trueshot Aura", "Aimed Shot", "Serpent Sting", "Sniper Shot", "Arcane Shot", "Multi-Shot", "Rapid Fire"},
    source="https://www.wowhead.com/forever/guide/classes/hunter/marksmanship/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026; PvE priority, not measured against all gear sets",
    rules={
@@ -614,6 +640,7 @@ ForeverCompanionSourcedPriorities={
    },
   },
   ["Beast Mastery"]={
+   primary={"Hunter's Mark", "Serpent Sting", "Summon Hawk", "Bestial Wrath", "Multi-Shot", "Tranquilizing Shot"},
    source="https://www.wowhead.com/forever/guide/classes/hunter/beast-mastery/rotation-cooldowns-pve-dps",
    reviewed="Wowhead Oct 30, 2026 / beta patch 1.60.1; ranged priority",
    rules={
@@ -744,46 +771,55 @@ local paladinEarly={
 -- Every spell is conditional on training and the selected build.
 local contextPractice={
  WARRIOR={
+  primary={leveling={"Charge", "Overpower", "Execute"},aoe={"Thunder Clap", "Whirlwind", "Cleave"},pvp={"Hamstring", "Mortal Strike", "Pummel"}},
   leveling={"Charge when safe. Use Battle Shout before the pull if it’s missing.","Overpower when it lights up. Use Mortal Strike or Bloodthirst if talented.","Execute at low enemy health. Spend excess Rage on Heroic Strike."},
   aoe={"Thunder Clap on a pack when safe.","Whirlwind if learned and appropriate for your stance.","Cleave with spare Rage. Keep enough for your next priority."},
   pvp={"Hamstring to keep the target close.","Mortal Strike if talented. Use Overpower when it becomes available.","Save Pummel or Shield Bash for a dangerous cast."},
  },
  PALADIN={
+  primary={leveling={"Seal of Righteousness", "Judgement", "Consecration"},aoe={"Consecration", "Judgement", "Holy Shield"},pvp={"Judgement", "Hammer of Justice", "Blessing of Freedom"}},
   leveling={"Keep Seal of Righteousness or talented Seal of Command active.","Use Judgement and Holy Strike when ready.","Use Consecration on packs if Mana allows. Heal with Holy Light when needed."},
   aoe={"Consecration once enemies are grouped. Stay near the pack.","Judgement and Holy Strike on the kill target.","Holy Shield if talented and tanking. Save Mana for utility."},
   pvp={"Judgement and Holy Strike when you can connect.","Hammer of Justice to stop a dangerous action or create a burst window.","Blessing of Freedom to escape roots. Use Cleanse for removable effects."},
  },
  HUNTER={
+  primary={leveling={"Auto Shot", "Serpent Sting", "Arcane Shot"},aoe={"Multi-Shot", "Volley", "Explosive Trap"},pvp={"Concussive Shot", false, "Arcane Shot"}},
   leveling={"Send your pet when it can safely take threat. Keep Auto Shot running.","Serpent Sting on targets that will live long enough.","Use Arcane Shot or Aimed Shot when trained. Keep room to kite."},
   aoe={"Multi-Shot for a small pack when it won’t break control.","Volley on a larger pack when you can channel safely.","Use Explosive Trap if trained and you can place it safely."},
   pvp={"Concussive Shot to create space. Keep Auto Shot running at range.","Use a trap to peel or isolate a target.","Use Arcane Shot while moving and hold your pet back from controlled targets."},
  },
  ROGUE={
+  primary={leveling={"Sinister Strike", "Slice and Dice", "Eviscerate"},aoe={"Blade Flurry", "Slice and Dice", "Kick"},pvp={"Cheap Shot", "Kidney Shot", "Kick"}},
   leveling={"Sinister Strike or your trained builder to earn combo points.","Slice and Dice on longer fights.","Eviscerate with spare combo points or to finish the target."},
   aoe={"Blade Flurry if talented and a second enemy is in range.","Keep Slice and Dice active. Build on the kill target.","Kick dangerous casts. Avoid cleaving enemies under crowd control."},
   pvp={"Cheap Shot for an opener when control matters, or Garrote for pressure.","Build with your trained combo-point attack. Use Kidney Shot when control is needed.","Keep Energy for Kick. Save Vanish to reset or escape."},
  },
  PRIEST={
+  primary={leveling={"Shadow Word: Pain", "Mind Blast", "Power Word: Shield"},aoe={"Shadow Word: Pain", "Mind Flay", "Prayer of Healing"},pvp={"Power Word: Shield", "Dispel Magic", "Psychic Scream"}},
   leveling={"Shadow Word: Pain on targets that will survive its ticks.","Mind Blast when ready. Fill with Mind Flay if talented or Smite.","Wand when Mana is low. Use Power Word: Shield if you need protection."},
   aoe={"Shadow Word: Pain on durable targets when you’re dealing damage.","Use Mind Flay or Mind Blast on the priority target.","When healing, use Prayer of Healing only when several party members need it."},
   pvp={"Power Word: Shield to protect an ally under pressure.","Dispel Magic on dangerous removable effects.","Use Psychic Scream to peel. Shadow can apply Shadow Word: Pain while moving."},
  },
  SHAMAN={
+  primary={leveling={"Lightning Bolt", "Flame Shock", "Healing Wave"},aoe={"Chain Lightning", "Fire Nova", "Chain Heal"},pvp={false, "Frost Shock", "Healing Wave"}},
   leveling={"Lightning Bolt at range. Enhancement can fight in melee with its weapon imbue.","Flame Shock on durable enemies; use Stormstrike or Lava Burst if trained for your build.","Keep Mana for Healing Wave and a dangerous-cast interrupt."},
   aoe={"Chain Lightning on grouped enemies when the tank has threat.","Use Fire Nova if trained and appropriate for your totem setup.","Chain Heal when healing clustered allies who actually need it."},
   pvp={"Use your trained interrupt on a dangerous cast.","Frost Shock to create space. Use Tremor Totem against Fear when appropriate.","Use Healing Wave when you have time to cast safely."},
  },
  MAGE={
+  primary={leveling={"Frostbolt", "Fire Blast", "Frost Nova"},aoe={"Frost Nova", "Blizzard", "Arcane Explosion"},pvp={"Frostbolt", "Polymorph", "Counterspell"}},
   leveling={"Frostbolt to slow and kite, or Fireball if leveling as Fire.","Use Fire Blast to finish when it saves a cast.","Frost Nova if enemies reach you. Move out before casting again."},
   aoe={"Frost Nova to create space before the pack reaches you.","Blizzard when you can channel safely at range.","Arcane Explosion only when close range is safe."},
   pvp={"Frostbolt to slow. Frost Nova to create space.","Polymorph a second threat when it won’t immediately break.","Counterspell a dangerous cast. Use Blink when you need to reposition."},
  },
  WARLOCK={
+  primary={leveling={false, "Corruption", "Shadow Bolt"},aoe={"Corruption", "Rain of Fire", false},pvp={"Corruption", false, "Drain Life"}},
   leveling={"Send your pet when it can safely take threat.","Corruption on targets that will survive the ticks.","Shadow Bolt or wand between refreshes. Life Tap when safe."},
   aoe={"Corruption on durable targets when spreading it will pay off.","Rain of Fire on a grouped pack if you can channel safely.","Avoid Hellfire if the self-damage or melee range would put you in danger."},
   pvp={"Corruption for pressure. Fear to create room or stop an attacker.","Use your pet’s utility for the matchup.","Drain Life when you can channel safely. Life Tap only out of immediate danger."},
  },
  DRUID={
+  primary={leveling={"Moonfire", "Claw", "Rejuvenation"},aoe={"Swipe", "Rake", "Wild Growth"},pvp={"Entangling Roots", "Rejuvenation", "Bash"}},
   leveling={"Caster: Moonfire on durable enemies, then Wrath.","Cat: Claw to build points. Use Rip on longer fights or Ferocious Bite to finish.","Rejuvenation or Healing Touch between pulls when needed."},
   aoe={"Bear: Swipe when tanking grouped enemies.","Cat: spread Rake only on enemies that will live long enough.","Healer: use Wild Growth if talented and multiple allies need healing."},
   pvp={"Entangling Roots to hold an enemy at range.","Rejuvenation before moving away from pressure.","Switch forms as needed for the fight. Use Bash if trained and in Bear Form."},
@@ -795,16 +831,19 @@ function ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
  local choices=ForeverCompanionSourcedPriorities[class]
  local entry=choices and choices[name]
  if class=="PALADIN" and type(level)=="number" and level<20 and mode~="pvp" then
-  local early={}
+  local early,primary={},{}
+  local earlySpells={"Seal of Righteousness","Judgement","Holy Strike","Holy Light"}
   if role=="Healer" and mode~="leveling" then
    early[1]="Holy Light — heal injured allies. Keep enough Mana for the next hit."
+   primary[1]="Holy Light"
   end
   for index,step in ipairs(paladinEarly) do
    if (index~=2 or level>=4) and (index~=3 or level>=6) and (index~=4 or not (role=="Healer" and mode~="leveling")) then
     early[#early+1]=step
+    primary[#early]=earlySpells[index]
    end
   end
-  return early,"Paladin / levels 1–19","Skip spells you haven’t trained. Keep auto-attacking in melee.","Wowhead · Forever Paladin leveling"
+  return early,"Paladin / levels 1–19","Skip spells you haven’t trained. Keep auto-attacking in melee.","Wowhead · Forever Paladin leveling",primary
  end
  if entry and (mode=="boss" or mode=="dungeon") then
   local hint="Start at the top. Skip spells you haven’t learned."
@@ -812,9 +851,9 @@ function ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
    hint="Showing "..selected[2].." priorities. Change Spec to match your role."
   end
   local source=entry.source:find("icy%-veins") and "Icy Veins" or "Wowhead"
-  return entry.rules,name..(mode=="boss" and " / Boss" or " / Dungeon priority"),hint,source.." · Forever"
+  return entry.rules,name..(mode=="boss" and " / Boss" or " / Dungeon priority"),hint,source.." · Forever",entry.primary
  end
  local labels={leveling="Leveling",aoe="Multiple enemies",pvp="PvP",boss="Boss",dungeon="Dungeon"}
  local practice=contextPractice[class]
- return practice and practice[mode] or fallback,name.." / "..(labels[mode] or "Practice"),"Class practice. Use only trained spells."
+ return practice and practice[mode] or fallback,name.." / "..(labels[mode] or "Practice"),"Class practice. Use only trained spells.",nil,practice and practice.primary[mode]
 end
