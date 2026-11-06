@@ -428,7 +428,9 @@ local function render()
             lines[#lines+1]="Use the general priority above and check your spellbook for available abilities."
           end
         end
-        if type(ForeverCompanionBeginnerAvailability)=="function" then
+        local previewing=classToken()~=actualClass()
+        if previewing then lines[#lines+1]="Class preview: live spellbook checks are available for your own class." end
+        if not previewing and type(ForeverCompanionBeginnerAvailability)=="function" then
           lines[#lines+1]="BEGINNER SPELLBOOK CHECK (READ-ONLY)"
           if type(ForeverCompanionBeginnerCoverage)=="function" then
             local ok,covered,total=pcall(ForeverCompanionBeginnerCoverage,classToken())
@@ -461,11 +463,11 @@ local function render()
           end
           lines[#lines+1]="Unlock levels come from published Forever client data; spellbook ownership is checked separately."
         end
-        if ForeverCompanionAvailableAbilitySummary then
+        if not previewing and ForeverCompanionAvailableAbilitySummary then
           lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
         end
         if ForeverCompanionAbilityReferenceLines then
-          for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level())) do
+          for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level(),previewing)) do
             lines[#lines+1]=referenceLine
           end
         end
@@ -473,10 +475,10 @@ local function render()
         if ForeverCompanionWorldGuide then lines[#lines+1]=ForeverCompanionWorldGuide.Format(level()) end
         if ForeverCompanionClassChanges then lines[#lines+1]=ForeverCompanionClassChanges.Format(classToken(),level()) end
         if ForeverCompanionClassChangeIndex then lines[#lines+1]=ForeverCompanionClassChangeIndex.Format(classToken(),level()) end
-        if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
+        if not previewing and ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
           lines[#lines+1]=ForeverCompanionSkillStudy.FormatNextActions(classToken(),level())
           lines[#lines+1]=ForeverCompanionSkillStudy.PracticePlan(classToken(),level()) end
-        if ForeverCompanionSkillDiscovery then
+        if not previewing and ForeverCompanionSkillDiscovery then
           lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatSummary(classToken())
           lines[#lines+1]=ForeverCompanionSkillDiscovery.Format(classToken())
           lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatChecklist(classToken()) end
@@ -494,7 +496,7 @@ local function render()
           lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
         end
         if ForeverCompanionSpecPlanner then lines[#lines+1]=ForeverCompanionSpecPlanner.Format(classToken(),mode) end
-        if ForeverCompanionSpellbook then lines[#lines+1]=ForeverCompanionSpellbook.Cooldowns(classToken()) end
+        if not previewing and ForeverCompanionSpellbook then lines[#lines+1]=ForeverCompanionSpellbook.Cooldowns(classToken()) end
         lines[#lines+1]="General reference only; verify abilities and talents on Forever."
       end
       local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
@@ -1400,7 +1402,7 @@ local function createUI()
   window:Hide()
   render()
 end
-for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD","PLAYER_XP_UPDATE","SKILL_LINES_CHANGED","CHAT_MSG_SKILL","UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED"}) do
+for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD","PLAYER_XP_UPDATE","SPELLS_CHANGED","SKILL_LINES_CHANGED","CHAT_MSG_SKILL","UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED"}) do
   pcall(function() addon:RegisterEvent(event) end)
 end
 addon:SetScript("OnEvent", function(_, event, arg)
@@ -1419,6 +1421,8 @@ addon:SetScript("OnEvent", function(_, event, arg)
   elseif DB and (event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED") then
     fitWindow()
     render()
+  elseif DB and event == "SPELLS_CHANGED" then
+    if window and window:IsShown() and currentTab=="Leveling" then render() end
   elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_XP_UPDATE" or event == "SKILL_LINES_CHANGED" or event == "CHAT_MSG_SKILL") then
     render()
   end

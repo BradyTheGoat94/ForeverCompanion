@@ -606,15 +606,23 @@ do
  assert(planner.buttons[1].node[2]==2)
  planner.tabs[1]:OnClick()
  planner.lowerLevel:OnClick()
- planner.raiseLevel:OnClick()
+ assert(model.Level(allocation)==59 and model.Level(other)==60)
+ ForeverCompanionSpecPlanner.Next("WARRIOR")
+ ForeverCompanionRefresh()
+ planner.lowerLevel:OnClick()
+ planner.lowerLevel:OnClick()
+ assert(model.Level(other)==58 and model.Level(allocation)==59,"level belongs to the active spec draft")
+ ForeverCompanionDB.specSelections.WARRIOR=1
+ ForeverCompanionRefresh()
+ assert(model.Level(model.Load("WARRIOR","Arms"))==59,"switching specs preserves the saved level")
  planner.resetButton:OnClick()
  assert(model.Total("WARRIOR",allocation)>0,"reset needs confirmation")
  planner.resetButton:OnClick()
- assert(model.Total("WARRIOR",allocation)==0,"confirmed reset clears draft")
+ assert(model.Total("WARRIOR",allocation)==0 and model.Level(allocation)==59,"confirmed reset clears ranks and preserves the plan level")
  planner.lowerLevel:OnClick()
  planner.recommendationButton:OnClick()
  planner.buildButton:OnClick()
- assert(model.Total("WARRIOR",allocation)==51 and planner.recommendationButton.text=="Recommended Build")
+ assert(model.Total("WARRIOR",allocation)==51 and model.Level(allocation)==60 and planner.recommendationButton.text=="Recommended Build")
  planner.resetButton:OnClick()
  planner.resetButton:OnClick()
 end
@@ -728,6 +736,23 @@ local preview=workspace.Plan(early,earlyPrimary,"WARRIOR","PALADIN")
 assert(scans==1 and preview[1].status=="Class preview","other-class previews do not use the character's spellbook")
 ForeverCompanionSpellbook.Scan=function() return {supported=true,complete=false,inspected=1,known={}} end
 assert(workspace.Plan(early,earlyPrimary,"PALADIN","PALADIN")[1].status=="Training unconfirmed")
+ForeverCompanionSpellbook.Scan=function() return {supported=true,complete=true,inspected=1,known={},englishNames=false} end
+local localized,_,missing=workspace.Plan(early,earlyPrimary,"PALADIN","PALADIN")
+assert(localized[1].status=="Training unconfirmed" and missing==0,"localized name mismatch is not a missing spell")
+local refreshes=0
+ForeverCompanionSpellbook.Scan=function()
+ refreshes=refreshes+1
+ return {supported=true,complete=true,inspected=1,known={}}
+end
+assert(addonFrame.events.SPELLS_CHANGED,"guide must subscribe to spellbook changes")
+mainWindow:Show()
+addonFrame.OnEvent(addonFrame,"SPELLS_CHANGED")
+assert(refreshes>0,"visible class guide refreshes when the spellbook changes")
+mainWindow:Hide()
+refreshes=0
+addonFrame.OnEvent(addonFrame,"SPELLS_CHANGED")
+assert(refreshes==0,"hidden addon does not scan on spellbook changes")
+mainWindow:Show()
 ForeverCompanionSpellbook.Scan=scanSpellbook
 C_Spell=savedSpell
 local guide=ForeverCompanionClassGuide

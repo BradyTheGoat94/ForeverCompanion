@@ -85,7 +85,8 @@ end
 function W.Plan(instructions,primary,playerClass,shownClass)
  local available,uncertain,missing={},{},{}
  local sameClass=playerClass==shownClass
- local scan=sameClass and ForeverCompanionSpellbook.Scan()
+ local spellbook=ForeverCompanionSpellbook
+ local scan=sameClass and spellbook.Scan()
  local learnedCount=0
  for i,instruction in ipairs(instructions) do
   local name=primary and primary[i]
@@ -93,13 +94,12 @@ function W.Plan(instructions,primary,playerClass,shownClass)
   local row={text=instruction:gsub("^%d+%.%s+",""),spell=spell}
   local bucket=available
   if name then
-   local key=(name:gsub("’","'")):lower()
    if not sameClass then
     row.status="Class preview"
-   elseif (spell and ForeverCompanionKnownSpell(spell.spellID)==true) or scan.known[key] then
+   elseif (spell and ForeverCompanionKnownSpell(spell.spellID)==true) or spellbook.HasName(scan,name) then
     row.status="In your spellbook"
     learnedCount=learnedCount+1
-   elseif scan.complete and scan.inspected>0 then
+   elseif spellbook.CanCheckEnglishNames(scan) then
     row.status="Primary spell not found · check talents or training"
     bucket=missing
    else

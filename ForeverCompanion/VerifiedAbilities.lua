@@ -87,7 +87,7 @@ function ForeverCompanionAbilityAudit()
  return report
 end
 
-function ForeverCompanionAbilityReferenceLines(classToken,level)
+function ForeverCompanionAbilityReferenceLines(classToken,level,preview)
  local data=ForeverCompanionVerifiedAbilities
  local result={"CURATED SPELL REFERENCE | "..data.build,
                data.status.." | Last reviewed "..data.checked}
@@ -102,8 +102,9 @@ function ForeverCompanionAbilityReferenceLines(classToken,level)
  table.sort(ordered,function(a,b) if a.level==b.level then return a.name<b.name end return a.level<b.level end)
  for _,entry in ipairs(ordered) do
   local gate=not n and "LEVEL UNKNOWN" or (n>=entry.level and "LEVEL MET" or "LOCKED BY LEVEL")
-  local known=ForeverCompanionKnownSpell(entry.id)
-  local ownership=known==true and "KNOWN IN SPELLBOOK" or (known==false and "NOT KNOWN" or "SPELLBOOK STATUS UNKNOWN")
+  local known
+  if not preview then known=ForeverCompanionKnownSpell(entry.id) end
+  local ownership=preview and "CLASS PREVIEW" or (known==true and "KNOWN IN SPELLBOOK" or (known==false and "LISTED RANK NOT FOUND" or "SPELLBOOK STATUS UNKNOWN"))
   local requirement=entry.kind=="Talent" and "Talent investment required" or (entry.kind=="Quest" and "Quest completion required" or "Trainer / spellbook check required")
   result[#result+1]=entry.name.." (spell "..entry.id..") | "..entry.tree.." | level "..entry.level.." | "..gate.." | "..ownership
   result[#result+1]="  "..requirement..". "..entry.note

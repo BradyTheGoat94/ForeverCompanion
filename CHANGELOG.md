@@ -1,3 +1,8 @@
+## 3.21.1-beta
+
+- Save the planning level separately for each specialization’s talent draft, including when resetting ranks.
+- Refresh open class guides on spellbook changes. Keep unmatched translated spell names unconfirmed and keep live spell ownership out of other-class previews.
+
 ## 3.21.0-beta
 
 - Added Recommended Build to Class Guides → Talents. Preview a complete Icy Veins level-60 PvE allocation for every specialization, including a separate Bear tank build. See the split across all three trees and copy a build to an empty draft.

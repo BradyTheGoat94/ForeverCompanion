@@ -3,7 +3,7 @@
 ForeverCompanionSpellbook={}
 local S=ForeverCompanionSpellbook
 local function normalized(v)
- return tostring(v or ""):lower():gsub("^%s+",""):gsub("%s+$","")
+ return tostring(v or ""):gsub("’","'"):lower():gsub("^%s+",""):gsub("%s+$","")
 end
 function S.Scan()
  local known,inspected={},0
@@ -16,6 +16,8 @@ function S.Scan()
  if not ok or type(count)~="number" or count<1 or count>100 then
   return {known=known,inspected=0,supported=false,complete=false}
  end
+ local locale=type(GetLocale)=="function" and GetLocale()
+ local englishNames=not locale or locale=="enUS" or locale=="enGB"
  local complete=true
  for tab=1,count do
   local good,info=pcall(book.GetSpellBookSkillLineInfo,tab)
@@ -38,14 +40,21 @@ function S.Scan()
    end
   end
  end
- return {known=known,inspected=inspected,supported=true,complete=complete}
+ return {known=known,inspected=inspected,supported=true,complete=complete,englishNames=englishNames}
+end
+function S.HasName(scan,name)
+ return scan.supported and scan.known and scan.known[normalized(name)]==true
+end
+function S.CanCheckEnglishNames(scan)
+ return scan.supported and scan.complete and (scan.inspected or 0)>0 and scan.englishNames~=false
 end
 function S.Status(name,scan)
  scan=scan or S.Scan()
  if not scan.supported then return "unverified (spellbook API unavailable)" end
  if scan.inspected==0 then return "unverified (spellbook returned no spells)" end
- if scan.known[normalized(name)] then return "found in spellbook" end
- if not scan.complete then return "unverified (partial scan)" end
+ if S.HasName(scan,name) then return "found in spellbook" end
+ if scan.englishNames==false then return "unverified (guide uses English spell names)" end
+ if not S.CanCheckEnglishNames(scan) then return "unverified (partial scan)" end
  return "not found in scanned spellbook (not proof of unavailable)"
 end
 function S.Cooldowns(class)

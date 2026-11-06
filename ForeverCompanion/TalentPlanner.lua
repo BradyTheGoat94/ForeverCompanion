@@ -59,6 +59,17 @@ function P.Load(class,spec)
  return allocation
 end
 
+function P.Level(allocation)
+ local value=allocation.level
+ return type(value)=="number" and value>=1 and value<=60 and value%1==0 and value or 60
+end
+
+function P.ClearRanks(allocation)
+ for key in pairs(allocation) do
+  if type(key)=="number" then allocation[key]=nil end
+ end
+end
+
 function P.Total(class,allocation,tree,beforeRow)
  local count=0
  for _,node in ipairs(ForeverCompanionTalentData.classes[class].nodes) do

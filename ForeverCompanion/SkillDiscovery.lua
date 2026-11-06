@@ -13,10 +13,9 @@ function D.Find(names,snapshot)
  snapshot=snapshot or D.Snapshot()
  local rows={}
  for _,name in ipairs(names or {}) do
-  local key=normalize(name)
   local state="UNCONFIRMED"
-  if snapshot.supported and snapshot.known and snapshot.known[key] then state="IN SPELLBOOK"
-  elseif snapshot.supported and snapshot.complete and (snapshot.inspected or 0)>0 then state="NOT IN SCANNED SPELLBOOK" end
+  if ForeverCompanionSpellbook.HasName(snapshot,name) then state="IN SPELLBOOK"
+  elseif ForeverCompanionSpellbook.CanCheckEnglishNames(snapshot) then state="NOT IN SCANNED SPELLBOOK" end
   rows[#rows+1]={name=name,state=state}
  end
  return rows
@@ -29,6 +28,9 @@ function D.Format(classToken)
   return table.concat(lines,"\n")
  end
  lines[#lines+1]="Scanned "..(snapshot.inspected or 0).." named entries; "..(snapshot.complete and "complete scan" or "partial scan").."."
+ if snapshot.englishNames==false then
+  lines[#lines+1]="The guide uses English spell names. Unmatched names are unconfirmed."
+ end
  local guide=ForeverCompanionCooldownGuides and ForeverCompanionCooldownGuides[classToken]
  if not guide then
   lines[#lines+1]="No curated skill candidates for this class."

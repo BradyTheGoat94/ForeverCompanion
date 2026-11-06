@@ -4,7 +4,6 @@ ForeverCompanionTalentWorkspace=W
 local planner=ForeverCompanionTalentPlanner
 local state,root,tabs,buttons,budgetLabel,summary,details,selectionTitle,status,levelLabel,openingLabel,buildButton,resetButton
 local recommendationButton,openingTitle,summaryTitle,guideField
-local planLevel=60
 local function text(parent,x,y,width,label,size,gold)
  local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetWidth(width);f:SetJustifyH("LEFT")
@@ -44,7 +43,7 @@ function W.Create(parent)
  end
  local function adjustLevel(direction)
   local step=type(IsShiftKeyDown)=="function" and IsShiftKeyDown() and 10 or 1
-  planLevel=math.max(1,math.min(60,planLevel+direction*step))
+  state.allocation.level=math.max(1,math.min(60,planner.Level(state.allocation)+direction*step))
   state.message=nil;state.confirmReset=nil;refresh()
  end
  W.lowerLevel=control(root,490,-70,25,"-",function() adjustLevel(-1) end)
@@ -53,7 +52,7 @@ function W.Create(parent)
  W.raiseLevel=control(root,592,-70,25,"+",function() adjustLevel(1) end)
  resetButton=control(root,628,-70,124,"Reset draft",function()
   if state.confirmReset then
-   for key in pairs(state.allocation) do state.allocation[key]=nil end
+   planner.ClearRanks(state.allocation)
    state.confirmReset=nil;state.message="Draft reset."
   else
    state.confirmReset=true;state.message="Confirm reset to clear all three trees in this draft."
@@ -78,7 +77,7 @@ function W.Create(parent)
    if not node then return end
    state.selected=node;state.confirmReset=nil
    if state.preview then refresh();return end
-   local ok,why=planner.Change(state.class,state.allocation,node,mouseButton=="RightButton" and -1 or 1,planner.Budget(planLevel))
+   local ok,why=planner.Change(state.class,state.allocation,node,mouseButton=="RightButton" and -1 or 1,planner.Budget(planner.Level(state.allocation)))
    state.message=not ok and why or nil;refresh()
   end)
   b:SetScript("OnEnter",function(self)
@@ -106,12 +105,12 @@ function W.Create(parent)
   state.confirmReset=nil
   if state.preview then
    local ok,message=planner.CopyRecommendation(state.class,state.spec[1],state.allocation)
-   if ok then state.preview=false;planLevel=60 end
+   if ok then state.preview=false;state.allocation.level=60 end
    state.message=ok and "Recommended build copied into your draft." or message
    refresh()
    return
   end
-  local ok,message=planner.LoadOpening(state.class,state.tree,state.spec[1],state.allocation,planner.Budget(planLevel))
+  local ok,message=planner.LoadOpening(state.class,state.tree,state.spec[1],state.allocation,planner.Budget(planner.Level(state.allocation)))
   state.message=ok and "Opening loaded into your draft." or message
   refresh()
  end)
@@ -152,6 +151,7 @@ function W.Render(class,spec)
  local recommended=planner.Recommendation(class,name)
  local preview=state.preview and recommended
  local allocation=preview and recommended[3] or state.allocation
+ local planLevel=planner.Level(state.allocation)
  local budget=planner.Budget(preview and 60 or planLevel)
  local total=planner.Total(class,allocation)
  recommendationButton:SetEnabled(recommended~=nil)

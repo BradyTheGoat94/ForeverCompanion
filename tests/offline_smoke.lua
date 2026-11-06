@@ -19,6 +19,11 @@ assertEqual(scan.supported,true,"spellbook supported")
 assertEqual(scan.inspected,2,"spell count")
 assertEqual(ForeverCompanionSpellbook.Status("Shield Wall",scan),"found in spellbook","known spell")
 assertEqual(ForeverCompanionSpellbook.Status("Unknown",scan),"not found in scanned spellbook (not proof of unavailable)","unknown spell")
+GetLocale=function() return "frFR" end
+local localized=ForeverCompanionSpellbook.Scan()
+assertEqual(ForeverCompanionSpellbook.Status("Unknown",localized),"unverified (guide uses English spell names)","localized scan cannot prove absence")
+assertEqual(ForeverCompanionSpellbook.Status("Shield Wall",localized),"found in spellbook","exact matches are still evidence")
+GetLocale=nil
 C_SpellBook.GetSpellBookItemName=function(i) if i==1 then return "Shield Wall" end error("simulated API failure") end
 local partial=ForeverCompanionSpellbook.Scan()
 assertEqual(partial.complete,false,"partial spellbook scan")
@@ -340,6 +345,7 @@ local warriorHigh=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",4
 assert(warriorLow:find("Bloodthirst",1,true) and warriorLow:find("LOCKED BY LEVEL",1,true),"level-10 reference should gate late abilities")
 assert(warriorHigh:find("Talent investment required",1,true),"talent abilities must not be presented as automatically learned")
 assert(warriorHigh:find("Quest completion required",1,true),"quest abilities must retain quest requirement")
+assert(table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40,true)," "):find("CLASS PREVIEW",1,true),"class preview must not report ownership")
 assert(table.concat(ForeverCompanionAbilityReferenceLines("PRIEST",40)," "):find("pending",1,true),"unaudited classes must not claim verification")
 
 -- Ownership must never be inferred from level, and API restrictions must be safe.
@@ -347,7 +353,7 @@ local previousIsSpellKnown=IsSpellKnown
 IsSpellKnown=function(id) return id==23881 end
 local known=table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n")
 assert(known:find("KNOWN IN SPELLBOOK",1,true),"known spell should be labeled")
-assert(known:find("NOT KNOWN",1,true),"missing spell should be labeled")
+assert(known:find("LISTED RANK NOT FOUND",1,true),"missing rank must not be presented as a missing ability")
 IsSpellKnown=function() error("restricted client API") end
 assert(table.concat(ForeverCompanionAbilityReferenceLines("WARRIOR",40),"\n"):find("SPELLBOOK STATUS UNKNOWN",1,true),"restricted API must not invent spell ownership")
 IsSpellKnown=previousIsSpellKnown
