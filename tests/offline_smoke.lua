@@ -1127,3 +1127,27 @@ do
  CreateFrame,ForeverCompanionDB,Minimap,ForeverCompanionPartyMinimap=oldFrame,oldDB,oldMinimap,oldParty
  SlashCmdList.FOREVERCOMPANIONPARTYMAP=oldSlash
 end
+
+
+-- World-map party list excludes the player in raids and handles empty groups.
+do
+ local oldFrame,oldRaid,oldExists,oldSame=CreateFrame,IsInRaid,UnitExists,UnitIsUnit
+ local oldParty=ForeverCompanionPartyMap
+ CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
+ IsInRaid=function() return false end
+ UnitExists=function(unit) return unit=="party1" or unit=="party2" end
+ UnitIsUnit=function(unit,target) return unit=="party2" and target=="player" end
+ dofile("ForeverCompanion/PartyMap.lua")
+ local units=ForeverCompanionPartyMap.PartyUnits()
+ assertEqual(#units,1,"party map excludes player duplicate")
+ assertEqual(units[1],"party1","party map keeps other members")
+ IsInRaid=function() return true end
+ UnitExists=function(unit) return unit=="raid1" or unit=="raid2" end
+ UnitIsUnit=function(unit,target) return unit=="raid1" and target=="player" end
+ units=ForeverCompanionPartyMap.PartyUnits()
+ assertEqual(#units,1,"raid map excludes own raid slot")
+ assertEqual(units[1],"raid2","raid map keeps other raid members")
+ UnitExists=function() return false end
+ assertEqual(#ForeverCompanionPartyMap.PartyUnits(),0,"empty raid produces no markers")
+ CreateFrame,IsInRaid,UnitExists,UnitIsUnit,ForeverCompanionPartyMap=oldFrame,oldRaid,oldExists,oldSame,oldParty
+end
