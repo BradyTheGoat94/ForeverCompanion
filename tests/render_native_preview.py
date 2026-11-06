@@ -84,8 +84,9 @@ def render(source,output,workspace=False):
         bx,by,bw,bh=box(target['id'])
         offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
         start=target['id']
-    elif workspace=='loot':
-        target=next(n for n in records if n.get('name')=='ForeverCompanionLootCatalog')
+    elif workspace in ('loot','encounter'):
+        name='ForeverCompanionLootCatalog' if workspace=='loot' else 'ForeverCompanionDungeonJournal'
+        target=next(n for n in records if n.get('name')==name)
         bx,by,bw,bh=box(target['id'])
         offset=(24-bx,24-by);width,height=818,math.ceil(bh)+94
         start=target['id']
@@ -174,6 +175,7 @@ render('ui_class_native.json','ui_rotation_native.png',True)
 render('ui_topic_native.json','ui_topic_native.png','talents')
 render('ui_gear_native.json','ui_gear_native.png')
 render('ui_loot_native.json','ui_loot_native.png','loot')
+render('ui_encounter_native.json','ui_encounter_preview.png','encounter')
 render('ui_long_priority_native.json','ui_long_priority_native.png',True)
 # Existing automation consumes these established preview filenames. Keep them
 # aligned with the native-layout outputs rather than older schematic drawings.

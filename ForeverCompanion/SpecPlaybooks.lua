@@ -713,11 +713,11 @@ function ForeverCompanionQuickStartLines(classToken)
  local steps=type(class)=="table" and class[name]
  if type(steps)~="table" then return {} end
  local lines={"START HERE | "..name.." | 3 BEGINNER ACTIONS"}
- lines[#lines+1]="BEFORE PULL: check your spellbook, equipped weapon, and active talents; skip any ability you have not trained."
+ lines[#lines+1]="Before pulling, check your weapon and talents. Use spells you know."
  for i=1,math.min(3,#steps) do
-  lines[#lines+1]="PRACTICE "..i..": "..steps[i]
+  lines[#lines+1]=i..". "..steps[i]
  end
- lines[#lines+1]="NEXT: this practice list is not a live DPS rotation. If instructions differ, follow the sourced conditional priority only when your build matches its assumptions."
+ lines[#lines+1]="For a full priority, open Rotations and match the guide to your build."
  return lines
 end
 
@@ -730,10 +730,10 @@ function ForeverCompanionSourcedPriorityLines(classToken)
  entry=type(entry)=="table" and entry[name]
  if type(entry)~="table" then return {} end
  local lines={"PUBLISHED FOREVER GUIDE | "..name,entry.reviewed}
- lines[#lines+1]="VERIFY IN GAME: this is a starting priority, not a DPS benchmark or proof of live talent availability."
- lines[#lines+1]="LEVEL GATE: talents unlock at level 10 by default; check for the Talented Legacy perk. Abilities and talent ranks shown below may require higher levels. Never attempt a spell missing from your current spellbook."
- lines[#lines+1]="BUILD GATE: confirm the talent is selected before following any 'if talented' instruction. At level 40, dual specialization can change which talents are active."
- lines[#lines+1]="GUIDE MODE: sourced conditional priorities take precedence over the simplified beginner button-order checklist below when their instructions differ."
+ lines[#lines+1]="Use this as a starting priority and check it against your build in game."
+ lines[#lines+1]="Talents unlock at level 10 by default. Talented can start them earlier."
+ lines[#lines+1]="Check active talents after switching dual specialization."
+ lines[#lines+1]="When advice differs, follow the sourced priority if it fits your build."
  for _,note in ipairs(ForeverCompanionGuideReadinessLines()) do lines[#lines+1]=note end
 
  if ForeverCompanionHotfixCautions[classToken] then lines[#lines+1]=ForeverCompanionHotfixCautions[classToken] end

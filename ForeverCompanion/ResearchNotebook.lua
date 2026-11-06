@@ -110,7 +110,7 @@ function N.Render(tab,db,reload)
   for name,edit in pairs(fields) do edit:SetText(entry[name]) end
   status:SetText(current.dirty and "Unsaved draft restored. Save before reloading the UI; Escape discards this draft." or "Personal notes only; no source, mechanic or client compatibility is verified here.")
  end
- root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Dungeons" and -706 or -395)
+ root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Dungeons" and -728 or -395)
  heading:SetText("PERSONAL RESEARCH / "..(tab=="Dungeons" and "SELECTED BOSS" or string.upper(tab)).." / NOT VERIFIED")
  root:Show()
 end

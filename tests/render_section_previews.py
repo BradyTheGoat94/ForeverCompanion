@@ -72,11 +72,11 @@ def quest_preview():
     panel(d,cx,top,517,210,"JOURNAL AT A GLANCE")
     panel(d,cx+529,top,535,210,"FOCUSED OBJECTIVE")
     count=next((s for s in strings if re.match(r"^\d+ active\s+\d+ ready",s) or " cached quests" in s),"Quest scan unavailable")
-    if count=="Quest scan unavailable" and any(s.startswith("Live quest-log snapshot") for s in strings):
+    if count=="Quest scan unavailable" and any(s.startswith("From your quest log") for s in strings):
         raise SystemExit("Active quest summary not found in captured UI strings")
     line(d,cx+23,top+78,count,49)
     line(d,cx+23,top+119,find(strings,"Top zone:","No zone data"),52,MUTED)
-    line(d,cx+23,top+177,find(strings,"Live quest-log snapshot","Quest-log status unavailable"),55,GOLD)
+    line(d,cx+23,top+177,find(strings,"From your quest log","Quest-log status unavailable"),55,GOLD)
     match=re.search(r"(\d+) active\s+(\d+) ready",count)
     frac=int(match.group(2))/int(match.group(1)) if match and int(match.group(1)) else None
     bar(d,cx+23,top+148,466,frac,(224,163,64))

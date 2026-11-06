@@ -7,7 +7,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 TOC = ROOT / "ForeverCompanion" / "ForeverCompanion.toc"
 HANDOFF = ROOT / "docs" / "CURSEFORGE_SUBMISSION.md"
-EXPECTED = {"Interface": "16001", "Title": "Brady's Forever Companion", "Version": "3.22.0-beta"}
+EXPECTED = {"Interface": "16001", "Title": "Brady's Forever Companion", "Version": "3.23.0-beta"}
 REQUIRED = (
     "## Project summary", "## Long description", "## Upload selection",
     "## Changelog", "## Release decision log", "No combat automation",

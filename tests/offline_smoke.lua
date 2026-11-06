@@ -833,10 +833,10 @@ for class,choices in pairs(ForeverCompanionSpecs) do
    assert(lines[1]:find(choice[1],1,true),"source-reviewed spec mismatch: "..class.." "..choice[1])
    assert(joined:find("https://",1,true),"source-reviewed URL missing: "..class.." "..choice[1])
    assert(joined:find("Re-check after each action",1,true),"decision safety reminder missing: "..class.." "..choice[1])
-   assert(joined:find("not a DPS benchmark",1,true),"unverified benchmark disclaimer missing: "..class.." "..choice[1])
-   assert(joined:find("talents unlock at level 10",1,true),"level gate missing: "..class.." "..choice[1])
+   assert(joined:find("starting priority",1,true),"unverified benchmark disclaimer missing: "..class.." "..choice[1])
+   assert(joined:find("Talents unlock at level 10",1,true),"level gate missing: "..class.." "..choice[1])
    assert(joined:find("dual specialization",1,true),"talent swap warning missing: "..class.." "..choice[1])
-   assert(joined:find("take precedence over the simplified beginner",1,true),"guide conflict resolution missing: "..class.." "..choice[1])
+   assert(joined:find("follow the sourced priority",1,true),"guide conflict resolution missing: "..class.." "..choice[1])
    standardSpecs=standardSpecs+1
   end
  end
@@ -901,12 +901,12 @@ for class,choices in pairs(ForeverCompanionSpecs) do
    local lines=ForeverCompanionQuickStartLines(class)
    assert(#lines==6,"quick start must have header, prep, three actions, next step: "..class.." "..choice[1])
    assert(lines[1]:find(choice[1],1,true),"quick start spec mismatch: "..class.." "..choice[1])
-   assert(lines[3]:find("PRACTICE 1:",1,true),"first practice action missing")
-   assert(lines[4]:find("PRACTICE 2:",1,true),"second practice action missing")
-   assert(lines[5]:find("PRACTICE 3:",1,true),"third practice action missing")
-   assert(lines[6]:find("not a live DPS rotation",1,true),"quick start safety missing")
-   assert(lines[2]:find("skip any ability you have not trained",1,true),"untrained spell safety missing")
-   assert(lines[6]:find("follow the sourced conditional priority",1,true),"conflicting priority safety missing")
+   assert(lines[3]:find("1. ",1,true),"first practice action missing")
+   assert(lines[4]:find("2. ",1,true),"second practice action missing")
+   assert(lines[5]:find("3. ",1,true),"third practice action missing")
+   assert(lines[6]:find("open Rotations",1,true),"quick start safety missing")
+   assert(lines[2]:find("Use spells you know",1,true),"untrained spell safety missing")
+   assert(lines[6]:find("match the guide to your build",1,true),"conflicting priority safety missing")
    quickCount=quickCount+1
   end
  end

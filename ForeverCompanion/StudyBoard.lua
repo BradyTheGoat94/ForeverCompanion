@@ -151,11 +151,11 @@ function B.Render(tab,class,db)
  heading:SetText(state.title)
  heading:SetTextColor(accent[1],accent[2],accent[3])
  paint(fill,accent[1],accent[2],accent[3])
- summary:SetText("Personal checklist  |  No game progress detected")
+ summary:SetText("Personal checklist")
  progressCaption:SetText(state.done.." / "..state.total.." reviewed")
  progressCaption:SetTextColor(accent[1],accent[2],accent[3])
  nextTask:SetText(B.NextActionLabel(state))
- evidence:SetText(tab=="Leveling" and "ADVISORY practice order. Source-reviewed conditional priorities below take precedence; skip untrained spells." or "FOREVER RULES UNCONFIRMED. These tasks track your research and preparation only.")
+ evidence:SetText(tab=="Leveling" and "Practice with spells you know." or "Mark tasks as you go.")
  fill:SetWidth(state.total>0 and math.max(1,738*state.done/state.total) or 1)
  for i,row in ipairs(rows) do
   local task=state.tasks[i]

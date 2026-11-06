@@ -350,7 +350,7 @@ C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure")
 assert(ForeverCompanionQuestPlanner.Sync()==false,"failed quest scan must not be reported successful")
 local staleWarning=false
 for _,w in ipairs(frames) do
- if w.text=="STALE DATA - verify in the game quest log" then staleWarning=true end
+ if w.text=="Cached. Check your quest log." then staleWarning=true end
 end
 assert(staleWarning,"quest briefing must warn about cached data")
 ForeverCompanionDashboard.Render()
@@ -395,15 +395,20 @@ end
 assert(alchemyTab and alchemyTab.OnClick,"styled profession handbook selector missing")
 alchemyTab.OnClick(alchemyTab)
 assert(alchemyTab.selected,"selected profession handbook tab should highlight")
+local notesToggle=ForeverCompanionUIState.professionNotesButton
+assert(notesToggle.visible and notesToggle.text=="Show detailed notes","profession details start collapsed")
+notesToggle:OnClick()
+assert(notesToggle.text=="Hide detailed notes")
 local sourcedCampingVisible=false
 for _,w in ipairs(frames) do
  if w.kind=="FontString" and w.text:find("Mana Well",1,true) and w.text:find("Blizzard Forever Camping preview (2026-10-21)",1,true) then
   sourcedCampingVisible=true
  end
 end
-assert(sourcedCampingVisible,"profession panel must show official source-attributed camp feature")
+assert(sourcedCampingVisible,"expanded notes show the source-attributed camp feature")
+notesToggle:OnClick()
 local materialStatus=false
-for _,w in ipairs(frames) do if w.text=="0/1 material goals completed" then materialStatus=true end end
+for _,w in ipairs(frames) do if w.text=="0/1 material goals done" then materialStatus=true end end
 assert(materialStatus,"manual material goal status incorrect")
 ForeverCompanionProfessionBriefing.Render("Blacksmithing")
 local shortageFound=false
@@ -416,7 +421,7 @@ exportSnapshot("ui_profession_snapshot.txt")
 assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,10),"material goal should update")
 ForeverCompanionProfessionBriefing.Render("Blacksmithing")
 local completedStatus=false
-for _,w in ipairs(frames) do if w.text=="1/1 material goals completed" then completedStatus=true end end
+for _,w in ipairs(frames) do if w.text=="1/1 material goals done" then completedStatus=true end end
 assert(completedStatus,"material briefing must refresh after manual update")
 assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,4))
 local originalGetProfessions=GetProfessions
@@ -1027,7 +1032,7 @@ browser.rows[1].OnClick(browser.rows[1])
 assert(noteFields[1]:GetText()=="Unsaved boss observation","boss draft restored after selection changes")
 saveNote.OnClick()
 assert(ForeverCompanionResearchNotebook.Read(ForeverCompanionDB,"Boss:"..browser.dungeon..":"..firstBoss).note=="Unsaved boss observation")
-buttonWithText("Next bosses").OnClick()
+browser.nextBossPage.OnClick()
 assert(browser.page==2 and browser.rows[1].boss,"catalog pagination")
 browser.searchBox:SetText("Dull Sawblade")
 browser.searchBox.OnTextChanged(browser.searchBox,true)
@@ -1038,17 +1043,26 @@ assert(browser.boss=="Sneed" and noteFields[1]:GetText()=="","direct search-resu
 browser.searchBox:SetText("no known boss")
 browser.searchBox.OnTextChanged(browser.searchBox,true)
 assert(not browser.rows[1].visible and browser.boss=="Sneed","empty filter must not lose selection")
-buttonWithText("Clear search").OnClick()
+buttonWithText("Clear").OnClick()
 assert(browser.query=="" and browser.searchBox:GetText()=="")
-browser.NextDungeon()
-ForeverCompanionRefresh()
+local function pickDungeon(name)
+ for _,row in ipairs(browser.dungeonRows) do
+  if row.dungeon==name then row:OnClick();return end
+ end
+ error("Missing dungeon choice: "..name)
+end
+pickDungeon("Wailing Caverns")
 assert(browser.dungeon=="Wailing Caverns" and browser.boss=="Kresh" and browser.page==1)
-browser.NextDungeon()
-ForeverCompanionRefresh()
+pickDungeon("Blackfathom Deeps")
 assert(browser.dungeon=="Blackfathom Deeps" and browser.boss=="Aku'mai" and #ForeverCompanionLoot.BossDrops(browser.dungeon,browser.boss)==3)
-browser.NextDungeon()
-ForeverCompanionRefresh()
+assert(#browser.dungeonRows==9 and browser.dungeonRows[9]:IsShown(),"all nine dungeons can be selected directly")
 exportSnapshot("ui_encounter_snapshot.txt")
+exportNative("ui_encounter_native.json")
+local secondDrop=browser.lootRows[2].record
+browser.lootRows[2]:OnClick()
+assert(ForeverCompanionDB.tab=="Loot" and lootUI.itemTitle.text==secondDrop.item,"drop clicks focus that exact item")
+SlashCmdList.FOREVERCOMPANION("open dungeon journal")
+assert(ForeverCompanionDB.tab=="Dungeons" and browser.boss=="Aku'mai","journal navigation preserves the selected boss")
 local openLoot=buttonWithText("Open boss loot")
 assert(openLoot and openLoot.OnClick,"boss loot shortcut missing")
 openLoot.OnClick()
@@ -1110,11 +1124,11 @@ assert(ForeverCompanionLootUI.slot=="" and ForeverCompanionLootUI.acquisition=="
 local measure=catalog.detail.GetStringHeight
 catalog.detail.GetStringHeight=function() return 700 end
 ForeverCompanionRefresh()
-assert(catalog.detail.height>=707 and catalog.root.height>=894,'long source descriptions expand beyond fixed row area')
+assert(catalog.detail.height>=707 and catalog.root.height>=1050,'long source descriptions expand beyond fixed row area')
 assert(catalog.detailPanel.fcPanelEdges.left.height==catalog.detailPanel.height,'detail panel edges follow expansion')
 for _,w in ipairs(frames) do
- if w.parent==catalog.root.id and w.text:find("Partial beta catalog",1,true)==1 then
-  assert(-w.point[5]>=111+catalog.detailPanel.height+14,"long item details must not cover the catalog disclosure")
+ if w.parent==catalog.root.id and w.text:find("Hover an item for stats",1,true)==1 then
+  assert(-w.point[5]>=149+catalog.detailPanel.height+14,"long item details must not cover the catalog disclosure")
  end
 end
 catalog.detail.GetStringHeight=measure

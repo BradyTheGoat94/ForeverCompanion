@@ -291,8 +291,8 @@ function D.Create(parent,openPage,ctx)
   end
   local welcome=text(banner,banner,93,-18,540,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",PALE)
   if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,24) end
-  text(banner,banner,94,-49,540,"Your in-game guide for leveling, quests, builds and professions","GameFontHighlight",PALE)
-  values.bannerStatus=text(banner,banner,94,-72,540,"Checking current character progress...","GameFontHighlightSmall",MUTED)
+  text(banner,banner,94,-49,540,"Class builds, quests and gear in one place","GameFontHighlight",PALE)
+  values.bannerStatus=text(banner,banner,94,-72,540,"Loading character…","GameFontHighlightSmall",MUTED)
   strip(banner,94,-88,402,1,{0.69,0.51,0.24,0.75})
   -- Keep the headline readable over the brighter portions of the citadel.
   local headlineShade=banner:CreateTexture(nil,"ARTWORK")

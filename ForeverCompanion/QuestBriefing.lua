@@ -57,7 +57,7 @@ function B.Create(parent)
   local summary=card(root,0,376,"JOURNAL AT A GLANCE")
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
   values.zone=label(summary,16,-75,344,"Zone data unavailable","GameFontHighlightSmall",{0.68,0.75,0.82})
-  values.status=label(summary,16,-124,344,"Read-only quest information","GameFontHighlightSmall",{0.76,0.70,0.57})
+  values.status=label(summary,16,-124,344,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
   local track=summary:CreateTexture(nil,"ARTWORK")
   track:SetPoint("TOPLEFT",summary,"TOPLEFT",16,-103)
   track:SetSize(BAR_WIDTH,9)
@@ -93,10 +93,10 @@ function B.Render()
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
     values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
-    values.status:SetText("Live quest-log snapshot")
+    values.status:SetText("From your quest log")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
-    values.status:SetText("STALE DATA - verify in the game quest log")
+    values.status:SetText("Cached. Check your quest log.")
   else
     values.count:SetText("Quest-log API unavailable")
     values.status:SetText("Manual quest notes remain available")
@@ -108,7 +108,7 @@ function B.Render()
   if selected then
     values.title:SetText((planner.IsPinned and planner.IsPinned(selected) and "[PINNED] " or "")..shorten(selected.title,38))
     values.location:SetText((selected.complete and "Ready to turn in" or "In progress").."  |  "..shorten(selected.zone or "Unknown zone",27))
-    values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "Objective details not supplied by client",48))
+    values.objective:SetText(shorten(selected.objectives and selected.objectives[1] or "No objective details available",48))
     local done,known
     if type(planner.ObjectiveProgress)=="function" then done,known=planner.ObjectiveProgress(selected) end
     if stale then
@@ -116,13 +116,13 @@ function B.Render()
     elseif known then
       values.hint:SetText("Known objectives: "..done.."/"..known.." | addon focus only")
     else
-      values.hint:SetText("Pin Focus to prioritize this quest in the guide")
+      values.hint:SetText("Pin to keep this quest in focus.")
     end
   else
     values.title:SetText("No focused quest")
     values.location:SetText("Select an active quest below")
     values.objective:SetText("Objective details will appear here")
-    values.hint:SetText("No route or turn-in automation")
+    values.hint:SetText("")
   end
 end
 function B.Show(show)

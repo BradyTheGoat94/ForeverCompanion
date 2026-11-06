@@ -1,3 +1,9 @@
+## 3.23.0-beta
+
+- Choose dungeons, bosses and drops in one journal. Open an item’s loot card or jump to preparation and notes.
+- Simplified the loot catalog and moved wishlist and obtained actions beside the selected item.
+- Shortened guide copy and put detailed profession references behind a toggle.
+
 ## 3.22.0-beta
 
 - Added 100 source-attributed equipment entries from six Forever dungeons. The catalog now has 127 entries across nine dungeons, with item and encounter references.

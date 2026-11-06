@@ -87,7 +87,7 @@ function Guide.TopicLines(class,view,role)
  local entry=data.classHandbook and data.classHandbook[class] or {}
  local coach=type(ForeverCompanionGetBeginnerCoach)=="function" and ForeverCompanionGetBeginnerCoach(class) or {}
  local spec=ForeverCompanionSpecPlanner.Get(class)
- local lines={"GENERAL REFERENCE / Live Forever verification pending."}
+ local lines={"GENERAL REFERENCE"}
  if view=="Overview" then
   lines[1]="SELECTED SPEC / "..(spec and spec[1] or "Not available").."  •  "..(spec and spec[2] or "Role unavailable")
   lines[#lines+1]="Resource: "..(coach.resource or "Check the client class panel")
@@ -97,7 +97,6 @@ function Guide.TopicLines(class,view,role)
   for _,line in ipairs(ForeverCompanionQuickStartLines(class)) do lines[#lines+1]=line end
   for _,line in ipairs(sourceLines) do lines[#lines+1]=line end
   if #sourceLines==0 then lines[#lines+1]="No published Forever priority is attached to this planner selection." end
-  for _,line in ipairs((data.classes and data.classes[class]) or {}) do lines[#lines+1]=line end
  elseif view=="Leveling" then
   lines[#lines+1]=entry.leveling or "Train abilities and review your current class resources."
   lines[#lines+1]=coach.first or "Check trained spells before pulling."
@@ -163,13 +162,14 @@ function Guide.Render(class,label,level,role,mode)
   topicTitle:Show();topicBody:Show()
   topicTitle:SetText(label.." / "..view)
   topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),view=="Overview" and "\n" or "\n\n"))
-  local bodyHeight=math.max(242,topicBody:GetStringHeight()+12)
+  local bodyHeight=math.max(100,topicBody:GetStringHeight()+12)
   topicBody:SetHeight(bodyHeight)
   ForeverCompanionVisualTheme.ResizePanel(topicPanel,bodyHeight+110)
   topicLink:ClearAllPoints();topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-(bodyHeight+67))
   local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot"}
   topicLink.target=targets[view]
-  if topicLink.target then topicLink:SetText("Open "..topicLink.target.." handbook");topicLink:Show() else topicLink:Hide() end
+  local linkLabels={Dungeons="Open Dungeon Journal",Loot="Open Loot Catalog",PvP="Open PvP Guide",Professions="Open Professions"}
+ if topicLink.target then topicLink:SetText(linkLabels[topicLink.target]);topicLink:Show() else topicLink:Hide() end
   topicPanel:Show()
  end
 end

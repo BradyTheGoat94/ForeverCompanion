@@ -101,6 +101,7 @@ function Briefing.Create(parent,openPage,ctx)
   root=CreateFrame("Frame",nil,parent)
   root:SetSize(770,291)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
+  root.host=parent
   local left=card(root,0,376)
   local right=card(root,389,381)
   local emblem=left:CreateTexture(nil,"OVERLAY")
@@ -174,7 +175,7 @@ function Briefing.Render(page)
   labels.count:SetText(summary.done.."/"..summary.total.." preparation tasks marked complete")
   labels.next:SetText(short(summary.nextTask and ("Next: "..summary.nextTask) or (summary.total>0 and "All tasks checked - review again before play" or "No checklist available"),52))
   progressFill:SetWidth(summary.total>0 and math.max(1,math.floor(BAR_WIDTH*summary.done/summary.total)) or 1)
-  labels.note:SetText("Manual checklist only  |  "..(page=="PvP" and "No automated PvP actions" or "No automatic group or dungeon actions"))
+  labels.note:SetText("Mark tasks as you go")
   for i,button in ipairs(taskRows) do
     local task=type(tasks)=="table" and tasks[i] or nil
     if task then
@@ -216,6 +217,8 @@ end
 function Briefing.Show(page)
   if not root then return end
   if page=="Dungeons" or page=="PvP" then
+    root:ClearAllPoints()
+    root:SetPoint("TOPLEFT",root.host,"TOPLEFT",8,page=="Dungeons" and -420 or -5)
     root:Show()
     Briefing.Render(page)
   else

@@ -125,7 +125,7 @@ function B.Render(guideName)
   local total=stats and safeNumber(stats.materials) or 0
   local complete=stats and safeNumber(stats.complete) or 0
   local missing=stats and safeNumber(stats.missing) or 0
-  values.materials:SetText(total>0 and (complete.."/"..total.." material goals completed") or "No material goals tracked")
+  values.materials:SetText(total>0 and (complete.."/"..total.." material goals done") or "No material goals tracked")
   values.missing:SetText(total>0 and (missing.." units remaining (manual counts)") or "Add materials with /fcm add")
   materialFill:SetWidth(total>0 and math.max(1,math.floor(345*math.max(0,math.min(1,complete/total)))) or 1)
   local highest,highestName=0,nil
@@ -145,7 +145,7 @@ function B.Render(guideName)
   if highestName then
     values.note:SetText("Selected guide shortage: "..shorten(highestName,19).." x"..highest)
   else
-    values.note:SetText("Totals cover all tracked lists; no bag scan")
+    values.note:SetText("Your tracked material lists")
   end
 end
 function B.Show(show)
