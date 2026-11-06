@@ -340,9 +340,11 @@ function M.Refresh()
    end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
    -- The session may omit a maximum; only pass known-safe values to the bar.
-   local maximum=source.maxAmount
-   if not (issecretvalue and issecretvalue(maximum)) and maximum==nil then maximum=data.maxAmount end
-   if (issecretvalue and issecretvalue(maximum)) or maximum~=nil then
+   -- Blizzard's combat session provides the shared maximum for all sources.
+   -- A per-source maximum can make every player's bar appear full.
+   -- Pass secret numeric values only to secret-safe native status-bar methods.
+   local maximum=data and data.maxAmount
+   if maximum~=nil then
     row.fill:SetMinMaxValues(0,maximum)
     row.fill:SetValue(source.totalAmount)
    else
