@@ -334,7 +334,7 @@ function M.Refresh()
  if isPast then
   local entry=availableHistory()[pastIndex]
   local title=type(entry)=="table" and entry.name
-  if type(title)=="string" and not (issecretvalue and issecretvalue(title)) and title~="" then
+  if not (issecretvalue and issecretvalue(title)) and type(title)=="string" and title~="" then
    notice:SetText(title)
   else
    notice:SetText("Past fight "..pastIndex.." | Native history")
