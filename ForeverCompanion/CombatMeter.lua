@@ -45,6 +45,7 @@ local function saved()
  return db.combatMeter
 end
 local function safeNumber(value)
+ if issecretvalue and issecretvalue(value) then return false end
  return type(value)=="number" and value==value and value~=math.huge and value~=-math.huge
 end
 local function savePosition(target)
@@ -102,8 +103,8 @@ local function build()
   frame:SetBackdropBorderColor(.13,.59,.73,1)
  end
  local db=saved()
- if type(db.rows)=="number" and db.rows==db.rows and db.rows~=math.huge and db.rows~=-math.huge then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
- if type(db.width)=="number" and db.width==db.width and db.width~=math.huge and db.width~=-math.huge then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
+ if safeNumber(db.rows) then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
+ if safeNumber(db.width) then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
  frame:SetSize(windowWidth,110+rowCount*24)
  if type(db.position)=="table" and safeNumber(db.position.x) and safeNumber(db.position.y) then
   frame:ClearAllPoints()
@@ -431,6 +432,7 @@ function M.Toggle()
  if frame and frame:IsShown() then M.Hide() else M.Show() end
 end
 function M.SetWidth(width)
+ if issecretvalue and issecretvalue(width) then return false end
  if type(width)~="number" or width~=width or width==math.huge or width==-math.huge or width~=math.floor(width) or width<260 or width>440 then return false end
  saved().width=width
  windowWidth=width
@@ -448,6 +450,7 @@ function M.SetWidth(width)
  return true
 end
 function M.SetRows(count)
+ if issecretvalue and issecretvalue(count) then return false end
  if type(count)~="number" or count~=count or count==math.huge or count==-math.huge or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
  rowCount=count
