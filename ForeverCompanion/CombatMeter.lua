@@ -301,16 +301,17 @@ function M.Refresh()
   local selected=sources[selectedRow]
   local safeToInspect=not (InCombatLockdown and InCombatLockdown())
   local breakdown
-  if safeToInspect and type(selected)=="table" and type(C_DamageMeter.GetCombatSessionSourceFromType)=="function" then
+  if safeToInspect and type(selected)=="table" and type(C_DamageMeter)=="table" then
    local guid=selected.sourceGUID
-   if not (issecretvalue and issecretvalue(guid)) then
+   local creatureID=selected.sourceCreatureID
+   if not (issecretvalue and issecretvalue(guid)) and not (issecretvalue and issecretvalue(creatureID)) then
     if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
      local entry=availableHistory()[pastIndex]
      if type(entry)=="table" and entry.sessionID then
-      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,entry.sessionID,types(),guid)
+      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,entry.sessionID,types(),guid,creatureID)
      end
     else
-     breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid)
+     breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid,creatureID)
     end
    end
   end
