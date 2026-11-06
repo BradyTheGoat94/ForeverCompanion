@@ -56,7 +56,7 @@ end
 local function button(parent,label,width,x,callback)
  local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
  b:SetSize(width,23)
- b:SetPoint("TOPRIGHT",parent,"TOPRIGHT",x,-37)
+ b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,-39)
  b:SetText(label)
  b:SetScript("OnClick",callback)
  return b
@@ -119,14 +119,14 @@ local function build()
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
  close:SetScript("OnClick",function() M.Hide() end)
- modeButton=button(frame,"Damage",91,-190,function()
+ modeButton=button(frame,"Damage",91,13,function()
   for _=1,#metrics do
    metricIndex=metricIndex%#metrics+1
    if types()~=nil then break end
   end
   M.Refresh()
  end)
- sessionButton=button(frame,"Current",92,-91,function()
+ sessionButton=button(frame,"Current",92,110,function()
   for _=1,#sessions do
    sessionIndex=sessionIndex%#sessions+1
    if sessionType()~=nil then break end
@@ -136,8 +136,8 @@ local function build()
   detailOpen=false
   M.Refresh()
  end)
- previousButton=button(frame,"<",27,-63,function() pastIndex=math.min(historyCount(),pastIndex+1);selectedRow=nil;detailOpen=false;M.Refresh() end)
- nextButton=button(frame,">",27,-35,function() pastIndex=math.max(1,pastIndex-1);selectedRow=nil;detailOpen=false;M.Refresh() end)
+ previousButton=button(frame,"<",27,13,function() pastIndex=math.min(historyCount(),pastIndex+1);selectedRow=nil;detailOpen=false;M.Refresh() end)
+ nextButton=button(frame,">",27,42,function() pastIndex=math.max(1,pastIndex-1);selectedRow=nil;detailOpen=false;M.Refresh() end)
  previousButton:ClearAllPoints()
  previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-45,8)
  nextButton:ClearAllPoints()
