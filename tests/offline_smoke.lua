@@ -1023,6 +1023,10 @@ do
  C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={}} end}
  assertEqual(meter.Available(),true,"meter detects native API")
  assertEqual(meter.SetMode("healing"),true,"meter mode selection")
+ assertEqual(meter.SetSession("current"),true,"current combat session selection")
+ assertEqual(meter.SetSession("past"),true,"past combat session selection")
+ assertEqual(meter.SetSession("overall"),true,"overall combat session selection")
+ assertEqual(meter.SetSession("invalid"),false,"invalid session rejected")
  assertEqual(meter.SetMode("invalid"),false,"meter rejects unknown modes")
  SlashCmdList.FOREVERCOMPANIONMETER("lock")
  assertEqual(ForeverCompanionDB.combatMeter.locked,true,"meter lock preference")
