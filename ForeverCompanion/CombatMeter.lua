@@ -231,11 +231,31 @@ local function build()
   hover:SetColorTexture(.31,.82,1,.12)
   hover:Hide()
   row:EnableMouse(true)
-  row:SetScript("OnEnter",function() hover:Show() end)
-  row:SetScript("OnLeave",function() hover:Hide() end)
-  row:SetScript("OnMouseDown",function()
-   selectedRow=(selectedRow==i) and nil or i
-   detailOpen=selectedRow~=nil
+  row:SetScript("OnEnter",function(self)
+   hover:Show()
+   if GameTooltip and self.sourceLabel then
+    GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+    GameTooltip:SetText(self.sourceLabel)
+    GameTooltip:AddLine("Left-click: spell breakdown",.8,.9,1)
+    GameTooltip:AddLine("Right-click: next damage/healing view",.8,.9,1)
+    GameTooltip:Show()
+   end
+  end)
+  row:SetScript("OnLeave",function()
+   hover:Hide()
+   if GameTooltip then GameTooltip:Hide() end
+  end)
+  row:SetScript("OnMouseDown",function(_,mouseButton)
+   if mouseButton=="RightButton" then
+    for _=1,#metrics do
+     metricIndex=metricIndex%#metrics+1
+     if types()~=nil then break end
+    end
+    selectedRow=nil;detailOpen=false
+   else
+    selectedRow=(selectedRow==i) and nil or i
+    detailOpen=selectedRow~=nil
+   end
    M.Refresh()
   end)
   name:SetTextColor(.92,.97,1)
@@ -333,6 +353,10 @@ function M.Refresh()
   local source=i<=rowCount and sources[i]
   if type(source)=="table" then
    row.frame:Show()
+   local displayName=source.name
+   if not (issecretvalue and issecretvalue(displayName)) and type(displayName)=="string" then
+    row.frame.sourceLabel=displayName
+   else row.frame.sourceLabel=nil end
    if selectedRow==i then row.background:SetColorTexture(.075,.19,.23,.98)
    elseif source.isLocalPlayer==true then row.background:SetColorTexture(.13,.16,.08,.98)
    else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
@@ -383,7 +407,7 @@ function M.Refresh()
     row.fill:SetMinMaxValues(0,1)
     row.fill:SetValue(0)
    end
-  else row.frame:Hide() end
+  else row.frame.sourceLabel=nil;row.frame:Hide() end
  end
  if selectedRow then
   local selected=sources[selectedRow]
