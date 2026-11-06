@@ -485,14 +485,15 @@ local function attach()
  provider.OnMapChanged=M.Refresh
  provider.OnCanvasSizeChanged=M.Refresh
  provider.OnCanvasScaleChanged=function()
-  -- Native shapes depend on map zoom. Refresh after the zoom animation settles.
-  if provider.zoomTimer then provider.zoomTimer:Cancel() end
+  -- Zoom-dependent service markers must refresh even when timer APIs are absent.
+  if provider.zoomTimer and provider.zoomTimer.Cancel then provider.zoomTimer:Cancel() end
+  provider.zoomTimer=nil
   if C_Timer and C_Timer.NewTimer then
    provider.zoomTimer=C_Timer.NewTimer(.15,function()
     provider.zoomTimer=nil
     M.Refresh()
    end)
-  end
+  else M.Refresh() end
  end
  provider.OnHide=hidePins
  provider.RemoveAllData=hidePins
