@@ -820,6 +820,17 @@ local function createUI()
   ForeverCompanionUIState.questCountText:SetTextColor(0.70,0.85,0.74)
   local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
   close:SetPoint("TOPRIGHT", -4, -4)
+  local meterToggle=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+  meterToggle:SetSize(116,24)
+  meterToggle:SetPoint("TOPRIGHT",window,"TOPRIGHT",-50,-65)
+  meterToggle:SetText("Combat Meter")
+  meterToggle:SetScript("OnClick",function()
+    if ForeverCompanionCombatMeter and ForeverCompanionCombatMeter.Toggle then
+      ForeverCompanionCombatMeter.Toggle()
+    else
+      say("Combat meter module is unavailable.")
+    end
+  end)
   local sidebar=window:CreateTexture(nil,"BORDER")
   sidebar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-98)
   sidebar:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,92)
@@ -1261,7 +1272,12 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
-  if msg == "help" then say("/fc, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "meter" or msg == "combat" then
+    if ForeverCompanionCombatMeter and ForeverCompanionCombatMeter.Toggle then ForeverCompanionCombatMeter.Toggle()
+    else say("Combat meter module is unavailable.") end
+    return
+  end
+  if msg == "help" then say("/fc meter, /fc, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end
