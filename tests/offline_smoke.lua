@@ -1080,3 +1080,26 @@ do
  SlashCmdList.FOREVERCOMPANIONMETER=oldSlash
  ForeverCompanionDB=oldDB
 end
+
+
+-- Standalone map styles never require OpenMap or external tile packs.
+do
+ local oldFrame,oldDB,oldMap=CreateFrame,ForeverCompanionDB,ForeverCompanionQuestMap
+ CreateFrame=function() return {RegisterEvent=function() end,SetScript=function() end} end
+ ForeverCompanionDB={}
+ dofile("ForeverCompanion/QuestMap.lua")
+ local map=ForeverCompanionQuestMap
+ assertEqual(map.MapStyle(),"atlas","standalone map defaults to atlas presentation")
+ assertEqual(map.SetMapStyle("clear"),true,"standalone clear style available")
+ assertEqual(map.MapStyle(),"clear","clear style persists")
+ assertEqual(ForeverCompanionDB.questMapStyle,"clear","clear style saved")
+ assertEqual(map.SetMapStyle("original"),true,"native original style available")
+ assertEqual(ForeverCompanionDB.questMapOriginalTerrain,true,"original terrain compatibility flag")
+ assertEqual(map.SetMapStyle("atlas"),true,"atlas style available")
+ assertEqual(ForeverCompanionDB.questMapOriginalTerrain,false,"atlas disables legacy original flag")
+ assertEqual(map.SetMapStyle("unknown"),false,"unknown map style rejected")
+ assertEqual(map.MapStyle(),"atlas","invalid style preserves map preference")
+ ForeverCompanionDB={questMapOriginalTerrain=true}
+ assertEqual(map.MapStyle(),"original","legacy original terrain preference honored")
+ CreateFrame,ForeverCompanionDB,ForeverCompanionQuestMap=oldFrame,oldDB,oldMap
+end
