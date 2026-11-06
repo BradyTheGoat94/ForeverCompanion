@@ -210,7 +210,7 @@ local function createGuide(map)
  end
  fitToolbar()
  bar:SetScript("OnShow",fitToolbar)
- bar:SetScript("OnSizeChanged",fitToolbar)
+ if map.HookScript then map:HookScript("OnSizeChanged",fitToolbar) end
  bar:SetPoint("TOP",map,"TOP",0,-38)
  bar:SetFrameLevel(map:GetFrameLevel()+200)
  local bg=bar:CreateTexture(nil,"BACKGROUND")
