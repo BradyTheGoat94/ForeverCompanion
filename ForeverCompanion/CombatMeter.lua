@@ -254,7 +254,7 @@ function M.Refresh()
  if isPast and type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" then
   local entry=availableHistory()[pastIndex]
   local id=type(entry)=="table" and entry.sessionID
-  if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
+  if not (issecretvalue and issecretvalue(id)) and id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
   if data==nil and pastIndex==1 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
@@ -313,8 +313,9 @@ function M.Refresh()
    if not (issecretvalue and issecretvalue(guid)) and not (issecretvalue and issecretvalue(creatureID)) then
     if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
      local entry=availableHistory()[pastIndex]
-     if type(entry)=="table" and entry.sessionID then
-      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,entry.sessionID,types(),guid,creatureID)
+     local sessionID=type(entry)=="table" and entry.sessionID
+     if not (issecretvalue and issecretvalue(sessionID)) and sessionID~=nil then
+      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,types(),guid,creatureID)
      end
     else
      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid,creatureID)
