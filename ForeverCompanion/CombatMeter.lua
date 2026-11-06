@@ -424,14 +424,24 @@ function M.SetRows(count)
  return true
 end
 function M.SetSession(mode)
+ local enums=Enum and Enum.DamageMeterSessionType
  for i,item in ipairs(sessions) do
-  if item[1]:lower()==tostring(mode):lower() then sessionIndex=i;pastIndex=1;selectedRow=nil;detailOpen=false;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then
+   if type(enums)~="table" or enums[item[2]]==nil then return false end
+   sessionIndex=i;pastIndex=1;selectedRow=nil;detailOpen=false;M.Refresh()
+   return true
+  end
  end
  return false
 end
 function M.SetMode(mode)
+ local enums=Enum and Enum.DamageMeterType
  for i,item in ipairs(metrics) do
-  if item[1]:lower()==tostring(mode):lower() then metricIndex=i;selectedRow=nil;detailOpen=false;M.Refresh();return true end
+  if item[1]:lower()==tostring(mode):lower() then
+   if type(enums)~="table" or enums[item[2]]==nil then return false end
+   metricIndex=i;selectedRow=nil;detailOpen=false;M.Refresh()
+   return true
+  end
  end
  return false
 end
