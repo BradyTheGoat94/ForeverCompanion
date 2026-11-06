@@ -45,15 +45,13 @@ function W.Create(parent,openPage,onRefresh)
  for i=1,W.pageSize do
   local row=CreateFrame("Button",nil,root);row:SetSize(410,52);row:SetPoint("TOPLEFT",root,"TOPLEFT",16,-111-(i-1)*57)
   row.bg=ForeverCompanionVisualTheme.Button(row,410,52)
-  row.name=text(row,12,-8,386,"",13);row.name:SetHeight(18)
-  row.meta=text(row,12,-30,386,"",10);row.meta:SetHeight(16)
+  row.icon=row:CreateTexture(nil,"ARTWORK")
+  row.icon:SetPoint("LEFT",row,"LEFT",10,0);row.icon:SetSize(32,32)
+  row.name=text(row,52,-8,346,"",13);row.name:SetHeight(18)
+  row.meta=text(row,52,-30,346,"",10);row.meta:SetHeight(16)
   row:SetScript("OnClick",function(self) if self.resultIndex then ForeverCompanionLootUI.selectedIndex=self.resultIndex;refresh() end end)
   row:SetScript("OnEnter",function(self)
-   if self.record and GameTooltip then
-    GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:SetText(self.record.item,1,.8,.4)
-    GameTooltip:AddLine(self.record.boss.." / "..self.record.dungeon,1,1,1,true)
-    GameTooltip:AddLine(self.record.status,.7,.8,.9,true);GameTooltip:Show()
-   end
+   ForeverCompanionLoot.ShowItemTooltip(self,self.record)
   end)
   row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
   W.rows[i]=row
@@ -97,6 +95,7 @@ function W.Render(tab,db,matches)
   local index=(page-1)*W.pageSize+i;local record=matches[index]
   row.resultIndex=record and index;row.record=record
   if record then
+   row.icon:SetTexture(loot.ItemIcon(record))
    row.name:SetText(record.item)
    row.meta:SetText((record.slot or "Slot unknown").."  /  "..(loot.Wishlist(db)[record.item] and "SAVED" or "Not saved").."  /  "..(loot.Obtained(db,record.item) and "Obtained (manual)" or "Not marked"))
    row.bg:SetColorTexture(index==ui.selectedIndex and .09 or .025,index==ui.selectedIndex and .17 or .028,index==ui.selectedIndex and .24 or .034,1)
@@ -104,7 +103,10 @@ function W.Render(tab,db,matches)
   else row:Hide() end
  end
  if count==0 then empty:Show() else empty:Hide() end
- detail:SetText(selected and loot.Detail(selected,db) or "No selected item. Clear filters to browse the sourced catalog. Unknown records never become automatic gear recommendations.")
+ detail:SetText(selected and table.concat({
+  selected.item,selected.boss.." / "..selected.dungeon,selected.status,
+  "Item ID: "..tostring(selected.itemID or "Unknown"),"Hover the item for stats."
+ },"\n\n") or "Clear filters to browse loot.")
  local height=math.max(370,detail:GetStringHeight()+65)
  detail:SetHeight(height-58)
  ForeverCompanionVisualTheme.ResizePanel(detailPanel,height)

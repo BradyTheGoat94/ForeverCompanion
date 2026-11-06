@@ -175,6 +175,12 @@ SlashCmdList.FOREVERCOMPANION("role damage")
 SlashCmdList.FOREVERCOMPANION("position reset")
 SlashCmdList.FOREVERCOMPANION("open quests")
 assert(ForeverCompanionDB.tab=="Quests","slash navigation must open quest guide")
+local questNav=ForeverCompanionUIState.nextQuestButton
+local viewport
+for _,widget in ipairs(frames) do
+ if widget.kind=="ScrollFrame" then viewport=widget;break end
+end
+assert(viewport.point[3]>questNav.point[3]+questNav.height,"quest scroll viewport must clear both footer buttons")
 SlashCmdList.FOREVERCOMPANION("overview")
 assert(ForeverCompanionDB.tab=="Overview","direct slash navigation must return to dashboard")
 assert(pcall(SlashCmdList.FOREVERCOMPANION,"status"),"read-only status command must not crash")
@@ -525,14 +531,8 @@ end
 assert(inlaySegments>=16,"quest and profession cards must share original gilded corner inlays")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
-local priorityTile, priorityNumber
-for _,w in ipairs(frames) do
- if w.kind=="Button" and w.width==88 and w.height==96 and w.label and w.label.text~="" then
-   priorityTile=w
-   if w.number and w.number.text=="1" then priorityNumber=w.number end
- end
-end
-assert(priorityTile and priorityNumber,"six-slot rotation strip should display numbered ability tiles")
+local workspace=ForeverCompanionRotationWorkspace
+assert(workspace.rows[1].visible and workspace.rows[1].number.text=="1","first priority is visible inside its panel")
 -- All nine class-preview buttons must be interactive, and must not mutate the player.
 local savedPreviewRole=ForeverCompanionDB.role
 local classTokens={"WARRIOR","PALADIN","HUNTER","ROGUE","PRIEST","SHAMAN","MAGE","WARLOCK","DRUID"}
@@ -549,14 +549,13 @@ for i,token in ipairs(classTokens) do
  ForeverCompanionClassGuide.SelectView("Rotations")
  for _,contextButton in ipairs(ForeverCompanionRotationWorkspace.buttons) do
   contextButton.OnClick()
-  local reference=ForeverCompanionRotations[token][contextButton.mode]
-  assert(ForeverCompanionRotationWorkspace.selectedText.text:find(reference[1],1,true),"visible explanation must match this class/context")
-  for priority,instruction in ipairs(reference) do
-   local row=ForeverCompanionRotationWorkspace.explanations[priority]
-   assert(row and row.visible,"each reference priority needs a visible instruction row")
-   row.OnClick()
-   assert(ForeverCompanionRotationWorkspace.selectedText.text:find(instruction,1,true),"all priority selections must retain their complete conditions")
+  local reference=ForeverCompanionVisiblePriority(token,contextButton.mode,60,nil,ForeverCompanionRotations[token][contextButton.mode])
+  for index,instruction in ipairs(reference) do
+   local row=workspace.rows[index]
+   assert(row and row.visible and row.parent==workspace.panel.id,"all steps must be shown inside the priority panel")
+   assert(row.caption.text==instruction:gsub("^%d+%.%s+",""),"row must show the complete instruction")
   end
+  for index=#reference+1,#workspace.rows do assert(not workspace.rows[index].visible,"stale priority row") end
  end
 end
 ForeverCompanionClassStripButtons[1].OnClick(ForeverCompanionClassStripButtons[1])
@@ -580,42 +579,38 @@ classOut:write("id|kind|parent|visible|width|height|anchor|x|y|text|texture",str
 classOut:write(table.concat(classSnapshot,string.char(10)))
 classOut:close()
 exportNative("ui_class_native.json")
-local workspace=ForeverCompanionRotationWorkspace
 assert(#workspace.buttons==5,"direct context navigation must expose every context")
-for i,b in ipairs(workspace.buttons) do
- b.OnClick()
+for i,button in ipairs(workspace.buttons) do
+ button.OnClick()
  assert(rotationControl.text=="Rotation: "..({"leveling","dungeon","boss","aoe","pvp"})[i])
- assert(workspace.selectedText.text:find("PRIORITY 1",1,true),"mode change resets visible explanation")
+ assert(workspace.rows[1].visible,"selected context must show its first priority")
 end
 workspace.buttons[1].OnClick()
-priorityTile.OnClick(priorityTile)
-assert(workspace.selectedText.text:find(priorityTile.detail,1,true),"selected tile instruction must be visible in explanation panel")
-workspace.explanations[2].OnClick()
-assert(workspace.selectedText.text:find("PRIORITY 2:",1,true),"instruction table must focus the clicked priority")
-assert(workspace.selectedText.text:find(ForeverCompanionRotations.WARRIOR.leveling[2],1,true),"table selection must keep the complete conditional instruction")
--- Long text must increase physical reading space, not just remain in SetText.
+assert(not workspace.ShowReference(),"long notes are collapsed by default")
+workspace.reference.OnClick()
+assert(workspace.ShowReference(),"guide notes toggle must reveal reference")
+workspace.reference.OnClick()
 local shortWorkspaceHeight=workspace.GetHeight()
-assert(shortWorkspaceHeight<500,"four priorities should leave room for the selected instruction")
-local originalMeasure=workspace.selectedText.GetStringHeight
-workspace.selectedText.GetStringHeight=function() return 240 end
+local row=workspace.rows[1]
+local originalMeasure=row.caption.GetStringHeight
+row.caption.GetStringHeight=function() return 350 end
 workspace.buttons[1].OnClick()
-assert(workspace.selectedText.height>=248,"long instructions need their measured height")
-assert(workspace.summaryPlate.height>=300,"selected detail panel must grow with its text")
-local edges=workspace.summaryPlate.fcPanelEdges
-assert(edges.left.height==workspace.summaryPlate.height,"resized left border must follow the panel")
-assert(edges.bottom.point[5]==-workspace.summaryPlate.height+1,"bottom border must follow resized panel")
-local desk
-for _,w in ipairs(frames) do
- if w.text=="ARMS / PRACTICE DESK" then desk=frames[w.parent] end
-end
-assert(desk and -desk.point[5]>=174+workspace.GetHeight()+20,"practice desk must follow the expanded workspace")
-for _,row in ipairs(workspace.explanations) do
- if row.visible then assert(row.height>=20 and row.OnEnter and row.detail,"instruction rows need readable targets and full hover text") end
-end
+assert(row.height>=366 and workspace.GetHeight()>shortWorkspaceHeight,"long steps expand the card and panel")
+local edges=workspace.panel.fcPanelEdges
+assert(edges.left.height==workspace.panel.height,"resized left border follows panel")
 exportNative("ui_long_priority_native.json")
-workspace.selectedText.GetStringHeight=originalMeasure
+row.caption.GetStringHeight=originalMeasure
 workspace.buttons[1].OnClick()
-assert(workspace.GetHeight()==shortWorkspaceHeight,"short content must shrink after an expanded instruction")
+assert(workspace.GetHeight()==shortWorkspaceHeight,"short content shrinks after expansion")
+local early=ForeverCompanionVisiblePriority("PALADIN","boss",11,"Tank",{})
+assert(#early==4 and early[3]:find("Holy Strike",1,true) and not table.concat(early):find("Consecration",1,true))
+local savedSpell=C_Spell
+C_Spell={GetSpellInfo=function(name)
+ if name=="Holy Strike" then return {name="Holy Strike",spellID=680,iconID=12345} end
+end}
+assert(ForeverCompanionIcons.PrioritySpell(early[3],"PALADIN").spellID==680)
+assert(not ForeverCompanionIcons.PrioritySpell("Holy Strikeout","PALADIN"),"do not match partial spell names")
+C_Spell=savedSpell
 local guide=ForeverCompanionClassGuide
 local priorSelections=ForeverCompanionDB.specSelections
 ForeverCompanionDB.specSelections={}
@@ -630,6 +625,8 @@ for class,choices in pairs(ForeverCompanionSpecs) do
   else
    specCount=specCount+1
    assert(overview:find("PUBLISHED FOREVER GUIDE",1,true))
+   local boss,title=ForeverCompanionVisiblePriority(class,"boss",60,nil,{})
+   assert(#boss>=3 and title==choice[1].." / Boss","every standard spec has a boss priority in the rotation window")
    if choice[1]=="Combat" then assert(overview:find("Blade Flurry",1,true)) end
    if choice[1]=="Beast Mastery" then assert(overview:find("Bestial Wrath",1,true)) end
    assert(overview:find("Reference: https://",1,true))
@@ -858,7 +855,17 @@ exportNative("ui_alts_native.json")
 SlashCmdList.FOREVERCOMPANION("open dungeons")
 assert(ForeverCompanionEncounterBrowser.dungeon~="")
 local browser=ForeverCompanionEncounterBrowser
+browser.dungeon="The Deadmines";browser.boss="Captain Greenskin";browser.page=1
+ForeverCompanionRefresh()
 local firstBoss=browser.boss
+local itemButton=browser.lootRows[1]
+assert(itemButton.visible and itemButton.record.itemID,"dungeon items have a native tooltip ID")
+function tooltip:SetHyperlink(link) self.link=link end
+GameTooltip=tooltip
+itemButton.OnEnter(itemButton)
+assert(tooltip.link=="item:"..itemButton.record.itemID)
+itemButton.OnLeave()
+GameTooltip=oldTooltip
 noteFields[1]:SetText("Unsaved boss observation")
 noteFields[1].OnTextChanged(noteFields[1],true)
 assert(browser.rows[2].boss and browser.rows[2].boss~=firstBoss)
@@ -883,7 +890,10 @@ buttonWithText("Clear search").OnClick()
 assert(browser.query=="" and browser.searchBox:GetText()=="")
 browser.NextDungeon()
 ForeverCompanionRefresh()
-assert(browser.dungeon=="Wailing Caverns" and browser.boss=="Skum" and browser.page==1)
+assert(browser.dungeon=="Wailing Caverns" and browser.boss=="Kresh" and browser.page==1)
+browser.NextDungeon()
+ForeverCompanionRefresh()
+assert(browser.dungeon=="Hall of Thanes" and #ForeverCompanionLoot.BossDrops(browser.dungeon,browser.boss)==3)
 browser.NextDungeon()
 ForeverCompanionRefresh()
 exportSnapshot("ui_encounter_snapshot.txt")
@@ -917,7 +927,10 @@ catalog.rows[2].OnClick(catalog.rows[2])
 assert(ForeverCompanionLootUI.selectedIndex==2 and ForeverCompanionLootUI.itemTitle.text==catalog.rows[2].record.item)
 catalog.nextPage.OnClick()
 assert(ForeverCompanionLootUI.selectedIndex==7 and catalog.rows[1].resultIndex==7)
-assert(not catalog.nextPage.enabled and catalog.previous.enabled)
+assert(catalog.nextPage.enabled and catalog.previous.enabled)
+catalog.nextPage.OnClick()
+assert(ForeverCompanionLootUI.selectedIndex==13 and catalog.nextPage.enabled)
+catalog.previous.OnClick()
 catalog.previous.OnClick()
 assert(ForeverCompanionLootUI.selectedIndex==1)
 local desired=catalog.rows[1].record

@@ -1,7 +1,7 @@
--- Reference-style rotation rail, priority table, quick tips and selected detail.
+-- Read-only rotation priorities. Clicking a row never invokes a game action.
 local W={}
 ForeverCompanionRotationWorkspace=W
-local root,heading,selectedText,tipText,quickText,buttons,explanations,arrows,sequencePlate,summaryPlate,quickPlate,explanationPlate,tipsPlate
+local root,heading,notice,sourceLabel,buttons,prioritiesPanel,showReference
 local modes={"leveling","dungeon","boss","aoe","pvp"}
 local names={"Leveling Rotation","Dungeon Rotation","Boss Rotation","AoE Rotation","PvP Rotation"}
 local captions={"Solo practice","Group preparation","Single target","Multiple enemies","Player combat"}
@@ -18,10 +18,10 @@ local function plate(parent,x,y,w,h,title)
  local label=text(p,12,-12,w-24,title,15);label:SetTextColor(.96,.80,.48)
  return p
 end
-function W.Create(parent,selectMode,selectPriority)
+function W.Create(parent,selectMode)
  root=CreateFrame("Frame",nil,parent);root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);root:SetSize(770,500);W.root=root
- local rail=plate(root,0,0,180,302,"Rotation Type")
- buttons={};explanations={};arrows={}
+ local rail=plate(root,0,0,180,339,"Rotation Type")
+ buttons={}
  for i,mode in ipairs(modes) do
   local b=CreateFrame("Button",nil,rail);b:SetSize(158,44);b:SetPoint("TOPLEFT",rail,"TOPLEFT",11,-44-(i-1)*49)
   b.bg=ForeverCompanionVisualTheme.Button(b,158,44)
@@ -31,93 +31,94 @@ function W.Create(parent,selectMode,selectPriority)
   b:SetScript("OnClick",function() selectMode(i) end);buttons[i]=b
  end
  W.buttons=buttons
- local sequence=plate(root,192,0,578,178,"Ability Priorities")
- sequencePlate=sequence
- heading=text(sequence,14,-44,550,"",14)
- local notice=text(sequence,14,-65,550,"General class practice / see Overview for your selected spec",10)
- notice:SetTextColor(.70,.75,.82)
- for i=1,5 do arrows[i]=text(sequence,0,-113,9,"›",15);arrows[i]:SetTextColor(.94,.75,.38) end
- local explanation=plate(root,192,-190,374,174,"Priority & Explanations");explanationPlate=explanation
- for i=1,6 do
-  local b=CreateFrame("Button",nil,explanation);b:SetSize(346,20);b:SetPoint("TOPLEFT",explanation,"TOPLEFT",14,-39-(i-1)*22)
-  b.bg=ForeverCompanionVisualTheme.Button(b,346,20)
-  b.number=text(b,4,-4,18,tostring(i),11);b.number:SetTextColor(.96,.80,.48)
-  b.caption=text(b,26,-4,316,"",11);b.caption:SetHeight(16)
-  b:SetScript("OnClick",function() selectPriority(i) end)
-  explanations[i]=b
- end
- W.explanations=explanations
- local tips=plate(root,578,-190,192,174,"Quick Tips");tipsPlate=tips
- tipText=text(tips,12,-43,168,"",11);tipText:SetJustifyV("TOP")
- local quick=plate(root,0,-314,180,186,"Class Quick Info");quickPlate=quick
- quickText=text(quick,12,-43,156,"",11);quickText:SetHeight(132)
- local summary=plate(root,192,-376,578,124,"Selected Priority");summaryPlate=summary
- selectedText=text(summary,12,-39,554,"",12);selectedText:SetJustifyV("TOP")
- W.selectedText=selectedText;W.summaryPlate=summaryPlate;W.quickText=quickText
+ W.reference=CreateFrame("Button",nil,rail,"UIPanelButtonTemplate")
+ W.reference:SetSize(158,25);W.reference:SetPoint("TOPLEFT",rail,"TOPLEFT",11,-299)
+ W.reference:SetScript("OnClick",function()
+  showReference=not showReference
+  ForeverCompanionRefresh()
+ end)
+ prioritiesPanel=plate(root,192,0,578,302,"What to Press")
+ heading=text(prioritiesPanel,14,-44,550,"",14)
+ notice=text(prioritiesPanel,14,-66,550,"",11)
+ notice:SetTextColor(.78,.82,.88)
+ sourceLabel=text(prioritiesPanel,14,-105,550,"",10)
+ sourceLabel:SetTextColor(.70,.75,.82)
+ W.heading=heading;W.notice=notice;W.rows={};W.panel=prioritiesPanel
  root:Hide()
 end
+
 function W.GetHeight()
- return root and root:GetHeight() or 500
+ return root and root:GetHeight() or 339
 end
-function W.Render(tab,class,mode,index,priorities)
+
+function W.ShowReference() return showReference end
+
+local function priorityRow(index)
+ local row=W.rows[index]
+ if row then return row end
+ row=CreateFrame("Frame",nil,prioritiesPanel)
+ row.bg=row:CreateTexture(nil,"BACKGROUND");row.bg:SetAllPoints(row)
+ row.bg:SetColorTexture(.065,.082,.108,1)
+ row.icon=row:CreateTexture(nil,"ARTWORK")
+ row.icon:SetPoint("TOPLEFT",row,"TOPLEFT",33,-6);row.icon:SetSize(22,22)
+ row:EnableMouse(true)
+ row:SetScript("OnEnter",function(self)
+  if not self.spellID or not GameTooltip then return end
+  GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+  local ok=type(GameTooltip.SetSpellByID)=="function" and pcall(GameTooltip.SetSpellByID,GameTooltip,self.spellID)
+  if not ok then GameTooltip:SetText(self.spellName) end
+  GameTooltip:AddLine("Spell ID: "..self.spellID,.7,.8,.9)
+  GameTooltip:Show()
+ end)
+ row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ row.number=text(row,9,-8,26,tostring(index),12)
+ row.number:SetTextColor(.96,.80,.48)
+ row.caption=text(row,65,-8,473,"",12)
+ row.caption:SetJustifyV("TOP")
+ W.rows[index]=row
+ return row
+end
+
+function W.Render(tab,class,mode,level,role,fallback)
  if not root then return end
  if tab~="Leveling" then root:Hide();return end
  root:Show()
- priorities=type(priorities)=="table" and priorities or {}
- local context=ForeverCompanionRotationPresentation and ForeverCompanionRotationPresentation.contexts[mode]
- heading:SetText(context and context.title or "Conditional class guidance")
- index=type(index)=="number" and math.floor(index) or 1
- if index<1 or index>#priorities then index=1 end
- local ability=priorities[index]
- local _,cue,iconStatus=ForeverCompanionRotationCardIcon(class,mode,index)
- local artwork=cue and ("\nArtwork: "..cue..(iconStatus=="spell" and " / client spell icon" or " / unresolved, showing question mark")) or "\nArtwork: class emblem / general instruction"
- selectedText:SetText(ability and ("PRIORITY "..index..": "..ability..artwork) or "No reference priority available for this class and context.")
- -- Measure after assigning the complete instruction; never clip its conditions.
- local detailHeight=math.max(72,selectedText:GetStringHeight()+8)
- selectedText:SetHeight(detailHeight)
- ForeverCompanionVisualTheme.ResizePanel(summaryPlate,detailHeight+52)
- local coach=type(ForeverCompanionGetBeginnerCoach)=="function" and ForeverCompanionGetBeginnerCoach(class) or {}
- local caution=coach.check or "Check trained abilities and your assigned role."
- tipText:SetText("• "..caution.."\n\nAdvisory / skip untrained spells.")
- local tipsHeight=tipText:GetStringHeight()+8
- local rowHeight=math.max(134,42+math.min(6,#priorities)*22,43+tipsHeight)
- tipText:SetHeight(tipsHeight)
- ForeverCompanionVisualTheme.ResizePanel(explanationPlate,rowHeight)
- ForeverCompanionVisualTheme.ResizePanel(tipsPlate,rowHeight)
- local detailTop=202+rowHeight
- summaryPlate:ClearAllPoints()
- summaryPlate:SetPoint("TOPLEFT",root,"TOPLEFT",192,-detailTop)
- root:SetHeight(detailTop+summaryPlate:GetHeight())
- ForeverCompanionVisualTheme.ResizePanel(quickPlate,root:GetHeight()-314)
- quickText:SetHeight(quickPlate:GetHeight()-52)
- local spec=ForeverCompanionSpecPlanner.Get(class)
- quickText:SetText("RESOURCE\n"..(coach.resource or "Check client").."\n\nSPECIALIZATION\n"..(spec and spec[1] or "Not available"))
- for _,b in ipairs(buttons) do
-  local active=b.mode==mode
-  b.name:SetTextColor(active and 1 or .88,active and .84 or .86,active and .52 or .82)
-  b.bg:SetColorTexture(active and .055 or .025,active and .16 or .028,active and .30 or .034,1)
+ W.reference:SetText(showReference and "Hide guide notes" or "More guide notes")
+ local instructions,title,hint,source=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ heading:SetText(title)
+ notice:SetText(hint)
+ local y=72+notice:GetStringHeight()
+ for i,instruction in ipairs(instructions) do
+  local row=priorityRow(i)
+  local caption=instruction:gsub("^%d+%.%s+","")
+  row.caption:SetText(caption)
+  local spell=ForeverCompanionIcons.PrioritySpell(caption,class)
+  row.spellID=spell and spell.spellID
+  row.spellName=spell and spell.name
+  if spell then
+   row.icon:SetTexture(spell.iconID)
+   row.icon:SetTexCoord(0,1,0,1)
+  else
+   ForeverCompanionIcons.ApplyClass(row.icon,class)
+  end
+  local height=math.max(31,row.caption:GetStringHeight()+16)
+  row.caption:SetHeight(height-12)
+  row:SetSize(550,height)
+  row:ClearAllPoints()
+  row:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-y)
+  row:Show()
+  y=y+height+4
  end
- for i,b in ipairs(explanations) do
-  local instruction=priorities[i]
-  if instruction then
-   b.caption:SetText(#instruction>45 and instruction:sub(1,42).."..." or instruction)
-   b.detail=instruction
-   b:SetScript("OnEnter",function(self)
-    if GameTooltip then
-     GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:SetText("Priority "..i,1,.8,.4)
-     GameTooltip:AddLine(self.detail,.92,.92,.88,true);GameTooltip:Show()
-    end
-   end)
-   b:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
-   b.bg:SetColorTexture(index==i and .065 or .025,index==i and .12 or .028,index==i and .20 or .034,1)
-   b:Show()
-  else b:Hide() end
- end
- local count=math.min(6,#priorities)
- local inset=math.max(0,math.floor((570-(count*95-7))/2))
- for i,arrow in ipairs(arrows) do
-  arrow:ClearAllPoints();arrow:SetPoint("TOPLEFT",sequencePlate,"TOPLEFT",8+inset+(i-1)*95+88,-113)
-  if i<count then arrow:Show() else arrow:Hide() end
+ for i=#instructions+1,#W.rows do W.rows[i]:Hide() end
+ sourceLabel:SetText(source and ("Source: "..source) or "")
+ sourceLabel:ClearAllPoints()
+ sourceLabel:SetPoint("TOPLEFT",prioritiesPanel,"TOPLEFT",14,-(y+4))
+ local height=math.max(339,y+(source and sourceLabel:GetStringHeight()+18 or 8))
+ ForeverCompanionVisualTheme.ResizePanel(prioritiesPanel,height)
+ root:SetHeight(height)
+ for _,button in ipairs(buttons) do
+  local active=button.mode==mode
+  button.name:SetTextColor(active and 1 or .88,active and .84 or .86,active and .52 or .82)
+  button.bg:SetColorTexture(active and .055 or .025,active and .16 or .028,active and .30 or .034,1)
  end
 end
-

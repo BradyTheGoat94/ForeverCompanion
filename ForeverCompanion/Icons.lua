@@ -39,3 +39,41 @@ function I.ApplyRotation(texture,class,mode,index)
  else texture:SetTexture(path);if texture.SetTexCoord then texture:SetTexCoord(0,1,0,1) end end
  return cue,status
 end
+
+-- These are display cues, not ranks or assumptions about trained spells.
+-- Resolve the spell ID and texture together from the active client's data.
+local prioritySpells={
+ PALADIN={"Seal of Righteousness","Seal of Command","Seal of the Crusader","Seal of Fury","Judgement","Holy Strike","Holy Light","Flash of Light","Holy Shock","Oath of Light","Light’s Vigil","Righteous Fury","Holy Shield","Consecration","Exorcism","Cleanse","Hammer of Justice","Templar's Bulwark","Divine Shield","Unsealed Wrath","Blessing of Protection","Blessing of Freedom"},
+ WARRIOR={"Pummel","Shield Bash","Hamstring","Battle Shout","Charge","Overpower","Mortal Strike","Rend","Slam","Execute","Bloodthirst","Whirlwind","Heroic Strike","Cleave","Bloodrage","Shield Block","Shield Slam","Revenge","Sunder Armor","Thunder Clap","Shield Wall","Death Wish","Recklessness","Taunt"},
+ DRUID={"Rejuvenation","Regrowth","Swiftmend","Wild Growth","Healing Touch","Nature's Swiftness","Innervate","Rebirth","Tranquility","Rake","Rip","Shred","Claw","Shifting Power","Ferocious Bite","Moonfire","Insect Swarm","Starfire","Wrath","Eclipse","Maul","Swipe","Lacerate","Growl","Entangling Roots","Bash"},
+ HUNTER={"Hunter's Mark","Serpent Sting","Summon Hawk","Arcane Shot","Aimed Shot","Bestial Wrath","Rapid Fire","Multi-Shot","Volley","Tranquilizing Shot","Raptor Strike","Mongoose Bite","Strider Kick","Immolation Trap","Explosive Trap","Sniper Shot","Auto Shot","Concussive Shot"},
+ MAGE={"Pyroblast","Scorch","Fireball","Fire Blast","Frostfire Bolt","Living Bomb","Combustion","Arcane Blast","Arcane Missiles","Arcane Power","Evocation","Frostbolt","Ice Lance","Fingers of Frost","Frozen Orb","Blizzard","Arcane Explosion","Frost Nova","Cone of Cold","Polymorph","Counterspell","Blink"},
+ PRIEST={"Power Word: Shield","Prayer of Mending","Flash Heal","Greater Heal","Prayer of Healing","Renew","Smite","Penance","Holy Binding","Shadow Word: Pain","Shadow Word: Death","Vampiric Touch","Mind Blast","Mind Flay","Devouring Plague","Fade","Power Infusion","Dispel Magic","Psychic Scream"},
+ ROGUE={"Slice and Dice","Sinister Strike","Backstab","Eviscerate","Adrenaline Rush","Blade Flurry","Kick","Garrote","Mutilate","Rupture","Envenom","Shiv","Hemorrhage","Premeditation","Preparation","Vanish","Cheap Shot","Kidney Shot","Gouge"},
+ SHAMAN={"Flame Shock","Earth Shock","Lava Burst","Lightning Bolt","Chain Lightning","Stormstrike","Lava Lash","Maelstrom Weapon","Lightning Shield","Healing Wave","Lesser Healing Wave","Chain Heal","Earth Shield","Riptide","Nature's Swiftness","Windfury Totem","Searing Totem","Fire Nova","Frost Shock","Tremor Totem"},
+ WARLOCK={"Corruption","Bane of Agony","Shadow Bolt","Life Tap","Immolate","Conflagrate","Incinerate","Shadowburn","Soul Fire","Bane of Havoc","Demonic Brand","Demonic Empowerment","Metamorphosis","Drain Soul","Drain Life","Siphon Life","Hellfire","Rain of Fire","Fear"},
+}
+local function normalizedSpellName(value)
+ return value:gsub("’","'"):lower()
+end
+function I.PrioritySpell(instruction,class)
+ local api=type(C_Spell)=="table" and C_Spell.GetSpellInfo
+ if type(api)~="function" then return nil end
+ local caption=normalizedSpellName(instruction)
+ local first,best,spellName
+ for _,name in ipairs(prioritySpells[class] or {}) do
+  local key=normalizedSpellName(name)
+  local start=caption:find("%f[%w]"..key:gsub("(%W)","%%%1").."%f[%W]")
+  if start and (not first or start<first or (start==first and #key>#best)) then
+   first,best,spellName=start,key,name
+  end
+ end
+ if not best then return nil end
+ local ok,spell=pcall(api,(spellName:gsub("’","'")))
+ if ok and type(spell)=="table" and type(spell.name)=="string"
+  and normalizedSpellName(spell.name)==best
+  and type(spell.spellID)=="number" and spell.spellID>0
+  and type(spell.iconID)=="number" and spell.iconID>0 then
+  return spell
+ end
+end

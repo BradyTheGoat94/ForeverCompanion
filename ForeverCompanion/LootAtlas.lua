@@ -19,6 +19,9 @@ function Loot.Add(record)
   if not clean(record.source) or not clean(record.status) then
     return false,"source and verification status required"
   end
+  if record.itemID~=nil and (type(record.itemID)~="number" or record.itemID<=0 or record.itemID%1~=0) then
+    return false,"invalid item ID"
+  end
   if record.dropRate~=nil and (type(record.dropRate)~="number" or record.dropRate~=record.dropRate or record.dropRate<0 or record.dropRate>100) then
     return false,"invalid drop rate"
   end
@@ -32,22 +35,64 @@ function Loot.Add(record)
   Loot.records[#Loot.records+1]=record
   return true
 end
--- Community beta observations, not guaranteed live drops or drop chances.
--- Source: 60forever.com (beta records checked 2026-09-24).
-local betaDrops={
-  {"Bandsaw Wristbands","The Deadmines","Sneed's Shredder","Wrist",21},
-  {"Dull Sawblade","The Deadmines","Sneed","Ranged",21},
-  {"Ogre Loincloth","The Deadmines","Rhahk'Zor","Legs",22},
-  {"First Mate Band","The Deadmines","Mr. Smite","Finger",22},
-  {"Rockslicer","The Deadmines","Rhahk'Zor","Two-Hand",23},
-  {"Goblin Hammer","The Deadmines","Gilnid","Main Hand",23},
-  {"Lookie's Spyglass","The Deadmines","Cookie","Trinket",23},
-  {"Skum's Bucket","Wailing Caverns","Skum","Off Hand",22},
+-- Forever item IDs and boss sources checked against Wowhead, 2026-11-05.
+-- Sources disagree on the Dull Sawblade encounter phase. Do not claim a rate.
+local deadmines="The Deadmines"
+local caverns="Wailing Caverns"
+local thanes="Hall of Thanes"
+local drops={
+  {"Bandsaw Wristbands",deadmines,"Sneed","Wrist",273293},
+  {"Dull Sawblade",deadmines,"Sneed","Ranged",285292,"Sources disagree: Sneed or Sneed’s Shredder."},
+  {"Ogre Loincloth",deadmines,"Rhahk'Zor","Legs",273289},
+  {"First Mate Band",deadmines,"Mr. Smite","Finger",284715},
+  {"Rockslicer",deadmines,"Rhahk'Zor","Two-Hand",872},
+  {"Goblin Hammer",deadmines,"Gilnid","Main Hand",273297},
+  {"Lookie's Spyglass",deadmines,"Cookie","Trinket",273298},
+  {"Skum's Bucket",caverns,"Skum","Off Hand",273137},
+  {"Rhahk'Zor's Hammer",deadmines,"Rhahk'Zor","Two-Hand",5187},
+  {"Smite's Mighty Hammer",deadmines,"Mr. Smite","Two-Hand",7230},
+  {"Emberstone Staff",deadmines,"Captain Greenskin","Two-Hand",5201},
+  {"Cruel Barb",deadmines,"Edwin VanCleef","One-Hand",5191},
+  {"Kresh's Back",caverns,"Kresh","Off Hand",13245},
+  {"Robe of the Moccasin",caverns,"Lord Cobrahn","Chest",6465},
+  {"Stinging Viper",caverns,"Lord Pythas","One-Hand",6472},
+  {"Ephemeral Choker",thanes,"Faldrim Anvilmar","Neck",270227},
+  {"Aetherwisp Bracers",thanes,"Faldrim Anvilmar","Wrist",271096},
+  {"Spiritwraith Drape",thanes,"Faldrim Anvilmar","Back",271097},
+  {"Kindlegem Girdle",thanes,"Magmatus","Waist",270230},
+  {"Flamefist Grips",thanes,"Magmatus","Hands",270231},
+  {"Fang of Magmatus",thanes,"Magmatus","Main Hand",271095},
+  {"Treads of the Protector Golem",thanes,"Plunder","Feet",270229},
+  {"Golemheart Stave",thanes,"Plunder","Two-Hand",270228},
+  {"Golemguard Chest",thanes,"Plunder","Chest",271098},
+  {"Durgen's Crescent Axe",thanes,"Durgen Dirgehammer","Main Hand",270256},
+  {"Robes of the Disgraced Thane",thanes,"Durgen Dirgehammer","Chest",270261},
+  {"Direhammer Leggings",thanes,"Durgen Dirgehammer","Legs",270260},
 }
-for _,entry in ipairs(betaDrops) do
+for _,entry in ipairs(drops) do
   Loot.Add({item=entry[1],dungeon=entry[2],boss=entry[3],slot=entry[4],
-    itemLevel=entry[5],status="Community beta report; unverified in live client",
-    source="https://60forever.com/"})
+    itemID=entry[5],status=entry[6] or "Forever database match",
+    source="https://www.wowhead.com/forever/item="..entry[5]})
+end
+
+function Loot.ShowItemTooltip(owner,record)
+  if not record or not GameTooltip then return end
+  GameTooltip:SetOwner(owner,"ANCHOR_RIGHT")
+  local ok=record.itemID and type(GameTooltip.SetHyperlink)=="function"
+    and pcall(GameTooltip.SetHyperlink,GameTooltip,"item:"..record.itemID)
+  if not ok then GameTooltip:SetText(record.item,1,.8,.4) end
+  GameTooltip:AddLine(record.boss.." / "..record.dungeon,1,1,1,true)
+  GameTooltip:AddLine(record.status,.7,.8,.9,true)
+  GameTooltip:Show()
+end
+
+function Loot.ItemIcon(record)
+  local api=type(C_Item)=="table" and C_Item.GetItemIconByID
+  if record and record.itemID and type(api)=="function" then
+    local ok,icon=pcall(api,record.itemID)
+    if ok and icon then return icon end
+  end
+  return "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 function Loot.Find(itemName)
   if type(itemName)~="string" then return nil end
@@ -188,7 +233,7 @@ function Loot.CatalogSummary()
   local names={}
   for name in pairs(counts) do names[#names+1]=name end
   table.sort(names)
-  local lines={"BOSS DROP COVERAGE / COMMUNITY BETA"}
+  local lines={"BOSS DROP COVERAGE / FOREVER"}
   for _,name in ipairs(names) do
     lines[#lines+1]=name..": "..counts[name].." sourced records"
   end

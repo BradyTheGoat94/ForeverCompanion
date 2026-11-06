@@ -38,6 +38,8 @@ An in-game reference companion for World of Warcraft Forever, featuring class an
 ## Changelog (paste into CurseForge)
 
 **3.18.0-beta**
+- Put numbered press priorities in the rotation window for all nine classes, with published dungeon and boss priorities for 27 standard specs. Extra notes are collapsed by default.
+- Added native spell and item hover tooltips, a 27-item Forever loot catalog across three dungeons, and a quest footer that keeps Previous and Next outside the scroll viewport.
 - Improved dashboard banner contrast and brought selected rotation explanations closer to the initial viewport. Class topic changes return to the heading.
 - Put beginner actions and published PvE priorities for all 27 specializations in Class Guides → Overview. Updated Combat Rogue and Beast Mastery Hunter with patch 1.60.1 references.
 - Added Blizzard-published Legacy and alt planning details and the nine new five-player dungeons with their suggested level bands. Long loot descriptions leave the catalog evidence disclosure visible.

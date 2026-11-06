@@ -479,30 +479,29 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Holy={
-   source="https://www.wowhead.com/forever/guide/classes/paladin/holy/rotation-cooldowns-pve-healer",
-   corroboration="https://www.icy-veins.com/wow-forever/holy-paladin-healer-pve-guide/",
-   reviewed="Wowhead Oct 29; Icy Veins Oct 20, 2026",
+   source="https://www.icy-veins.com/wow-forever/holy-paladin-healer-pve-rotation-cooldowns-abilities",
+   corroboration="https://www.wowhead.com/forever/guide/classes/paladin/holy/rotation-cooldowns-pve-healer",
+   reviewed="Icy Veins Nov 3, 2026; group healing",
    rules={
-    "1. Maintain assigned Blessing and Aura before pulls.",
-    "2. Use Flash of Light for moderate, urgent spot healing.",
-    "3. Use Holy Light for large missing health when the target can survive its cast.",
-    "4. Downrank Holy Light when efficient healing will suffice.",
-    "5. Use talented Holy Shock for an emergency instant heal; Light's Vigil is not expected at level 30.",
-    "6. Cleanse dangerous effects and use Blessing of Protection to prevent deaths.",
-    "7. Only contribute damage if allies are safe and Mana is sufficient.",
+    "1. Keep Oath of Light on the tank if learned.",
+    "2. Holy Shock: save it for someone who may die before a cast finishes.",
+    "3. Flash of Light: your usual heal for moderate damage.",
+    "4. Holy Light: use for a large heal or to spend Infusion of Light.",
+    "5. Light’s Vigil: set it before heavy group damage, then Holy Shock that ally.",
+    "6. Cleanse dangerous effects when you can safely pause healing.",
    },
   },
   Retribution={
-   source="https://www.icy-veins.com/wow-forever/retribution-paladin-melee-dps-pve-guide",
-   corroboration="https://www.wowhead.com/forever/guide/classes/paladin/retribution/level-30-dps-overview",
-   reviewed="Icy Veins level-30 beta guide Oct 27; Wowhead level-30 beta guide Oct 10",
+   source="https://www.wowhead.com/forever/guide/classes/paladin/retribution/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/retribution-paladin-leveling",
+   reviewed="Wowhead Nov 4, 2026; Unsealed Wrath and Shockadin builds",
    rules={
-    "1. Maintain Blessing and Aura; always keep a suitable Seal active.",
-    "2. For a slow weapon with low Spell Power, consider talented Seal of Command; with fast weapons and Spell Power, compare Seal of Righteousness.",
-    "3. Judge Seal of the Crusader first on durable enemies if the Holy-damage amplification will pay off; then switch back to your damage Seal.",
-    "4. Use Holy Strike and Judgement when trained and affordable; Judgement does not consume the active Seal in Forever.",
-    "5. With talented Holy Shock (Shockadin build), cast it when useful; use Exorcism against Undead or Demons.",
-    "6. For AoE at level 20+, use Consecration when Mana permits; avoid assuming it is available before level 20.",
+    "1. Keep a damage Seal active. Use talented Seal of Command with a suitable two-hander; Shockadin uses Seal of Righteousness.",
+    "2. Judgement: use when ready. It leaves your Seal active.",
+    "3. Holy Strike: use when ready; stay in melee for weapon swings.",
+    "4. Unsealed Wrath: switch damage Seals after building stacks, if you took the capstone.",
+    "5. Holy Shock: use when ready if playing Shockadin. Use Exorcism against eligible targets.",
+    "6. Consecration: prioritize it on packs. Cut back when Mana is low.",
    },
   },
  },
@@ -732,4 +731,90 @@ function ForeverCompanionSpecPlaybookLines(classToken)
  lines[#lines+1]="These are practice decisions, not an automated rotation. Skip untrained spells."
  lines[#lines+1]="Sources: Blizzard class deep dives; Mobalytics Forever class guides; Wowhead Forever rotations and tuning."
  return lines
+end
+
+-- Early Paladin spells are available before the endgame talent builds.
+local paladinEarly={
+ "Seal of Righteousness — apply before combat and keep it active.",
+ "Judgement — use when in range and ready (train at level 4).",
+ "Holy Strike — use in melee when ready (train at level 6).",
+ "Holy Light — heal when needed. Keep swinging between abilities.",
+}
+-- Class-wide practice for contexts without a spec-specific PvE guide.
+-- Every spell is conditional on training and the selected build.
+local contextPractice={
+ WARRIOR={
+  leveling={"Charge when safe. Use Battle Shout before the pull if it’s missing.","Overpower when it lights up. Use Mortal Strike or Bloodthirst if talented.","Execute at low enemy health. Spend excess Rage on Heroic Strike."},
+  aoe={"Thunder Clap on a pack when safe.","Whirlwind if learned and appropriate for your stance.","Cleave with spare Rage. Keep enough for your next priority."},
+  pvp={"Hamstring to keep the target close.","Mortal Strike if talented. Use Overpower when it becomes available.","Save Pummel or Shield Bash for a dangerous cast."},
+ },
+ PALADIN={
+  leveling={"Keep Seal of Righteousness or talented Seal of Command active.","Use Judgement and Holy Strike when ready.","Use Consecration on packs if Mana allows. Heal with Holy Light when needed."},
+  aoe={"Consecration once enemies are grouped. Stay near the pack.","Judgement and Holy Strike on the kill target.","Holy Shield if talented and tanking. Save Mana for utility."},
+  pvp={"Judgement and Holy Strike when you can connect.","Hammer of Justice to stop a dangerous action or create a burst window.","Blessing of Freedom to escape roots. Use Cleanse for removable effects."},
+ },
+ HUNTER={
+  leveling={"Send your pet when it can safely take threat. Keep Auto Shot running.","Serpent Sting on targets that will live long enough.","Use Arcane Shot or Aimed Shot when trained. Keep room to kite."},
+  aoe={"Multi-Shot for a small pack when it won’t break control.","Volley on a larger pack when you can channel safely.","Use Explosive Trap if trained and you can place it safely."},
+  pvp={"Concussive Shot to create space. Keep Auto Shot running at range.","Use a trap to peel or isolate a target.","Use Arcane Shot while moving and hold your pet back from controlled targets."},
+ },
+ ROGUE={
+  leveling={"Sinister Strike or your trained builder to earn combo points.","Slice and Dice on longer fights.","Eviscerate with spare combo points or to finish the target."},
+  aoe={"Blade Flurry if talented and a second enemy is in range.","Keep Slice and Dice active. Build on the kill target.","Kick dangerous casts. Avoid cleaving enemies under crowd control."},
+  pvp={"Cheap Shot for an opener when control matters, or Garrote for pressure.","Build with your trained combo-point attack. Use Kidney Shot when control is needed.","Keep Energy for Kick. Save Vanish to reset or escape."},
+ },
+ PRIEST={
+  leveling={"Shadow Word: Pain on targets that will survive its ticks.","Mind Blast when ready. Fill with Mind Flay if talented or Smite.","Wand when Mana is low. Use Power Word: Shield if you need protection."},
+  aoe={"Shadow Word: Pain on durable targets when you’re dealing damage.","Use Mind Flay or Mind Blast on the priority target.","When healing, use Prayer of Healing only when several party members need it."},
+  pvp={"Power Word: Shield to protect an ally under pressure.","Dispel Magic on dangerous removable effects.","Use Psychic Scream to peel. Shadow can apply Shadow Word: Pain while moving."},
+ },
+ SHAMAN={
+  leveling={"Lightning Bolt at range. Enhancement can fight in melee with its weapon imbue.","Flame Shock on durable enemies; use Stormstrike or Lava Burst if trained for your build.","Keep Mana for Healing Wave and a dangerous-cast interrupt."},
+  aoe={"Chain Lightning on grouped enemies when the tank has threat.","Use Fire Nova if trained and appropriate for your totem setup.","Chain Heal when healing clustered allies who actually need it."},
+  pvp={"Use your trained interrupt on a dangerous cast.","Frost Shock to create space. Use Tremor Totem against Fear when appropriate.","Use Healing Wave when you have time to cast safely."},
+ },
+ MAGE={
+  leveling={"Frostbolt to slow and kite, or Fireball if leveling as Fire.","Use Fire Blast to finish when it saves a cast.","Frost Nova if enemies reach you. Move out before casting again."},
+  aoe={"Frost Nova to create space before the pack reaches you.","Blizzard when you can channel safely at range.","Arcane Explosion only when close range is safe."},
+  pvp={"Frostbolt to slow. Frost Nova to create space.","Polymorph a second threat when it won’t immediately break.","Counterspell a dangerous cast. Use Blink when you need to reposition."},
+ },
+ WARLOCK={
+  leveling={"Send your pet when it can safely take threat.","Corruption on targets that will survive the ticks.","Shadow Bolt or wand between refreshes. Life Tap when safe."},
+  aoe={"Corruption on durable targets when spreading it will pay off.","Rain of Fire on a grouped pack if you can channel safely.","Avoid Hellfire if the self-damage or melee range would put you in danger."},
+  pvp={"Corruption for pressure. Fear to create room or stop an attacker.","Use your pet’s utility for the matchup.","Drain Life when you can channel safely. Life Tap only out of immediate danger."},
+ },
+ DRUID={
+  leveling={"Caster: Moonfire on durable enemies, then Wrath.","Cat: Claw to build points. Use Rip on longer fights or Ferocious Bite to finish.","Rejuvenation or Healing Touch between pulls when needed."},
+  aoe={"Bear: Swipe when tanking grouped enemies.","Cat: spread Rake only on enemies that will live long enough.","Healer: use Wild Growth if talented and multiple allies need healing."},
+  pvp={"Entangling Roots to hold an enemy at range.","Rejuvenation before moving away from pressure.","Switch forms as needed for the fight. Use Bash if trained and in Bear Form."},
+ },
+}
+function ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ local selected=ForeverCompanionSpecPlanner.Get(class)
+ local name=selected and selected[1] or "Class"
+ local choices=ForeverCompanionSourcedPriorities[class]
+ local entry=choices and choices[name]
+ if class=="PALADIN" and type(level)=="number" and level<20 and mode~="pvp" then
+  local early={}
+  if role=="Healer" and mode~="leveling" then
+   early[1]="Holy Light — heal injured allies. Keep enough Mana for the next hit."
+  end
+  for index,step in ipairs(paladinEarly) do
+   if (index~=2 or level>=4) and (index~=3 or level>=6) and (index~=4 or not (role=="Healer" and mode~="leveling")) then
+    early[#early+1]=step
+   end
+  end
+  return early,"Paladin / levels 1–19","Skip spells you haven’t trained. Keep auto-attacking in melee.","Wowhead · Forever Paladin leveling"
+ end
+ if entry and (mode=="boss" or mode=="dungeon") then
+  local hint="Start at the top. Skip spells you haven’t learned."
+  if role and selected[2]~=role then
+   hint="Showing "..selected[2].." priorities. Change Spec to match your role."
+  end
+  local source=entry.source:find("icy%-veins") and "Icy Veins" or "Wowhead"
+  return entry.rules,name..(mode=="boss" and " / Boss" or " / Dungeon priority"),hint,source.." · Forever"
+ end
+ local labels={leveling="Leveling",aoe="Multiple enemies",pvp="PvP",boss="Boss",dungeon="Dungeon"}
+ local practice=contextPractice[class]
+ return practice and practice[mode] or fallback,name.." / "..(labels[mode] or "Practice"),"Class practice. Use only trained spells."
 end

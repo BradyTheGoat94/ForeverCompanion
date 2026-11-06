@@ -6,8 +6,6 @@ local ROTATIONS = ForeverCompanionRotations
 local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
-local rotationRows={}
-local rotationDetail=1
 local DB, window, titleText, content, currentTab, headerMeta
 ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
 local tabs = {"Overview", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "PvP", "Settings"}
@@ -184,7 +182,7 @@ local function render()
     if isOverview then scrollFrame:Hide() else scrollFrame:Show() end
     scrollFrame:ClearAllPoints()
     scrollFrame:SetPoint("TOPLEFT",216,currentTab=="Leveling" and -104 or -163)
-    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Leveling" and 57 or 92)
+    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Leveling" and 57 or (currentTab=="Quests" and 116 or 92))
   end
   if ForeverCompanionClassGuide then
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
@@ -192,8 +190,7 @@ local function render()
   end
   if ForeverCompanionRotationWorkspace then
     local priorities=ROTATIONS and ROTATIONS[classToken()] and ROTATIONS[classToken()][rotationModes[rotationMode]] or {}
-    if rotationDetail>#priorities then rotationDetail=1 end
-    ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],rotationDetail,priorities)
+    ForeverCompanionRotationWorkspace.Render(ForeverCompanionClassGuide.GetView()=="Rotations" and currentTab or "",classToken(),rotationModes[rotationMode],level(),DB.role,priorities)
   end
   if ForeverCompanionLootWorkspace then ForeverCompanionLootWorkspace.Render(currentTab,DB,currentTab=="Loot" and lootMatches() or {}) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
@@ -266,7 +263,6 @@ local function render()
   for _, b in ipairs(checkButtons) do b:Hide() end
   if handbookIcon then handbookIcon:Hide() end
   if rotationIcon then rotationIcon:Hide() end
-  for _,row in ipairs(rotationRows) do row:Hide() end
   if rotationButton then rotationButton:SetText("Rotation: "..rotationModes[rotationMode]);rotationButton:Hide() end
   if specButton then
     if currentTab=="Leveling" and ForeverCompanionSpecPlanner then
@@ -302,25 +298,7 @@ local function render()
     if ForeverCompanionReadiness then lines[#lines+1]=ForeverCompanionReadiness.Format(classToken(),level(),(DB and DB.professions or "")) end
     if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
   elseif currentTab == "Loot" then
-    lines = {"LOOT ATLAS"}
-    if ForeverCompanionLoot and type(ForeverCompanionLoot.Format)=="function" then
-      local matches=lootMatches()
-      local selected=matches[ForeverCompanionLootUI.selectedIndex]
-      lines[#lines+1]=selected and ("SELECTED DROP: "..selected.item.." / "..selected.boss) or "SELECTED DROP: None"
-      lines[#lines+1]=ForeverCompanionLoot.FilterSummary(ForeverCompanionLootUI.query,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.savedOnly,DB,ForeverCompanionLootUI.boss,ForeverCompanionLootUI.acquisition,ForeverCompanionLootUI.slot)
-      lines[#lines+1]=ForeverCompanionLoot.Detail(selected,DB)
-      if selected and type(ForeverCompanionLoot.BossSummary)=="function" then
-        lines[#lines+1]=ForeverCompanionLoot.BossSummary(selected.dungeon,selected.boss,DB)
-      end
-      lines[#lines+1]=ForeverCompanionLoot.ProgressSummary(DB,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.boss)
-      lines[#lines+1]=ForeverCompanionLoot.CollectionSummary(DB,ForeverCompanionLootUI.dungeon,ForeverCompanionLootUI.boss)
-      lines[#lines+1]=ForeverCompanionLoot.CatalogSummary()
-      lines[#lines+1]=ForeverCompanionLoot.FormatMatches(matches)
-      lines[#lines+1]=ForeverCompanionLoot.WishlistSummary(DB)
-      lines[#lines+1]=ForeverCompanionLoot.RecommendationSummary(classToken(),DB.role)
-    else
-      lines[#lines+1]="Loot reference is unavailable."
-    end
+    lines = {ForeverCompanionLoot.WishlistSummary(DB)}
   elseif currentTab == "Legacy" then
     lines = {"LEGACY SYSTEM / BLIZZARD LAUNCH REFERENCE",
       "UNLOCK: Earn your first Legacy Point, commonly by reaching level 25 or 150 skill in a non-gathering primary profession. Once unlocked, open the Legacy shield or press Y with default bindings.",
@@ -337,269 +315,216 @@ local function render()
       "Source: https://worldofwarcraft.blizzard.com/en-us/news/24307383",
       "Personal checklist and research notes are per character. Exact XP rates and client behavior remain unverified."}
   elseif currentTab == "Leveling" then
-    lines = {"CLASS GUIDANCE",experienceText(),
-      "ALT LEVELING: The Alt Leveling and Legacy pages explain shared points, character-specific perks and practical preparation."}
-    -- Put the immediately actionable, spec-specific steps first in the
-    -- scrollable guide, before long reference material and rotation notes.
-    if type(ForeverCompanionQuickStartLines)=="function" then
-      local ok,quick=pcall(ForeverCompanionQuickStartLines,classToken())
-      if ok and type(quick)=="table" then
-        lines[#lines+1]="START HERE / THREE PRACTICE STEPS"
-        for _,note in ipairs(quick) do
-          if type(note)=="string" then lines[#lines+1]=note end
+    if ForeverCompanionClassGuide.GetView()=="Rotations" and ForeverCompanionRotationWorkspace.ShowReference() then
+      lines = {"CLASS GUIDANCE",experienceText(),
+        "ALT LEVELING: The Alt Leveling and Legacy pages explain shared points, character-specific perks and practical preparation."}
+      -- Put the immediately actionable, spec-specific steps first in the
+      -- scrollable guide, before long reference material and rotation notes.
+      if type(ForeverCompanionQuickStartLines)=="function" then
+        local ok,quick=pcall(ForeverCompanionQuickStartLines,classToken())
+        if ok and type(quick)=="table" then
+          lines[#lines+1]="START HERE / THREE PRACTICE STEPS"
+          for _,note in ipairs(quick) do
+            if type(note)=="string" then lines[#lines+1]=note end
+          end
         end
       end
-    end
-    local rotations=ROTATIONS and ROTATIONS[classToken()]
-    if rotations then
-      local mode=rotationModes[rotationMode]
-      lines[#lines+1]="ROTATION / PRIORITY: "..string.upper(mode)
-      local presentation=ForeverCompanionRotationPresentation
-      local context=presentation and presentation.contexts[mode]
-      if context then lines[#lines+1]=context.title.." - "..context.description end
-      local priorities=rotations[mode] or {}
-      if rotationDetail>#priorities then rotationDetail=1 end
-      for i,ability in ipairs(priorities) do
-        lines[#lines+1]=i..". "..ability
-        local row=rotationRows[i]
-        if row then
-          -- Center short reference lists without inventing additional abilities.
-          local count=math.min(6,#priorities)
-          local inset=math.max(0,math.floor((570-(count*95-7))/2))
-          row:ClearAllPoints()
-          row:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",208+inset+(i-1)*95,-256)
-          -- Use a concise action heading on the tile; retain the full
-          -- instructional sentence in the tooltip and guide detail.
-          local short=tostring(ability):gsub("^[Bb]efore pull:%s*","Prep: "):gsub("^[Bb]efore combat:%s*","Prep: ")
-          short=short:match("^([^;%.]+)") or short
-          if #short>26 then short=short:sub(1,23).."..." end
-          local titles=mode=="leveling" and ForeverCompanionRotationCardTitles and ForeverCompanionRotationCardTitles[classToken()]
-          row.label:SetText(titles and titles[i] or short)
-          colorTexture(row.bg,rotationDetail==i and 0.23 or 0.105,rotationDetail==i and 0.19 or 0.13,rotationDetail==i and 0.12 or 0.18,1)
-          colorTexture(row.trim,rotationDetail==i and 0.99 or 0.45,rotationDetail==i and 0.76 or 0.36,rotationDetail==i and 0.32 or 0.20,1)
-          row.detail=ability
-          -- Avoid suggesting a repeating icon represents a verified spell.
-          -- The full action remains available in the tooltip.
-          row:SetScript("OnEnter",function(self)
-            if GameTooltip then
-              GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-              GameTooltip:SetText("Priority "..i.." | "..string.upper(mode),1,0.8,0.3)
-              GameTooltip:AddLine(self.detail or "",1,1,1,true)
-              local coach=type(ForeverCompanionGetBeginnerCoach)=="function"
-                and ForeverCompanionGetBeginnerCoach(classToken())
-              if type(coach)=="table" then
-                GameTooltip:AddLine("RESOURCE: "..coach.resource,0.95,0.75,0.38,true)
-                GameTooltip:AddLine("IF STUCK: "..coach.recover,0.84,0.86,0.81,true)
+      local rotations=ROTATIONS and ROTATIONS[classToken()]
+      if rotations then
+        local mode=rotationModes[rotationMode]
+        lines[#lines+1]="ROTATION / PRIORITY: "..string.upper(mode)
+        local presentation=ForeverCompanionRotationPresentation
+        local context=presentation and presentation.contexts[mode]
+        if context then lines[#lines+1]=context.title.." - "..context.description end
+        -- Read-only beginner coaching appears in the visible guide text for every class.
+        -- These instructions are conditional, never an automated combat sequence.
+        local coach=type(ForeverCompanionGetBeginnerCoach)=="function"
+          and ForeverCompanionGetBeginnerCoach(classToken())
+        if type(coach)=="table" then
+          lines[#lines+1]="BEGINNER COACH (ILLUSTRATIVE - VERIFY IN FOREVER)"
+          lines[#lines+1]="RESOURCE: "..coach.resource
+          lines[#lines+1]="BEFORE COMBAT: "..coach.first
+          lines[#lines+1]="YOUR BASIC LOOP: "..coach.loop
+          lines[#lines+1]="IF SOMETHING GOES WRONG: "..coach.recover
+          lines[#lines+1]="VERIFY IN CLIENT: "..coach.check
+        end
+        -- Specialization-aware practice guidance uses the player's selected
+        -- planning spec and never assumes that an untrained spell is available.
+        if ForeverCompanionPracticeNotes then
+          for _,note in ipairs(ForeverCompanionPracticeNotes.Lines(classToken())) do lines[#lines+1]=note end
+        end
+        if type(ForeverCompanionSpecCoachLines)=="function" then
+          for _,note in ipairs(ForeverCompanionSpecCoachLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionSpecPriorityNoteLines)=="function" then
+          for _,note in ipairs(ForeverCompanionSpecPriorityNoteLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionSourcedPriorityLines)=="function" then
+          for _,note in ipairs(ForeverCompanionSourcedPriorityLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionSpecPlaybookLines)=="function" then
+          for _,note in ipairs(ForeverCompanionSpecPlaybookLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionGuideEvidenceLines)=="function" then
+          for _,note in ipairs(ForeverCompanionGuideEvidenceLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionSimResearchLines)=="function" then
+          for _,note in ipairs(ForeverCompanionSimResearchLines()) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionNovemberTuningLines)=="function" then
+          for _,note in ipairs(ForeverCompanionNovemberTuningLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        if type(ForeverCompanionForeverLessonLines)=="function" then
+          for _,note in ipairs(ForeverCompanionForeverLessonLines(classToken())) do
+            lines[#lines+1]=note
+          end
+        end
+        -- Sourced Forever mechanics are displayed separately from generic leveling
+        -- priorities; they remain conditional on trained spells and chosen talents.
+        local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
+        if type(foreverNotes)=="table" then
+          lines[#lines+1]="FOREVER CLASS CHANGES (CHECK YOUR SPELLBOOK)"
+          for _,note in ipairs(foreverNotes) do lines[#lines+1]="- "..note end
+          local sources=ForeverCompanionForeverMechanicsSources
+          if type(sources)=="table" and type(sources[classToken()])=="string" then
+            lines[#lines+1]="Source: "..sources[classToken()]
+          end
+        end
+        local coaching=type(ForeverCompanionForeverDpsCoaching)=="table" and ForeverCompanionForeverDpsCoaching[classToken()]
+        if type(coaching)=="table" then
+          local selected
+          if type(ForeverCompanionSpecPlanner)=="table" and type(ForeverCompanionSpecPlanner.Get)=="function" then
+            local ok,result=pcall(ForeverCompanionSpecPlanner.Get,classToken())
+            if ok then selected=result end
+          end
+          local specName=type(selected)=="table" and type(selected[1])=="string" and selected[1] or ""
+          local steps=coaching[string.lower(specName)]
+          lines[#lines+1]="SPECIALIZATION DPS COACHING: "..(specName~="" and string.upper(specName) or "SELECT A SPEC")
+          lines[#lines+1]="Use the Spec button above to change your selected specialization."
+          if type(steps)=="table" then
+            lines[#lines+1]="PRACTICE IN ORDER — then repeat the priority as conditions change:"
+            for step,tip in ipairs(steps) do
+              lines[#lines+1]="STEP "..step.."  |  "..tip
+            end
+            lines[#lines+1]="DPS CHECK: Keep attacking while mechanics allow; avoid wasted resources and unnecessary movement."
+            lines[#lines+1]="DPS CHECK: Revisit your spellbook after leveling or changing talents."
+            lines[#lines+1]="These priorities are advisory; confirm talents and learned spells in the Forever client."
+          else
+            lines[#lines+1]="No Forever-specific DPS coaching has been verified for this selection yet."
+            lines[#lines+1]="Use the general priority above and check your spellbook for available abilities."
+          end
+        end
+        if type(ForeverCompanionBeginnerAvailability)=="function" then
+          lines[#lines+1]="BEGINNER SPELLBOOK CHECK (READ-ONLY)"
+          if type(ForeverCompanionBeginnerCoverage)=="function" then
+            local ok,covered,total=pcall(ForeverCompanionBeginnerCoverage,classToken())
+            if ok and type(covered)=="number" and type(total)=="number" then
+              lines[#lines+1]="CURATED UNLOCK DATA: "..covered.."/"..total.." suggested spells cross-referenced."
+              if covered<total then
+                lines[#lines+1]="Other suggestions are general coaching only; unlock levels are not verified."
               end
-              GameTooltip:AddLine("Reference only; verify trained abilities in your Forever spellbook.",0.72,0.78,0.86,true)
-              GameTooltip:AddLine(self.iconCue and ("Icon: "..self.iconCue..(self.iconStatus=="spell" and " / client texture" or " / unavailable, showing question mark")) or "Class emblem / general instruction, no single spell named.",0.72,0.78,0.86,true)
-              GameTooltip:AddLine("Artwork lookup does not establish training or recommend a cast.",0.72,0.78,0.86,true)
-              GameTooltip:Show()
-            end
-          end)
-          row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
-          if row.icon then
-            row.iconCue,row.iconStatus=ForeverCompanionIcons.ApplyRotation(row.icon,classToken(),mode,i)
-            row.icon:Show()
-          end
-          row:SetScript("OnClick",function() rotationDetail=i; render() end)
-          if ForeverCompanionClassGuide.GetView()=="Rotations" then row:Show() end
-        end
-      end
-      -- Read-only beginner coaching appears in the visible guide text for every class.
-      -- These instructions are conditional, never an automated combat sequence.
-      local coach=type(ForeverCompanionGetBeginnerCoach)=="function"
-        and ForeverCompanionGetBeginnerCoach(classToken())
-      if type(coach)=="table" then
-        lines[#lines+1]="BEGINNER COACH (ILLUSTRATIVE - VERIFY IN FOREVER)"
-        lines[#lines+1]="RESOURCE: "..coach.resource
-        lines[#lines+1]="BEFORE COMBAT: "..coach.first
-        lines[#lines+1]="YOUR BASIC LOOP: "..coach.loop
-        lines[#lines+1]="IF SOMETHING GOES WRONG: "..coach.recover
-        lines[#lines+1]="VERIFY IN CLIENT: "..coach.check
-      end
-      -- Specialization-aware practice guidance uses the player's selected
-      -- planning spec and never assumes that an untrained spell is available.
-      if ForeverCompanionPracticeNotes then
-        for _,note in ipairs(ForeverCompanionPracticeNotes.Lines(classToken())) do lines[#lines+1]=note end
-      end
-      if type(ForeverCompanionSpecCoachLines)=="function" then
-        for _,note in ipairs(ForeverCompanionSpecCoachLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionSpecPriorityNoteLines)=="function" then
-        for _,note in ipairs(ForeverCompanionSpecPriorityNoteLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionSourcedPriorityLines)=="function" then
-        for _,note in ipairs(ForeverCompanionSourcedPriorityLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionSpecPlaybookLines)=="function" then
-        for _,note in ipairs(ForeverCompanionSpecPlaybookLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionGuideEvidenceLines)=="function" then
-        for _,note in ipairs(ForeverCompanionGuideEvidenceLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionSimResearchLines)=="function" then
-        for _,note in ipairs(ForeverCompanionSimResearchLines()) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionNovemberTuningLines)=="function" then
-        for _,note in ipairs(ForeverCompanionNovemberTuningLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      if type(ForeverCompanionForeverLessonLines)=="function" then
-        for _,note in ipairs(ForeverCompanionForeverLessonLines(classToken())) do
-          lines[#lines+1]=note
-        end
-      end
-      -- Sourced Forever mechanics are displayed separately from generic leveling
-      -- priorities; they remain conditional on trained spells and chosen talents.
-      local foreverNotes=type(ForeverCompanionForeverMechanics)=="table" and ForeverCompanionForeverMechanics[classToken()]
-      if type(foreverNotes)=="table" then
-        lines[#lines+1]="FOREVER CLASS CHANGES (CHECK YOUR SPELLBOOK)"
-        for _,note in ipairs(foreverNotes) do lines[#lines+1]="- "..note end
-        local sources=ForeverCompanionForeverMechanicsSources
-        if type(sources)=="table" and type(sources[classToken()])=="string" then
-          lines[#lines+1]="Source: "..sources[classToken()]
-        end
-      end
-      local coaching=type(ForeverCompanionForeverDpsCoaching)=="table" and ForeverCompanionForeverDpsCoaching[classToken()]
-      if type(coaching)=="table" then
-        local selected
-        if type(ForeverCompanionSpecPlanner)=="table" and type(ForeverCompanionSpecPlanner.Get)=="function" then
-          local ok,result=pcall(ForeverCompanionSpecPlanner.Get,classToken())
-          if ok then selected=result end
-        end
-        local specName=type(selected)=="table" and type(selected[1])=="string" and selected[1] or ""
-        local steps=coaching[string.lower(specName)]
-        lines[#lines+1]="SPECIALIZATION DPS COACHING: "..(specName~="" and string.upper(specName) or "SELECT A SPEC")
-        lines[#lines+1]="Use the Spec button above to change your selected specialization."
-        if type(steps)=="table" then
-          lines[#lines+1]="PRACTICE IN ORDER — then repeat the priority as conditions change:"
-          for step,tip in ipairs(steps) do
-            lines[#lines+1]="STEP "..step.."  |  "..tip
-          end
-          lines[#lines+1]="DPS CHECK: Keep attacking while mechanics allow; avoid wasted resources and unnecessary movement."
-          lines[#lines+1]="DPS CHECK: Revisit your spellbook after leveling or changing talents."
-          lines[#lines+1]="These priorities are advisory; confirm talents and learned spells in the Forever client."
-        else
-          lines[#lines+1]="No Forever-specific DPS coaching has been verified for this selection yet."
-          lines[#lines+1]="Use the general priority above and check your spellbook for available abilities."
-        end
-      end
-      if type(ForeverCompanionBeginnerAvailability)=="function" then
-        lines[#lines+1]="BEGINNER SPELLBOOK CHECK (READ-ONLY)"
-        if type(ForeverCompanionBeginnerCoverage)=="function" then
-          local ok,covered,total=pcall(ForeverCompanionBeginnerCoverage,classToken())
-          if ok and type(covered)=="number" and type(total)=="number" then
-            lines[#lines+1]="CURATED UNLOCK DATA: "..covered.."/"..total.." suggested spells cross-referenced."
-            if covered<total then
-              lines[#lines+1]="Other suggestions are general coaching only; unlock levels are not verified."
             end
           end
+          local scan
+          if type(ForeverCompanionSpellbook)=="table" and type(ForeverCompanionSpellbook.Scan)=="function" then
+            local ok,value=pcall(ForeverCompanionSpellbook.Scan)
+            if ok then scan=value end
+          end
+          if type(scan)~="table" then scan={supported=false,inspected=0,complete=false,known={}} end
+          local ok,results=pcall(ForeverCompanionBeginnerAvailability,classToken(),scan)
+          if ok and type(results)=="table" then
+            for _,line in ipairs(results) do lines[#lines+1]=line end
+          else
+            lines[#lines+1]="Spell availability could not be checked in this client."
+          end
+          lines[#lines+1]="Unknown or absent entries do not prove a spell is unavailable; check talents, trainer and ranks."
         end
-        local scan
-        if type(ForeverCompanionSpellbook)=="table" and type(ForeverCompanionSpellbook.Scan)=="function" then
-          local ok,value=pcall(ForeverCompanionSpellbook.Scan)
-          if ok then scan=value end
+        if classToken()=="MAGE" and type(ForeverCompanionMageMilestoneLines)=="function" then
+          lines[#lines+1]="MAGE LEVELING: WHAT TO PRESS NEXT"
+          local ok,milestones=pcall(ForeverCompanionMageMilestoneLines,level())
+          if ok and type(milestones)=="table" then
+            for _,milestone in ipairs(milestones) do lines[#lines+1]=milestone end
+          end
+          lines[#lines+1]="Unlock levels come from published Forever client data; spellbook ownership is checked separately."
         end
-        if type(scan)~="table" then scan={supported=false,inspected=0,complete=false,known={}} end
-        local ok,results=pcall(ForeverCompanionBeginnerAvailability,classToken(),scan)
-        if ok and type(results)=="table" then
-          for _,line in ipairs(results) do lines[#lines+1]=line end
-        else
-          lines[#lines+1]="Spell availability could not be checked in this client."
+        if ForeverCompanionAvailableAbilitySummary then
+          lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
         end
-        lines[#lines+1]="Unknown or absent entries do not prove a spell is unavailable; check talents, trainer and ranks."
-      end
-      if classToken()=="MAGE" and type(ForeverCompanionMageMilestoneLines)=="function" then
-        lines[#lines+1]="MAGE LEVELING: WHAT TO PRESS NEXT"
-        local ok,milestones=pcall(ForeverCompanionMageMilestoneLines,level())
-        if ok and type(milestones)=="table" then
-          for _,milestone in ipairs(milestones) do lines[#lines+1]=milestone end
+        if ForeverCompanionAbilityReferenceLines then
+          for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level())) do
+            lines[#lines+1]=referenceLine
+          end
         end
-        lines[#lines+1]="Unlock levels come from published Forever client data; spellbook ownership is checked separately."
-      end
-      if ForeverCompanionAvailableAbilitySummary then
-        lines[#lines+1]=ForeverCompanionAvailableAbilitySummary(classToken(),level())
-      end
-      if ForeverCompanionAbilityReferenceLines then
-        for _,referenceLine in ipairs(ForeverCompanionAbilityReferenceLines(classToken(),level())) do
-          lines[#lines+1]=referenceLine
+        if ForeverCompanionLevelingCurriculum then lines[#lines+1]=ForeverCompanionLevelingCurriculum.Format(classToken(),level()) end
+        if ForeverCompanionWorldGuide then lines[#lines+1]=ForeverCompanionWorldGuide.Format(level()) end
+        if ForeverCompanionClassChanges then lines[#lines+1]=ForeverCompanionClassChanges.Format(classToken(),level()) end
+        if ForeverCompanionClassChangeIndex then lines[#lines+1]=ForeverCompanionClassChangeIndex.Format(classToken(),level()) end
+        if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
+          lines[#lines+1]=ForeverCompanionSkillStudy.FormatNextActions(classToken(),level())
+          lines[#lines+1]=ForeverCompanionSkillStudy.PracticePlan(classToken(),level()) end
+        if ForeverCompanionSkillDiscovery then
+          lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatSummary(classToken())
+          lines[#lines+1]=ForeverCompanionSkillDiscovery.Format(classToken())
+          lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatChecklist(classToken()) end
+        local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
+        if specNotes then
+          lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
+          for _,note in ipairs(specNotes) do
+            lines[#lines+1]=note.name.." | "..note.focus
+            lines[#lines+1]="Level / unlock check: "..note.levels
+            lines[#lines+1]="Solo: "..note.solo
+            lines[#lines+1]="Group: "..note.group
+          end
         end
-      end
-      if ForeverCompanionLevelingCurriculum then lines[#lines+1]=ForeverCompanionLevelingCurriculum.Format(classToken(),level()) end
-      if ForeverCompanionWorldGuide then lines[#lines+1]=ForeverCompanionWorldGuide.Format(level()) end
-      if ForeverCompanionClassChanges then lines[#lines+1]=ForeverCompanionClassChanges.Format(classToken(),level()) end
-      if ForeverCompanionClassChangeIndex then lines[#lines+1]=ForeverCompanionClassChangeIndex.Format(classToken(),level()) end
-      if ForeverCompanionSkillStudy then lines[#lines+1]=ForeverCompanionSkillStudy.Format(classToken(),level())
-        lines[#lines+1]=ForeverCompanionSkillStudy.FormatNextActions(classToken(),level())
-        lines[#lines+1]=ForeverCompanionSkillStudy.PracticePlan(classToken(),level()) end
-      if ForeverCompanionSkillDiscovery then
-        lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatSummary(classToken())
-        lines[#lines+1]=ForeverCompanionSkillDiscovery.Format(classToken())
-        lines[#lines+1]=ForeverCompanionSkillDiscovery.FormatChecklist(classToken()) end
-      local specNotes=ForeverCompanionSpecGuidance and ForeverCompanionSpecGuidance[classToken()]
-      if specNotes then
-        lines[#lines+1]="SPECIALIZATION STUDY NOTES (illustrative, check your talents)"
-        for _,note in ipairs(specNotes) do
-          lines[#lines+1]=note.name.." | "..note.focus
-          lines[#lines+1]="Level / unlock check: "..note.levels
-          lines[#lines+1]="Solo: "..note.solo
-          lines[#lines+1]="Group: "..note.group
+        if ForeverCompanionFormatCooldowns then
+          lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
         end
+        if ForeverCompanionSpecPlanner then lines[#lines+1]=ForeverCompanionSpecPlanner.Format(classToken(),mode) end
+        if ForeverCompanionSpellbook then lines[#lines+1]=ForeverCompanionSpellbook.Cooldowns(classToken()) end
+        lines[#lines+1]="General reference only; verify abilities and talents on Forever."
       end
-      if priorities[rotationDetail] then
-        lines[#lines+1]="FOCUSED PRIORITY "..rotationDetail.." / "..#priorities..": "..priorities[rotationDetail]
-        lines[#lines+1]="WHY THIS MATTERS: This is a decision reminder, not a fixed cast sequence. Check your talents, resources, target count, threat, and the live encounter before acting."
-        lines[#lines+1]="WHEN TO ADJUST: If the listed ability is unavailable, unsafe, or inappropriate for your role, skip it and continue with the next relevant priority."
-        lines[#lines+1]="ROTATION STATUS: Illustrative Classic-era guidance; not yet validated against live WoW Forever combat mechanics."
+      local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
+      if guide then
+        lines[#lines+1]="LEVELING: "..guide.leveling
+        lines[#lines+1]="DUNGEON: "..guide.dungeon
+        lines[#lines+1]="PVP: "..guide.pvp
+        lines[#lines+1]="PROFESSIONS: "..guide.professions
+        if handbookIcon then ForeverCompanionIcons.ApplyClass(handbookIcon,classToken()) end
       end
-      if ForeverCompanionFormatCooldowns then
-        lines[#lines+1]=ForeverCompanionFormatCooldowns(classToken(),mode)
+      for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
+      local deep=ADVANCED and ADVANCED.classes[classToken()]
+      if deep then
+        lines[#lines+1]="SPECIALIZATION OVERVIEW (GENERAL REFERENCE)"
+        lines[#lines+1]=table.concat(deep.specializations," / ")
+        lines[#lines+1]="Core: "..deep.core
+        lines[#lines+1]="Party: "..deep.party
+        for _,tip in ipairs(deep.sections) do lines[#lines+1]="- "..tip end
       end
-      if ForeverCompanionSpecPlanner then lines[#lines+1]=ForeverCompanionSpecPlanner.Format(classToken(),mode) end
-      if ForeverCompanionSpellbook then lines[#lines+1]=ForeverCompanionSpellbook.Cooldowns(classToken()) end
-      lines[#lines+1]="General reference only; verify abilities and talents on Forever."
-    end
-    local guide=DATA.classHandbook and DATA.classHandbook[classToken()]
-    if guide then
-      lines[#lines+1]="LEVELING: "..guide.leveling
-      lines[#lines+1]="DUNGEON: "..guide.dungeon
-      lines[#lines+1]="PVP: "..guide.pvp
-      lines[#lines+1]="PROFESSIONS: "..guide.professions
-      if handbookIcon then ForeverCompanionIcons.ApplyClass(handbookIcon,classToken()) end
-    end
-    for _, tip in ipairs(DATA.classes[classToken()] or {}) do lines[#lines+1] = "- "..tip end
-    local deep=ADVANCED and ADVANCED.classes[classToken()]
-    if deep then
-      lines[#lines+1]="SPECIALIZATION OVERVIEW (GENERAL REFERENCE)"
-      lines[#lines+1]=table.concat(deep.specializations," / ")
-      lines[#lines+1]="Core: "..deep.core
-      lines[#lines+1]="Party: "..deep.party
-      for _,tip in ipairs(deep.sections) do lines[#lines+1]="- "..tip end
-    end
-    if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
-      lines[#lines+1]="YOUR ROLE: "..string.upper(DB.role)
-      for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
-    end
-    lines[#lines+1] = "LEVELING"
-    for _, band in ipairs(DATA.zones) do
-      if (level() or 0) >= band[1] and (level() or 0) <= band[2] then
-        lines[#lines+1] = "Level "..band[1].."-"..band[2]..": "..band[3]
-        lines[#lines+1] = band[4]
-        break
+      if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
+        lines[#lines+1]="YOUR ROLE: "..string.upper(DB.role)
+        for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
+      end
+      lines[#lines+1] = "LEVELING"
+      for _, band in ipairs(DATA.zones) do
+        if (level() or 0) >= band[1] and (level() or 0) <= band[2] then
+          lines[#lines+1] = "Level "..band[1].."-"..band[2]..": "..band[3]
+          lines[#lines+1] = band[4]
+          break
+        end
       end
     end
   elseif currentTab == "Quests" then
@@ -1013,6 +938,7 @@ local function createUI()
     local ux, uy = UIParent:GetCenter()
     if x and y and ux and uy then DB.position = {x=x-ux, y=y-uy} end
   end)
+  if window.SetFrameStrata then window:SetFrameStrata("DIALOG") end
   window:SetClampedToScreen(true)
   fitWindow()
   if window.SetBackdrop then
@@ -1200,7 +1126,7 @@ local function createUI()
   scroll:SetScrollChild(child)
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child,openSection) end
   if ForeverCompanionRotationWorkspace then
-    ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;rotationDetail=1;render() end,function(index) rotationDetail=index;render() end)
+    ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;render() end)
   end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection) end
@@ -1277,12 +1203,12 @@ local function createUI()
   rotationButton=CreateFrame("Button",nil,child,"UIPanelButtonTemplate")
   rotationButton:SetSize(155,23)
   rotationButton:SetPoint("TOPLEFT",child,"TOPLEFT",8,-166)
-  rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; rotationDetail=1; render() end)
+  rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; render() end)
   rotationButton:Hide()
   specButton=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
   specButton:SetSize(195,23)
   specButton:SetPoint("TOPRIGHT",window,"TOPRIGHT",-180,-62)
-  specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); rotationDetail=1; render() end)
+  specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); render() end)
   specButton:Hide()
   handbookIcon=child:CreateTexture(nil,"OVERLAY")
   handbookIcon:SetSize(30,30)
@@ -1347,91 +1273,7 @@ local function createUI()
     entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide()
     materialRows[i]=entry
   end
-  for i=1,6 do
-    local row=CreateFrame("Button",nil,child)
-    row:SetSize(88,96)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",208+(i-1)*95,-256)
-    row:EnableMouse(true)
-    row.bg=row:CreateTexture(nil,"BACKGROUND")
-    row.bg:SetAllPoints(row)
-    colorTexture(row.bg,0.105,0.13,0.18,1)
-    -- Ornate card surface: dark blue inset, gilded top rule and mirrored
-    -- corner filigree. The icon and text remain above the decoration.
-    local cardInset=row:CreateTexture(nil,"BORDER")
-    cardInset:SetPoint("TOPLEFT",row,"TOPLEFT",4,-4)
-    cardInset:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",-4,4)
-    colorTexture(cardInset,0.035,0.050,0.077,0.92)
-    local cardTop=row:CreateTexture(nil,"ARTWORK")
-    cardTop:SetPoint("TOPLEFT",row,"TOPLEFT",5,-4)
-    cardTop:SetSize(78,1)
-    colorTexture(cardTop,0.72,0.51,0.24,0.85)
-    local cardCornerLeft=row:CreateTexture(nil,"ARTWORK")
-    cardCornerLeft:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",5,5)
-    cardCornerLeft:SetSize(15,2)
-    colorTexture(cardCornerLeft,0.90,0.65,0.27,0.85)
-    local cardCornerRight=row:CreateTexture(nil,"ARTWORK")
-    cardCornerRight:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",-5,5)
-    cardCornerRight:SetSize(15,2)
-    colorTexture(cardCornerRight,0.90,0.65,0.27,0.85)
-    row.edgeBottom=row:CreateTexture(nil,"ARTWORK")
-    row.edgeBottom:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",0,0)
-    row.edgeBottom:SetSize(88,1)
-    colorTexture(row.edgeBottom,0.53,0.40,0.23,0.9)
-    row.edgeLeft=row:CreateTexture(nil,"ARTWORK")
-    row.edgeLeft:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
-    row.edgeLeft:SetSize(1,96)
-    colorTexture(row.edgeLeft,0.44,0.33,0.19,0.85)
-    row.edgeRight=row:CreateTexture(nil,"ARTWORK")
-    row.edgeRight:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
-    row.edgeRight:SetSize(1,96)
-    colorTexture(row.edgeRight,0.44,0.33,0.19,0.85)
-    row.trim=row:CreateTexture(nil,"ARTWORK")
-    row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
-    row.trim:SetSize(88,3)
-    colorTexture(row.trim,0.45,0.36,0.20,1)
-    row.iconFrame=row:CreateTexture(nil,"OVERLAY")
-    row.iconFrame:SetPoint("TOP",row,"TOP",0,-5)
-    row.iconFrame:SetSize(64,64)
-    row.iconFrame:SetTexture("Interface\\Buttons\\UI-Quickslot2")
-    row.icon=row:CreateTexture(nil,"ARTWORK")
-    row.icon:SetSize(52,52)
-    row.icon:SetPoint("TOP",row,"TOP",0,-10)
-    row.rankPlate=row:CreateTexture(nil,"BORDER")
-    row.rankPlate:SetPoint("TOP",row,"TOP",0,0)
-    row.rankPlate:SetSize(22,16)
-    colorTexture(row.rankPlate,0.13,0.11,0.10,0.95)
-    row.number=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-    row.number:SetPoint("TOP",row,"TOP",0,-1)
-    row.number:SetText(tostring(i))
-    row.number:SetTextColor(1,0.78,0.34)
-    local rankRule=row:CreateTexture(nil,"ARTWORK")
-    rankRule:SetPoint("TOPLEFT",row,"TOPLEFT",22,-11)
-    rankRule:SetSize(25,1)
-    colorTexture(rankRule,0.70,0.48,0.23,0.65)
-    local corner=row:CreateTexture(nil,"ARTWORK")
-    corner:SetPoint("TOPRIGHT",row,"TOPRIGHT",-4,-4)
-    corner:SetSize(10,2)
-    colorTexture(corner,0.95,0.70,0.29,0.90)
-    row.label=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    row.label:SetPoint("BOTTOM",row,"BOTTOM",0,4)
-    row.label:SetWidth(80)
-    row.label:SetHeight(28)
-    row.label:SetJustifyH("CENTER")
-    if row.label.SetJustifyV then row.label:SetJustifyV("MIDDLE") end
-    local labelShade=row:CreateTexture(nil,"BORDER")
-    labelShade:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",3,3)
-    labelShade:SetSize(82,33)
-    colorTexture(labelShade,0.025,0.035,0.055,0.90)
-    local divider=row:CreateTexture(nil,"ARTWORK")
-    divider:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",8,36)
-    divider:SetSize(72,1)
-    colorTexture(divider,0.62,0.43,0.21,0.70)
-    row.label:SetTextColor(0.95,0.88,0.72)
-    -- Render() owns the selected tile palette; do not override it with
-    -- competing hover scripts. The tooltip is installed during Render().
-    row:Hide()
-    rotationRows[i]=row
-  end
+
   setupLootControls(child)
   ForeverCompanionLootWorkspace.Create(child,openSection,render)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

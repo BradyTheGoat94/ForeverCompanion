@@ -1,7 +1,7 @@
 -- Historical catalog navigation. No boss tactics, rates or unlocks inferred.
 local E={dungeon="",boss="",query="",page=1,pageSize=4}
 ForeverCompanionEncounterBrowser=E
-local root,title,detail,buttons,host,navigate,rows,pageLabel,previous,nextPage
+local root,title,detail,buttons,host,navigate,rows,lootRows,pageLabel,previous,nextPage
 -- Only bosses represented in the attributed loot catalog are included.
 function E.Results(dungeon,query)
  local result={}
@@ -40,7 +40,7 @@ function E.Create(parent,openPage)
  local rail=root:CreateTexture(nil,"ARTWORK");rail:SetSize(770,2);rail:SetPoint("TOPLEFT",root,"TOPLEFT",0,0)
  if rail.SetColorTexture then rail:SetColorTexture(0.92,0.70,0.31,1) else rail:SetTexture(0.92,0.70,0.31,1) end
  title=label(root,16,-14,730,"GameFontNormalLarge");title:SetText("BOSS & LOOT REFERENCE");title:SetTextColor(0.96,0.76,0.39)
- local notice=label(root,16,-42,735);notice:SetText("Historical sourced catalog. Forever availability and mechanics unconfirmed; drop chances unknown.")
+ local notice=label(root,16,-42,735);notice:SetText("Forever loot reference. Hover an item to see its in-game stats.")
  buttons={}
  local captions={"Cycle dungeon","Clear search","Open boss loot"}
  for i=1,3 do
@@ -78,7 +78,15 @@ function E.Create(parent,openPage)
  nextPage=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");nextPage:SetSize(125,24);nextPage:SetPoint("TOPLEFT",root,"TOPLEFT",629,-270);nextPage:SetText("Next bosses")
  nextPage:SetScript("OnClick",function() E.page=E.page+1;ForeverCompanionRefresh() end)
  pageLabel=label(root,160,-277,455)
- detail=label(root,16,-307,735)
+ detail=label(root,16,-302,735)
+ lootRows={};E.lootRows=lootRows
+ for i=1,3 do
+  local row=CreateFrame("Button",nil,root,"UIPanelButtonTemplate")
+  row:SetSize(238,22);row:SetPoint("TOPLEFT",root,"TOPLEFT",16+(i-1)*247,-325)
+  row:SetScript("OnEnter",function(self) ForeverCompanionLoot.ShowItemTooltip(self,self.record) end)
+  row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+  lootRows[i]=row
+ end
  root:Hide()
 end
 function E.Render(tab,db)
@@ -103,6 +111,11 @@ function E.Render(tab,db)
  if previous.SetEnabled then previous:SetEnabled(E.page>1) end
  if nextPage.SetEnabled then nextPage:SetEnabled(E.page<pages) end
  if buttons[3].SetEnabled then buttons[3]:SetEnabled(E.boss~="") end
- detail:SetText(E.boss~="" and ("Selected: "..E.boss.." / "..#ForeverCompanionLoot.BossDrops(E.dungeon,E.boss).." attributed loot records.\nSearch only filters the list; selection, loot shortcut and research remain on this boss.\nPartial historical catalog; not a complete boss roster or verified Forever encounter guide.") or "No sourced bosses loaded. Role preparation remains available above.")
+ local drops=ForeverCompanionLoot.BossDrops(E.dungeon,E.boss)
+ detail:SetText(E.boss~="" and (E.boss.."  /  "..#drops.." listed drops") or "No listed boss drops.")
+ for i,row in ipairs(lootRows) do
+  row.record=drops[i]
+  if row.record then row:SetText(row.record.item);row:Show() else row:Hide() end
+ end
  root:Show()
 end

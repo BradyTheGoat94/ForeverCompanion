@@ -7,6 +7,18 @@ assert(#bosses>0,"expected sourced beta boss fixtures")
 for i=2,#bosses do assert(bosses[i-1]<bosses[i],"bosses sorted") end
 eq(#loot.BossDrops("The Deadmines","Not a boss"),0,"unknown boss")
 eq(#loot.BossDrops(nil,"Sneed"),0,"missing dungeon")
+local ids={}
+for _,record in ipairs(loot.records) do
+  assert(type(record.itemID)=="number" and not ids[record.itemID],"unique Forever item ID required")
+  assert(record.source:find("item="..record.itemID,1,true),"item source must match ID")
+  ids[record.itemID]=true
+end
+eq(#loot.records,27,"catalog size")
+for _,boss in ipairs({"Faldrim Anvilmar","Magmatus","Plunder","Durgen Dirgehammer"}) do
+  eq(#loot.BossDrops("Hall of Thanes",boss),3,"Hall of Thanes boss drops")
+end
+eq(loot.Find("Bandsaw Wristbands").boss,"Sneed","Bandsaw boss correction")
+assert(loot.Find("Dull Sawblade").status:find("Sources disagree",1,true),"preserve encounter-phase uncertainty")
 local drops=loot.BossDrops("The Deadmines","Sneed")
 assert(#drops>0,"expected Sneed fixture")
 local db={}
