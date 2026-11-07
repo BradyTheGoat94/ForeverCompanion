@@ -5,7 +5,10 @@ ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
 local rowCount=8
-local windowWidth=290
+local ROW_HEIGHT=25
+local ROW_STEP=27
+local BASE_HEIGHT=112
+local windowWidth=320
 local selectedRow=nil
 local detailOpen=false
 local detailRows={}
@@ -83,16 +86,16 @@ local function button(parent,label,width,x,callback)
 end
 local function build()
  frame=CreateFrame("Frame","ForeverCompanionCombatMeterWindow",UIParent,"BackdropTemplate")
- frame:SetSize(290,302)
+ frame:SetSize(320,328)
  frame:SetPoint("CENTER",UIParent,"CENTER",330,0)
  frame:SetFrameStrata("MEDIUM")
  frame:SetClampedToScreen(true)
  frame:SetMovable(true)
  if frame.SetResizable then frame:SetResizable(true) end
- if frame.SetResizeBounds then frame:SetResizeBounds(260,104+4*21,440,104+12*21)
+ if frame.SetResizeBounds then frame:SetResizeBounds(280,BASE_HEIGHT+4*ROW_STEP,500,BASE_HEIGHT+12*ROW_STEP)
  elseif frame.SetMinResize and frame.SetMaxResize then
-  frame:SetMinResize(260,104+4*21)
-  frame:SetMaxResize(440,104+12*21)
+  frame:SetMinResize(280,BASE_HEIGHT+4*ROW_STEP)
+  frame:SetMaxResize(500,BASE_HEIGHT+12*ROW_STEP)
  end
  frame:EnableMouse(true)
  frame:RegisterForDrag("LeftButton")
@@ -120,8 +123,8 @@ local function build()
   end
  end
  if safeNumber(db.rows) then rowCount=math.max(4,math.min(12,math.floor(db.rows))) end
- if safeNumber(db.width) then windowWidth=math.max(260,math.min(440,math.floor(db.width))) end
- frame:SetSize(windowWidth,104+rowCount*21)
+ if safeNumber(db.width) then windowWidth=math.max(280,math.min(500,math.floor(db.width))) end
+ frame:SetSize(windowWidth,BASE_HEIGHT+rowCount*ROW_STEP)
  if type(db.position)=="table" and safeNumber(db.position.x) and safeNumber(db.position.y) then
   frame:ClearAllPoints()
   frame:SetPoint("CENTER",UIParent,"CENTER",db.position.x,db.position.y)
@@ -144,8 +147,8 @@ local function build()
   if frame.StopMovingOrSizing then frame:StopMovingOrSizing() end
   local width,height=frame:GetWidth(),frame:GetHeight()
   if safeNumber(width) and safeNumber(height) then
-   M.SetWidth(math.max(260,math.min(440,math.floor(width+.5))))
-   M.SetRows(math.max(4,math.min(12,math.floor((height-104)/21+.5))))
+   M.SetWidth(math.max(280,math.min(500,math.floor(width+.5))))
+   M.SetRows(math.max(4,math.min(12,math.floor((height-BASE_HEIGHT)/ROW_STEP+.5))))
   end
   savePosition(frame)
  end)
@@ -163,7 +166,7 @@ local function build()
  heading:SetTextColor(.95,.98,1)
  heading:SetShadowOffset(1,-1)
  heading:SetShadowColor(0,0,0,.9)
- heading:SetText("Forever | Meter")
+ heading:SetText("FOREVER  /  COMBAT")
  local headerDivider=frame:CreateTexture(nil,"ARTWORK")
  headerDivider:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-46)
  headerDivider:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-13,-46)
@@ -172,7 +175,7 @@ local function build()
  local subtitle=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  subtitle:SetPoint("TOPLEFT",frame,"TOPLEFT",14,-29)
  subtitle:SetTextColor(.54,.75,.80)
- subtitle:SetText("LIVE • NATIVE COMBAT")
+ subtitle:SetText("DAMAGE  •  HEALING  •  ENCOUNTERS")
  -- Drag by the header as well as the body; do not drag on controls.
  dragHandle=CreateFrame("Frame",nil,frame)
  dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",4,-4)
@@ -238,8 +241,8 @@ local function build()
  rows={}
  for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
-  row:SetSize(windowWidth-18,19)
-  row:SetPoint("TOPLEFT",frame,"TOPLEFT",9,-68-(i-1)*21)
+  row:SetSize(windowWidth-18,ROW_HEIGHT)
+  row:SetPoint("TOPLEFT",frame,"TOPLEFT",9,-70-(i-1)*ROW_STEP)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row)
   bg:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97)
@@ -262,17 +265,22 @@ local function build()
   local valueShade=row:CreateTexture(nil,"ARTWORK")
   valueShade:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
   valueShade:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",0,0)
-  valueShade:SetWidth(100)
+  valueShade:SetWidth(112)
   valueShade:SetColorTexture(.008,.018,.026,.5)
+  local sheen=row:CreateTexture(nil,"OVERLAY")
+  sheen:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
+  sheen:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
+  sheen:SetHeight(2)
+  sheen:SetColorTexture(1,1,1,.12)
   local rank=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   rank:SetPoint("LEFT",row,"LEFT",5,0)
-  rank:SetWidth(18)
+  rank:SetWidth(19)
   rank:SetTextColor(.74,.81,.86)
   rank:SetShadowOffset(1,-1)
   rank:SetText(i)
   local classIcon=row:CreateTexture(nil,"OVERLAY")
-  classIcon:SetSize(15,15)
-  classIcon:SetPoint("LEFT",row,"LEFT",24,0)
+  classIcon:SetSize(19,19)
+  classIcon:SetPoint("LEFT",row,"LEFT",26,0)
   classIcon:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes")
   classIcon:Hide()
   local iconBorder=row:CreateTexture(nil,"ARTWORK")
@@ -281,19 +289,19 @@ local function build()
   iconBorder:SetColorTexture(.7,.79,.85,.55)
   iconBorder:SetDrawLayer("ARTWORK",-1)
   local name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  name:SetPoint("LEFT",row,"LEFT",42,0)
-  name:SetWidth(windowWidth-158)
+  name:SetPoint("LEFT",row,"LEFT",51,0)
+  name:SetWidth(windowWidth-160)
   name:SetJustifyH("LEFT")
   name:SetShadowOffset(1,-1)
   name:SetShadowColor(0,0,0,1)
   local amount=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  amount:SetPoint("RIGHT",row,"RIGHT",-5,0)
+  amount:SetPoint("RIGHT",row,"RIGHT",-9,0)
   amount:SetJustifyH("RIGHT")
   amount:SetShadowOffset(1,-1)
   amount:SetShadowColor(0,0,0,1)
   local accent=row:CreateTexture(nil,"OVERLAY")
   accent:SetPoint("LEFT",row,"LEFT",0,0)
-  accent:SetSize(3,19)
+  accent:SetSize(3,ROW_HEIGHT)
   accent:SetColorTexture(.18,.83,.96,1)
   local hover=row:CreateTexture(nil,"OVERLAY")
   hover:SetAllPoints(row)
@@ -362,7 +370,7 @@ local function build()
   if elapsed>=.4 then elapsed=0;M.Refresh() end
  end)
  detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
- detailPanel:SetSize(290,110+8*23)
+ detailPanel:SetSize(340,110+8*23)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  if detailPanel.SetBackdrop then
   detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -392,11 +400,11 @@ local function build()
   icon:Hide()
   local label=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-35-(i-1)*23)
-  label:SetWidth(153)
+  label:SetWidth(194)
   label:SetJustifyH("LEFT")
   local value=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-35-(i-1)*23)
-  value:SetWidth(85)
+  value:SetWidth(95)
   value:SetJustifyH("RIGHT")
   detailRows[i]={label=label,value=value,icon=icon}
  end
@@ -603,7 +611,7 @@ function M.Toggle()
 end
 function M.SetWidth(width)
  if issecretvalue and issecretvalue(width) then return false end
- if type(width)~="number" or width~=width or width==math.huge or width==-math.huge or width~=math.floor(width) or width<260 or width>440 then return false end
+ if type(width)~="number" or width~=width or width==math.huge or width==-math.huge or width~=math.floor(width) or width<280 or width>500 then return false end
  saved().width=width
  windowWidth=width
  if frame then
@@ -611,7 +619,7 @@ function M.SetWidth(width)
   notice:SetWidth(width-100)
   for _,row in ipairs(rows) do
    row.frame:SetWidth(width-18)
-   row.name:SetWidth(width-158)
+   row.name:SetWidth(width-160)
   end
   if detailLabel then detailLabel:SetWidth(width-26) end
 
@@ -625,7 +633,7 @@ function M.SetRows(count)
  saved().rows=count
  rowCount=count
  if selectedRow and selectedRow>rowCount then selectedRow=nil;detailOpen=false end
- if frame then frame:SetHeight(104+rowCount*21) end
+ if frame then frame:SetHeight(BASE_HEIGHT+rowCount*ROW_STEP) end
  M.Refresh()
  return true
 end
@@ -634,9 +642,9 @@ end
 function M.SetLayout(layout)
  if layout~="compact" and layout~="standard" and layout~="expanded" then return false end
  local width,count
- if layout=="compact" then width,count=260,4
- elseif layout=="standard" then width,count=290,8
- else width,count=400,12 end
+ if layout=="compact" then width,count=280,4
+ elseif layout=="standard" then width,count=320,8
+ else width,count=440,12 end
  M.SetWidth(width)
  M.SetRows(count)
  saved().layout=layout
