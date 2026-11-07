@@ -13,6 +13,7 @@ local selectedRow=nil
 local detailOpen=false
 local detailRows={}
 local detailPanel,detailTitle,detailClose
+local detailSummary={}
 local detailTabs={}
 local detailTab="Spells"
 local detailLabel
@@ -427,7 +428,7 @@ local function build()
   if elapsed>=.4 then elapsed=0;M.Refresh() end
  end)
  detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
- detailPanel:SetSize(340,120+8*27)
+ detailPanel:SetSize(600,120+8*27)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  if detailPanel.SetBackdrop then
   detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -459,6 +460,29 @@ local function build()
  detailTrim:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",1,-1)
  detailTrim:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-1,-1)
  detailTrim:SetHeight(3)
+ local summaryPanel=CreateFrame("Frame",nil,detailPanel,"BackdropTemplate")
+ summaryPanel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-9,-66)
+ summaryPanel:SetSize(242,238)
+ if summaryPanel.SetBackdrop then
+  summaryPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+  summaryPanel:SetBackdropColor(.025,.035,.055,.92)
+  summaryPanel:SetBackdropBorderColor(.23,.29,.38,.9)
+ end
+ local summaryHeading=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
+ summaryHeading:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-13)
+ summaryHeading:SetText("PLAYER SUMMARY")
+ for i,key in ipairs({"Total","Per second","Metric","Session"}) do
+  local label=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  label:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-44-(i-1)*36)
+  label:SetText(key)
+  label:SetTextColor(.7,.78,.85)
+  local value=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  value:SetPoint("TOPRIGHT",summaryPanel,"TOPRIGHT",-12,-44-(i-1)*36)
+  value:SetWidth(124)
+  value:SetJustifyH("RIGHT")
+  value:SetTextColor(.98,.94,.84)
+  detailSummary[i]=value
+ end
  for i=1,8 do
   local stripe=detailPanel:CreateTexture(nil,"BACKGROUND")
   stripe:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",8,-66-(i-1)*27)
@@ -647,6 +671,12 @@ function M.Refresh()
    if not (issecretvalue and issecretvalue(selectedName)) and type(selectedName)=="string" then
     detailTitle:SetText(selectedName.."  /  "..metrics[metricIndex][1])
    end
+  end
+  if type(selected)=="table" and #detailSummary==4 then
+   detailSummary[1]:SetText(selected.totalAmount)
+   detailSummary[2]:SetText(selected.amountPerSecond)
+   detailSummary[3]:SetText(metrics[metricIndex][1])
+   detailSummary[4]:SetText(sessions[sessionIndex][1])
   end
   local safeToInspect=not (InCombatLockdown and InCombatLockdown())
   local breakdown
