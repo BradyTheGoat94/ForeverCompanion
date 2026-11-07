@@ -162,14 +162,14 @@ local function showServices(canvas,mapID,scale)
  local groups,ordered={},{}
  -- Recycled pins must never survive a map, zoom, or visibility change.
  for _,oldPin in ipairs(servicePins) do oldPin:Hide() end
- -- Keep essential services visible at broad zoom; reveal individual vendors
- -- and trainers as the player zooms into a town. Never invent POIs.
+ -- Show all documented service types on every mapped zone. At broad zoom
+ -- cluster same-category markers; zooming in reveals individual NPCs.
  local detailed=scale>=1.25
  local radius=detailed and 18 or 42
  for _,point in ipairs(points) do
-  local essential=point.symbol=="B" or point.symbol=="AH"
-   or point.symbol=="F" or point.symbol=="M" or point.symbol=="I"
-  if detailed or essential then
+  -- Display every supported service category in every mapped zone.
+  -- Broad zoom groups nearby pins by category to limit clutter.
+  if point.symbol and point.x and point.y then
    -- At close zoom, retain each known NPC rather than collapsing nearby
    -- vendors into one icon. Broad zoom still groups by service and location.
    local key=detailed and (point.symbol..":"..point.label..":"..string.format("%.5f",point.x)..":"..string.format("%.5f",point.y))
