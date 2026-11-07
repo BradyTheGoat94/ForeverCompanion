@@ -711,10 +711,14 @@ function M.Refresh()
   -- Find the largest inspectable spell amount instead of assuming the
   -- native API sorts spell entries by damage. Never inspect secret amounts.
   local spellMaximum=0
+  local spellTotal=0
   if detailTab=="Spells" and type(spells)=="table" then
    for _,entry in ipairs(spells) do
     if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>spellMaximum then
      spellMaximum=entry.totalAmount
+    end
+    if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>0 then
+     spellTotal=spellTotal+entry.totalAmount
     end
    end
   end
@@ -739,7 +743,7 @@ function M.Refresh()
     if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
      item.bar:SetMinMaxValues(0,maxAmount)
      item.bar:SetValue(amount)
-     item.percent:SetText(string.format("%.1f%%",100*amount/maxAmount))
+     item.percent:SetText(spellTotal>0 and string.format("%.1f%%",100*amount/spellTotal) or "")
     else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0);item.percent:SetText("") end
    else
     item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
