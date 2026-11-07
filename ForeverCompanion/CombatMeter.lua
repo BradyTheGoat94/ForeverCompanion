@@ -13,6 +13,8 @@ local selectedRow=nil
 local detailOpen=false
 local detailRows={}
 local detailPanel,detailTitle,detailClose
+local detailTabs={}
+local detailTab="Spells"
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -394,7 +396,7 @@ local function build()
   if elapsed>=.4 then elapsed=0;M.Refresh() end
  end)
  detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
- detailPanel:SetSize(340,110+8*23)
+ detailPanel:SetSize(340,120+8*27)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  if detailPanel.SetBackdrop then
   detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -403,10 +405,24 @@ local function build()
  end
  detailTitle=detailPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  detailTitle:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-12)
- detailTitle:SetText("SPELL BREAKDOWN")
+ detailTitle:SetText("PLAYER  /  DAMAGE DONE")
  detailClose=CreateFrame("Button",nil,detailPanel,"UIPanelCloseButton")
  detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",2,2)
  detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;M.Refresh() end)
+ -- Screenshot-inspired tab strip. Only Spells is populated from verified
+ -- native breakdown data; unsupported views are explicitly labeled.
+ local tabNames={"Spells","Auras","Targets","Compare"}
+ for i,tabName in ipairs(tabNames) do
+  local tab=CreateFrame("Button",nil,detailPanel,"UIPanelButtonTemplate")
+  tab:SetSize(77,24)
+  tab:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",9+(i-1)*81,-32)
+  tab:SetText(tabName)
+  tab:SetScript("OnClick",function()
+   detailTab=tabName
+   M.Refresh()
+  end)
+  detailTabs[i]=tab
+ end
  local detailTrim=detailPanel:CreateTexture(nil,"ARTWORK")
  detailTrim:SetColorTexture(.85,.62,.29,1)
  detailTrim:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",1,-1)
@@ -414,20 +430,20 @@ local function build()
  detailTrim:SetHeight(3)
  for i=1,8 do
   local stripe=detailPanel:CreateTexture(nil,"BACKGROUND")
-  stripe:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",8,-31-(i-1)*23)
+  stripe:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",8,-66-(i-1)*27)
   stripe:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-8,-31-(i-1)*23)
-  stripe:SetHeight(22)
+  stripe:SetHeight(25)
   stripe:SetColorTexture(i%2==0 and .045 or .065,i%2==0 and .075 or .095,i%2==0 and .105 or .135,.85)
   local icon=detailPanel:CreateTexture(nil,"ARTWORK")
   icon:SetSize(17,17)
-  icon:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-33-(i-1)*23)
+  icon:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-69-(i-1)*27)
   icon:Hide()
   local label=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-35-(i-1)*23)
+  label:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-70-(i-1)*27)
   label:SetWidth(194)
   label:SetJustifyH("LEFT")
   local value=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-35-(i-1)*23)
+  value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-70-(i-1)*27)
   value:SetWidth(95)
   value:SetJustifyH("RIGHT")
   detailRows[i]={label=label,value=value,icon=icon}
@@ -599,9 +615,15 @@ function M.Refresh()
    end
   end
   local spells=type(breakdown)=="table" and breakdown.combatSpells
-  detailTitle:SetText(safeToInspect and "SPELL BREAKDOWN  |  BETA" or "SPELLS  |  AFTER COMBAT")
+  detailTitle:SetText(detailTab=="Spells" and
+   (safeToInspect and "PLAYER  /  SPELL DAMAGE" or "PLAYER  /  AFTER COMBAT")
+   or ("PLAYER  /  "..detailTab:upper()))
+  for _,tab in ipairs(detailTabs) do
+   local active=tab:GetText()==detailTab
+   tab:GetFontString():SetTextColor(active and 1 or .65,active and .82 or .72,active and .98 or .8)
+  end
   for i,item in ipairs(detailRows) do
-   local spell=type(spells)=="table" and spells[i]
+   local spell=detailTab=="Spells" and type(spells)=="table" and spells[i]
    if type(spell)=="table" then
     local spellID=spell.spellID
     if issecretvalue and issecretvalue(spellID) then spellID=nil end
@@ -617,7 +639,7 @@ function M.Refresh()
     else item.icon:Hide() end
     item.value:SetText(spell.totalAmount)
    else
-    item.label:SetText(i==1 and (safeToInspect and "No spell data available" or "Available after combat") or "")
+    item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
     item.value:SetText("")
     item.icon:Hide()
    end
