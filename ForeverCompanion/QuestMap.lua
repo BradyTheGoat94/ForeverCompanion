@@ -207,9 +207,19 @@ local function showServices(canvas,mapID,scale)
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     GameTooltip:SetText(self.locations[1].service)
-    local seen={}
+    local seen,count,displayed={},0,0
     for _,entry in ipairs(self.locations) do
-     if not seen[entry.label] then GameTooltip:AddLine(entry.label,.8,.9,1,true);seen[entry.label]=true end
+     if not seen[entry.label] then
+      seen[entry.label]=true
+      count=count+1
+      if displayed<6 then
+       GameTooltip:AddLine(entry.label,.8,.9,1,true)
+       displayed=displayed+1
+      end
+     end
+    end
+    if count>displayed then
+     GameTooltip:AddLine("+"..(count-displayed).." more nearby locations",.65,.78,.85)
     end
     GameTooltip:AddLine("QuestieDB reference  ·  Click for arrow",.65,.78,.85)
     GameTooltip:Show()
