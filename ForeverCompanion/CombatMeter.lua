@@ -406,6 +406,7 @@ local function build()
     saved().metric=metrics[metricIndex][1]
    else
     selectedRow=(selectedRow==i) and nil or i
+    spellPage=1
     detailOpen=selectedRow~=nil
    end
    M.Refresh()
@@ -491,13 +492,13 @@ local function build()
  local summaryHeading=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  summaryHeading:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-13)
  summaryHeading:SetText("PLAYER SUMMARY")
- for i,key in ipairs({"Total","Per second","Metric","Session"}) do
+ for i,key in ipairs({"Total","Per second","Metric","Session","Spell coverage"}) do
   local label=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  label:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-44-(i-1)*36)
+  label:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-44-(i-1)*33)
   label:SetText(key)
   label:SetTextColor(.7,.78,.85)
   local value=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  value:SetPoint("TOPRIGHT",summaryPanel,"TOPRIGHT",-12,-44-(i-1)*36)
+  value:SetPoint("TOPRIGHT",summaryPanel,"TOPRIGHT",-12,-44-(i-1)*33)
   value:SetWidth(124)
   value:SetJustifyH("RIGHT")
   value:SetTextColor(.98,.94,.84)
@@ -703,7 +704,7 @@ function M.Refresh()
     detailTitle:SetText(selectedName.."  /  "..metrics[metricIndex][1])
    end
   end
-  if type(selected)=="table" and #detailSummary==4 then
+  if type(selected)=="table" and #detailSummary==5 then
    detailSummary[1]:SetText(selected.totalAmount)
    detailSummary[2]:SetText(selected.amountPerSecond)
    detailSummary[3]:SetText(metrics[metricIndex][1])
@@ -764,6 +765,14 @@ function M.Refresh()
    detailPanel.nextSpells:SetEnabled(detailTab=="Spells" and spellPage<pageCount)
   end
   if spellPageLabel then spellPageLabel:SetText(spellPage.."/"..pageCount) end
+  -- Coverage compares the sum of inspectable spell entries to the native
+  -- player total. Hide it if any amount is secret or not numeric.
+  if #detailSummary==5 then
+   local nativeTotal=type(selected)=="table" and selected.totalAmount
+   if safeNumber(nativeTotal) and nativeTotal>0 and spellTotal>0 then
+    detailSummary[5]:SetText(string.format("%.1f%%",100*spellTotal/nativeTotal))
+   else detailSummary[5]:SetText("N/A") end
+  end
   for i,item in ipairs(detailRows) do
    local spell=detailTab=="Spells" and type(spells)=="table" and spells[(spellPage-1)*8+i]
    if type(spell)=="table" then
