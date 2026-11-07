@@ -16,6 +16,8 @@ local detailPanel,detailTitle,detailClose
 local detailSummary={}
 local detailTabs={}
 local detailTab="Spells"
+local spellPage=1
+local spellPageLabel
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -452,10 +454,27 @@ local function build()
   tab:SetText(tabName)
   tab:SetScript("OnClick",function()
    detailTab=tabName
+   spellPage=1
    M.Refresh()
   end)
   detailTabs[i]=tab
  end
+ local prevSpells=CreateFrame("Button",nil,detailPanel,"UIPanelButtonTemplate")
+ prevSpells:SetSize(24,22)
+ prevSpells:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-91,-33)
+ prevSpells:SetText("<")
+ prevSpells:SetScript("OnClick",function() spellPage=math.max(1,spellPage-1);M.Refresh() end)
+ local nextSpells=CreateFrame("Button",nil,detailPanel,"UIPanelButtonTemplate")
+ nextSpells:SetSize(24,22)
+ nextSpells:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-33)
+ nextSpells:SetText(">")
+ nextSpells:SetScript("OnClick",function() spellPage=spellPage+1;M.Refresh() end)
+ spellPageLabel=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ spellPageLabel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-41,-39)
+ spellPageLabel:SetWidth(47)
+ spellPageLabel:SetJustifyH("CENTER")
+ detailPanel.prevSpells=prevSpells
+ detailPanel.nextSpells=nextSpells
  local detailTrim=detailPanel:CreateTexture(nil,"ARTWORK")
  detailTrim:SetColorTexture(.85,.62,.29,1)
  detailTrim:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",1,-1)
@@ -729,8 +748,15 @@ function M.Refresh()
     end
    end
   end
+  local pageCount=type(spells)=="table" and math.max(1,math.ceil(#spells/8)) or 1
+  if spellPage>pageCount then spellPage=pageCount end
+  if detailPanel.prevSpells then
+   detailPanel.prevSpells:SetEnabled(detailTab=="Spells" and spellPage>1)
+   detailPanel.nextSpells:SetEnabled(detailTab=="Spells" and spellPage<pageCount)
+  end
+  if spellPageLabel then spellPageLabel:SetText(spellPage.."/"..pageCount) end
   for i,item in ipairs(detailRows) do
-   local spell=detailTab=="Spells" and type(spells)=="table" and spells[i]
+   local spell=detailTab=="Spells" and type(spells)=="table" and spells[(spellPage-1)*8+i]
    if type(spell)=="table" then
     local spellID=spell.spellID
     if issecretvalue and issecretvalue(spellID) then spellID=nil end
