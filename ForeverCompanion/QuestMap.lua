@@ -160,6 +160,8 @@ local function showServices(canvas,mapID,scale)
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  local groups,ordered={},{}
+ -- Recycled pins must never survive a map, zoom, or visibility change.
+ for _,oldPin in ipairs(servicePins) do oldPin:Hide() end
  -- Keep essential services visible at broad zoom; reveal individual vendors
  -- and trainers as the player zooms into a town. Never invent POIs.
  local detailed=scale>=1.25
@@ -201,6 +203,7 @@ local function showServices(canvas,mapID,scale)
    pin.border=border
    sharpenOverlay(border)
    pin:SetScript("OnEnter",function(self)
+    if self.border then self.border:SetVertexColor(1,1,1,1) end
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     GameTooltip:SetText(self.locations[1].service)
@@ -211,7 +214,12 @@ local function showServices(canvas,mapID,scale)
     GameTooltip:AddLine("QuestieDB reference  ·  Click for arrow",.65,.78,.85)
     GameTooltip:Show()
    end)
-   pin:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+   pin:SetScript("OnLeave",function(self)
+    if self.border and self.markerColor then
+     self.border:SetVertexColor(self.markerColor[1],self.markerColor[2],self.markerColor[3],1)
+    end
+    if GameTooltip then GameTooltip:Hide() end
+   end)
    pin:SetScript("OnClick",function(self)
     local target=self.locations[1]
     guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,target.label))
@@ -224,12 +232,15 @@ local function showServices(canvas,mapID,scale)
   pin.icon:SetTexture(serviceArtwork[point.symbol] or serviceArtwork.V)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
+   pin.markerColor={1,.8,.35}
    pin.border:SetVertexColor(1,.8,.35,1)
   elseif point.symbol=="F" or point.symbol=="M" then
    pin.background:SetColorTexture(.025,.12,.16,.96)
+   pin.markerColor={.4,.9,1}
    pin.border:SetVertexColor(.4,.9,1,1)
   else
    pin.background:SetColorTexture(.025,.055,.09,.96)
+   pin.markerColor={.7,.82,.94}
    pin.border:SetVertexColor(.7,.82,.94,1)
   end
   local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
