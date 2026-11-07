@@ -143,6 +143,18 @@ local function townsEnabled()
  return not ForeverCompanionDB or ForeverCompanionDB.questMapHideTowns~=true
 end
 
+-- Built-in Blizzard icon textures; no letter tiles or external assets.
+-- All paths use shipped game artwork. Unknown services use a bag icon.
+local serviceArtwork={
+ B="Interface\\Icons\\INV_Misc_Bag_10",
+ AH="Interface\\Icons\\INV_Misc_Coin_01",
+ F="Interface\\Icons\\Ability_Mount_Wyvern_01",
+ I="Interface\\Icons\\INV_Misc_Food_15",
+ R="Interface\\Icons\\Trade_BlackSmithing",
+ V="Interface\\Icons\\INV_Misc_Bag_08",
+ T="Interface\\Icons\\INV_Misc_Book_09",
+ M="Interface\\Icons\\INV_Letter_15",
+}
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
@@ -170,13 +182,24 @@ local function showServices(canvas,mapID,scale)
   if not pin then
    pin=CreateFrame("Button",nil,canvas)
    pin:RegisterForClicks("LeftButtonUp")
-   pin:SetSize(25,19)
+   pin:SetSize(25,25)
    local bg=pin:CreateTexture(nil,"BACKGROUND")
-   bg:SetAllPoints(pin);bg:SetColorTexture(.07,.21,.37,.96)
+   bg:SetAllPoints(pin)
+   bg:SetColorTexture(.015,.025,.04,.94)
    pin.background=bg
    sharpenOverlay(bg)
-   pin.label=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-   pin.label:SetPoint("CENTER")
+   local icon=pin:CreateTexture(nil,"ARTWORK")
+   icon:SetPoint("TOPLEFT",pin,"TOPLEFT",3,-3)
+   icon:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",-3,3)
+   icon:SetTexCoord(.07,.93,.07,.93)
+   pin.icon=icon
+   sharpenOverlay(icon)
+   local border=pin:CreateTexture(nil,"OVERLAY")
+   border:SetPoint("TOPLEFT",pin,"TOPLEFT",-1,1)
+   border:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",1,-1)
+   border:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+   pin.border=border
+   sharpenOverlay(border)
    pin:SetScript("OnEnter",function(self)
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
@@ -197,19 +220,17 @@ local function showServices(canvas,mapID,scale)
   end
   local point=group[1]
   pin.locations=group
-  pin.label:SetText(point.symbol)
-  -- Use compact category-specific symbols so the map remains legible when
-  -- several service types share a building or city block.
-  pin.label:SetTextColor(1,.96,.82)
-  if point.symbol=="AH" then pin:SetSize(29,19)
-  elseif point.symbol=="B" then pin:SetSize(23,19)
-  else pin:SetSize(25,19) end
-  if pin.background then
-   if point.symbol=="B" or point.symbol=="AH" then
-    pin.background:SetColorTexture(.47,.31,.10,.97)
-   elseif point.symbol=="F" or point.symbol=="M" then
-    pin.background:SetColorTexture(.12,.34,.42,.97)
-   else pin.background:SetColorTexture(.09,.23,.35,.97) end
+  pin:SetSize(detailed and 27 or 23,detailed and 27 or 23)
+  pin.icon:SetTexture(serviceArtwork[point.symbol] or serviceArtwork.V)
+  if point.symbol=="B" or point.symbol=="AH" then
+   pin.background:SetColorTexture(.16,.11,.035,.96)
+   pin.border:SetVertexColor(1,.8,.35,1)
+  elseif point.symbol=="F" or point.symbol=="M" then
+   pin.background:SetColorTexture(.025,.12,.16,.96)
+   pin.border:SetVertexColor(.4,.9,1,1)
+  else
+   pin.background:SetColorTexture(.025,.055,.09,.96)
+   pin.border:SetVertexColor(.7,.82,.94,1)
   end
   local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
   pin:SetFrameLevel(canvas:GetFrameLevel()+priority)
