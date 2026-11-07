@@ -673,6 +673,16 @@ function M.Refresh()
    local active=tab:GetText()==detailTab
    tab:GetFontString():SetTextColor(active and 1 or .65,active and .82 or .72,active and .98 or .8)
   end
+  -- Find the largest inspectable spell amount instead of assuming the
+  -- native API sorts spell entries by damage. Never inspect secret amounts.
+  local spellMaximum=0
+  if detailTab=="Spells" and type(spells)=="table" then
+   for _,entry in ipairs(spells) do
+    if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>spellMaximum then
+     spellMaximum=entry.totalAmount
+    end
+   end
+  end
   for i,item in ipairs(detailRows) do
    local spell=detailTab=="Spells" and type(spells)=="table" and spells[i]
    if type(spell)=="table" then
@@ -690,7 +700,7 @@ function M.Refresh()
     else item.icon:Hide() end
     item.value:SetText(spell.totalAmount)
     local amount=spell.totalAmount
-    local maxAmount=type(spells)=="table" and spells[1] and spells[1].totalAmount
+    local maxAmount=spellMaximum
     if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
      item.bar:SetMinMaxValues(0,maxAmount)
      item.bar:SetValue(amount)
