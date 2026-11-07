@@ -7,7 +7,7 @@ local pastIndex=1
 local rowCount=8
 local ROW_HEIGHT=25
 local ROW_STEP=27
-local BASE_HEIGHT=112
+local BASE_HEIGHT=142
 local windowWidth=320
 local selectedRow=nil
 local detailOpen=false
@@ -277,13 +277,15 @@ local function build()
  nextButton:ClearAllPoints()
  nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-15,8)
  local footer=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,10)
- footer:SetTextColor(.72,.76,.84)
+ footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,32)
+ footer:SetTextColor(.86,.9,.96)
+ footer:SetWidth(windowWidth-24)
+ footer:SetJustifyH("LEFT")
  footer:SetText("Current Fight")
  frame.meterFooter=footer
  local footerRule=frame:CreateTexture(nil,"ARTWORK")
- footerRule:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,30)
- footerRule:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-9,30)
+ footerRule:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,72)
+ footerRule:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-9,72)
  footerRule:SetHeight(1)
  footerRule:SetColorTexture(.25,.28,.35,.7)
  rows={}
@@ -314,7 +316,12 @@ local function build()
   valueShade:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
   valueShade:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",0,0)
   valueShade:SetWidth(112)
-  valueShade:SetColorTexture(.008,.018,.026,.5)
+  valueShade:SetColorTexture(.005,.009,.016,.92)
+  -- Readable text well over vivid class bars; preserve the class-colored fill.
+  local nameShade=row:CreateTexture(nil,"OVERLAY")
+  nameShade:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
+  nameShade:SetPoint("BOTTOMRIGHT",valueShade,"BOTTOMLEFT",0,0)
+  nameShade:SetColorTexture(.008,.014,.025,.53)
   local sheen=row:CreateTexture(nil,"OVERLAY")
   sheen:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
   sheen:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
@@ -356,6 +363,7 @@ local function build()
   name:SetShadowColor(0,0,0,1)
   local amount=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   amount:SetPoint("RIGHT",row,"RIGHT",-9,0)
+  amount:SetWidth(96)
   amount:SetJustifyH("RIGHT")
   amount:SetShadowOffset(1,-1)
   amount:SetShadowColor(0,0,0,1)
@@ -412,19 +420,19 @@ local function build()
    M.Refresh()
   end)
   name:SetTextColor(1,1,1)
-  amount:SetTextColor(1,.97,.87)
+  amount:SetTextColor(1,1,1)
   rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail}
   if i>rowCount then row:Hide() end
  end
  detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,29)
+ detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,53)
  detailLabel:SetWidth(windowWidth-26)
  detailLabel:SetJustifyH("LEFT")
  detailLabel:SetTextColor(.98,.78,.45)
  detailLabel:SetText("Select a player row for details")
  notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,12)
- notice:SetWidth(windowWidth-100)
+ notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,13)
+ notice:SetWidth(windowWidth-24)
  notice:SetTextColor(.65,.76,.84)
  frame:SetScript("OnUpdate",function(_,dt)
   elapsed=elapsed+dt
