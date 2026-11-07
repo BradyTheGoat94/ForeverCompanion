@@ -273,6 +273,16 @@ local function build()
  previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-45,8)
  nextButton:ClearAllPoints()
  nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-15,8)
+ local footer=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,10)
+ footer:SetTextColor(.72,.76,.84)
+ footer:SetText("Current Fight")
+ frame.meterFooter=footer
+ local footerRule=frame:CreateTexture(nil,"ARTWORK")
+ footerRule:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,30)
+ footerRule:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-9,30)
+ footerRule:SetHeight(1)
+ footerRule:SetColorTexture(.25,.28,.35,.7)
  rows={}
  for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
@@ -501,6 +511,9 @@ function M.Refresh()
  if not frame or not frame:IsShown() then return end
  modeButton:SetText(metrics[metricIndex][1])
  sessionButton:SetText(sessions[sessionIndex][1])
+ if frame.meterFooter then
+  frame.meterFooter:SetText(sessions[sessionIndex][1].." Fight  /  "..metrics[metricIndex][1])
+ end
  local isPast=sessionIndex==2
  previousButton:SetShown(isPast)
  nextButton:SetShown(isPast)
@@ -622,6 +635,12 @@ function M.Refresh()
    end
   end
   local selected=sources[selectedRow]
+  if type(selected)=="table" then
+   local selectedName=selected.name
+   if not (issecretvalue and issecretvalue(selectedName)) and type(selectedName)=="string" then
+    detailTitle:SetText(selectedName.."  /  "..metrics[metricIndex][1])
+   end
+  end
   local safeToInspect=not (InCombatLockdown and InCombatLockdown())
   local breakdown
   if safeToInspect and type(selected)=="table" and type(C_DamageMeter)=="table" then
