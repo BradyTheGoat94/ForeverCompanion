@@ -689,9 +689,9 @@ function M.Refresh()
      item.icon:Show()
     else item.icon:Hide() end
     item.value:SetText(spell.totalAmount)
-    local amount=safeNumber(spell.totalAmount)
-    local maxAmount=safeNumber(type(spells)=="table" and spells[1] and spells[1].totalAmount)
-    if amount and maxAmount and maxAmount>0 then
+    local amount=spell.totalAmount
+    local maxAmount=type(spells)=="table" and spells[1] and spells[1].totalAmount
+    if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
      item.bar:SetMinMaxValues(0,maxAmount)
      item.bar:SetValue(amount)
     else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0) end
