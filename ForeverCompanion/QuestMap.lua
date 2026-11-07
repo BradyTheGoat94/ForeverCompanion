@@ -238,7 +238,8 @@ local function showServices(canvas,mapID,scale)
   end
   local point=group[1]
   pin.locations=group
-  pin:SetSize(detailed and 27 or 23,detailed and 27 or 23)
+  -- Smaller, less intrusive POI icons at both zoom levels.
+  pin:SetSize(detailed and 20 or 16,detailed and 20 or 16)
   pin.icon:SetTexture(serviceArtwork[point.symbol] or serviceArtwork.V)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
