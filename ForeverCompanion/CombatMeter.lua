@@ -748,15 +748,18 @@ function M.Refresh()
   -- native API sorts spell entries by damage. Never inspect secret amounts.
   local spellMaximum=0
   local spellTotal=0
+  local allSpellAmountsSafe=type(spells)=="table" and #spells>0
   if detailTab=="Spells" and type(spells)=="table" then
    for _,entry in ipairs(spells) do
-    if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>spellMaximum then
-     spellMaximum=entry.totalAmount
-    end
-    if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>0 then
+    if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>=0 then
      spellTotal=spellTotal+entry.totalAmount
+     if entry.totalAmount>spellMaximum then spellMaximum=entry.totalAmount end
+    else
+     allSpellAmountsSafe=false
     end
    end
+  else
+   allSpellAmountsSafe=false
   end
   local pageCount=type(spells)=="table" and math.max(1,math.ceil(#spells/8)) or 1
   if spellPage>pageCount then spellPage=pageCount end
@@ -769,7 +772,7 @@ function M.Refresh()
   -- player total. Hide it if any amount is secret or not numeric.
   if #detailSummary==5 then
    local nativeTotal=type(selected)=="table" and selected.totalAmount
-   if safeNumber(nativeTotal) and nativeTotal>0 and spellTotal>0 then
+   if allSpellAmountsSafe and safeNumber(nativeTotal) and nativeTotal>0 and spellTotal>0 and spellTotal<=nativeTotal then
     detailSummary[5]:SetText(string.format("%.1f%%",100*spellTotal/nativeTotal))
    else detailSummary[5]:SetText("N/A") end
   end
@@ -794,7 +797,7 @@ function M.Refresh()
     if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
      item.bar:SetMinMaxValues(0,maxAmount)
      item.bar:SetValue(amount)
-     item.percent:SetText(spellTotal>0 and string.format("%.1f%%",100*amount/spellTotal) or "")
+     item.percent:SetText(allSpellAmountsSafe and spellTotal>0 and string.format("%.1f%%",100*amount/spellTotal) or "")
     else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0);item.percent:SetText("") end
    else
     item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
