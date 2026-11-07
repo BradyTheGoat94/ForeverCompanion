@@ -283,6 +283,7 @@ local function build()
     GameTooltip:SetText(self.sourceLabel)
     GameTooltip:AddLine("Left-click: spell breakdown",.8,.9,1)
     GameTooltip:AddLine("Right-click: next damage/healing view",.8,.9,1)
+    GameTooltip:AddLine("Mouse wheel: cycle damage/healing views",.65,.85,.92)
     GameTooltip:Show()
    end
   end)
