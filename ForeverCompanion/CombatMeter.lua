@@ -765,6 +765,13 @@ function M.Refresh()
   else
    allSpellAmountsSafe=false
   end
+  -- Tab availability is explicit: do not suggest unsupported native data
+  -- is implemented just because the visual tab exists.
+  if detailPanel.prevSpells then
+   detailPanel.prevSpells:SetShown(detailTab=="Spells")
+   detailPanel.nextSpells:SetShown(detailTab=="Spells")
+  end
+  if spellPageLabel then spellPageLabel:SetShown(detailTab=="Spells") end
   local pageCount=type(spells)=="table" and math.max(1,math.ceil(#spells/8)) or 1
   if spellPage>pageCount then spellPage=pageCount end
   if detailPanel.prevSpells then
