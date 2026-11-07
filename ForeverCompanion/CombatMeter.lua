@@ -17,6 +17,12 @@ local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
+local skins={
+ details={background={.012,.018,.027,.98},border={.24,.31,.36,1},accent={.22,.82,.96,1},rail={.025,.038,.052,.95},barAlpha=.92,texture="Interface\\\\TargetingFrame\\\\UI-StatusBar"},
+ recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},barAlpha=.83,texture="Interface\\\\Buttons\\\\WHITE8X8"}
+}
+local skinName="details"
+local function skin() return skins[skinName] or skins.details end
 local elapsed=0
 local function availableHistory()
  local api=C_DamageMeter
@@ -112,6 +118,7 @@ local function build()
   frame:SetBackdropBorderColor(.24,.31,.36,1)
  end
  local db=saved()
+ if skins[db.skin] then skinName=db.skin end
  if type(db.metric)=="string" then
   for i,item in ipairs(metrics) do
    if item[1]==db.metric then metricIndex=i;break end
@@ -158,6 +165,7 @@ local function build()
  resizeGrip:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
  local trim=frame:CreateTexture(nil,"ARTWORK")
  trim:SetColorTexture(.22,.82,.96,1)
+ frame.meterTrim=trim
  trim:SetPoint("TOPLEFT",1,-1)
  trim:SetPoint("TOPRIGHT",-1,-1)
  trim:SetHeight(3)
@@ -352,7 +360,7 @@ local function build()
   end)
   name:SetTextColor(1,1,1)
   amount:SetTextColor(1,.97,.87)
-  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon}
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail}
   if i>rowCount then row:Hide() end
  end
  detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
@@ -410,6 +418,27 @@ local function build()
  end
  detailPanel:Hide()
  frame:Hide()
+ M.SetSkin(skinName)
+end
+function M.SetSkin(name)
+ if type(name)~="string" then return false end
+ name=name:lower()
+ if not skins[name] then return false end
+ skinName=name
+ saved().skin=name
+ if frame then
+  local style=skin()
+  if frame.SetBackdropColor then frame:SetBackdropColor(unpack(style.background)) end
+  if frame.SetBackdropBorderColor then frame:SetBackdropBorderColor(unpack(style.border)) end
+  if frame.meterTrim then frame.meterTrim:SetColorTexture(unpack(style.accent)) end
+  if heading then heading:SetText(name=="recount" and "FOREVER  /  RECOUNT" or "FOREVER  /  DETAILS") end
+  for _,entry in ipairs(rows or {}) do
+   entry.fill:SetStatusBarTexture(style.texture)
+   entry.rail:SetColorTexture(unpack(style.rail))
+  end
+ end
+ M.Refresh()
+ return true
 end
 function M.Refresh()
  if not frame or not frame:IsShown() then return end
@@ -490,7 +519,7 @@ function M.Refresh()
    local color
    if not (issecretvalue and issecretvalue(class)) and type(class)=="string" then color=colors[class] end
    if color then
-    row.fill:SetStatusBarColor(color.r,color.g,color.b,.9)
+    row.fill:SetStatusBarColor(color.r,color.g,color.b,skin().barAlpha)
     row.accent:SetColorTexture(color.r,color.g,color.b,1)
    else
     row.fill:SetStatusBarColor(.18,.72,.87,.68)
@@ -681,6 +710,9 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="unlock" then saved().locked=false
  elseif msg=="compact" or msg=="standard" or msg=="expanded" then
   M.SetLayout(msg)
+  M.Show()
+ elseif msg=="skin details" or msg=="skin recount" then
+  M.SetSkin(msg:match("^skin%s+(%w+)$"))
   M.Show()
  elseif msg=="details" then
   if selectedRow then detailOpen=not detailOpen;M.Refresh() else M.Show() end
