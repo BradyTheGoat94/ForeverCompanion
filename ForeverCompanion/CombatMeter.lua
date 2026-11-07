@@ -4,7 +4,7 @@ local M={}
 ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
-local rowCount=8
+local rowCount=4
 local ROW_HEIGHT=25
 local ROW_STEP=27
 local BASE_HEIGHT=142
