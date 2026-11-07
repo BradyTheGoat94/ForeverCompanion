@@ -20,8 +20,8 @@ local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
 local skins={
- details={background={.012,.018,.027,.98},border={.24,.31,.36,1},accent={.22,.82,.96,1},rail={.025,.038,.052,.95},barAlpha=.92,texture="Interface\\\\TargetingFrame\\\\UI-StatusBar"},
- recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},barAlpha=.83,texture="Interface\\\\Buttons\\\\WHITE8X8"}
+ details={background={.012,.018,.027,.98},border={.24,.31,.36,1},accent={.22,.82,.96,1},rail={.025,.038,.052,.95},barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
+ recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},barAlpha=.83,texture="Interface\\Buttons\\WHITE8X8"}
 }
 local skinName="details"
 local function skin() return skins[skinName] or skins.details end
