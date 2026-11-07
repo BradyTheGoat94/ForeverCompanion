@@ -727,9 +727,18 @@ function M.Refresh()
    end
   end
   local spells=type(breakdown)=="table" and breakdown.combatSpells
-  detailTitle:SetText(detailTab=="Spells" and
-   (safeToInspect and "PLAYER  /  SPELL DAMAGE" or "PLAYER  /  AFTER COMBAT")
-   or ("PLAYER  /  "..detailTab:upper()))
+  -- Keep the selected player's identity in the title, including when
+  -- switching tabs; only inspect names Blizzard marks nonsecret.
+  local titleName="PLAYER"
+  if type(selected)=="table" then
+   local name=selected.name
+   if not (issecretvalue and issecretvalue(name)) and type(name)=="string" and name~="" then
+    titleName=name
+   end
+  end
+  detailTitle:SetText(titleName.."  /  "..(detailTab=="Spells" and
+   (safeToInspect and "SPELL DAMAGE" or "AFTER COMBAT")
+   or detailTab:upper()))
   for _,tab in ipairs(detailTabs) do
    local active=tab:GetText()==detailTab
    tab:GetFontString():SetTextColor(active and 1 or .65,active and .82 or .72,active and .98 or .8)
