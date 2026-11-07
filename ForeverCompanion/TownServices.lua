@@ -90,14 +90,16 @@ function S.ForMap(map)
  local side=read(UnitFactionGroup,"player")
  if not db or (side~="Alliance" and side~="Horde") then
   database,faction,byMap,loaded,loadError=nil,nil,nil,nil,nil
-  return {}, "QuestieDB needed for town pins"
+  return {}, "QuestieDB needed for service pins"
  end
  side=side:sub(1,1)
  if database~=db or faction~=side then start(db,side) end
  if database~=db or faction~=side then return {}, "Town service data unavailable" end
  if not loaded then return {}, "Loading town services…" end
  if loadError then return {},loadError end
- local info=C_Map and read(C_Map.GetMapInfo,map)
- if type(info)~="table" or (info.mapType~=3 and info.mapType~=5) then return {} end
+ -- NPC service locations can occur in outdoor zones, settlements,
+ -- instances and other map types. Use the provider's mapped spawn data
+ -- instead of assuming that only city/zone map types contain services.
+ if type(map)~="number" then return {} end
  return byMap[map] or {}
 end
