@@ -486,7 +486,7 @@ local function build()
  for i=1,8 do
   local stripe=detailPanel:CreateTexture(nil,"BACKGROUND")
   stripe:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",8,-66-(i-1)*27)
-  stripe:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-8,-66-(i-1)*27)
+  stripe:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",346,-66-(i-1)*27)
   stripe:SetHeight(25)
   stripe:SetColorTexture(i%2==0 and .045 or .065,i%2==0 and .075 or .095,i%2==0 and .105 or .135,.85)
   local spellBar=CreateFrame("StatusBar",nil,detailPanel)
@@ -496,6 +496,11 @@ local function build()
   spellBar:SetStatusBarColor(.72,.38,.85,.95)
   spellBar:SetMinMaxValues(0,1)
   spellBar:SetValue(0)
+  local spellPercent=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  spellPercent:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",332,-91-(i-1)*27)
+  spellPercent:SetWidth(58)
+  spellPercent:SetJustifyH("RIGHT")
+  spellPercent:SetTextColor(.77,.67,.92)
   local spellTrack=detailPanel:CreateTexture(nil,"BORDER")
   spellTrack:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-88-(i-1)*27)
   spellTrack:SetSize(285,3)
@@ -509,10 +514,10 @@ local function build()
   label:SetWidth(194)
   label:SetJustifyH("LEFT")
   local value=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  value:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-70-(i-1)*27)
+  value:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",334,-70-(i-1)*27)
   value:SetWidth(95)
   value:SetJustifyH("RIGHT")
-  detailRows[i]={label=label,value=value,icon=icon,bar=spellBar}
+  detailRows[i]={label=label,value=value,icon=icon,bar=spellBar,percent=spellPercent}
  end
  detailPanel:Hide()
  frame:Hide()
@@ -734,11 +739,13 @@ function M.Refresh()
     if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
      item.bar:SetMinMaxValues(0,maxAmount)
      item.bar:SetValue(amount)
-    else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0) end
+     item.percent:SetText(string.format("%.1f%%",100*amount/maxAmount))
+    else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0);item.percent:SetText("") end
    else
     item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
     item.value:SetText("")
     item.bar:SetValue(0)
+    item.percent:SetText("")
     item.icon:Hide()
    end
   end
