@@ -430,6 +430,7 @@ local function build()
  detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
  detailPanel:SetSize(600,120+8*27)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
+ detailPanel:SetClampedToScreen(true)
  if detailPanel.SetBackdrop then
   detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
   detailPanel:SetBackdropColor(.035,.055,.085,.96)
@@ -658,7 +659,13 @@ function M.Refresh()
   if not (InCombatLockdown and InCombatLockdown()) and frame.GetRight and UIParent and UIParent.GetRight then
    local right,screenRight=frame:GetRight(),UIParent:GetRight()
    if safeNumber(right) and safeNumber(screenRight) then
-    local side=(screenRight-right)<300 and "LEFT" or "RIGHT"
+    -- The expanded analysis pane is 600px wide, not the old 300px.
+    -- Prefer the side with sufficient space, and keep it screen-clamped.
+    local left=frame:GetLeft()
+    local screenLeft=UIParent:GetLeft()
+    local leftSpace=safeNumber(left) and safeNumber(screenLeft) and (left-screenLeft) or 0
+    local rightSpace=screenRight-right
+    local side=(rightSpace<605 and leftSpace>rightSpace) and "LEFT" or "RIGHT"
     if detailPanel.anchorSide~=side then
      detailPanel:ClearAllPoints()
      if side=="LEFT" then
