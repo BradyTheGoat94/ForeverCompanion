@@ -290,6 +290,19 @@ local function build()
    hover:Hide()
    if GameTooltip then GameTooltip:Hide() end
   end)
+  row:EnableMouseWheel(true)
+  row:SetScript("OnMouseWheel",function(_,delta)
+   -- Recount-style quick metric switching, without touching combat state.
+   local direction=delta>0 and -1 or 1
+   for _=1,#metrics do
+    metricIndex=(metricIndex-1+direction+#metrics)%#metrics+1
+    if types()~=nil then break end
+   end
+   saved().metric=metrics[metricIndex][1]
+   selectedRow=nil
+   detailOpen=false
+   M.Refresh()
+  end)
   row:SetScript("OnMouseDown",function(_,mouseButton)
    if mouseButton=="RightButton" then
     for _=1,#metrics do
