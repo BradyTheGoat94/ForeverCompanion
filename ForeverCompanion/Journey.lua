@@ -62,6 +62,57 @@ function J.Recommend(quests,mapLocations,selected)
  return best,index
 end
 
+-- A short visit order from actual current-map quest locations. This does
+-- not resolve terrain, quest prerequisites, or multiple objectives for a quest.
+function J.LocalRoute(quests,locations,x,y,limit)
+ local function valid(n) return not (issecretvalue and issecretvalue(n)) and type(n)=="number" and n>=0 and n<=1 end
+ if not valid(x) or not valid(y) then return {} end
+ local live,used,result={},{},{}
+ for i,q in ipairs(quests) do live[q]=i end
+ local count=math.min(5,limit or 3)
+ for _=1,count do
+  local best,distance,priority
+  for _,entry in ipairs(locations) do
+   local q,p=entry.quest,entry.target
+   if live[q] and not used[q] and type(p)=="table" and valid(p.x) and valid(p.y) then
+    local pinned=ForeverCompanionQuestPlanner and ForeverCompanionQuestPlanner.IsPinned(q)
+    local rank=pinned and 2 or (q.complete and 1 or 0)
+    local d=(p.x-x)^2+(p.y-y)^2
+    if not best or rank>priority or (rank==priority and (d<distance or (d==distance and live[q]<live[best.quest]))) then
+     best,distance,priority=entry,d,rank
+    end
+   end
+  end
+  if not best then break end
+  result[#result+1]={quest=best.quest,target=best.target,index=live[best.quest]}
+  used[best.quest]=true
+  x,y=best.target.x,best.target.y
+ end
+ return result
+end
+
+function J.FormatLocalRoute()
+ local planner=ForeverCompanionQuestPlanner
+ if not planner or not planner.IsSupported() then return "NEARBY STOPS: Open the quest log for current data." end
+ local ok,mapID=pcall(function() return C_Map.GetBestMapForUnit("player") end)
+ if not ok or not mapID then return "NEARBY STOPS: Player map unavailable." end
+ local positionOK,x,y=pcall(function()
+  local p=C_Map.GetPlayerMapPosition(mapID,"player")
+  if p then return p:GetXY() end
+ end)
+ if not positionOK then return "NEARBY STOPS: Player position unavailable." end
+ local quests=planner.GetLive()
+ local locations=ForeverCompanionQuestWaypoints.MapLocations(mapID,quests)
+ local stops=J.LocalRoute(quests,locations,x,y,3)
+ local lines={"NEARBY QUEST STOPS (current map)","Pinned quests first, then turn-ins; approximate map distance within each group. Terrain and prerequisites are not evaluated."}
+ for i,stop in ipairs(stops) do
+  lines[#lines+1]=i..". "..(stop.quest.complete and "Turn in: " or "Objective: ")..stop.quest.title
+ end
+ if #stops==0 then lines[#lines+1]="No reported destinations here. Check another quest zone; no coordinates have been guessed." end
+ lines[#lines+1]="One stop per quest. Review every remaining objective before leaving a zone. Select a quest and click its map marker to start navigation."
+ return table.concat(lines,"\n")
+end
+
 local root,kind,title,detail,hint,mapButton,stageText,previous,nextStage,rows
 local overrideStage,actionQuest,actionIndex,zoneNote
 local function label(parent,x,y,w,size,color)
@@ -160,7 +211,12 @@ function J.Show(show,level)
  if planner.IsSupported() then
   local quests=planner.GetLive()
   local locations=map and ForeverCompanionQuestWaypoints.MapLocations(map,quests) or {}
-  actionQuest,actionIndex=J.Recommend(quests,locations,planner.GetSelected())
+  local position=map and C_Map and read(C_Map.GetPlayerMapPosition,map,"player")
+  local x,y
+  if position then x,y=read(position.GetXY,position) end
+  local stops=J.LocalRoute(quests,locations,x,y,1)
+  if stops[1] then actionQuest,actionIndex=stops[1].quest,stops[1].index
+  else actionQuest,actionIndex=J.Recommend(quests,locations,planner.GetSelected()) end
  end
  local quest=actionQuest
  if quest then
@@ -172,7 +228,7 @@ function J.Show(show,level)
    if not state or not state.done then step=line;break end
   end
   detail:SetText(quest.complete and ("Return to the quest giver  ·  "..quest.zone) or (step or ("Check the quest journal for details  ·  "..quest.zone)))
-  hint:SetText("Click a highlighted marker to start the arrow")
+  hint:SetText("Suggested stop; check terrain. Click map marker for arrow.")
  else
   kind:SetText("NEXT STEP   ·   FIND A QUEST")
   title:SetText(planner.IsSupported() and "Visit a nearby quest hub" or "Open your in-game quest log")

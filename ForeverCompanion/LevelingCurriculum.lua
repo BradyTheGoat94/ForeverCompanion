@@ -79,3 +79,18 @@ function C.Format(class,level)
  local lines={"LEVELING PRACTICE - "..band[3].." (Lv "..band[1].."-"..band[2]..")",notes[stage],"NEXT STAGE: "..(stage<5 and notes[stage+1] or "Review actual character skills and endgame role requirements."),"REFERENCE: General practice advice; confirm unlocks and class changes in the live Forever client."}
  return table.concat(lines,"\n")
 end
+
+-- General, actionable preparation without assuming Forever unlock levels.
+function C.TravelPlan(level)
+ local stage=C.Stage(level)
+ local steps={
+  "AT A HUB: Accept quests you meet the requirements for; read the objectives before leaving. Repair, sell unwanted items, and check bag space.",
+  "OUTDOORS: Group objectives in the same area. A map marker is a reported destination, not a safe path; avoid cliffs and hostile camps.",
+  "RETURN: Turn in completed quests and check for follow-ups. Review trainer abilities and set your hearthstone only when the inn suits your next trip.",
+  "ZONE CHANGE: If remaining quests are too difficult, use Journey's zone suggestions and confirm the next hub in the game. Finish local turn-ins before long travel.",
+  "DUNGEON OPTION: Gather available dungeon quests, agree on your role, and check your gear and supplies. Entrance access and quest requirements must be verified in the client.",
+  "ALTERNATE CHARACTER: Recheck this character's quest log, skills, flight paths and supplies. Another character's progress does not prove an unlock here.",
+ }
+ if stage==1 then table.insert(steps,1,"FIRST TRIP: Learn one safe pull at a time. Follow the starter quests before making a long journey.") end
+ return "LEVELING FIELD CHECKLIST\n"..table.concat(steps,"\n")
+end

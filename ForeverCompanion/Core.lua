@@ -441,7 +441,7 @@ local function render()
             lines[#lines+1]=referenceLine
           end
         end
-        if ForeverCompanionLevelingCurriculum then lines[#lines+1]=ForeverCompanionLevelingCurriculum.Format(classToken(),level()) end
+        if ForeverCompanionLevelingCurriculum then lines[#lines+1]=ForeverCompanionLevelingCurriculum.Format(classToken(),level()); lines[#lines+1]=ForeverCompanionLevelingCurriculum.TravelPlan(level()) end
         if ForeverCompanionWorldGuide then lines[#lines+1]=ForeverCompanionWorldGuide.Format(level()) end
         if ForeverCompanionClassChanges then lines[#lines+1]=ForeverCompanionClassChanges.Format(classToken(),level()) end
         if ForeverCompanionClassChangeIndex then lines[#lines+1]=ForeverCompanionClassChangeIndex.Format(classToken(),level()) end
@@ -503,7 +503,7 @@ local function render()
     local live=ForeverCompanionQuestPlanner.GetLive()
     local visible=ForeverCompanionQuestPlanner.GetVisible()
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
-    lines = {ForeverCompanionQuestPlanner.FormatOverview(), "", ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
+    lines = {ForeverCompanionQuestPlanner.FormatOverview(), "", ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", ForeverCompanionJourney.FormatLocalRoute(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
     if not ForeverCompanionQuestPlanner.IsSupported() then
       table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
     end
