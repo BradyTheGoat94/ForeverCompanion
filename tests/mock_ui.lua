@@ -1654,4 +1654,23 @@ C_DamageMeter=nil
 ForeverCompanionCombatMeter.Show()
 ForeverCompanionCombatMeter.SetLayout("standard")
 exportNative("ui_meter_native.json")
+ForeverCompanionCombatMeter.SetLayout('compact')
+exportNative('ui_meter_compact_native.json')
+ForeverCompanionCombatMeter.SetLayout('expanded')
+exportNative('ui_meter_expanded_native.json')
+ForeverCompanionCombatMeter.SetLayout('standard')
+ForeverCompanionCombatMeter.SetSkin('recount')
+exportNative('ui_meter_recount_native.json')
+ForeverCompanionCombatMeter.SetSkin('details')
+local meterFrame
+for _,f in ipairs(frames) do if f.name=='ForeverCompanionCombatMeterWindow' then meterFrame=f end end
+assert(meterFrame)
+ForeverCompanionCombatMeter.OpenOptions(meterFrame.optionsButton)
+for _,f in ipairs(frames) do
+ if f.kind=='FontString' and f.text=='METER OPTIONS' then
+  -- Preview identity only; the control geometry and labels are the real UI.
+  frames[f.parent].name='ForeverCompanionMeterOptionsPreview'
+ end
+end
+exportNative('ui_meter_options_native.json')
 ForeverCompanionCombatMeter.Hide()

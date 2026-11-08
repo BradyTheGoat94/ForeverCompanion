@@ -54,7 +54,7 @@ for _,layout in ipairs({'compact','standard','expanded'}) do
  assert(m.SetLayout(layout))
  m.Refresh()
  local window=ForeverCompanionCombatMeterWindow
- assert(window:GetHeight()==170+ForeverCompanionDB.combatMeter.rows*27)
+ assert(window:GetHeight()==50+ForeverCompanionDB.combatMeter.rows*21)
  for _,o in ipairs(objects) do
   if o.kind=='FontString' and o.text==secret then
    if o.parent~=window then
@@ -64,12 +64,11 @@ for _,layout in ipairs({'compact','standard','expanded'}) do
   end
  end
 end
-local metricControl
-for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='DPS' then metricControl=o end end
+local metricControl=ForeverCompanionCombatMeterWindow.metricButton
 assert(metricControl)
 metricControl.OnClick()
 local healingControl
-for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Healing' then healingControl=o end end
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Healing Done' then healingControl=o end end
 assert(healingControl and healingControl.enabled)
 healingControl.OnClick()
 assert(ForeverCompanionDB.combatMeter.metric=='Healing','explicit metric menu selects desired view')
@@ -84,6 +83,20 @@ for _,o in ipairs(objects) do
  if rawget(o,'sourceLabel')=='Public player' then publicRow=o end
 end
 assert(compactFound and publicRow,'narrow meter uses compact inspectable amounts')
+local nameLabel,totalLabel,rateLabel
+for _,o in ipairs(objects) do
+ if o.kind=='FontString' and rawget(o,'parent') and rawget(o.parent,'parent')==publicRow then
+  if o.text=='Public player' then nameLabel=o
+  elseif o.text=='1.2m' then totalLabel=o
+  elseif o.text=='12.3k' then rateLabel=o end
+ end
+end
+assert(nameLabel and totalLabel and rateLabel)
+assert(nameLabel.point[4]+nameLabel.width<=publicRow.width+totalLabel.point[4]-totalLabel.width,'dual columns cannot collide with names at minimum width')
+assert(publicRow.width+totalLabel.point[4]<=publicRow.width+rateLabel.point[4]-rateLabel.width,'total and rate columns remain separate')
+assert(m.SetBothColumns(false))
+assert(nameLabel.point[4]+nameLabel.width<=publicRow.width+totalLabel.point[4]-totalLabel.width,'single-column mode cannot collide with names')
+assert(m.SetBothColumns(true))
 local tooltipLines={}
 GameTooltip={SetOwner=function() end,SetText=function() end,AddLine=function(_,line) tooltipLines[#tooltipLines+1]=line end,Show=function() end,Hide=function() end}
 publicRow.OnEnter(publicRow)
@@ -134,6 +147,51 @@ InCombatLockdown=function() return false end
 assert(m.SetMode('healing'))
 playerRow.OnMouseDown(playerRow,"LeftButton")
 assert(m.SelectedRow()==1)
+-- Every native rank remains accessible in a four-row viewport.
+assert(m.SetMode('DPS'));assert(m.SetRows(4))
+local raid={}
+for i=1,40 do raid[i]={name='Player '..i,sourceGUID='GUID-'..i,totalAmount=i*1000,amountPerSecond=i*100,classFilename='MAGE'} end
+C_DamageMeter.GetCombatSessionFromType=function() return {combatSources=raid,maxAmount=40000} end
+m.Refresh();assert(m.ScrollOffset()==0)
+playerRow.OnMouseWheel(playerRow,-1)
+assert(m.ScrollOffset()==1 and playerRow.sourceIndex==2,'wheel scrolls player ranks instead of changing metric')
+assert(m.Scroll(1000) and m.ScrollOffset()==36 and playerRow.sourceIndex==37)
+playerRow.OnMouseDown(playerRow,'LeftButton');assert(m.SelectedRow()==37)
+assert(m.SetRows(8) and m.ScrollOffset()==32,'resize clamps the scroll range')
+assert(m.SelectedRow()==37,'row-count change retains the selected player breakdown')
+raid[1],raid[37]=raid[37],raid[1]
+m.Refresh();assert(m.SelectedRow()==1,'off-screen selection still follows native GUID')
+assert(m.Scroll(-1000) and m.ScrollOffset()==0 and playerRow.sourceGUID=='GUID-37')
+assert(not m.Scroll(secret) and not m.Scroll(math.huge))
+assert(m.SetBothColumns(false) and ForeverCompanionDB.combatMeter.showBoth==false)
+assert(m.SetBothColumns(true));assert(m.SetTextSize(13));assert(not m.SetTextSize(99))
+local sessionID
+C_DamageMeter.GetAvailableCombatSessions=function() return {{sessionID=77,name='Native encounter'}} end
+C_DamageMeter.GetCombatSessionFromID=function(id) sessionID=id;return {combatSources=raid,maxAmount=40000,durationSeconds=90} end
+ForeverCompanionCombatMeterWindow.sessionButton.OnClick()
+local recorded
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='1. Native encounter' then recorded=o end end
+assert(recorded and recorded.enabled)
+recorded.OnClick();assert(sessionID==77 and ForeverCompanionDB.combatMeter.session=='Past')
+assert(not m.SelectPast(2),'nonexistent session cannot be selected')
+local resetCount=0
+C_DamageMeter.ResetAllCombatSessions=function() resetCount=resetCount+1;raid={} end
+m.RequestReset(ForeverCompanionCombatMeterWindow.resetButton)
+assert(resetCount==0,'opening reset confirmation must preserve data')
+local confirm
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Clear all native combat sessions' then confirm=o end end
+assert(confirm and confirm.enabled)
+InCombatLockdown=function() return true end
+confirm.OnClick();assert(resetCount==0,'combat starting after confirmation still blocks reset')
+InCombatLockdown=function() return false end
+m.RequestReset(ForeverCompanionCombatMeterWindow.resetButton)
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Clear all native combat sessions' then confirm=o end end
+confirm.OnClick();assert(resetCount==1 and m.ScrollOffset()==0 and m.SelectedRow()==nil)
+ForeverCompanionCombatMeterWindow.optionsButton.OnClick()
+local lock
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Lock window' then lock=o end end
+assert(lock);lock.OnClick();assert(ForeverCompanionDB.combatMeter.locked and ForeverCompanionCombatMeterWindow.resizeGrip.shown==false)
+SlashCmdList.FOREVERCOMPANIONMETER('unlock');assert(ForeverCompanionCombatMeterWindow.resizeGrip.shown)
 C_DamageMeter=nil;m.Refresh()
-print('PASS: meter layouts, overlay frame levels, native secret display, missing API')
+print('PASS: compact meter geometry, secret-safe dual columns, raid scrolling, stable selection, segment menus, reset confirmation and options')
 

@@ -4,11 +4,14 @@ local M={}
 ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
-local rowCount=4
-local ROW_HEIGHT=25
-local ROW_STEP=27
-local BASE_HEIGHT=170
-local ROW_TOP=94
+local rowOffset,sourceCount=0,0
+local optionsButton
+local metricNames={DPS="Damage / DPS",Damage="Damage Done",HPS="Healing / HPS",Healing="Healing Done",Absorbs="Absorbs",Interrupts="Interrupts",Dispels="Dispels",Taken="Damage Taken"}
+local rowCount=8
+local ROW_HEIGHT=20
+local ROW_STEP=21
+local BASE_HEIGHT=50
+local ROW_TOP=26
 local windowWidth=320
 local selectedRow,selectedSourceGUID=nil,nil
 local detailOpen=false
@@ -25,7 +28,7 @@ local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
 local skins={
- details={background={.012,.018,.027,.98},border={.24,.31,.36,1},accent={.22,.82,.96,1},rail={.025,.038,.052,.95},barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
+ details={background={.016,.016,.018,.96},border={.17,.17,.19,1},accent={.65,.65,.68,1},rail={.035,.035,.04,.95},barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
  recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},barAlpha=.83,texture="Interface\\Buttons\\WHITE8X8"}
 }
 local skinName="details"
@@ -112,14 +115,6 @@ function M.Available()
  end
  return true
 end
-local function button(parent,label,width,x,callback)
- local b=flatButton(parent)
- b:SetSize(width,23)
- b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,-51)
- b:SetText(label)
- b:SetScript("OnClick",callback)
- return b
-end
 local function build()
  frame=CreateFrame("Frame","ForeverCompanionCombatMeterWindow",UIParent,"BackdropTemplate")
  frame:SetSize(320,328)
@@ -169,6 +164,7 @@ local function build()
  -- Drag the lower-right grip to resize the meter. Snap the result to
  -- whole player rows, keeping all persisted dimensions within safe bounds.
  local resizeGrip=CreateFrame("Button",nil,frame)
+ frame.resizeGrip=resizeGrip
  resizeGrip:SetSize(18,18)
  resizeGrip:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-1,1)
  resizeGrip:SetFrameLevel(frame:GetFrameLevel()+10)
@@ -197,166 +193,79 @@ local function build()
   if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText("Drag to resize • /fcmeter lock");GameTooltip:Show() end
  end)
  resizeGrip:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local trim=frame:CreateTexture(nil,"ARTWORK")
- trim:SetColorTexture(.22,.82,.96,1)
- frame.meterTrim=trim
- trim:SetPoint("TOPLEFT",1,-1)
- trim:SetPoint("TOPRIGHT",-1,-1)
- trim:SetHeight(3)
- heading=frame:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
- heading:SetPoint("TOPLEFT",frame,"TOPLEFT",44,-11)
- heading:SetWidth(156)
- heading:SetHeight(18)
- heading:SetJustifyH("LEFT")
- heading:SetWordWrap(false)
- heading:SetTextColor(.95,.98,1)
- heading:SetShadowOffset(1,-1)
- heading:SetShadowColor(0,0,0,.9)
- heading:SetText("Forever Meter")
- local headerIcon=frame:CreateTexture(nil,"OVERLAY")
- headerIcon:SetSize(27,27)
- headerIcon:SetPoint("TOPLEFT",frame,"TOPLEFT",9,-8)
- headerIcon:SetTexture("Interface\\Icons\\Ability_Warrior_BattleShout")
- local headerIconBorder=frame:CreateTexture(nil,"ARTWORK")
- headerIconBorder:SetPoint("TOPLEFT",headerIcon,"TOPLEFT",-2,2)
- headerIconBorder:SetPoint("BOTTOMRIGHT",headerIcon,"BOTTOMRIGHT",2,-2)
- headerIconBorder:SetColorTexture(.55,.45,.78,.8)
- headerIconBorder:SetDrawLayer("ARTWORK",-1)
- local headerDivider=frame:CreateTexture(nil,"ARTWORK")
- headerDivider:SetPoint("TOPLEFT",frame,"TOPLEFT",13,-46)
- headerDivider:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-13,-46)
- headerDivider:SetHeight(1)
- headerDivider:SetColorTexture(.18,.47,.56,.85)
- local subtitle=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- subtitle:SetPoint("TOPLEFT",frame,"TOPLEFT",44,-29)
- subtitle:SetTextColor(.54,.75,.80)
- subtitle:SetText("DPS / Current")
- subtitle:SetWidth(windowWidth-60)
- subtitle:SetHeight(14)
- subtitle:SetWordWrap(false)
- frame.meterSubtitle=subtitle
- -- Drag by the header as well as the body; do not drag on controls.
+ -- Compact title bar: native artwork and independently implemented controls.
+ local header=frame:CreateTexture(nil,"BACKGROUND")
+ header:SetPoint("TOPLEFT",1,-1);header:SetPoint("TOPRIGHT",-1,-1);header:SetHeight(23)
+ header:SetColorTexture(.065,.065,.07,.98)
+ local trim=frame:CreateTexture(nil,"BORDER")
+ trim:SetPoint("TOPLEFT",0,0);trim:SetPoint("TOPRIGHT",0,0);trim:SetHeight(1)
+ trim:SetColorTexture(.25,.25,.27,1);frame.meterTrim=trim
+ heading=ForeverCompanionInterface.Text(frame,12)
+ heading:SetPoint("TOPLEFT",frame,"TOPLEFT",8,-5);heading:SetWidth(windowWidth-124)
+ heading:SetHeight(16);heading:SetText("Damage / DPS")
  dragHandle=CreateFrame("Frame",nil,frame)
- dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",4,-4)
- dragHandle:SetSize(170,32)
- dragHandle:EnableMouse(true)
- dragHandle:RegisterForDrag("LeftButton")
+ dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",3,-2);dragHandle:SetSize(windowWidth-120,21)
+ dragHandle:EnableMouse(true);dragHandle:RegisterForDrag("LeftButton")
  dragHandle:SetScript("OnDragStart",function() if not saved().locked then frame:StartMoving() end end)
- dragHandle:SetScript("OnDragStop",function()
-  frame:StopMovingOrSizing()
-  savePosition(frame)
+ dragHandle:SetScript("OnDragStop",function() frame:StopMovingOrSizing();savePosition(frame) end)
+ dragHandle:SetScript("OnMouseUp",function(_,key)
+  if key=="RightButton" then
+   if IsShiftKeyDown and IsShiftKeyDown() then M.OpenSessions(dragHandle) else M.OpenMetrics(dragHandle) end
+  end
  end)
- -- Details/Recount-style quick controls without protected combat actions.
- local smaller=flatButton(frame)
- smaller:SetSize(22,20)
- smaller:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-106,-53)
- smaller:SetText("-")
- smaller:SetScript("OnClick",function()
-  M.SetRows(math.max(4,rowCount-1))
- end)
- smaller:SetScript("OnEnter",function(self)
-  if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText("Show fewer players");GameTooltip:Show() end
- end)
- smaller:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local larger=flatButton(frame)
- larger:SetSize(22,20)
- larger:SetPoint("LEFT",smaller,"RIGHT",2,0)
- larger:SetText("+")
- larger:SetScript("OnClick",function()
-  M.SetRows(math.min(12,rowCount+1))
- end)
- larger:SetScript("OnEnter",function(self)
-  if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText("Show more players");GameTooltip:Show() end
- end)
- larger:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local skinToggle=flatButton(frame)
- skinToggle:SetSize(48,19)
- skinToggle:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-26,-54)
- skinToggle:SetText("SKIN")
- skinToggle:SetScript("OnClick",function()
-  M.SetSkin(skinName=="details" and "recount" or "details")
- end)
- skinToggle:SetScript("OnEnter",function(self)
+ dragHandle:SetScript("OnEnter",function(self)
   if GameTooltip then
-   GameTooltip:SetOwner(self,"ANCHOR_TOP")
-   GameTooltip:SetText("Switch visual skin")
-   GameTooltip:AddLine("Details-inspired / Recount-inspired",.75,.87,.94)
-   GameTooltip:Show()
+   GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText("Forever Companion meter")
+   GameTooltip:AddLine("Drag to move. Right-click for displays.",.8,.85,.9)
+   GameTooltip:AddLine("Shift + right-click for combat segments.",.8,.85,.9);GameTooltip:Show()
   end
  end)
- skinToggle:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local close=flatButton(frame)
- close:SetSize(20,20);close:SetText("x")
- close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-6,-10)
- close:SetScript("OnClick",function() M.Hide() end)
- local layoutButton=flatButton(frame)
- layoutButton:SetSize(38,20)
- layoutButton:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-28,-10)
- layoutButton:SetText("Size")
- layoutButton:SetScript("OnClick",function()
-  local current=saved().layout or "standard"
-  M.SetLayout(current=="compact" and "standard" or (current=="standard" and "expanded" or "compact"))
- end)
- layoutButton:SetScript("OnEnter",function(self)
-  if GameTooltip then
-   GameTooltip:SetOwner(self,"ANCHOR_TOP")
-   GameTooltip:SetText("Cycle compact / standard / expanded")
-   GameTooltip:Show()
-  end
- end)
- layoutButton:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local playerColumn=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- playerColumn:SetPoint("TOPLEFT",frame,"TOPLEFT",58,-78)
- playerColumn:SetText("PLAYER")
- playerColumn:SetTextColor(.58,.7,.78)
- local amountColumn=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- amountColumn:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-18,-78)
- amountColumn:SetText("AMOUNT")
- amountColumn:SetTextColor(.58,.7,.78)
- frame.amountColumn=amountColumn
- modeButton=button(frame,"DPS",65,9,function()
-  local entries={}
-  local enums=Enum and Enum.DamageMeterType or {}
-  for i,item in ipairs(metrics) do
-   local index=i
-   entries[#entries+1]={label=item[1],selected=i==metricIndex,enabled=enums[item[2]]~=nil,action=function() M.SetMode(metrics[index][1]) end}
-  end
-  ForeverCompanionInterface.Menu(modeButton,"SELECT METRIC",entries,skin())
- end)
- sessionButton=button(frame,"Current",65,78,function()
-  local entries={}
-  local enums=Enum and Enum.DamageMeterSessionType or {}
-  for i,item in ipairs(sessions) do
-   local index=i
-   entries[#entries+1]={label=item[1],selected=i==sessionIndex,enabled=enums[item[2]]~=nil,action=function() M.SetSession(sessions[index][1]) end}
-  end
-  ForeverCompanionInterface.Menu(sessionButton,"COMBAT SESSION",entries,skin())
- end)
- previousButton=button(frame,"<",27,13,function() pastIndex=math.min(historyCount(),pastIndex+1);selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;M.Refresh() end)
- nextButton=button(frame,">",27,42,function() pastIndex=math.max(1,pastIndex-1);selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;M.Refresh() end)
- previousButton:ClearAllPoints()
- previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-45,8)
- nextButton:ClearAllPoints()
- nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-15,8)
- local footer=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,32)
- footer:SetTextColor(.86,.9,.96)
- footer:SetWidth(windowWidth-24)
- footer:SetJustifyH("LEFT")
- footer:SetWordWrap(false)
- footer:SetHeight(14)
- footer:SetText("Current Fight")
- frame.meterFooter=footer
- local footerRule=frame:CreateTexture(nil,"ARTWORK")
- footerRule:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",9,72)
- footerRule:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-9,72)
- footerRule:SetHeight(1)
- footerRule:SetColorTexture(.25,.28,.35,.7)
+ dragHandle:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ local function tool(offset,texture,title,description,callback)
+  local b=flatButton(frame);b:SetSize(19,19);b:SetPoint("TOPRIGHT",frame,"TOPRIGHT",offset,-3)
+  b:SetFrameLevel(dragHandle:GetFrameLevel()+2)
+  if texture then
+   local icon=b:CreateTexture(nil,"ARTWORK");icon:SetSize(15,15);icon:SetPoint("CENTER",b,"CENTER",0,0)
+   icon:SetTexture(texture);icon:SetTexCoord(.08,.92,.08,.92)
+  else b:SetText("x") end
+  b:SetScript("OnClick",callback)
+  b:SetScript("OnEnter",function(self)
+   if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText(title);GameTooltip:AddLine(description,.8,.85,.9,true);GameTooltip:Show() end
+  end)
+  b:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+  return b
+ end
+ modeButton=tool(-67,"Interface\\Icons\\Ability_Warrior_SavageBlow","Displays","Choose damage, DPS, healing and utility views.",function() M.OpenMetrics(modeButton) end)
+ local reset=tool(-88,"Interface\\Icons\\Spell_Holy_Renew","Reset combat data","Opens a confirmation. Clears all sessions in Blizzard's native meter too.",function() M.RequestReset(frame.resetButton) end)
+ sessionButton=tool(-46,"Interface\\Icons\\INV_Misc_PocketWatch_01","Combat segments","Choose current, overall or a recorded combat segment.",function() M.OpenSessions(sessionButton) end)
+ optionsButton=tool(-25,"Interface\\Icons\\INV_Misc_Gear_01","Meter options","Layouts, text size, columns, skins and position lock.",function() M.OpenOptions(optionsButton) end)
+ tool(-4,nil,"Close meter","Reopen with /fcmeter or the dashboard.",function() M.Hide() end)
+ frame.metricButton=modeButton;frame.sessionButton=sessionButton;frame.optionsButton=optionsButton;frame.resetButton=reset
+ frame:EnableMouseWheel(true)
+ frame:SetScript("OnMouseWheel",function(_,delta) M.Scroll(-delta) end)
+ frame:SetScript("OnMouseUp",function(_,key) if key=="RightButton" then M.OpenQuickMenu(frame) end end)
+ previousButton=flatButton(frame);previousButton:SetSize(16,17);previousButton:SetText("<")
+ previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-36,3)
+ previousButton:SetScript("OnClick",function() M.SelectPast(pastIndex+1) end)
+ nextButton=flatButton(frame);nextButton:SetSize(16,17);nextButton:SetText(">")
+ nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-19,3)
+ nextButton:SetScript("OnClick",function() M.SelectPast(pastIndex-1) end)
+ local footer=ForeverCompanionInterface.Text(frame,10)
+ footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",6,5);footer:SetWidth(windowWidth-68)
+ footer:SetTextColor(.7,.72,.76);frame.meterFooter=footer
+ local range=ForeverCompanionInterface.Text(frame,10)
+ range:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-19,5);range:SetWidth(70);range:SetJustifyH("RIGHT")
+ frame.playerRange=range
+ detailLabel=ForeverCompanionInterface.Text(frame,10);detailLabel:Hide()
+ notice=ForeverCompanionInterface.Text(frame,10);notice:Hide()
+ local footerRule=frame:CreateTexture(nil,"BORDER")
+ footerRule:SetPoint("BOTTOMLEFT",0,23);footerRule:SetPoint("BOTTOMRIGHT",0,23);footerRule:SetHeight(1)
+ footerRule:SetColorTexture(.17,.17,.19,1)
  rows={}
  for i=1,12 do
   local row=CreateFrame("Frame",nil,frame)
-  row:SetSize(windowWidth-18,ROW_HEIGHT)
-  row:SetPoint("TOPLEFT",frame,"TOPLEFT",9,-ROW_TOP-(i-1)*ROW_STEP)
+  row:SetSize(windowWidth-8,ROW_HEIGHT)
+  row:SetPoint("TOPLEFT",frame,"TOPLEFT",4,-ROW_TOP-(i-1)*ROW_STEP)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row)
   bg:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97)
@@ -383,13 +292,13 @@ local function build()
   local valueShade=content:CreateTexture(nil,"ARTWORK")
   valueShade:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
   valueShade:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",0,0)
-  valueShade:SetWidth(112)
-  valueShade:SetColorTexture(.005,.009,.016,.97)
+  valueShade:SetWidth(132)
+  valueShade:SetColorTexture(0,0,0,.28)
   -- Readable text well over vivid class bars; preserve the class-colored fill.
   local nameShade=content:CreateTexture(nil,"OVERLAY")
   nameShade:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
   nameShade:SetPoint("BOTTOMRIGHT",valueShade,"BOTTOMLEFT",0,0)
-  nameShade:SetColorTexture(.008,.014,.025,.56)
+  nameShade:SetColorTexture(0,0,0,.2)
   local sheen=content:CreateTexture(nil,"OVERLAY")
   sheen:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
   sheen:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
@@ -406,16 +315,16 @@ local function build()
   valueDivider:SetPoint("TOPRIGHT",row,"TOPRIGHT",-111,-3)
   valueDivider:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",-111,3)
   valueDivider:SetWidth(1)
-  valueDivider:SetColorTexture(1,1,1,.13)
+  valueDivider:SetColorTexture(1,1,1,0)
   local rank=content:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  rank:SetPoint("LEFT",row,"LEFT",5,0)
-  rank:SetWidth(19)
+  rank:SetPoint("LEFT",row,"LEFT",2,0)
+  rank:SetWidth(15)
   rank:SetTextColor(.9,.94,.98)
   rank:SetShadowOffset(1,-1)
   rank:SetText(i)
   local classIcon=content:CreateTexture(nil,"OVERLAY")
   classIcon:SetSize(17,17)
-  classIcon:SetPoint("LEFT",row,"LEFT",26,0)
+  classIcon:SetPoint("LEFT",row,"LEFT",19,0)
   classIcon:SetTexture("Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes")
   classIcon:Hide()
   local iconBorder=content:CreateTexture(nil,"ARTWORK")
@@ -424,8 +333,8 @@ local function build()
   iconBorder:SetColorTexture(.7,.79,.85,.55)
   iconBorder:SetDrawLayer("ARTWORK",-1)
   local name=content:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  name:SetPoint("LEFT",row,"LEFT",49,0)
-  name:SetWidth(windowWidth-175)
+  name:SetPoint("LEFT",row,"LEFT",38,0)
+  name:SetWidth(windowWidth-182)
   name:SetJustifyH("LEFT")
   name:SetShadowOffset(1,-1)
   name:SetShadowColor(0,0,0,1)
@@ -434,7 +343,7 @@ local function build()
   name:SetHeight(18)
   local amount=content:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   amount:SetPoint("RIGHT",row,"RIGHT",-9,0)
-  amount:SetWidth(96)
+  amount:SetWidth(120)
   amount:SetFontObject("GameFontHighlightSmall")
   amount:SetWordWrap(false)
   amount:SetHeight(18)
@@ -442,6 +351,10 @@ local function build()
   amount:SetShadowOffset(1,-1)
   amount:SetTextColor(1,1,1,1)
   amount:SetShadowColor(0,0,0,1)
+  local rate=content:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+  rate:SetPoint("RIGHT",row,"RIGHT",-4,0);rate:SetWidth(58);rate:SetHeight(18)
+  rate:SetJustifyH("RIGHT");rate:SetWordWrap(false);rate:SetTextColor(.9,.9,.9)
+  rate:SetShadowOffset(1,-1);rate:SetShadowColor(0,0,0,1)
   local accent=content:CreateTexture(nil,"OVERLAY")
   accent:SetPoint("LEFT",row,"LEFT",0,0)
   accent:SetSize(3,ROW_HEIGHT)
@@ -450,6 +363,9 @@ local function build()
   hover:SetAllPoints(row)
   hover:SetColorTexture(.31,.82,1,.12)
   hover:Hide()
+  local selection=content:CreateTexture(nil,'OVERLAY')
+  selection:SetPoint('BOTTOMLEFT',row,'BOTTOMLEFT',0,0);selection:SetPoint('BOTTOMRIGHT',row,'BOTTOMRIGHT',0,0)
+  selection:SetHeight(1);selection:SetColorTexture(1,1,1,.75);selection:Hide()
   row:EnableMouse(true)
   row:SetScript("OnEnter",function(self)
    hover:Show()
@@ -460,9 +376,10 @@ local function build()
     local rate=M.ExactAmount(self.amountPerSecond)
     if total then GameTooltip:AddLine('Total: '..total,.94,.96,1) end
     if rate then GameTooltip:AddLine('Per second: '..rate,.94,.96,1) end
+    if saved().showBoth~=false then GameTooltip:AddLine('Right columns: total | per second',.7,.8,.86) end
     GameTooltip:AddLine("Left-click: spell breakdown",.8,.9,1)
-    GameTooltip:AddLine("Right-click: next damage/healing view",.8,.9,1)
-    GameTooltip:AddLine("Mouse wheel: cycle damage/healing views",.65,.85,.92)
+    GameTooltip:AddLine("Right-click: quick displays and options",.8,.9,1)
+    GameTooltip:AddLine("Wheel: scroll players. Ctrl + wheel: change display.",.65,.85,.92)
     GameTooltip:Show()
    end
   end)
@@ -472,27 +389,14 @@ local function build()
   end)
   row:EnableMouseWheel(true)
   row:SetScript("OnMouseWheel",function(_,delta)
-   -- Recount-style quick metric switching, without touching combat state.
-   local direction=delta>0 and -1 or 1
-   for _=1,#metrics do
-    metricIndex=(metricIndex-1+direction+#metrics)%#metrics+1
-    if types()~=nil then break end
-   end
-   saved().metric=metrics[metricIndex][1]
-   selectedRow=nil;selectedSourceGUID=nil
-   detailOpen=false
-   M.Refresh()
+   if IsControlKeyDown and IsControlKeyDown() then M.CycleMetric(delta>0 and -1 or 1)
+   else M.Scroll(-delta) end
   end)
   row:SetScript("OnMouseDown",function(_,mouseButton)
    if mouseButton=="RightButton" then
-    for _=1,#metrics do
-     metricIndex=metricIndex%#metrics+1
-     if types()~=nil then break end
-    end
-    selectedRow=nil;selectedSourceGUID=nil;detailOpen=false
-    saved().metric=metrics[metricIndex][1]
+    M.OpenQuickMenu(rows[i].frame);return
    else
-    selectedRow=(selectedRow==i) and nil or i
+    selectedRow=(selectedRow==rows[i].frame.sourceIndex) and nil or rows[i].frame.sourceIndex
     selectedSourceGUID=selectedRow and rows[i].frame.sourceGUID or nil
     spellPage=1
     detailOpen=selectedRow~=nil
@@ -501,28 +405,13 @@ local function build()
   end)
   name:SetTextColor(1,1,1)
   amount:SetTextColor(1,1,1)
-  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail}
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail,rank=rank,rate=rate,valueShade=valueShade,selection=selection}
   if i>rowCount then row:Hide() end
  end
  emptyTitle=ForeverCompanionInterface.Text(frame,14)
  emptyTitle:SetJustifyH("CENTER")
  emptyBody=ForeverCompanionInterface.Text(frame,11)
  emptyBody:SetJustifyH("CENTER");emptyBody:SetWordWrap(true);emptyBody:SetHeight(40)
- detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,53)
- detailLabel:SetWidth(windowWidth-26)
- detailLabel:SetJustifyH("LEFT")
- detailLabel:SetWordWrap(false)
- detailLabel:SetHeight(14)
- detailLabel:SetTextColor(.98,.78,.45)
- detailLabel:SetText("Select a player row for details")
- notice=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- notice:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,13)
- notice:SetWidth(windowWidth-110)
- notice:SetTextColor(.65,.76,.84)
- notice:SetJustifyH("LEFT")
- notice:SetWordWrap(false)
- notice:SetHeight(14)
  frame:SetScript("OnUpdate",function(_,dt)
   elapsed=elapsed+dt
   if elapsed>=.4 then elapsed=0;M.Refresh() end
@@ -679,7 +568,7 @@ function M.SetSkin(name)
   end
   for _,entry in ipairs(detailRows) do entry.bar:SetStatusBarColor(unpack(style.accent)) end
   if frame.meterTrim then frame.meterTrim:SetColorTexture(unpack(style.accent)) end
-  if heading then heading:SetText("Forever Meter") end
+  if heading then heading:SetText(metricNames[metrics[metricIndex][1]]) end
   for _,entry in ipairs(rows or {}) do
    entry.fill:SetStatusBarTexture(style.texture)
    entry.rail:SetColorTexture(unpack(style.rail))
@@ -690,11 +579,10 @@ function M.SetSkin(name)
 end
 function M.Refresh()
  if not frame or not frame:IsShown() then return end
- modeButton:SetText(metrics[metricIndex][1])
- sessionButton:SetText(sessions[sessionIndex][1])
+ heading:SetText(metricNames[metrics[metricIndex][1]])
+ frame.resizeGrip:SetShown(not saved().locked)
  emptyTitle:ClearAllPoints();emptyTitle:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-30));emptyTitle:SetWidth(windowWidth-28)
  emptyBody:ClearAllPoints();emptyBody:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-2));emptyBody:SetWidth(windowWidth-36)
- if frame.meterSubtitle then frame.meterSubtitle:SetText(metrics[metricIndex][1].." / "..sessions[sessionIndex][1]) end
  if frame.meterFooter then
   frame.meterFooter:SetText(sessions[sessionIndex][1].." Fight  /  "..metrics[metricIndex][1])
  end
@@ -714,6 +602,8 @@ function M.Refresh()
   emptyBody:SetText("Enable the game's damage meter if available, then reopen this window.");emptyBody:Show()
   detailLabel:Hide()
   notice:SetText("Meter unavailable")
+  frame.meterFooter:SetText("Native combat data unavailable")
+  frame.playerRange:Hide();rowOffset=0;sourceCount=0
   return
  end
  local data
@@ -732,10 +622,9 @@ function M.Refresh()
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
  end
- if frame.amountColumn then frame.amountColumn:SetText(metrics[metricIndex][1]:upper()) end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
- emptyTitle:SetShown(#sources==0);emptyBody:SetShown(#sources==0);detailLabel:SetShown(#sources>0)
+ emptyTitle:SetShown(#sources==0);emptyBody:SetShown(#sources==0);detailLabel:Hide()
  emptyTitle:SetText("No combat session data")
  emptyBody:SetText("Your combat session will appear here. Choose a metric or another session above.")
  if frame.meterFooter then
@@ -745,6 +634,12 @@ function M.Refresh()
    suffix=string.format("  /  %d:%02d",math.floor(duration/60),math.floor(duration%60))
   end
   frame.meterFooter:SetText(sessions[sessionIndex][1].."  /  "..#sources.." players"..suffix)
+  frame.meterFooter:SetWidth(windowWidth-(isPast and 70 or (#sources>rowCount and 94 or 25)))
+  if isPast then
+   local entry=availableHistory()[pastIndex]
+   local name=type(entry)=='table' and entry.name
+   if not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name~='' then frame.meterFooter:SetText(name..suffix) end
+  end
  end
  if selectedSourceGUID then
   local match
@@ -755,19 +650,26 @@ function M.Refresh()
   selectedRow=match
   if not match then selectedSourceGUID=nil;detailOpen=false end
  end
- if selectedRow and selectedRow>rowCount then selectedRow=nil;selectedSourceGUID=nil;detailOpen=false end
+ if selectedRow and selectedRow>#sources then selectedRow=nil;selectedSourceGUID=nil;detailOpen=false end
+ sourceCount=#sources
+ rowOffset=math.max(0,math.min(rowOffset,math.max(0,sourceCount-rowCount)))
+ frame.playerRange:SetShown(not isPast and sourceCount>rowCount)
+ frame.playerRange:SetText(sourceCount>0 and ((rowOffset+1).."-"..math.min(sourceCount,rowOffset+rowCount).."/"..sourceCount) or "")
  local colors=RAID_CLASS_COLORS or {}
  for i,row in ipairs(rows) do
-  local source=i<=rowCount and sources[i]
+  local sourceIndex=rowOffset+i
+  local source=i<=rowCount and sources[sourceIndex]
   if type(source)=="table" then
    row.frame:Show()
+   row.frame.sourceIndex=sourceIndex;row.rank:SetText(sourceIndex)
+   row.selection:SetShown(selectedRow==sourceIndex)
    local guid=source.sourceGUID
    row.frame.sourceGUID=not (issecretvalue and issecretvalue(guid)) and type(guid)=="string" and guid or nil
    local displayName=source.name
    if not (issecretvalue and issecretvalue(displayName)) and type(displayName)=="string" then
     row.frame.sourceLabel=displayName
    else row.frame.sourceLabel=nil end
-   if selectedRow==i then row.background:SetColorTexture(.075,.19,.23,.98)
+   if selectedRow==sourceIndex then row.background:SetColorTexture(.075,.19,.23,.98)
    elseif not (issecretvalue and issecretvalue(source.isLocalPlayer)) and source.isLocalPlayer==true then
     row.background:SetColorTexture(.13,.16,.08,.98)
    else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
@@ -775,10 +677,27 @@ function M.Refresh()
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    row.name:SetText(source.name)
-   if metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps" then
-    row.amount:SetText(M.DisplayAmount(source.amountPerSecond))
-   else
+   local metric=metrics[metricIndex][2]
+   local rateMetric=metric=="Dps" or metric=="Hps"
+   local both=saved().showBoth~=false and (rateMetric or metric=="DamageDone" or metric=="HealingDone")
+   row.rate:SetShown(both)
+   row.amount:ClearAllPoints()
+   row.amount:SetPoint("RIGHT",row.frame,"RIGHT",both and -68 or -5,0)
+   row.amount:SetWidth(both and 64 or 96)
+   row.name:SetWidth(windowWidth-(both and 182 or 158))
+   row.valueShade:SetWidth(both and 132 or 108)
+   if both then
     row.amount:SetText(M.DisplayAmount(source.totalAmount))
+    row.rate:SetText(M.DisplayAmount(source.amountPerSecond))
+   elseif rateMetric then row.amount:SetText(M.DisplayAmount(source.amountPerSecond))
+   else row.amount:SetText(M.DisplayAmount(source.totalAmount)) end
+   local fontSize=safeNumber(saved().textSize) and saved().textSize or 11
+   if fontSize~=10 and fontSize~=11 and fontSize~=13 then fontSize=11 end
+   if row.fontSize~=fontSize then
+    for _,label in ipairs({row.name,row.amount,row.rate,row.rank}) do
+     if label.SetFont then label:SetFont("Fonts\\FRIZQT__.TTF",fontSize,"OUTLINE") end
+    end
+    row.fontSize=fontSize
    end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
@@ -1024,15 +943,16 @@ function M.SetWidth(width)
  if issecretvalue and issecretvalue(width) then return false end
  if type(width)~="number" or width~=width or width==math.huge or width==-math.huge or width~=math.floor(width) or width<280 or width>500 then return false end
  saved().width=width
+ saved().layout=nil
  windowWidth=width
  if frame then
   frame:SetWidth(width)
-  notice:SetWidth(width-110)
-  if frame.meterFooter then frame.meterFooter:SetWidth(width-24) end
-  if frame.meterSubtitle then frame.meterSubtitle:SetWidth(width-60) end
+  heading:SetWidth(width-124);dragHandle:SetWidth(width-120)
+  notice:SetWidth(width-68)
+  if frame.meterFooter then frame.meterFooter:SetWidth(width-92) end
   for _,row in ipairs(rows) do
-   row.frame:SetWidth(width-18)
-   row.name:SetWidth(width-175)
+   row.frame:SetWidth(width-8)
+   row.name:SetWidth(width-182)
   end
   if detailLabel then detailLabel:SetWidth(width-26) end
 
@@ -1044,8 +964,9 @@ function M.SetRows(count)
  if issecretvalue and issecretvalue(count) then return false end
  if type(count)~="number" or count~=count or count==math.huge or count==-math.huge or count~=math.floor(count) or count<4 or count>12 then return false end
  saved().rows=count
+ saved().layout=nil
  rowCount=count
- if selectedRow and selectedRow>rowCount then selectedRow=nil;selectedSourceGUID=nil;detailOpen=false end
+
  if frame then frame:SetHeight(BASE_HEIGHT+rowCount*ROW_STEP) end
  M.Refresh()
  return true
@@ -1068,7 +989,7 @@ function M.SetSession(mode)
  for i,item in ipairs(sessions) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   sessionIndex=i;pastIndex=1;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().session=item[1];M.Refresh()
+   sessionIndex=i;pastIndex=1;rowOffset=0;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().session=item[1];M.Refresh()
    return true
   end
  end
@@ -1079,19 +1000,126 @@ function M.SetMode(mode)
  for i,item in ipairs(metrics) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   metricIndex=i;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().metric=item[1];M.Refresh()
+   metricIndex=i;rowOffset=0;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().metric=item[1];M.Refresh()
    return true
   end
  end
  return false
+end
+function M.Scroll(delta)
+ if not safeNumber(delta) then return false end
+ rowOffset=math.max(0,math.min(math.max(0,sourceCount-rowCount),rowOffset+math.floor(delta)))
+ M.Refresh();return true
+end
+function M.ScrollOffset() return rowOffset end
+function M.CycleMetric(delta)
+ if not safeNumber(delta) or delta==0 then return false end
+ delta=delta>0 and 1 or -1
+ for _=1,#metrics do
+  metricIndex=(metricIndex-1+delta+#metrics)%#metrics+1
+  if types()~=nil then return M.SetMode(metrics[metricIndex][1]) end
+ end
+ return false
+end
+function M.SelectPast(index)
+ if not safeNumber(index) or index~=math.floor(index) or index<1 or index>historyCount() then return false end
+ if not C_DamageMeter or type(C_DamageMeter.GetCombatSessionFromID)~='function' then return false end
+ if not M.SetSession('Past') then return false end
+ pastIndex=index;rowOffset=0;M.Refresh();return true
+end
+function M.OpenMetrics(anchor)
+ local entries={}
+ local enums=Enum and Enum.DamageMeterType or {}
+ for i,item in ipairs(metrics) do
+  local index=i
+  entries[#entries+1]={label=metricNames[item[1]],selected=i==metricIndex,enabled=enums[item[2]]~=nil,action=function() M.SetMode(metrics[index][1]) end}
+ end
+ ForeverCompanionInterface.Menu(anchor or modeButton,'SELECT DISPLAY',entries,skin())
+end
+function M.OpenSessions(anchor)
+ local entries={}
+ local enums=Enum and Enum.DamageMeterSessionType or {}
+ for i,item in ipairs(sessions) do
+  local index=i
+  entries[#entries+1]={label=item[1]..' combat',selected=i==sessionIndex,enabled=enums[item[2]]~=nil,action=function() M.SetSession(sessions[index][1]) end}
+ end
+ local history=availableHistory()
+ local first=math.max(1,math.min(pastIndex-4,#history-9))
+ for i=first,math.min(#history,first+9) do
+  local index=i
+  local entry=history[i]
+  local name=type(entry)=='table' and entry.name
+  if (issecretvalue and issecretvalue(name)) or type(name)~='string' or name=='' then name='Fight '..i end
+  entries[#entries+1]={label=i..'. '..name,selected=sessionIndex==2 and pastIndex==i,enabled=enums.Expired~=nil and historyID(entry)~=nil and C_DamageMeter and type(C_DamageMeter.GetCombatSessionFromID)=='function',action=function() M.SelectPast(index) end}
+ end
+ ForeverCompanionInterface.Menu(anchor or sessionButton,'COMBAT SEGMENTS',entries,skin())
+end
+function M.SetTextSize(size)
+ if not safeNumber(size) or (size~=10 and size~=11 and size~=13) then return false end
+ saved().textSize=size;M.Refresh();return true
+end
+function M.SetBothColumns(enabled)
+ if type(enabled)~='boolean' then return false end
+ saved().showBoth=enabled;M.Refresh();return true
+end
+function M.OpenQuickMenu(anchor)
+ local entries={}
+ for _,metric in ipairs({'Damage','DPS','Healing','HPS','Taken'}) do
+  local name=metric
+  local enabled=false
+  for _,item in ipairs(metrics) do if item[1]==name then enabled=Enum and Enum.DamageMeterType and Enum.DamageMeterType[item[2]]~=nil end end
+  entries[#entries+1]={label=metricNames[name],enabled=enabled,selected=metrics[metricIndex][1]==name,action=function() M.SetMode(name) end}
+ end
+ entries[#entries+1]={label='Combat segments...',action=function() M.OpenSessions(anchor) end}
+ entries[#entries+1]={label='Meter options...',action=function() M.OpenOptions(anchor) end}
+ ForeverCompanionInterface.Menu(anchor or frame,'QUICK DISPLAYS',entries,skin())
+end
+function M.OpenOptions(anchor)
+ local entries={}
+ for _,layout in ipairs({'compact','standard','expanded'}) do
+  local name=layout
+  entries[#entries+1]={label=name:sub(1,1):upper()..name:sub(2)..' layout',selected=saved().layout==name,action=function() M.SetLayout(name) end}
+ end
+ entries[#entries+1]={label='Show fewer players',enabled=rowCount>4,action=function() M.SetRows(rowCount-1) end}
+ entries[#entries+1]={label='Show more players',enabled=rowCount<12,action=function() M.SetRows(rowCount+1) end}
+ entries[#entries+1]={label='Total + per second columns',selected=saved().showBoth~=false,action=function() M.SetBothColumns(saved().showBoth==false) end}
+ entries[#entries+1]={label='Larger text',selected=saved().textSize==13,action=function() M.SetTextSize(saved().textSize==13 and 11 or 13) end}
+ entries[#entries+1]={label='Details-inspired skin',selected=skinName=='details',action=function() M.SetSkin('details') end}
+ entries[#entries+1]={label='Recount-inspired skin',selected=skinName=='recount',action=function() M.SetSkin('recount') end}
+ entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
+ entries[#entries+1]={label='Reset window appearance',action=function()
+  saved().locked=false;saved().position=nil;saved().showBoth=true;saved().textSize=11
+  M.SetSkin('details');M.SetLayout('standard');rowOffset=0
+  frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()
+ end}
+ entries[#entries+1]={label='Reset combat data...',action=function() M.RequestReset(anchor) end}
+ entries[#entries+1]={label='Close meter',action=M.Hide}
+ ForeverCompanionInterface.Menu(anchor or optionsButton,'METER OPTIONS',entries,skin())
+end
+function M.RequestReset(anchor)
+ local api=C_DamageMeter
+ local enabled=type(api)=='table' and type(api.ResetAllCombatSessions)=='function' and not (InCombatLockdown and InCombatLockdown())
+ ForeverCompanionInterface.Menu(anchor or frame,'CLEAR ALL NATIVE COMBAT DATA?',{
+  {label='Clear all native combat sessions',enabled=enabled,action=function()
+   if InCombatLockdown and InCombatLockdown() then return end
+   local current=C_DamageMeter
+   if not current or type(current.ResetAllCombatSessions)~='function' then return end
+   local ok=pcall(current.ResetAllCombatSessions)
+   if ok then rowOffset=0;pastIndex=1;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;M.Refresh()
+   elseif frame then frame.meterFooter:SetText('Native meter could not reset data') end
+  end},
+  {label='Cancel',action=function() end}
+ },skin())
 end
 SLASH_FOREVERCOMPANIONMETER1="/fcmeter"
 SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  msg=(msg or ""):lower():match("^%s*(.-)%s*$")
  if msg=="hide" or msg=="off" then M.Hide()
  elseif msg=="show" or msg=="on" then M.Show()
- elseif msg=="lock" then saved().locked=true
- elseif msg=="unlock" then saved().locked=false
+ elseif msg=="lock" then saved().locked=true;M.Refresh()
+ elseif msg=="unlock" then saved().locked=false;M.Refresh()
+ elseif msg=="options" then M.Show();M.OpenOptions(optionsButton)
+ elseif msg=="reset" then M.Show();M.RequestReset(frame.resetButton)
  elseif msg=="compact" or msg=="standard" or msg=="expanded" then
   M.SetLayout(msg)
   M.Show()
