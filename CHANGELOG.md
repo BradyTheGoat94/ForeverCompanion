@@ -1,3 +1,18 @@
+## 3.33.0-beta — Quest-giver analysis and readable combat values
+
+- Expanded Discover Quests with selected-giver details, per-location source labels, navigation feedback, level filtering, reset controls and sorting by name, level, client evidence or approximate map proximity. Unknown levels stay visible; proximity is not a terrain-aware route or yard measurement.
+- Added a Find new quests shortcut beside the active quest controls. Selection follows a giver's coordinates when provider results reorder, and stale quests disable navigation. Invalid coordinates and duplicate locations are excluded.
+- Journey now offers up to three distinct quest pickups when no active quest is recommended. Client-reported starts take priority over database references; map proximity helps order candidates when position is available. Each pickup can start navigation explicitly.
+- Refreshes the visible guide when background quest indexing finishes. Database-only availability still requires confirmation with the giver; special reputation, profession and seasonal rules are not fully evaluated.
+- Compact public combat totals and rates into narrow meter columns, spell rows and player summaries. Hover shows unrounded public values. Secret values retain their original native display path and are never formatted or used for derived totals.
+- Extended offline regression checks for mixed-source giver locations, sorting, level filters, invalid coordinates, selection recovery, stale navigation, pickup queues and secret-safe number formatting. Added a dedicated quest-discovery capture to the offline interface gallery. In-game acceptance remains pending.
+
+## 3.32.0-beta — Searchable quest discovery
+
+- Added a searchable current-zone browser for unaccepted quest pickups, with native/database source filters, grouped giver locations and explicit navigation.
+- Kept discovery usable when map pickup icons are hidden, without changing marker preferences.
+- Added an initial pickup suggestion to Journey's empty quest-log state and automated discovery checks.
+
 ## 3.31.0-beta — Unified interface and profession workspace
 
 - Unified the application shell, navigation, dashboard, guide cards, checklists, catalog controls and settings around charcoal surfaces, restrained brass accents and a shared native-font type scale. Removed stacked ornamental borders and default push-button chrome from addon-owned controls.
