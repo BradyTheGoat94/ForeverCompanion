@@ -22,7 +22,7 @@ local professionIndex=1
 local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
-local questSectionLabel,questEmpty
+local questSectionLabel,questEmpty,questDiscoveryButton
 local questListBottom=650
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
@@ -661,6 +661,7 @@ local function render()
   end
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   ForeverCompanionQuestDiscovery.Show(currentTab=="Quests",scrollChild,questListBottom)
+  if questDiscoveryButton then questDiscoveryButton:SetShown(currentTab=="Quests") end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
   local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
@@ -977,6 +978,11 @@ local function createUI()
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   ForeverCompanionQuestDiscovery.Create(child)
+  questDiscoveryButton=ForeverCompanionInterface.Button(child)
+  questDiscoveryButton:SetSize(172,23);questDiscoveryButton:SetPoint("TOPLEFT",child,"TOPLEFT",606,-181)
+  questDiscoveryButton:SetText("Find new quests")
+  questDiscoveryButton:SetScript("OnClick",function() scroll:SetVerticalScroll(questListBottom) end)
+  questDiscoveryButton:Hide()
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then

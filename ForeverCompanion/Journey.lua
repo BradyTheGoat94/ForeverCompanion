@@ -116,6 +116,15 @@ end
 local root,kind,title,detail,hint,mapButton,stageText,previous,nextStage,rows
 local overrideStage,actionQuest,actionIndex,zoneNote,actionPickup
 local queueRows,queueEmpty,levelBadge,queueStatus
+function J.PickupStops(entries,x,y,limit)
+ local grouped=ForeverCompanionQuestDiscovery.Filter(entries,'',false,{sort='recommended',x=x,y=y})
+ local result={}
+ for i=1,math.min(limit or 3,#grouped) do
+  local item=grouped[i]
+  result[i]={quest=item.quest,target=item.targets[1],pickup=true,reference=item.targets[1].reference}
+ end
+ return result
+end
 local function label(parent,x,y,w,size,color)
  local text=parent:CreateFontString(nil,"OVERLAY","GameFontHighlight")
  text:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
@@ -177,6 +186,9 @@ function J.Create(parent,navigate)
   item.title=label(item,30,-6,170,12,white);item.title:SetWordWrap(false);item.title:SetHeight(17)
   item.status=label(item,30,-23,170,10,muted);item.status:SetWordWrap(false);item.status:SetHeight(14)
   item.view=button(item,205,-7,52,"View",function()
+   if item.stop and item.stop.pickup then
+    ForeverCompanionQuestWaypoints.Navigate(item.stop.target,true,item.stop.quest.title);return
+   end
    local p=ForeverCompanionQuestPlanner
    if item.stop and p.IsSupported() and p.GetLive()[item.stop.index]==item.stop.quest then
     p.Select(item.stop.index);navigate("Quests")
@@ -236,19 +248,24 @@ function J.Show(show,level)
  local planner=ForeverCompanionQuestPlanner
  actionQuest,actionIndex,actionPickup=nil,nil,nil
  local upcoming={}
+ local position=map and C_Map and read(C_Map.GetPlayerMapPosition,map,"player")
+ local x,y
+ if position then x,y=read(position.GetXY,position) end
  levelBadge:SetText("LEVEL "..tostring(level or "?"))
  if planner.IsSupported() then
   local quests=planner.GetLive()
   local locations=map and ForeverCompanionQuestWaypoints.MapLocations(map,quests) or {}
-  local position=map and C_Map and read(C_Map.GetPlayerMapPosition,map,"player")
-  local x,y
-  if position then x,y=read(position.GetXY,position) end
   local stops=J.LocalRoute(quests,locations,x,y,3)
   upcoming=stops
   if stops[1] then actionQuest,actionIndex=stops[1].quest,stops[1].index
   else actionQuest,actionIndex=J.Recommend(quests,locations,planner.GetSelected()) end
  end
- queueStatus:SetText(#upcoming>0 and (#upcoming.." STOPS") or "NO ROUTE")
+ if not actionQuest and map then
+  local pickups=ForeverCompanionQuestWaypoints.MapPickups(map,planner.GetLive(),true)
+  upcoming=J.PickupStops(pickups,x,y,3)
+  actionPickup=upcoming[1]
+ end
+ queueStatus:SetText(#upcoming>0 and (#upcoming..(actionPickup and " PICKUPS" or " STOPS")) or "NO ROUTE")
  queueEmpty:SetShown(#upcoming==0)
  queueEmpty:SetText("No reported destinations nearby. Open the quest journal to choose a quest or another zone.")
  for i,item in ipairs(queueRows) do
@@ -256,17 +273,10 @@ function J.Show(show,level)
   item.stop=stop;item:SetShown(stop~=nil)
   if stop then
    item.title:SetText(stop.quest.title)
-   item.status:SetText(planner.IsPinned(stop.quest) and "Pinned priority" or (stop.quest.complete and "Ready to turn in" or "Quest objective"))
+   item.status:SetText(stop.pickup and (stop.reference and "Pickup · database reference" or "Pickup · client reported") or (planner.IsPinned(stop.quest) and "Pinned priority" or (stop.quest.complete and "Ready to turn in" or "Quest objective")))
   end
  end
  local quest=actionQuest
- if not quest and map then
-  local pickups=ForeverCompanionQuestWaypoints.MapPickups(map,planner.GetLive(),true)
-  -- Prefer client-reported starts over database reference locations.
-  for _,pickup in ipairs(pickups) do
-   if not actionPickup or (actionPickup.reference and not pickup.reference) then actionPickup=pickup end
-  end
- end
  if actionPickup then
   kind:SetText("NEXT STEP   ·   PICK UP A QUEST")
   title:SetText(actionPickup.quest.title)

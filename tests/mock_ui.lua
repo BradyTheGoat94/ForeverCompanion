@@ -746,6 +746,39 @@ C_QuestLog.IsComplete=originalComplete
 assert(ForeverCompanionQuestPlanner.Sync(),"ready quest fixture should recover")
 exportSnapshot("ui_quest_snapshot.txt")
 exportNative("ui_quest_native.json")
+do
+ local originalPickups=ForeverCompanionQuestWaypoints.MapPickups
+ local originalNavigate=ForeverCompanionQuestWaypoints.Navigate
+ local originalMap=C_Map
+ local map=1429
+ C_Map={GetBestMapForUnit=function() return map end,GetMapInfo=function() return {name='Sample forest'} end}
+ local sample={quest={id=900001,title='Sample: Help the outpost',level=60},target={map=map,x=.23,y=.46,label='Sample quartermaster'},reference=true}
+ local client={quest={id=900001,title='Sample: Help the outpost',level=60},target={map=map,x=.21,y=.43,label='Sample scout'}}
+ local fixture={sample,client}
+ ForeverCompanionQuestWaypoints.MapPickups=function() return fixture end
+ local navigated
+ ForeverCompanionQuestWaypoints.Navigate=function(target,showMap,title) navigated=target;return 'Test waypoint selected' end
+ ForeverCompanionQuestDiscovery.Refresh()
+ local row
+ for _,frame in ipairs(frames) do if frame.kind=='Button' and frame.item and frame.item.quest.id==900001 then row=frame;break end end
+ assert(row and #row.item.targets==2)
+ row.OnClick(row)
+ row.cycle.OnClick(row.cycle)
+ row.go.OnClick(row.go)
+ assert(navigated and navigated.x==.23,'selected reference giver must be navigated instead of first giver')
+ exportNative('ui_discovery_native.json')
+ -- Provider refreshes may reorder locations; selection follows coordinates.
+ fixture={client,sample};ForeverCompanionQuestDiscovery.Refresh()
+ row.go.OnClick(row.go);assert(navigated.x==.23,'giver identity survives provider reordering')
+ fixture={};ForeverCompanionQuestDiscovery.Refresh()
+ local detailGo
+ for _,frame in ipairs(frames) do if frame.kind=='Button' and frame.text=='Navigate to giver' then detailGo=frame end end
+ assert(detailGo and detailGo.enabled==false,'stale quest disappears and disables navigation')
+ ForeverCompanionQuestWaypoints.MapPickups=originalPickups
+ ForeverCompanionQuestWaypoints.Navigate=originalNavigate
+ C_Map=originalMap
+ ForeverCompanionQuestDiscovery.Refresh()
+end
 local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
 assert(ForeverCompanionQuestPlanner.Sync()==false,"failed quest scan must not be reported successful")

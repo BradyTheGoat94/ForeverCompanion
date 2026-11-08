@@ -78,6 +78,7 @@ local function build(db,who)
    loading=false
    if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
    if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
+   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
   end
  end
  C_Timer.After(0,batch)

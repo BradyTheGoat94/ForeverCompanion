@@ -16,7 +16,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     sections = ('dashboard', 'journey', 'class', 'gear', 'topic', 'quest',
                 'profession', 'loot', 'encounter', 'legacy', 'alts', 'practice',
-                'pvp', 'settings', 'meter')
+                'pvp', 'settings', 'meter', 'discovery')
     cards = []
     for section in sections:
         source = Path('ui_' + section + '_native.json')
@@ -24,6 +24,7 @@ def main():
             continue
         target = output / (section + '.png')
         options = {'window_name': 'ForeverCompanionCombatMeterWindow'} if section == 'meter' else {}
+        if section == 'discovery': options = {'window_name': 'ForeverCompanionQuestDiscoveryPanel'}
         render(source, target, **options)
         label = {'topic': 'Talent planner', 'class': 'Class guides', 'quest': 'Quest journal',
                  'profession': 'Profession planning', 'meter': 'Meter — empty API state'}.get(section, section.title())
