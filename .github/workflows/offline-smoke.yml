@@ -33,4 +33,5 @@ jobs:
           lua5.1 tests/quest_locations_smoke.lua
           lua5.1 tests/quest_pickups_smoke.lua
           lua5.1 tests/available_quests_smoke.lua
+          lua5.1 tests/material_workspace_smoke.lua
           lua5.1 tests/mock_ui.lua

@@ -11,3 +11,4 @@ work/
 __pycache__/
 ui_*snapshot.txt
 ui_*native.json
+ui_*.png

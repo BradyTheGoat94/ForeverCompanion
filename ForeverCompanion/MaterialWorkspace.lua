@@ -2,7 +2,7 @@
 local W={page=1,pageSize=5}
 ForeverCompanionMaterialWorkspace=W
 local root,profession,refresh,fields,rows,status,heading,counter,previous,nextPage,save,cancel,empty
-local editIndex
+local editIndex,editingRecord
 local function input(parent,x,width,hint,max)
  local box=ForeverCompanionInterface.EditBox(parent,hint)
  box:SetPoint('TOPLEFT',parent,'TOPLEFT',x,-58);box:SetSize(width,27)
@@ -16,9 +16,10 @@ local function label(parent,x,y,width,text,size)
  return f
 end
 local function reset()
- editIndex=nil
+ editIndex,editingRecord=nil,nil
  fields.name:SetText('');fields.needed:SetText('');fields.owned:SetText('0')
  save:SetText('Add goal');cancel:Hide()
+ for _,box in pairs(fields) do if box.ClearFocus then box:ClearFocus() end end
 end
 local function quantity(text,minimum)
  local value=tonumber(text)
@@ -32,6 +33,9 @@ local function submit()
  if #name>60 then status:SetText('Use a shorter material name.');return end
  if not need or not owned then status:SetText('Use whole quantities: needed 1–999999; owned 0–999999.');return end
  local model=ForeverCompanionCraftingPlanner
+ if editIndex and model.GetEntries(profession)[editIndex]~=editingRecord then
+  status:SetText("This goal changed while you were editing. Cancel and reopen its Edit control.");return
+ end
  local ok,message
  if editIndex then ok,message=model.Update(profession,editIndex,name,need,owned)
  else ok,message=model.Add(profession,name,need,owned) end
@@ -52,9 +56,18 @@ function W.Create(parent,onRefresh)
  label(root,442,-39,94,'Owned',10)
  fields={name=input(root,16,306,'Material name',60),needed=input(root,336,94,'Required',6),owned=input(root,442,94,'On hand',6)}
  W.fields=fields
- for _,box in pairs(fields) do box:SetScript('OnEnterPressed',submit) end
+ local ordered={fields.name,fields.needed,fields.owned}
+ for i,box in ipairs(ordered) do
+  box:SetScript('OnEnterPressed',submit)
+  box:SetScript('OnTabPressed',function()
+   local direction=IsShiftKeyDown and IsShiftKeyDown() and -1 or 1
+   local target=ordered[(i-1+direction+#ordered)%#ordered+1]
+   if target.SetFocus then target:SetFocus() end
+   if target.HighlightText then target:HighlightText() end
+  end)
+ end
  save=ForeverCompanionInterface.Button(root);save:SetPoint('TOPLEFT',root,'TOPLEFT',548,-58);save:SetSize(106,27);save:SetText('Add goal');save:SetScript('OnClick',submit)
- cancel=ForeverCompanionInterface.Button(root);cancel:SetPoint('TOPLEFT',root,'TOPLEFT',664,-58);cancel:SetSize(90,27);cancel:SetText('Cancel');cancel:SetScript('OnClick',function() reset();status:SetText('Edit cancelled. Your saved goal is unchanged.') end)
+ cancel=ForeverCompanionInterface.Button(root);cancel:SetPoint('TOPLEFT',root,'TOPLEFT',664,-58);cancel:SetSize(90,27);cancel:SetText('Cancel');cancel:SetScript('OnClick',function() reset();status:SetText('Edit cancelled. Your saved goal is unchanged.');if refresh then refresh() end end)
  status=label(root,16,-92,738,'Counts are entered manually; these goals do not scan your bags.',10)
  status:SetWordWrap(false)
  label(root,16,-120,300,'MATERIAL',10)
@@ -71,7 +84,7 @@ function W.Create(parent,onRefresh)
   row.edit:SetScript('OnClick',function()
    local entry=ForeverCompanionCraftingPlanner.GetEntries(profession)[row.index]
    if type(entry)~='table' then return end
-   editIndex=row.index;fields.name:SetText(entry.name);fields.needed:SetText(tostring(entry.needed));fields.owned:SetText(tostring(entry.owned))
+   editIndex,editingRecord=row.index,entry;fields.name:SetText(entry.name);fields.needed:SetText(tostring(entry.needed));fields.owned:SetText(tostring(entry.owned))
    save:SetText('Save goal');cancel:Show();status:SetText('Editing '..entry.name..'. Enter saves; Cancel keeps the current goal.')
   end)
   row.remove=ForeverCompanionInterface.Button(row);row.remove:SetSize(88,24);row.remove:SetPoint('TOPLEFT',row,'TOPLEFT',642,-5);row.remove:SetText('Remove')

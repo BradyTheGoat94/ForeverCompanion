@@ -36,6 +36,7 @@ jobs:
           python3 tests/render_planning_previews.py
           python3 tests/render_encounter_preview.py
           python3 tests/render_native_preview.py
+          python3 tests/render_design_review.py --output work/design-review
       - name: Upload offline UI text snapshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -44,6 +45,7 @@ jobs:
           path: |
             ui_snapshot.txt
             ui_preview.png
+            work/design-review/
             ui_leveling_snapshot.txt
             ui_class_preview.png
             ui_quest_snapshot.txt

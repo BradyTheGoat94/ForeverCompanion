@@ -1,3 +1,13 @@
+## 3.31.0-beta — Unified interface and profession workspace
+
+- Unified the application shell, navigation, dashboard, guide cards, checklists, catalog controls and settings around charcoal surfaces, restrained brass accents and a shared native-font type scale. Removed stacked ornamental borders and default push-button chrome from addon-owned controls.
+- Added consistent input insets, focus indicators, persistent search hints, selected-row edge markers and modern close controls. Preserved per-character state, class colors, meter themes and navigation behavior.
+- Made quest pagination and detail placement follow the visible row count, added informative empty states, bounded row labels and fixed compact-sidebar/footer collisions.
+- Replaced command-only material entry with a profession workspace: add, edit, cancel and remove goals with aligned owned/needed/remaining columns and pagination. Invalid, duplicate or stale edits cannot overwrite a saved goal. Counts remain explicitly manual; no crafting, trading or inventory actions are performed.
+- Improved bank name/count separation and empty search feedback, long loot-title flow, talent-tile text and rank spacing, detail-sidebar growth, notebook status spacing, navigation HUD typography and meter empty states.
+- Added a reproducible 15-screen offline design-review gallery with client font/icon approximations, including a meter capture containing no invented combat data.
+- Lua 5.1 and mocked-client checks cover the new form workflow and atomic updates, compact navigation, input hints, existing talent planning, quest pickups and secret-safe combat data. Actual Forever-client acceptance is still pending.
+
 ## 3.30.0-beta — Unaccepted quests and professional interface pass
 
 - Added background indexing of unaccepted quest-giver locations from Forever QuestieDB, including NPCs and objects. Checks active/completed state, minimum level, provider race/class masks, quest prerequisites, exclusive choices, parent quests and breadcrumbs. No item-drop pickup coordinates are guessed.
