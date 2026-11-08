@@ -14,7 +14,7 @@ local function text(parent,x,y,width,label,size,gold)
 end
 
 local function control(parent,x,y,w,caption,action)
- local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
+ local b=ForeverCompanionInterface.Button(parent)
  b:SetSize(w,24);b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetText(caption)
  b:SetScript("OnClick",action)
  return b
@@ -123,7 +123,7 @@ function W.Create(parent)
  text(root,16,-530,736,"Draft controls: left click adds a rank, right click refunds. Shift-click + or - changes level by 10.",11)
  text(root,16,-551,736,"Grid adapted from Zephras (CC BY 4.0). Names and icon references belong to Blizzard.",10)
  local function reference(x,width,url)
-  local field=CreateFrame("EditBox",nil,root,"InputBoxTemplate")
+  local field=ForeverCompanionInterface.EditBox(root)
   field:SetSize(width,22);field:SetPoint("TOPLEFT",root,"TOPLEFT",x,-570)
   if field.SetAutoFocus then field:SetAutoFocus(false) end
   field.url=url

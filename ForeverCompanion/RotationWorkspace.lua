@@ -31,7 +31,7 @@ function W.Create(parent,selectMode)
   b:SetScript("OnClick",function() selectMode(i) end);buttons[i]=b
  end
  W.buttons=buttons
- W.reference=CreateFrame("Button",nil,rail,"UIPanelButtonTemplate")
+ W.reference=ForeverCompanionInterface.Button(rail)
  W.reference:SetSize(158,25);W.reference:SetPoint("TOPLEFT",rail,"TOPLEFT",11,-299)
  W.reference:SetScript("OnClick",function()
   showReference=not showReference

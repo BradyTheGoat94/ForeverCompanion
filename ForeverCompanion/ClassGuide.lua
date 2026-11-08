@@ -64,7 +64,7 @@ function Guide.Create(parent,openPage)
  ForeverCompanionVisualTheme.Panel(topicPanel,770,352)
  topicTitle=text(topicPanel,16,-13,730,"",18,true)
  topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetJustifyV("TOP")
- topicLink=CreateFrame("Button",nil,topicPanel,"UIPanelButtonTemplate");topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
+ topicLink=ForeverCompanionInterface.Button(topicPanel);topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
  topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
  ForeverCompanionTalentWorkspace.Create(topicPanel)
  Guide.topicPanel=topicPanel;Guide.topicBody=topicBody

@@ -14,6 +14,7 @@ local function label(parent,x,y,width,value,font,color)
   f:SetWidth(width)
   f:SetJustifyH("LEFT")
   f:SetText(value or "")
+  ForeverCompanionVisualTheme.Font(f,12)
   if color then f:SetTextColor(color[1],color[2],color[3]) end
   return f
 end
@@ -27,37 +28,17 @@ local function plate(parent,x,width,title)
   local p=CreateFrame("Frame",nil,parent)
   p:SetSize(width,175)
   p:SetPoint("TOPLEFT",parent,"TOPLEFT",x,0)
-  local bg=p:CreateTexture(nil,"BACKGROUND")
-  bg:SetAllPoints(p)
-  paint(bg,0.056,0.074,0.101,0.99)
-  edge(p,0,0,width,2,0.94,0.71,0.30)
-  edge(p,0,-174,width,1,0.36,0.29,0.20)
-  edge(p,0,0,1,175,0.36,0.29,0.20)
-  edge(p,width-1,0,1,175,0.36,0.29,0.20)
-  edge(p,5,-5,16,2,0.91,0.69,0.31)
-  edge(p,5,-5,2,15,0.91,0.69,0.31)
-  edge(p,width-21,-5,16,2,0.91,0.69,0.31)
-  edge(p,width-7,-5,2,15,0.91,0.69,0.31)
-  if ForeverCompanionOrnaments then ForeverCompanionOrnaments.Hero(p,width,175) end
-  label(p,16,-14,width-32,title,"GameFontNormal",GOLD)
+  ForeverCompanionVisualTheme.Panel(p,width,175)
+  local heading=label(p,16,-12,width-32,title,"GameFontNormal",{.82,.71,.50})
+  ForeverCompanionVisualTheme.Font(heading,12)
   return p
 end
 local function button(parent,x,text,fn)
-  local b=CreateFrame("Button",nil,parent)
+  local b=ForeverCompanionInterface.Button(parent)
   b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,-190)
   b:SetSize(240,37)
-  local bg=b:CreateTexture(nil,"BACKGROUND")
-  bg:SetAllPoints(b)
-  paint(bg,0.12,0.15,0.20,1)
-  edge(b,0,0,240,2,0.75,0.56,0.25)
-  edge(b,0,-36,240,1,0.43,0.33,0.19)
-  local caption=label(b,15,-10,211,text,"GameFontHighlight",{0.96,0.86,0.67})
-  b.caption=caption
-  b:SetScript("OnClick",function()
-    if type(fn)=="function" then fn() end
-  end)
-  b:SetScript("OnEnter",function() paint(bg,0.25,0.21,0.13,1) end)
-  b:SetScript("OnLeave",function() paint(bg,0.12,0.15,0.20,1) end)
+  b:SetText(text);b.caption=b:GetFontString()
+  b:SetScript("OnClick",function() if type(fn)=="function" then fn() end end)
   return b
 end
 local function safe(fn,...)

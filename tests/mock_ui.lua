@@ -108,6 +108,9 @@ local function widget(kind)
  function w:SetSpacing() end
  function w:SetTextColor(...) self.textColor={...} end
  function w:SetFontObject() end
+ function w:SetTextInsets(...) self.textInsets={...} end
+ function w:SetAutoFocus(v) self.autoFocus=v end
+ function w:SetDisabledFontObject() end
  function w:SetFont(path,size,flags) self.font={path,size,flags} end
  function w:SetTexCoord(...) self.texCoord={...} end
  function w:SetAlpha(value) self.alpha=value end
@@ -309,7 +312,7 @@ for _,w in ipairs(frames) do
 end
 assert(questCountCard,"live quest briefing count incorrect")
 local sortControl
-for _,w in ipairs(frames) do if w.text=="Sort: zone" then sortControl=w end end
+for _,w in ipairs(frames) do if w.OnClick and w.text=="Sort: zone" then sortControl=w end end
 assert(sortControl and sortControl.OnClick,"quest sort selector missing")
 sortControl.OnClick(sortControl) -- ready
 assert(ForeverCompanionQuestPlanner.GetSort()=="ready","quest sort should persist readiness")
@@ -820,7 +823,7 @@ ForeverCompanionProfessionBriefing.Render("Blacksmithing")
 overviewButton.OnClick(overviewButton)
 local compactButton,mainWindow
 for _,w in ipairs(frames) do
- if w.text=="Compact" then compactButton=w end
+ if w.OnClick and w.text=="Compact" then compactButton=w end
  if w.width==1080 and w.height==720 then mainWindow=w end
 end
 assert(mainWindow and mainWindow.scale and mainWindow.scale<1,"responsive scale not applied")
@@ -875,13 +878,13 @@ assert(ForeverCompanionDB.tab=="Leveling","leveling navigation failed")
 local classHeading,rotationControl
 for _,w in ipairs(frames) do
  if w.text=="CLASS GUIDES  /  WARRIOR" then classHeading=w end
- if w.text=="Rotation: leveling" then rotationControl=w end
+ if w.OnClick and w.text=="Rotation: leveling" then rotationControl=w end
 end
 assert(classHeading,"wide class banner breadcrumb missing")
 SlashCmdList.FOREVERCOMPANION("open class guides")
 assert(ForeverCompanionDB.tab=="Leveling","visible Class Guides label must work in slash navigation")
 local specControl
-for _,w in ipairs(frames) do if w.text=="Spec: Arms" then specControl=w end end
+for _,w in ipairs(frames) do if w.OnClick and w.text=="Spec: Arms" then specControl=w end end
 assert(specControl and specControl.parent==mainWindow.id,"header specialization selector must avoid scroll-child clipping")
 assert(#ForeverCompanionClassGuide.topicButtons==8,"class guide requires eight functional topic tabs")
 local classScroll
@@ -1025,13 +1028,14 @@ for _,w in ipairs(frames) do
  if w.text:find("FOCUS: At higher levels",1,true)==1 then currentFocus=true end
 end
 assert(currentFocus,"leveling hero must display class-specific current stage focus")
-local inlaySegments=0
+local unifiedCards=0
 for _,w in ipairs(frames) do
- if w.kind=="Texture" and w.width==19 and w.height==2 and w.color then
-  inlaySegments=inlaySegments+1
+ if w.fcPanelEdges and w.fcPanelBackground then
+  unifiedCards=unifiedCards+1
+  assert(w.fcPanelBackground.color[1]<.06,"shared cards retain a dark reading surface")
  end
 end
-assert(inlaySegments>=16,"quest and profession cards must share original gilded corner inlays")
+assert(unifiedCards>=12,"guide and utility cards share the same surface system")
 assert(frames[classHeading.parent].visible,"class-guide header should be visible on Leveling")
 assert(rotationControl and rotationControl.point and rotationControl.point[1]=="TOPLEFT","rotation control should be in content area")
 local workspace=ForeverCompanionRotationWorkspace

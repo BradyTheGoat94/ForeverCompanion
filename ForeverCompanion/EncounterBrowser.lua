@@ -40,7 +40,7 @@ local function label(parent,x,y,w,text,size,gold)
  return t
 end
 local function button(parent,x,y,w,text,action)
- local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
+ local b=ForeverCompanionInterface.Button(parent)
  b:SetSize(w,23);b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
  b:SetText(text);b:SetScript("OnClick",action)
  return b
@@ -72,7 +72,7 @@ function E.Create(parent,navigate,onPrep)
  subtitle=label(root,16,-44,440)
  button(root,614,-10,140,"Prep & notes",onPrep)
  label(root,456,-46,60,"Search")
- E.searchBox=CreateFrame("EditBox",nil,root,"InputBoxTemplate")
+ E.searchBox=ForeverCompanionInterface.EditBox(root)
  E.searchBox:SetSize(176,22);E.searchBox:SetPoint("TOPLEFT",root,"TOPLEFT",505,-39)
  if E.searchBox.SetAutoFocus then E.searchBox:SetAutoFocus(false) end
  if E.searchBox.SetMaxLetters then E.searchBox:SetMaxLetters(120) end

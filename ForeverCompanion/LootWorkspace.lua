@@ -10,7 +10,7 @@ local function text(parent,x,y,width,value,size)
  return f
 end
 local function button(parent,x,y,width,caption,callback)
- local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate");b:SetSize(width,25);b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetText(caption);b:SetScript("OnClick",callback);return b
+ local b=ForeverCompanionInterface.Button(parent);b:SetSize(width,25);b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetText(caption);b:SetScript("OnClick",callback);return b
 end
 local function cycle(list,value)
  for i,name in ipairs(list) do if name==value then return list[i+1] or "" end end
@@ -34,7 +34,7 @@ function W.Create(parent,openPage,onRefresh)
  text(root,16,-13,550,"Loot Catalog",18):SetTextColor(.97,.80,.48)
  button(root,607,-10,147,"Dungeon Journal",function() navigate("Dungeons") end)
  text(root,16,-47,52,"Search",11)
- searchBox=CreateFrame("EditBox",nil,root,"InputBoxTemplate")
+ searchBox=ForeverCompanionInterface.EditBox(root)
  searchBox:SetSize(290,24);searchBox:SetPoint("TOPLEFT",root,"TOPLEFT",68,-41)
  if searchBox.SetAutoFocus then searchBox:SetAutoFocus(false) end
  if searchBox.SetMaxLetters then searchBox:SetMaxLetters(80) end

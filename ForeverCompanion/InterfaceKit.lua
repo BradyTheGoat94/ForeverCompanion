@@ -2,13 +2,13 @@
 -- explicit selection menus. Contains no gameplay or combat-data processing.
 local U={}
 ForeverCompanionInterface=U
-U.palette={background={.018,.022,.029,.99},surface={.045,.055,.070,1},border={.17,.21,.26,1},accent={.88,.70,.39,1},text={.93,.95,.98,1},muted={.57,.65,.73,1}}
+U.palette={background={.018,.022,.029,.99},surface={.045,.055,.070,1},border={.17,.21,.26,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.57,.65,.73,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
 local function paint(texture,color) texture:SetColorTexture(unpack(color)) end
 function U.Text(parent,size,color)
  local text=parent:CreateFontString(nil,'OVERLAY','GameFontHighlightSmall')
- if text.SetFont then text:SetFont('Fonts\\FRIZQT__.TTF',size or 12,'') end
+ if text.SetFont then text:SetFont('Fonts\\ARIALN.TTF',size or 12,'') end
  text:SetTextColor(unpack(color or U.palette.text))
  text:SetJustifyH('LEFT')
  text:SetWordWrap(false)
@@ -22,6 +22,9 @@ function U.Surface(parent,palette)
  local edge=parent:CreateTexture(nil,'BORDER')
  edge:SetPoint('TOPLEFT',0,0);edge:SetPoint('TOPRIGHT',0,0);edge:SetHeight(1)
  paint(edge,p.border or U.palette.border)
+ local bottom=parent:CreateTexture(nil,'BORDER')
+ bottom:SetPoint('BOTTOMLEFT',0,0);bottom:SetPoint('BOTTOMRIGHT',0,0);bottom:SetHeight(1)
+ bottom:SetColorTexture(.08,.10,.14,1)
  return bg,edge
 end
 function U.Button(parent,palette)
@@ -32,6 +35,7 @@ function U.Button(parent,palette)
  text:ClearAllPoints();text:SetPoint('LEFT',b,'LEFT',7,0);text:SetPoint('RIGHT',b,'RIGHT',-7,0)
  text:SetJustifyH('CENTER')
  b:SetFontString(text)
+ if b.SetDisabledFontObject then b:SetDisabledFontObject("GameFontDisableSmall") end
  b:SetHighlightTexture('Interface\\Buttons\\WHITE8X8','ADD')
  local highlight=b.GetHighlightTexture and b:GetHighlightTexture()
  if highlight then highlight:SetVertexColor(.35,.55,.75,.14) end
@@ -40,6 +44,19 @@ function U.Button(parent,palette)
  if pushed then pushed:SetVertexColor(.2,.4,.6,.18) end
  controls[b]={background=bg,edge=edge,text=text}
  return b
+end
+-- Search and note fields share the same inset and focus treatment.
+function U.EditBox(parent)
+ local edit=CreateFrame('EditBox',nil,parent)
+ edit:SetFontObject('ChatFontNormal')
+ if edit.SetFont then edit:SetFont('Fonts\\ARIALN.TTF',12,'') end
+ edit:SetTextColor(unpack(U.palette.text))
+ edit:SetTextInsets(9,9,2,2)
+ edit:SetAutoFocus(false)
+ local bg,edge=U.Surface(edit,{background={.015,.020,.028,1},border={.20,.24,.30,1}})
+ edit:SetScript('OnEditFocusGained',function() paint(edge,U.palette.accent) end)
+ edit:SetScript('OnEditFocusLost',function() paint(edge,U.palette.border) end)
+ return edit
 end
 function U.StyleButton(button,palette,active)
  local parts=controls[button]

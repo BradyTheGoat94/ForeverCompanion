@@ -67,7 +67,7 @@ function N.Create(parent)
  for i,info in ipairs(names) do
   local y=-60-(i-1)*32
   label(root,16,y,155,info[2])
-  local edit=CreateFrame("EditBox",nil,root,"InputBoxTemplate")
+  local edit=ForeverCompanionInterface.EditBox(root)
   edit:SetSize(540,24);edit:SetPoint("TOPLEFT",root,"TOPLEFT",188,y+4)
   if edit.SetAutoFocus then edit:SetAutoFocus(false) end
   if edit.SetMaxLetters then edit:SetMaxLetters(info[3]) end
@@ -87,8 +87,8 @@ function N.Create(parent)
   edit:SetScript("OnEnterPressed",save)
   edit:SetScript("OnTextChanged",function(_,userInput) if userInput and current then current.dirty=true;status:SetText("Unsaved changes. Save or press Enter; Escape restores the saved note.") end end)
  end
- local button=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");button:SetSize(150,24);button:SetPoint("TOPLEFT",root,"TOPLEFT",16,-157);button:SetText("Save research note");button:SetScript("OnClick",save)
- local clear=CreateFrame("Button",nil,root,"UIPanelButtonTemplate");clear:SetSize(150,24);clear:SetPoint("TOPLEFT",root,"TOPLEFT",178,-157);clear:SetText("Clear research note")
+ local button=ForeverCompanionInterface.Button(root);button:SetSize(150,24);button:SetPoint("TOPLEFT",root,"TOPLEFT",16,-157);button:SetText("Save research note");button:SetScript("OnClick",save)
+ local clear=ForeverCompanionInterface.Button(root);clear:SetSize(150,24);clear:SetPoint("TOPLEFT",root,"TOPLEFT",178,-157);clear:SetText("Clear research note")
  clear:SetScript("OnClick",function()
   if current then N.Save(current.db,current.key,{});N.Render(current.tab,current.db,true);status:SetText("Personal note cleared. Guide evidence unchanged.") end
  end)

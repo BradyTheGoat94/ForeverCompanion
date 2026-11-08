@@ -33,36 +33,7 @@ local function panel(x,y,w,h,label,icon)
   local p=CreateFrame("Frame",nil,root)
   p:SetSize(w,h)
   p:SetPoint("TOPLEFT",root,"TOPLEFT",x,y)
-  local bg=p:CreateTexture(nil,"BACKGROUND")
-  bg:SetAllPoints(p)
-  paint(bg,0.023,0.025,0.030,0.99)
-  -- Layered header rule and inset bevel create a deeper gilded card frame.
-  strip(p,0,0,w,2,GOLD)
-  strip(p,3,-4,w-6,1,{0.72,0.53,0.25,0.52})
-  strip(p,5,-h+6,w-10,1,{0.22,0.28,0.34,0.85})
-  strip(p,0,-h+2,w,1,{0.36,0.29,0.19,0.9})
-  strip(p,0,0,1,h,{0.34,0.29,0.22,0.8})
-  strip(p,w-1,0,1,h,{0.34,0.29,0.22,0.8})
-  -- Fine antique-gold corner inlays; native texture strips avoid external assets.
-  local corner={0.91,0.69,0.31,0.94}
-  strip(p,4,-4,15,2,corner)
-  strip(p,4,-4,2,15,corner)
-  strip(p,w-19,-4,15,2,corner)
-  strip(p,w-6,-4,2,15,corner)
-  strip(p,4,-h+19,2,15,corner)
-  strip(p,w-6,-h+19,2,15,corner)
-  -- A restrained illuminated title rail reinforces hierarchy on every card.
-  strip(p,12,-37,w-24,1,{0.48,0.36,0.21,0.48})
-  -- Match the class hero's nested metallic frame and quiet velvet title rail.
-  strip(p,9,-9,w-18,1,{0.27,0.23,0.18,0.42})
-  strip(p,9,-h+10,w-18,1,{0.72,0.50,0.24,0.30})
-  strip(p,9,-12,1,h-24,{0.48,0.35,0.20,0.26})
-  strip(p,w-10,-12,1,h-24,{0.48,0.35,0.20,0.26})
-  strip(p,24,-12,12,1,{0.94,0.71,0.33,0.70})
-  strip(p,w-36,-12,12,1,{0.94,0.71,0.33,0.70})
-  strip(p,24,-h+13,12,1,{0.75,0.53,0.25,0.54})
-  strip(p,w-36,-h+13,12,1,{0.75,0.53,0.25,0.54})
-
+  ForeverCompanionVisualTheme.Panel(p,w,h)
   local start=15
   if icon then
     local image=p:CreateTexture(nil,"OVERLAY")
@@ -73,8 +44,7 @@ local function panel(x,y,w,h,label,icon)
   end
   p.heading=text(p,p,start,-13,w-start-12,label,"GameFontNormal",GOLD)
   if ForeverCompanionVisualTheme then
-    ForeverCompanionVisualTheme.Panel(p,w,h)
-    ForeverCompanionVisualTheme.Font(p.heading,14)
+    ForeverCompanionVisualTheme.Font(p.heading,13)
   end
   return p
 end
@@ -85,18 +55,8 @@ local function action(parent,x,y,w,label,icon,fn,height)
   b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
   local bg=b:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(b)
-  paint(bg,0.035,0.038,0.045,1)
-  strip(b,0,0,w,1,{0.60,0.45,0.23,1})
-  strip(b,0,-h+1,w,1,{0.45,0.35,0.21,1})
-  local rail=strip(b,0,0,3,h,{0.46,0.35,0.20,1})
-  strip(b,w-11,-6,6,1,{0.67,0.51,0.26,0.9})
-  strip(b,w-6,-6,1,6,{0.67,0.51,0.26,0.9})
-  -- Button bevel and inset footer: richer focus without overwhelming text.
-  strip(b,6,-4,w-12,1,{0.72,0.56,0.32,0.24})
-  strip(b,6,-h+5,w-12,1,{0.06,0.08,0.12,0.70})
-  strip(b,w-14,-h+12,8,1,{0.62,0.48,0.28,0.52})
-  strip(b,w-7,-h+12,1,7,{0.62,0.48,0.28,0.52})
-
+  paint(bg,.043,.052,.068,1)
+  local rail=strip(b,0,0,2,h,{.22,.27,.34,1})
   local offset=12
   if icon then
     local i=b:CreateTexture(nil,"ARTWORK")
@@ -110,13 +70,15 @@ local function action(parent,x,y,w,label,icon,fn,height)
   caption:SetWidth(w-offset-6)
   caption:SetJustifyH("LEFT")
   caption:SetText(label)
-  caption:SetTextColor(0.96,0.88,0.69)
+  caption:SetTextColor(.90,.93,.97)
+  caption:SetWordWrap(false);caption:SetHeight(18)
+  ForeverCompanionVisualTheme.Font(caption,12)
   b.caption=caption
   b:SetScript("OnClick",fn)
   b:SetScript("OnEnter",function(self)
-    paint(bg,0.24,0.20,0.12,1)
-    paint(rail,0.98,0.73,0.30,1)
-    caption:SetTextColor(1,0.91,0.72)
+    paint(bg,.075,.09,.115,1)
+    paint(rail,.82,.68,.43,1)
+    caption:SetTextColor(.98,.97,.93)
     if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" and type(GameTooltip.SetText)=="function" then
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
       GameTooltip:SetText(self.detail,1,0.84,0.47)
@@ -127,9 +89,9 @@ local function action(parent,x,y,w,label,icon,fn,height)
     end
   end)
   b:SetScript("OnLeave",function()
-    paint(bg,0.035,0.038,0.045,1)
-    paint(rail,0.46,0.35,0.20,1)
-    caption:SetTextColor(0.96,0.88,0.69)
+    paint(bg,.043,.052,.068,1)
+    paint(rail,.22,.27,.34,1)
+    caption:SetTextColor(.90,.93,.97)
     if GameTooltip and type(GameTooltip.Hide)=="function" then GameTooltip:Hide() end
   end)
   return b
@@ -249,7 +211,7 @@ function D.Create(parent,openPage,ctx)
   if ForeverCompanionVisualTheme then
     -- The artwork occupies BORDER above the panel background and below text.
     bannerBg:Hide()
-    ForeverCompanionVisualTheme.Banner(banner,2,-3,842,89,1)
+    ForeverCompanionVisualTheme.Banner(banner,2,-3,842,89,.72)
   end
   -- Layered atmospheric bands and distant ridge lines enrich the banner
   -- without external artwork or additional client dependencies.
@@ -290,7 +252,7 @@ function D.Create(parent,openPage,ctx)
     crest:SetTexture("Interface\\Icons\\INV_Misc_Book_09")
   end
   local welcome=text(banner,banner,93,-18,540,"WELCOME TO FOREVER COMPANION","GameFontNormalLarge",PALE)
-  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,24) end
+  if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,21) end
   text(banner,banner,94,-49,540,"Class builds, quests and gear in one place","GameFontHighlight",PALE)
   values.bannerStatus=text(banner,banner,94,-72,540,"Loading character…","GameFontHighlightSmall",MUTED)
   strip(banner,94,-88,402,1,{0.69,0.51,0.24,0.75})
@@ -337,6 +299,7 @@ function D.Create(parent,openPage,ctx)
   values.step2=action(steps,12,-89,392,"",nil,function() navigate("Leveling") end,39)
   values.step3=action(steps,12,-134,392,"",nil,function() navigate("Professions") end,39)
   local focus=panel(428,-296,418,186,"TODAY'S FOCUS","Interface\\Icons\\INV_Misc_Note_01")
+  focus.heading:SetWidth(260)
   values.focusCount=text(focus,focus,312,-14,92,"0/4 done","GameFontHighlightSmall",GOLD)
   values.focusCount:SetJustifyH("RIGHT")
   strip(focus,15,-181,388,3,{0.19,0.24,0.30,1})

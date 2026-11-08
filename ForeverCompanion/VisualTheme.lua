@@ -5,9 +5,11 @@ ForeverCompanionVisualTheme=T
 T.citadel="Interface\\AddOns\\ForeverCompanion\\Media\\Citadel.tga"
 T.crest="Interface\\AddOns\\ForeverCompanion\\Media\\Crest.tga"
 T.warrior="Interface\\AddOns\\ForeverCompanion\\Media\\Warrior.tga"
+-- Shared type scale: display 22/18, body 13, labels 11. Native game fonts.
+T.colors={background={.018,.022,.029,1},surface={.032,.040,.052,1},raised={.052,.064,.081,1},border={.16,.19,.24,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.60,.67,.75,1}}
 function T.Font(widget,size,display)
  if widget and type(widget.SetFont)=="function" then
-  pcall(widget.SetFont,widget,display and "Fonts\\MORPHEUS.TTF" or "Fonts\\FRIZQT__.TTF",size,"")
+  pcall(widget.SetFont,widget,display and "Fonts\\FRIZQT__.TTF" or "Fonts\\ARIALN.TTF",size,"")
  end
 end
 local function strip(parent,x,y,w,h,r,g,b,a,layer)
@@ -17,18 +19,17 @@ local function strip(parent,x,y,w,h,r,g,b,a,layer)
  return t
 end
 function T.Panel(parent,w,h)
- -- Charcoal rather than blue-gray; restrained brass edges and a lit title band.
+ -- One surface and one perimeter. No stacked bevels or competing corner art.
  local bg=parent:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(parent)
- if bg.SetColorTexture then bg:SetColorTexture(0.023,0.025,0.030,1)
- else bg:SetTexture(0.023,0.025,0.030,1) end
- for i=0,7 do strip(parent,2,-2-i*4,w-4,4,0.12-i*.009,0.105-i*.007,0.077-i*.004,0.65) end
- strip(parent,0,0,w,1,0.87,0.71,0.40)
- local bottom=strip(parent,0,-h+1,w,1,0.43,0.35,0.23)
- local left=strip(parent,0,0,1,h,0.51,0.43,0.29)
- local right=strip(parent,w-1,0,1,h,0.51,0.43,0.29)
+ bg:SetColorTexture(unpack(T.colors.surface))
+ local band=strip(parent,1,-1,w-2,34,.047,.056,.071,1,"BORDER")
+ local top=strip(parent,0,0,w,1,.25,.28,.33,1)
+ local bottom=strip(parent,0,-h+1,w,1,.14,.17,.22,1)
+ local left=strip(parent,0,0,1,h,.14,.17,.22,1)
+ local right=strip(parent,w-1,0,1,h,.14,.17,.22,1)
+ strip(parent,12,-36,w-24,1,.14,.17,.22,.8)
  parent.fcPanelEdges={bottom=bottom,left=left,right=right}
- strip(parent,3,-3,w-6,1,0.36,0.30,0.21,0.55)
- strip(parent,12,-36,w-24,1,0.47,0.39,0.26,0.60)
+ parent.fcPanelBackground=bg
 end
 function T.ResizePanel(parent,height)
  parent:SetHeight(height)
@@ -46,9 +47,13 @@ function T.Banner(parent,x,y,w,h,alpha)
  return art
 end
 function T.Button(parent,w,h)
- local bg=strip(parent,0,0,w,h,0.025,0.028,0.034,1,"BACKGROUND")
- strip(parent,0,0,w,1,0.66,0.52,0.29,0.9)
- strip(parent,0,-h+1,w,1,0.30,0.27,0.21,1)
+ local bg=strip(parent,0,0,w,h,.045,.055,.072,1,"BACKGROUND")
+ strip(parent,0,0,w,1,.17,.21,.27,1)
+ strip(parent,0,-h+1,w,1,.08,.10,.14,1)
+ if parent.SetHighlightTexture then
+  parent:SetHighlightTexture("Interface\\Buttons\\WHITE8X8","ADD")
+  local highlight=parent.GetHighlightTexture and parent:GetHighlightTexture()
+  if highlight then highlight:SetVertexColor(.3,.4,.55,.12) end
+ end
  return bg
 end
-
