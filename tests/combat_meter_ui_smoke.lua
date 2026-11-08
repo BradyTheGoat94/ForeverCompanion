@@ -42,6 +42,13 @@ RAID_CLASS_COLORS={MAGE={r=.2,g=.7,b=1}}
 dofile('ForeverCompanion/InterfaceKit.lua')
 dofile('ForeverCompanion/CombatMeter.lua')
 local m=ForeverCompanionCombatMeter
+assert(rawequal(m.DisplayAmount(secret),secret),'secret identity must pass through untouched')
+assert(m.ExactAmount(secret)==nil,'secret values must never enter tooltip formatting')
+assert(m.DisplayAmount(12345)=='12.3k' and m.DisplayAmount(1234567)=='1.2m')
+assert(m.DisplayAmount(999950)=='1m' and m.DisplayAmount(999950000)=='1b','compact rollover must remain readable')
+assert(m.DisplayAmount(12.34)=='12.3' and m.DisplayAmount(0)=='0')
+assert(m.ExactAmount(1234567)=='1234567' and m.ExactAmount(12.34)=='12.34')
+assert(m.ExactAmount(0/0)==nil and m.ExactAmount(math.huge)==nil)
 m.Show()
 for _,layout in ipairs({'compact','standard','expanded'}) do
  assert(m.SetLayout(layout))
@@ -69,6 +76,23 @@ assert(ForeverCompanionDB.combatMeter.metric=='Healing','explicit metric menu se
 assert(m.SetMode('DPS'))
 assert(m.SetSkin('recount'));assert(m.SetSkin('details'))
 assert(m.SetRows(4));assert(m.SetWidth(280));m.Refresh()
+source.name='Public player';source.totalAmount=1234567;source.amountPerSecond=12345.67
+m.Refresh()
+local publicRow,compactFound
+for _,o in ipairs(objects) do
+ if o.kind=='FontString' and o.text=='12.3k' then compactFound=true end
+ if rawget(o,'sourceLabel')=='Public player' then publicRow=o end
+end
+assert(compactFound and publicRow,'narrow meter uses compact inspectable amounts')
+local tooltipLines={}
+GameTooltip={SetOwner=function() end,SetText=function() end,AddLine=function(_,line) tooltipLines[#tooltipLines+1]=line end,Show=function() end,Hide=function() end}
+publicRow.OnEnter(publicRow)
+local exactFound=false
+for _,line in ipairs(tooltipLines) do if line=='Per second: 12345.67' then exactFound=true end end
+assert(exactFound,'hover preserves the unrounded public rate')
+GameTooltip=nil
+source.name=secret;source.totalAmount=secret;source.amountPerSecond=secret
+m.Refresh()
 local calls=0
 source.sourceGUID="Player-Test"
 m.Refresh()

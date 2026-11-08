@@ -70,6 +70,23 @@ local function safeNumber(value)
  if issecretvalue and issecretvalue(value) then return false end
  return type(value)=="number" and value==value and value~=math.huge and value~=-math.huge
 end
+-- Compact only inspectable numbers. Secret values retain their native identity
+-- and pass directly to FontString:SetText without conversion or arithmetic.
+function M.DisplayAmount(value)
+ if not safeNumber(value) then return value end
+ local magnitude=math.abs(value)
+ local divisor,suffix=1,''
+ if magnitude>=999950000 then divisor,suffix=1000000000,'b'
+ elseif magnitude>=999950 then divisor,suffix=1000000,'m'
+ elseif magnitude>=1000 then divisor,suffix=1000,'k' end
+ if divisor>1 then return (string.format('%.1f',value/divisor):gsub('%.0$',''))..suffix end
+ return string.format(magnitude<100 and value~=math.floor(value) and '%.1f' or '%.0f',value)
+end
+function M.ExactAmount(value)
+ if not safeNumber(value) then return nil end
+ if value==math.floor(value) then return string.format('%.0f',value) end
+ return tostring(value)
+end
 local function savePosition(target)
  if not target or not UIParent or not target.GetCenter or not UIParent.GetCenter then return end
  local x,y=target:GetCenter()
@@ -439,6 +456,10 @@ local function build()
    if GameTooltip and self.sourceLabel then
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     GameTooltip:SetText(self.sourceLabel)
+    local total=M.ExactAmount(self.totalAmount)
+    local rate=M.ExactAmount(self.amountPerSecond)
+    if total then GameTooltip:AddLine('Total: '..total,.94,.96,1) end
+    if rate then GameTooltip:AddLine('Per second: '..rate,.94,.96,1) end
     GameTooltip:AddLine("Left-click: spell breakdown",.8,.9,1)
     GameTooltip:AddLine("Right-click: next damage/healing view",.8,.9,1)
     GameTooltip:AddLine("Mouse wheel: cycle damage/healing views",.65,.85,.92)
@@ -603,6 +624,15 @@ local function build()
  detailMessage:SetWidth(610)
  for i=1,8 do
   local row=CreateFrame("Frame",nil,detailPanel)
+  row:EnableMouse(true)
+  row:SetScript('OnEnter',function(self)
+   if not GameTooltip or not self.spellName then return end
+   GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.spellName)
+   local exact=M.ExactAmount(self.totalAmount)
+   if exact then GameTooltip:AddLine('Amount: '..exact,.94,.96,1) end
+   GameTooltip:Show()
+  end)
+  row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   row:SetSize(388,32)
   row:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-94-(i-1)*34)
   local stripe=row:CreateTexture(nil,"BACKGROUND")
@@ -741,13 +771,14 @@ function M.Refresh()
    elseif not (issecretvalue and issecretvalue(source.isLocalPlayer)) and source.isLocalPlayer==true then
     row.background:SetColorTexture(.13,.16,.08,.98)
    else row.background:SetColorTexture(i%2==0 and .035 or .045,i%2==0 and .060 or .075,i%2==0 and .095 or .12,.97) end
+   row.frame.totalAmount=source.totalAmount;row.frame.amountPerSecond=source.amountPerSecond
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    row.name:SetText(source.name)
    if metrics[metricIndex][2]=="Dps" or metrics[metricIndex][2]=="Hps" then
-    row.amount:SetText(source.amountPerSecond)
+    row.amount:SetText(M.DisplayAmount(source.amountPerSecond))
    else
-    row.amount:SetText(source.totalAmount)
+    row.amount:SetText(M.DisplayAmount(source.totalAmount))
    end
    -- Use only NeverSecret class metadata for class color.
    local class=source.classFilename
@@ -788,7 +819,7 @@ function M.Refresh()
     row.fill:SetMinMaxValues(0,1)
     row.fill:SetValue(0)
    end
-  else row.frame.sourceLabel=nil;row.frame.sourceGUID=nil;row.frame:Hide() end
+  else row.frame.sourceLabel=nil;row.frame.sourceGUID=nil;row.frame.totalAmount=nil;row.frame.amountPerSecond=nil;row.frame:Hide() end
  end
  if selectedRow then
   local selected=sources[selectedRow]
@@ -828,8 +859,8 @@ function M.Refresh()
    end
   end
   if type(selected)=="table" and #detailSummary==5 then
-   detailSummary[1]:SetText(selected.totalAmount)
-   detailSummary[2]:SetText(selected.amountPerSecond)
+   detailSummary[1]:SetText(M.DisplayAmount(selected.totalAmount))
+   detailSummary[2]:SetText(M.DisplayAmount(selected.amountPerSecond))
    detailSummary[3]:SetText(metrics[metricIndex][1])
    detailSummary[4]:SetText(sessions[sessionIndex][1])
   end
@@ -932,12 +963,15 @@ function M.Refresh()
      info=read(C_Spell.GetSpellInfo,spellID)
     end
     item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
+    local name=type(info)=='table' and info.name
+    item.frame.spellName=not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name or nil
+    item.frame.totalAmount=spell.totalAmount
     local iconID=type(info)=="table" and info.iconID
     if not (issecretvalue and issecretvalue(iconID)) and type(iconID)=="number" and iconID>0 then
      item.icon:SetTexture(iconID)
      item.icon:Show()
     else item.icon:Hide() end
-    item.value:SetText(spell.totalAmount)
+    item.value:SetText(M.DisplayAmount(spell.totalAmount))
     local amount=spell.totalAmount
     local maxAmount=spellMaximum
     if safeNumber(amount) and safeNumber(maxAmount) and maxAmount>0 then
