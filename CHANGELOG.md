@@ -1,3 +1,12 @@
+## 3.30.0-beta — Unaccepted quests and professional interface pass
+
+- Added background indexing of unaccepted quest-giver locations from Forever QuestieDB, including NPCs and objects. Checks active/completed state, minimum level, provider race/class masks, quest prerequisites, exclusive choices, parent quests and breadcrumbs. No item-drop pickup coordinates are guessed.
+- Native Blizzard pickup records take precedence. Database-only markers explicitly require availability confirmation because reputation, profession and seasonal rules are not fully evaluated. Phased and invalid spawns are omitted.
+- Added native yellow quest pickup icons, nearby pickup clusters, Shift-click cycling, navigation and a Pickups map toggle with source/loading help.
+- Added shared dark interface controls and explicit meter metric/session menus. Rebuilt spell analysis into spacious rows with separate values, shares, bars and stacked player statistics. Sorts only inspectable spell totals and keeps selection attached to a public player GUID when rankings change.
+- Added an Up Next quest queue to Journey, compact zone cards and consistent action buttons.
+- Offline regression coverage includes eligibility, Skyborne masks, native precedence, clustered pickup interaction, metric menus, spell sorting and rank changes. Real-client acceptance remains pending.
+
 ## 3.29.0-beta — Meter readability, map services, and live quest guidance
 
 - Rebuilt meter text/texture layers above the native bars; separated header controls, added column labels and a layout toggle, constrained footer text, and corrected spell breakdown row collisions. Both skins share the detail-panel styling.
