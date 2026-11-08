@@ -115,13 +115,13 @@ local function createPin(canvas)
   local entry=self.entry
   GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
   GameTooltip:SetText(entry.quest.title)
-  GameTooltip:AddLine(entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective"),1,1,1,true)
+  GameTooltip:AddLine(entry.pickup and "Reported quest pickup - check requirements in game" or (entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective")),1,1,1,true)
   GameTooltip:AddLine(entry.target.label or entry.target.source,.68,.75,.82,true)
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
   for _,nearby in ipairs(self.nearby or {}) do
    GameTooltip:AddLine(nearby.quest.title,.81,.87,.92,true)
   end
-  GameTooltip:AddLine(self.focused and "Click to start arrow" or "Click to focus quest",.46,.84,.96)
+  GameTooltip:AddLine((self.focused or entry.pickup) and "Click to start arrow" or "Click to focus quest",.46,.84,.96)
   GameTooltip:Show()
  end)
  pin:SetScript("OnLeave",function()
@@ -129,7 +129,9 @@ local function createPin(canvas)
  end)
  pin:SetScript("OnClick",function(self)
   local entry=self.entry
-  if self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
+  if entry.pickup then
+   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
+  elseif self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
    if not self.focused then ForeverCompanionQuestPlanner.Select(entry.index) end
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
   else
@@ -497,6 +499,9 @@ function M.Refresh()
  end
  if view=="all" then
   addOtherQuests(groups,locations,focus,width*scale,height*scale)
+  for _,entry in ipairs(ForeverCompanionQuestWaypoints.MapPickups(mapID,quests)) do
+   groups[#groups+1]={entry=entry,focused=false,samples=1,nearby={}}
+  end
  end
 
  for i,group in ipairs(groups) do
@@ -519,7 +524,7 @@ function M.Refresh()
   if group.focused then pin.badge:SetColorTexture(.32,.92,1,1)
   elseif entry.quest.complete then pin.badge:SetColorTexture(.48,.91,.52,.93)
   else pin.badge:SetColorTexture(.93,.76,.40,.86) end
-  pin.symbol:SetText(shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or "")))
+  pin.symbol:SetText(entry.pickup and "!" or (shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or ""))))
   pin:ClearAllPoints()
   pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
   pin:Show()

@@ -101,6 +101,37 @@ function W.MapLocations(map,quests)
  return result
 end
 
+-- Only native, explicitly reported quest starts. This is not an eligibility
+-- inference: the player must inspect and accept the quest in the game.
+function W.MapPickups(map,quests)
+ local api=C_QuestLog
+ if type(api)~="table" then return {} end
+ local records=read(api.GetQuestsOnMap,map)
+ if type(records)~="table" then return {} end
+ local active,seen,result={},{},{}
+ for _,q in ipairs(quests or {}) do if q.id then active[q.id]=true end end
+ for _,entry in ipairs(records) do
+  local candidate=read(function()
+   if entry.mapID~=map or entry.isQuestStart~=true or type(entry.questID)~="number" or entry.questID<=0 or active[entry.questID] then return end
+   local target=point(map,entry.x,entry.y,"WoW quest pickup")
+   local title=read(api.GetTitleForQuestID,entry.questID)
+   if not target or type(title)~="string" or title=="" then return end
+   target.kind="pickup"
+   return {quest={id=entry.questID,title=title,complete=false},target=target,pickup=true}
+  end)
+  if candidate then
+   local key=candidate.quest.id..":"..candidate.target.x..":"..candidate.target.y
+   if not seen[key] then seen[key]=true;result[#result+1]=candidate end
+  end
+ end
+ table.sort(result,function(a,b)
+  if a.quest.id~=b.quest.id then return a.quest.id<b.quest.id end
+  if a.target.x~=b.target.x then return a.target.x<b.target.x end
+  return a.target.y<b.target.y
+ end)
+ return result
+end
+
 local function openMap(map)
  local open=(C_Map and C_Map.OpenWorldMap) or OpenWorldMap
  return type(open)=="function" and pcall(open,map)
