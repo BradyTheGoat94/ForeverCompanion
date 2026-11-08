@@ -19,6 +19,7 @@ local detailTabs={}
 local detailTab="Spells"
 local spellPage=1
 local spellPageLabel
+local emptyTitle,emptyBody
 local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
@@ -154,10 +155,14 @@ local function build()
  resizeGrip:SetSize(18,18)
  resizeGrip:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-1,1)
  resizeGrip:SetFrameLevel(frame:GetFrameLevel()+10)
- local gripText=resizeGrip:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- gripText:SetAllPoints(resizeGrip)
- gripText:SetText("◢")
- gripText:SetTextColor(.55,.82,.92)
+ -- Geometric resize grip avoids font-dependent Unicode symbols.
+ for i=1,3 do
+  local stroke=resizeGrip:CreateTexture(nil,"ARTWORK")
+  stroke:SetSize(1,4+i*3)
+  stroke:SetPoint("BOTTOMRIGHT",resizeGrip,"BOTTOMRIGHT",-3-(i-1)*4,3)
+  stroke:SetColorTexture(.48,.60,.70,.8)
+  stroke:SetRotation(-math.pi/4)
+ end
  resizeGrip:RegisterForDrag("LeftButton")
  resizeGrip:SetScript("OnDragStart",function()
   if not saved().locked and frame.StartSizing then frame:StartSizing("BOTTOMRIGHT") end
@@ -263,8 +268,9 @@ local function build()
   end
  end)
  skinToggle:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
- close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
+ local close=flatButton(frame)
+ close:SetSize(20,20);close:SetText("x")
+ close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-6,-10)
  close:SetScript("OnClick",function() M.Hide() end)
  local layoutButton=flatButton(frame)
  layoutButton:SetSize(38,20)
@@ -477,6 +483,10 @@ local function build()
   rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail}
   if i>rowCount then row:Hide() end
  end
+ emptyTitle=ForeverCompanionInterface.Text(frame,14)
+ emptyTitle:SetJustifyH("CENTER")
+ emptyBody=ForeverCompanionInterface.Text(frame,11)
+ emptyBody:SetJustifyH("CENTER");emptyBody:SetWordWrap(true);emptyBody:SetHeight(40)
  detailLabel=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  detailLabel:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",12,53)
  detailLabel:SetWidth(windowWidth-26)
@@ -512,8 +522,9 @@ local function build()
  detailTitle:SetHeight(16)
  detailTitle:SetWordWrap(false)
  detailTitle:SetJustifyH("LEFT")
- detailClose=CreateFrame("Button",nil,detailPanel,"UIPanelCloseButton")
- detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",2,2)
+ detailClose=flatButton(detailPanel)
+ detailClose:SetSize(22,22);detailClose:SetText("x")
+ detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-7,-7)
  detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;selectedSourceGUID=nil;M.Refresh() end)
  -- Screenshot-inspired tab strip. Only Spells is populated from verified
  -- native breakdown data; unsupported views are explicitly labeled.
@@ -651,6 +662,8 @@ function M.Refresh()
  if not frame or not frame:IsShown() then return end
  modeButton:SetText(metrics[metricIndex][1])
  sessionButton:SetText(sessions[sessionIndex][1])
+ emptyTitle:ClearAllPoints();emptyTitle:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-30));emptyTitle:SetWidth(windowWidth-28)
+ emptyBody:ClearAllPoints();emptyBody:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-2));emptyBody:SetWidth(windowWidth-36)
  if frame.meterSubtitle then frame.meterSubtitle:SetText(metrics[metricIndex][1].." / "..sessions[sessionIndex][1]) end
  if frame.meterFooter then
   frame.meterFooter:SetText(sessions[sessionIndex][1].." Fight  /  "..metrics[metricIndex][1])
@@ -667,7 +680,10 @@ function M.Refresh()
   detailOpen=false
   if detailLabel then detailLabel:SetText("Select a player row for details") end
   for _,row in ipairs(rows) do row.frame:Hide() end
-  notice:SetText("Blizzard combat meter API unavailable")
+  emptyTitle:SetText("Combat data unavailable");emptyTitle:Show()
+  emptyBody:SetText("Enable the game's damage meter if available, then reopen this window.");emptyBody:Show()
+  detailLabel:Hide()
+  notice:SetText("Meter unavailable")
   return
  end
  local data
@@ -689,6 +705,9 @@ function M.Refresh()
  if frame.amountColumn then frame.amountColumn:SetText(metrics[metricIndex][1]:upper()) end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
+ emptyTitle:SetShown(#sources==0);emptyBody:SetShown(#sources==0);detailLabel:SetShown(#sources>0)
+ emptyTitle:SetText("No combat session data")
+ emptyBody:SetText("Your combat session will appear here. Choose a metric or another session above.")
  if frame.meterFooter then
   local duration=type(data)=="table" and data.durationSeconds
   local suffix=""

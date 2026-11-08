@@ -82,6 +82,7 @@ end
 local function text(parent,x,y,w,value,font)
  local t=parent:CreateFontString(nil,"OVERLAY",font or "GameFontHighlightSmall")
  t:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);t:SetWidth(w);t:SetJustifyH("LEFT");t:SetText(value or "")
+ ForeverCompanionVisualTheme.Font(t,font=="GameFontNormalLarge" and 16 or 12)
  return t
 end
 local function bar(parent,x,y,w,h,r,g,b)
@@ -91,8 +92,7 @@ function B.Create(parent,openPage)
  host=parent
  navigate=openPage
  root=CreateFrame("Frame",nil,parent);root:SetSize(770,375)
- local bg=root:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(root);paint(bg,0.035,0.047,0.070,0.99)
- bar(root,0,0,770,2,0.90,0.67,0.29);bar(root,0,-374,770,1,0.44,0.33,0.20)
+ ForeverCompanionVisualTheme.Panel(root,770,375)
  heading=text(root,16,-15,565,"STUDY DESK","GameFontNormalLarge");heading:SetTextColor(0.97,0.77,0.40)
  summary=text(root,16,-43,730,"")
  evidence=text(root,16,-63,735,"");evidence:SetTextColor(0.70,0.76,0.83)
@@ -106,7 +106,7 @@ function B.Create(parent,openPage)
   local b=CreateFrame("Button",nil,root);b:SetSize(738,40);b:SetPoint("TOPLEFT",root,"TOPLEFT",16,-113-(i-1)*43)
   b.bg=b:CreateTexture(nil,"BACKGROUND");b.bg:SetAllPoints(b)
   b.rail=bar(b,0,0,3,40,0.94,0.72,0.32)
-  b.number=text(b,10,-12,60,"");b.caption=text(b,77,-7,647,"");b.caption:SetTextColor(0.94,0.90,0.81)
+  b.number=text(b,10,-12,60,"");b.caption=text(b,77,-7,647,"");b.caption:SetTextColor(.91,.94,.98);b.caption:SetWordWrap(true);b.caption:SetHeight(30)
   b:SetScript("OnClick",function()
    if current and B.Toggle(current.tab,current.class,current.db,index) then
     if ForeverCompanionRefresh then ForeverCompanionRefresh()
@@ -164,7 +164,7 @@ function B.Render(tab,class,db)
    paint(row.rail,state.checked[i]==true and 0.43 or accent[1],state.checked[i]==true and 0.91 or accent[2],state.checked[i]==true and 0.66 or accent[3])
    row.caption:SetText(task)
    row.caption:SetTextColor(state.checked[i]==true and 0.66 or 0.94,state.checked[i]==true and 0.81 or 0.90,state.checked[i]==true and 0.75 or 0.81)
-   paint(row.bg,state.checked[i]==true and 0.10 or 0.065,state.checked[i]==true and 0.19 or 0.085,0.12)
+   paint(row.bg,state.checked[i]==true and .05 or .035,state.checked[i]==true and .085 or .043,state.checked[i]==true and .07 or .058)
   else row:Hide() end
  end
  for i,link in ipairs(links) do

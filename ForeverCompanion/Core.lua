@@ -16,15 +16,14 @@ ForeverCompanionClassStripButtons={}
 local checkButtons = {}
 local scrollFrame, scrollChild
 ForeverCompanionUIState = ForeverCompanionUIState or {}
-local handbookIcon, handbookButtons={}, {}
-local materialRows={}
-local materialPage=1
-local materialPageLabel, materialPrevious, materialNext
+local handbookButtons={}
+local professionChecklistHeading
 local professionIndex=1
 local questRows = {}
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
-local questSectionLabel
+local questSectionLabel,questEmpty
+local questListBottom=650
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
   Journey="Next quest, navigation and suggested zones",
@@ -169,6 +168,10 @@ local function render()
     ForeverCompanionStudyBoard.Render(studyTab,classToken(),DB)
   end
   if ForeverCompanionBankView then ForeverCompanionBankView.Show(currentTab=="Bank") end
+  if ForeverCompanionMaterialWorkspace then
+    local selected=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
+    ForeverCompanionMaterialWorkspace.Render(currentTab=="Professions",selected and selected.name)
+  end
   if ForeverCompanionJourney then ForeverCompanionJourney.Show(currentTab=="Journey",level()) end
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Show(currentTab=="Quests") end
   if ForeverCompanionProfessionBriefing then
@@ -228,7 +231,7 @@ local function render()
     end
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
-  if handbookIcon then handbookIcon:Hide() end
+  if professionChecklistHeading then professionChecklistHeading:Hide() end
   if rotationIcon then rotationIcon:Hide() end
   if rotationButton then rotationButton:SetText("Rotation: "..rotationModes[rotationMode]);rotationButton:Hide() end
   if specButton then
@@ -239,9 +242,8 @@ local function render()
     else specButton:Hide() end
   end
   for _,b in ipairs(handbookButtons) do b:Hide() end
-  for _,entry in ipairs(materialRows) do entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide() end
-  if materialPageLabel then materialPageLabel:Hide(); materialPrevious:Hide(); materialNext:Hide() end
   for _, b in ipairs(questRows) do b:Hide() end
+  if questEmpty then questEmpty:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
   if questRows.pinControl then
@@ -526,12 +528,12 @@ local function render()
       end
       btn.status:SetText(q.complete and "READY" or (total>0 and (finished.."/"..total.." OBJECTIVES") or "ACTIVE"))
       btn.status:SetTextColor(q.complete and 0.48 or 0.77,q.complete and 0.88 or 0.76,q.complete and 0.53 or 0.70)
-      colorTexture(btn.bg,selected and 0.24 or 0.085,selected and 0.20 or 0.11,selected and 0.13 or 0.15,1)
-      colorTexture(btn.trim,selected and 0.98 or 0.30,selected and 0.75 or 0.28,selected and 0.33 or 0.21,1)
+      ForeverCompanionVisualTheme.SelectRow(btn,btn.bg,selected)
+      colorTexture(btn.trim,.82,.68,.43,0)
       btn.selected=selected
       btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex) end)
       btn:SetScript("OnEnter",function(self)
-        colorTexture(self.bg,0.20,0.18,0.14,1)
+        colorTexture(self.bg,.075,.09,.115,1)
         if GameTooltip then
           GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
           GameTooltip:SetText(q.title or "Quest",1,0.8,0.3)
@@ -545,23 +547,40 @@ local function render()
         end
       end)
       btn:SetScript("OnLeave",function(self)
-        colorTexture(self.bg,self.selected and 0.24 or 0.085,self.selected and 0.20 or 0.11,self.selected and 0.13 or 0.15,1)
+        ForeverCompanionVisualTheme.SelectRow(self,self.bg,self.selected)
         if GameTooltip then GameTooltip:Hide() end
       end)
       btn:Show()
     end
+    local shown=math.max(0,math.min(#questRows,#visible-(questPage-1)*#questRows))
+    local pageY=210+math.max(3,shown)*25+12
+    questListBottom=pageY+52
+    if questEmpty then
+      questEmpty:SetShown(shown==0)
+      questEmpty:SetText(not ForeverCompanionQuestPlanner.IsSupported() and "Quest data is unavailable. Open your in-game quest log and try again." or (#live==0 and "No quests accepted yet. Open the world map and enable Pickups to find your next quest giver." or "No quests match this view. Change the Show filter to see your other quests."))
+    end
+    if pageBack then pageBack:ClearAllPoints();pageBack:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-pageY) end
     if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
     if pageBack then pageBack:SetEnabled(questPage>1); pageForward:SetEnabled(questPage<pages) end
   elseif currentTab == "Settings" then
     lines = {"Commands", "/fc help  •  Command list", "/fcdiag  •  Client diagnostics", "/fc position reset  •  Center the window"}
   else
-    lines = (currentTab=="Dungeons" or currentTab=="PvP") and {} or {string.upper(currentTab).." CHECKLIST"}
+    lines = (currentTab=="Dungeons" or currentTab=="PvP" or currentTab=="Professions") and {} or {string.upper(currentTab).." CHECKLIST"}
     local entries = DATA.checklist[currentTab] or {}
+    if #entries==0 then lines={} end
     for i, item in ipairs(entries) do
       local done = DB.checks and DB.checks[currentTab] and DB.checks[currentTab][i]
-      if currentTab~="Dungeons" and currentTab~="PvP" then lines[#lines+1]=(done and "[x] " or "[ ] ")..item end
+      if currentTab~="Dungeons" and currentTab~="PvP" and currentTab~="Professions" then lines[#lines+1]=(done and "[x] " or "[ ] ")..item end
       if checkButtons[i] then
-        checkButtons[i]:SetText(done and "Undo "..i or "Done "..i)
+        local button=checkButtons[i]
+        button:SetText((done and "[x]  " or "[ ]  ")..item)
+        button:ClearAllPoints();button:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-(284+ForeverCompanionMaterialWorkspace.GetHeight()+(i-1)*33))
+        button:GetFontString():SetJustifyH("LEFT")
+        ForeverCompanionInterface.StyleButton(button,nil,done)
+        if professionChecklistHeading then
+          professionChecklistHeading:ClearAllPoints();professionChecklistHeading:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-(256+ForeverCompanionMaterialWorkspace.GetHeight()))
+          professionChecklistHeading:SetShown(currentTab=="Professions")
+        end
         if currentTab=="Dungeons" or currentTab=="PvP" then checkButtons[i]:Hide() else checkButtons[i]:Show() end
       end
     end
@@ -595,24 +614,6 @@ local function render()
           lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
         end
         if ForeverCompanionCraftingPlanner then
-          local materials=ForeverCompanionCraftingPlanner.GetEntries(guide.name)
-          local pages=math.max(1,math.ceil(#materials/5))
-          materialPage=math.min(materialPage,pages)
-          materialPageLabel:SetText("Materials "..materialPage.."/"..pages)
-          materialPageLabel:Show(); materialPrevious:Show(); materialNext:Show()
-          materialPrevious:SetEnabled(materialPage>1)
-          materialNext:SetEnabled(materialPage<pages)
-          for i,entry in ipairs(materialRows) do
-            local index=(materialPage-1)*5+i
-            local material=materials[index]
-            if material then
-              local remaining=math.max(0,(tonumber(material.needed) or 0)-(tonumber(material.owned) or 0))
-              entry.label:SetText(material.name.."  "..material.owned.."/"..material.needed.."  (need "..remaining..")")
-              entry.label:Show(); entry.minus:Show(); entry.plus:Show()
-              entry.minus:SetScript("OnClick",function() ForeverCompanionCraftingPlanner.AdjustOwned(guide.name,index,-1); render() end)
-              entry.plus:SetScript("OnClick",function() ForeverCompanionCraftingPlanner.AdjustOwned(guide.name,index,1); render() end)
-            end
-          end
           if showNotes then
             lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
             lines[#lines+1]=ForeverCompanionCraftingPlanner.ShoppingSummary(5)
@@ -638,17 +639,16 @@ local function render()
           lines[#lines+1]="Materials: "..deep.materials.."  |  Output: "..deep.output
           for i,step in ipairs(deep.stages) do lines[#lines+1]=i..". "..step end
         end
-        if handbookIcon then handbookIcon:SetTexture(guide.icon); handbookIcon:Show() end
         for i,button in ipairs(handbookButtons) do
           local entry=DATA.professionHandbook[i]
           if entry then
             button.label:SetText(clipText(entry.name,18))
             button.icon:SetTexture(entry.icon)
             local selected=professionIndex==i
-            colorTexture(button.bg,selected and 0.26 or 0.09,selected and 0.20 or 0.12,selected and 0.12 or 0.16,1)
-            colorTexture(button.trim,selected and 0.98 or 0.40,selected and 0.73 or 0.32,selected and 0.31 or 0.19,1)
+            ForeverCompanionVisualTheme.SelectRow(button,button.bg,selected)
+            colorTexture(button.trim,.82,.68,.43,0)
             button.selected=selected
-            button:SetScript("OnClick",function() professionIndex=i; materialPage=1; render() end)
+            button:SetScript("OnClick",function() professionIndex=i; render() end)
             button:Show()
           end
         end
@@ -662,7 +662,7 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=650,Professions=445,Leveling=970,Dungeons=953,PvP=325,Overview=215,Settings=282,Legacy=630,Alts=630}
+  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom,Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -821,8 +821,7 @@ local function createUI()
   ForeverCompanionUIState.questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionUIState.questCountText:SetPoint("TOPRIGHT",-48,-43)
   ForeverCompanionUIState.questCountText:SetTextColor(0.70,0.85,0.74)
-  local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
-  close:SetPoint("TOPRIGHT", -4, -4)
+  local close = ForeverCompanionInterface.CloseButton(window,function() window:Hide() end)
   local meterToggle=ForeverCompanionInterface.Button(window)
   meterToggle:SetSize(116,24)
   meterToggle:SetPoint("TOPRIGHT",window,"TOPRIGHT",-50,-65)
@@ -882,7 +881,7 @@ local function createUI()
     local underline=b:CreateTexture(nil,"ARTWORK")
     underline:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",4,0)
     underline:SetSize(156,1)
-    colorTexture(underline,0.42,0.35,0.24,0.7)
+    colorTexture(underline,.12,.15,.20,.65)
     b.navTop=b:CreateTexture(nil,"ARTWORK")
     b.navTop:SetPoint("TOPLEFT",b,"TOPLEFT",5,0)
     b.navTop:SetSize(154,1)
@@ -1055,10 +1054,6 @@ local function createUI()
   specButton:SetPoint("TOPRIGHT",window,"TOPRIGHT",-180,-62)
   specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); render() end)
   specButton:Hide()
-  handbookIcon=child:CreateTexture(nil,"OVERLAY")
-  handbookIcon:SetSize(30,30)
-  handbookIcon:SetPoint("TOPLEFT",child,"TOPLEFT",745,-165)
-  handbookIcon:Hide()
   -- Two-row profession handbook selector with fantasy-themed icons.
   for i=1,9 do
     local b=CreateFrame("Button",nil,child)
@@ -1079,46 +1074,14 @@ local function createUI()
     b.label:SetWidth(108)
     b.label:SetJustifyH("LEFT")
     b.label:SetTextColor(0.94,0.87,0.73)
-    b:SetScript("OnEnter",function(self) colorTexture(self.bg,0.20,0.18,0.13,1) end)
+    b:SetScript("OnEnter",function(self) colorTexture(self.bg,.075,.09,.115,1) end)
     b:SetScript("OnLeave",function(self)
-      colorTexture(self.bg,self.selected and 0.26 or 0.09,self.selected and 0.20 or 0.12,self.selected and 0.12 or 0.16,1)
+      ForeverCompanionVisualTheme.SelectRow(self,self.bg,self.selected)
     end)
     b:Hide()
     handbookButtons[i]=b
   end
-  materialPrevious=ForeverCompanionInterface.Button(child)
-  materialPrevious:SetSize(65,22)
-  materialPrevious:SetPoint("TOPLEFT",child,"TOPLEFT",8,-240)
-  materialPrevious:SetText("Prev")
-  materialPrevious:Hide()
-  materialPrevious:SetScript("OnClick",function() materialPage=math.max(1,materialPage-1); render() end)
-  materialNext=ForeverCompanionInterface.Button(child)
-  materialNext:SetSize(65,22)
-  materialNext:SetPoint("TOPLEFT",child,"TOPLEFT",195,-240)
-  materialNext:SetText("Next")
-  materialNext:Hide()
-  materialNext:SetScript("OnClick",function() materialPage=materialPage+1; render() end)
-  materialPageLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-  materialPageLabel:SetPoint("TOPLEFT",child,"TOPLEFT",80,-245)
-  materialPageLabel:Hide()
-  for i=1,5 do
-    local entry={}
-    entry.label=child:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    entry.label:SetWidth(445)
-    entry.label:SetJustifyH("LEFT")
-    entry.label:SetPoint("TOPLEFT",child,"TOPLEFT",8,-272-(i-1)*29)
-    entry.minus=ForeverCompanionInterface.Button(child)
-    entry.minus:SetSize(34,24)
-    entry.minus:SetPoint("TOPLEFT",child,"TOPLEFT",510,-267-(i-1)*29)
-    entry.minus:SetText("-")
-    entry.plus=ForeverCompanionInterface.Button(child)
-    entry.plus:SetSize(34,24)
-    entry.plus:SetPoint("LEFT",entry.minus,"RIGHT",4,0)
-    entry.plus:SetText("+")
-    entry.label:Hide(); entry.minus:Hide(); entry.plus:Hide()
-    materialRows[i]=entry
-  end
-
+  ForeverCompanionMaterialWorkspace.Create(child,render)
   ForeverCompanionLootWorkspace.Create(child,openSection,render)
   content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   content:SetPoint("TOPLEFT", 5, -5)
@@ -1142,20 +1105,26 @@ local function createUI()
     row.title:SetPoint("LEFT",row,"LEFT",13,0)
     row.title:SetWidth(460)
     row.title:SetJustifyH("LEFT")
-    row.title:SetTextColor(0.95,0.89,0.78)
+    row.title:SetTextColor(.91,.94,.98);row.title:SetWordWrap(false);row.title:SetHeight(17)
+    ForeverCompanionVisualTheme.Font(row.title,12)
     row.zone=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     row.zone:SetPoint("LEFT",row,"LEFT",479,0)
     row.zone:SetWidth(164)
     row.zone:SetJustifyH("LEFT")
-    row.zone:SetTextColor(0.68,0.74,0.80)
+    row.zone:SetTextColor(.60,.67,.75);row.zone:SetWordWrap(false);row.zone:SetHeight(17)
+    ForeverCompanionVisualTheme.Font(row.zone,11)
     row.status=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     row.status:SetPoint("LEFT",row,"LEFT",651,0)
     row.status:SetWidth(93)
-    row.status:SetJustifyH("RIGHT")
+    row.status:SetJustifyH("RIGHT");row.status:SetWordWrap(false);row.status:SetHeight(16)
+    ForeverCompanionVisualTheme.Font(row.status,10)
     row:Hide()
     questRows[i]=row
   end
+  questEmpty=ForeverCompanionInterface.Text(child,14)
+  questEmpty:SetPoint("TOPLEFT",child,"TOPLEFT",24,-225);questEmpty:SetWidth(710);questEmpty:SetHeight(65);questEmpty:SetWordWrap(true);questEmpty:SetJustifyH("CENTER");questEmpty:Hide()
   content:SetWidth(760)
+  ForeverCompanionVisualTheme.Font(content,13)
   if content.SetSpacing then content:SetSpacing(4) end
   content:SetJustifyH("LEFT")
   content:SetJustifyV("TOP")
@@ -1176,13 +1145,14 @@ local function createUI()
   ForeverCompanionUIState.previousQuestButton:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Previous(); render() end)
   ForeverCompanionUIState.previousQuestButton:Hide()
   for i=1,4 do
-    local b=ForeverCompanionInterface.Button(window)
-    b:SetSize(90, 25)
-    b:SetPoint("BOTTOMLEFT", 220+(i-1)*96, 48)
+    local b=ForeverCompanionInterface.Button(child)
+    b:SetSize(754,28)
     b:SetScript("OnClick", function() toggleCheck(currentTab,i); render() end)
     b:Hide()
     checkButtons[i]=b
   end
+  professionChecklistHeading=ForeverCompanionInterface.Text(child,13)
+  professionChecklistHeading:SetWidth(750);professionChecklistHeading:SetText("PREPARATION CHECKLIST");professionChecklistHeading:Hide()
   -- Class selection is a genuine preview control, never a character/class change.
   -- Placed above footer controls, and visible only on the leveling page.
   for i,token in ipairs(classOrder) do

@@ -35,7 +35,7 @@ local function exportNative(path)
  for _,f in ipairs(frames) do
   local values={id=f.id,kind=f.kind,parent=f.parent,name=f.name,visible=f.visible,width=f.width,height=f.height,
    text=f.text,texture=type(f.texture)=="string" and f.texture or nil,textureId=type(f.texture)=="number" and f.texture or nil,color=f.color,textColor=f.textColor,
-   layer=f.layer,font=f.font,alpha=f.alpha,crop=f.texCoord,all=f.all,template=f.template,justify=f.justify}
+   layer=f.layer,font=f.font,alpha=f.alpha,crop=f.texCoord,all=f.all,template=f.template,justify=f.justify,backdrop=f.backdropColor,backdropBorder=f.backdropBorder,wordWrap=f.wordWrap}
   local points={}
   for _,p in ipairs(f.points or {}) do
    local point,relative,relativePoint,x,y=p[1],f.parent,p[1],0,0
@@ -52,7 +52,7 @@ local function exportNative(path)
 end
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
- function w:SetText(v) self.text=tostring(v or "");if self.fontString then self.fontString:SetText(v) end end
+ function w:SetText(v) self.text=tostring(v or "");if self.fontString then self.fontString:SetText(v) end;for _,hook in ipairs(self.hooks and self.hooks.OnTextChanged or {}) do hook(self,false) end end
  function w:GetText() return self.text end
  function w:GetStringHeight()
   local size=self.font and self.font[2] or 12
@@ -66,6 +66,8 @@ local function widget(kind)
  function w:IsShown() return self.visible end
  function w:SetShown(value) self.visible=value end
  function w:SetScript(name,fn) self[name]=fn end
+ function w:HookScript(name,fn) self.hooks=self.hooks or {};self.hooks[name]=self.hooks[name] or {};table.insert(self.hooks[name],fn) end
+ function w:HasFocus() return self.focused==true end
  function w:GetScript(name) return self[name] end
  function w:RegisterEvent(name) self.events=self.events or {};self.events[name]=true end
  function w:CreateTexture(_,layer) local child=widget("Texture");child.parent=self.id;child.layer=layer;return child end
@@ -80,6 +82,14 @@ local function widget(kind)
  function w:GetHeight() return self.height end
  function w:SetScale(value) self.scale=value end
  function w:SetFrameStrata(value) self.strata=value end
+ function w:GetFrameLevel() return self.frameLevel or (self.parent and frames[self.parent]:GetFrameLevel()+1) or 1 end
+ function w:SetFrameLevel(v) self.frameLevel=v end
+ function w:SetMinMaxValues(a,b) self.minimum,self.maximum=a,b end
+ function w:SetValue(v) self.value=v end
+ function w:SetStatusBarColor(...) self.barColor={...} end
+ function w:SetStatusBarTexture(v) self.barTexture=v end
+ function w:EnableMouseWheel() end
+ function w:SetResizeBounds() end
  function w:SetRotation(value) self.rotation=value end
  function w:SetEnabled(value) self.enabled=value end
  function w:LockHighlight() end
@@ -92,17 +102,18 @@ local function widget(kind)
  function w:EnableMouse() end
  function w:RegisterForClicks() end
  function w:SetVertexColor(...) self.vertexColor={...} end
+ function w:SetDrawLayer(value) self.layer=value end
  function w:RegisterForDrag() end
  function w:SetMovable() end
  function w:SetClampedToScreen() end
  function w:SetResizable() end
  function w:SetBackdrop(...) end
- function w:SetBackdropColor(...) end
- function w:SetBackdropBorderColor(...) end
+ function w:SetBackdropColor(...) self.backdropColor={...} end
+ function w:SetBackdropBorderColor(...) self.backdropBorder={...} end
  function w:SetAllPoints(target) self.all=target and target.id or self.parent end
  function w:SetJustifyH(value) self.justify=value end
  function w:SetJustifyV() end
- function w:SetWordWrap() end
+ function w:SetWordWrap(v) self.wordWrap=v end
  function w:SetShadowOffset() end
  function w:SetShadowColor() end
  function w:SetSpacing() end
@@ -110,6 +121,7 @@ local function widget(kind)
  function w:SetFontObject() end
  function w:SetTextInsets(...) self.textInsets={...} end
  function w:SetAutoFocus(v) self.autoFocus=v end
+ function w:SetMaxLetters(v) self.maxLetters=v end
  function w:SetDisabledFontObject() end
  function w:SetFont(path,size,flags) self.font={path,size,flags} end
  function w:SetTexCoord(...) self.texCoord={...} end
@@ -717,7 +729,7 @@ do
  bankEvent:OnEvent("BAG_UPDATE_DELAYED")
  SlashCmdList.FOREVERCOMPANION("bank")
  local found
- for _,frame in ipairs(frames) do if frame.text=="Sample ore  ×6" then found=true end end
+ for _,frame in ipairs(frames) do if frame.text=="Sample ore" then found=true end end
  assert(ForeverCompanionDB.tab=="Bank" and found,"bank items remain viewable after leaving the banker")
  SlashCmdList.FOREVERCOMPANION("open quests")
  C_Bank,C_Container,Enum,GetServerTime,date=originalBank,originalContainer,originalEnum,originalTime,originalDate
@@ -733,6 +745,7 @@ assert(ForeverCompanionQuestPlanner.GetSelected().title=="Sample: Speak with tra
 C_QuestLog.IsComplete=originalComplete
 assert(ForeverCompanionQuestPlanner.Sync(),"ready quest fixture should recover")
 exportSnapshot("ui_quest_snapshot.txt")
+exportNative("ui_quest_native.json")
 local originalQuestCount=C_QuestLog.GetNumQuestLogEntries
 C_QuestLog.GetNumQuestLogEntries=function() error("temporary quest API failure") end
 assert(ForeverCompanionQuestPlanner.Sync()==false,"failed quest scan must not be reported successful")
@@ -806,6 +819,27 @@ end
 assert(shortageFound,"selected profession should show its largest manual shortage")
 ForeverCompanionProfessionBriefing.Render("Alchemy")
 exportSnapshot("ui_profession_snapshot.txt")
+exportNative("ui_profession_native.json")
+-- Full manual-goal workflow stays in the UI and preserves failed edits.
+local materialsUI=ForeverCompanionMaterialWorkspace
+local planner=ForeverCompanionCraftingPlanner
+materialsUI.fields.name:SetText("Review herb")
+materialsUI.fields.needed:SetText("12");materialsUI.fields.owned:SetText("3")
+materialsUI.save:OnClick()
+assert(planner.GetEntries("Alchemy")[1].name=="Review herb")
+materialsUI.rows[1].edit:OnClick()
+materialsUI.fields.name:SetText("Renamed review herb")
+materialsUI.fields.needed:SetText("15");materialsUI.fields.owned:SetText("5")
+materialsUI.save:OnClick()
+assert(planner.GetEntries("Alchemy")[1].needed==15 and planner.GetEntries("Alchemy")[1].owned==5)
+materialsUI.rows[1].edit:OnClick()
+materialsUI.fields.needed:SetText("-1")
+materialsUI.save:OnClick()
+assert(planner.GetEntries("Alchemy")[1].needed==15,"invalid form edits must not overwrite a saved goal")
+materialsUI.cancel:OnClick()
+materialsUI.rows[1].remove:OnClick()
+assert(#planner.GetEntries("Alchemy")==0,"remove only changes manual planning data")
+
 assert(ForeverCompanionCraftingPlanner.SetOwned("Blacksmithing",1,10),"material goal should update")
 ForeverCompanionProfessionBriefing.Render("Blacksmithing")
 local completedStatus=false
@@ -840,6 +874,9 @@ UIParent.GetWidth=originalWidth
 assert(compactButton and compactButton.OnClick,"compact toggle missing")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==620 and ForeverCompanionDB.compact,"compact layout failed")
+for _,nav in ipairs(frames) do
+ if nav.section then assert(-nav.point[5]+nav.height<=528,"compact navigation must stay above the footer") end
+end
 local focusTitle
 for _,w in ipairs(frames) do if w.text=="TODAY\'S FOCUS" then focusTitle=w end end
 assert(focusTitle and frames[focusTitle.parent].visible==false,"compact mode should hide lower focus panel")
@@ -1282,6 +1319,7 @@ assert(pvpDone.checked and pvpDone.status.text=="DONE","PvP tile did not show co
 assert(progressLabel.text=="1/4 preparation tasks marked complete","PvP manual progress did not update")
 assert(ForeverCompanionDB.checks.Dungeons[1]==false,"PvP state must not change Dungeon tasks")
 exportSnapshot("ui_pvp_snapshot.txt")
+exportNative("ui_pvp_native.json")
 pvpDone.OnClick(pvpDone)
 local questLink
 for _,w in ipairs(frames) do
@@ -1341,6 +1379,7 @@ assert(missingBuild,"Settings must not invent a missing client Interface number"
 GetBuildInfo=originalBuildInfo
 ForeverCompanionRefresh()
 exportSnapshot("ui_settings_snapshot.txt")
+exportNative("ui_settings_native.json")
 overviewButton.OnClick(overviewButton)
 assert(not frames[frames[settingsHeading.parent].parent].visible,"Settings cards must hide on dashboard")
 -- Notebook edits persist only when explicitly saved and are context-isolated.
@@ -1534,6 +1573,14 @@ end
 catalog.detail.GetStringHeight=measure
 ForeverCompanionRefresh()
 exportNative("ui_loot_native.json")
+local searchField=ForeverCompanionLootUI.searchBox
+local priorSearch=searchField:GetText()
+searchField:SetText("")
+assert(searchField.fcPlaceholder.visible,"empty search shows its placeholder")
+searchField:SetText("test")
+assert(not searchField.fcPlaceholder.visible,"typing hides the placeholder")
+searchField:SetText(priorSearch)
+
 exportSnapshot("ui_loot_snapshot.txt")
 SlashCmdList.FOREVERCOMPANION("open leveling")
 assert(not catalog.root.visible,"catalog must hide outside Loot")
@@ -1564,3 +1611,9 @@ out:close()
 io.write("PASS: actual addon manifest loaded and core UI rendered in offline mock ("..#frames.." widgets)\n")
 
 
+
+C_DamageMeter=nil
+ForeverCompanionCombatMeter.Show()
+ForeverCompanionCombatMeter.SetLayout("standard")
+exportNative("ui_meter_native.json")
+ForeverCompanionCombatMeter.Hide()

@@ -46,7 +46,7 @@ function U.Button(parent,palette)
  return b
 end
 -- Search and note fields share the same inset and focus treatment.
-function U.EditBox(parent)
+function U.EditBox(parent,placeholder)
  local edit=CreateFrame('EditBox',nil,parent)
  edit:SetFontObject('ChatFontNormal')
  if edit.SetFont then edit:SetFont('Fonts\\ARIALN.TTF',12,'') end
@@ -54,8 +54,24 @@ function U.EditBox(parent)
  edit:SetTextInsets(9,9,2,2)
  edit:SetAutoFocus(false)
  local bg,edge=U.Surface(edit,{background={.015,.020,.028,1},border={.20,.24,.30,1}})
- edit:SetScript('OnEditFocusGained',function() paint(edge,U.palette.accent) end)
- edit:SetScript('OnEditFocusLost',function() paint(edge,U.palette.border) end)
+ edit:HookScript('OnEditFocusGained',function() paint(edge,U.palette.accent) end)
+ edit:HookScript('OnEditFocusLost',function() paint(edge,U.palette.border) end)
+ if placeholder then
+  local hint=U.Text(edit,12,U.palette.muted)
+  hint:SetPoint('LEFT',edit,'LEFT',9,0);hint:SetPoint('RIGHT',edit,'RIGHT',-9,0)
+  hint:SetText(placeholder)
+  local function refreshHint(self)
+   local empty=(self:GetText() or '')==''
+   hint:SetShown(empty and not (self.HasFocus and self:HasFocus()))
+  end
+  if edit.HookScript then
+   edit:HookScript('OnTextChanged',refreshHint)
+   edit:HookScript('OnEditFocusGained',refreshHint)
+   edit:HookScript('OnEditFocusLost',refreshHint)
+  end
+  edit.fcPlaceholder=hint
+  refreshHint(edit)
+ end
  return edit
 end
 function U.StyleButton(button,palette,active)
@@ -110,4 +126,11 @@ function U.Menu(anchor,title,entries,palette)
  end
  popup=shade
  return shade
+end
+
+function U.CloseButton(parent,action)
+ local button=U.Button(parent)
+ button:SetSize(26,26);button:SetPoint('TOPRIGHT',parent,'TOPRIGHT',-8,-8)
+ button:SetText('x');button:SetScript('OnClick',action)
+ return button
 end

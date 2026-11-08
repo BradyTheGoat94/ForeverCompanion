@@ -29,6 +29,19 @@ function P.Add(profession,name,needed,owned)
   items[profession][#items[profession]+1]={name=name,needed=needed,owned=owned}
   return true,"Tracked "..name.." for "..profession
 end
+-- Replace one manual goal atomically after validating all fields.
+function P.Update(profession,index,name,needed,owned)
+ local entries=db()[key(profession)]
+ name=clean(name)
+ if not entries or type(index)~="number" or index~=math.floor(index) or not entries[index] then return false,"Choose an existing goal." end
+ if type(needed)~="number" or needed~=needed or needed<1 or needed>999999 or needed~=math.floor(needed)
+  or type(owned)~="number" or owned~=owned or owned<0 or owned>999999 or owned~=math.floor(owned) or name=="" then return false,"Enter a material name and valid whole quantities." end
+ for i,entry in ipairs(entries) do
+  if i~=index and entry.name:lower()==name:lower() then return false,"Material already tracked." end
+ end
+ entries[index]={name=name,needed=needed,owned=owned}
+ return true,"Updated "..name
+end
 function P.GetEntries(profession)
   return db()[key(profession)] or {}
 end

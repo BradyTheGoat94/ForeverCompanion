@@ -57,9 +57,8 @@ local function label(parent,x,y,w,value)
 end
 function N.Create(parent)
  host=parent
- root=CreateFrame("Frame",nil,parent);root:SetSize(770,210)
- local bg=root:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(root)
- if bg.SetColorTexture then bg:SetColorTexture(0.045,0.06,0.085,1) else bg:SetTexture(0.045,0.06,0.085,1) end
+ root=CreateFrame("Frame",nil,parent);root:SetSize(770,226)
+ ForeverCompanionVisualTheme.Panel(root,770,226)
  heading=label(root,16,-12,730,"PERSONAL RESEARCH / NOT VERIFIED");heading:SetTextColor(0.96,0.76,0.39)
  label(root,16,-34,730,"Save observations with a source and client build. Entered text does not verify a rule or encounter.")
  fields={}
@@ -67,7 +66,7 @@ function N.Create(parent)
  for i,info in ipairs(names) do
   local y=-60-(i-1)*32
   label(root,16,y,155,info[2])
-  local edit=ForeverCompanionInterface.EditBox(root)
+  local edit=ForeverCompanionInterface.EditBox(root,info[2])
   edit:SetSize(540,24);edit:SetPoint("TOPLEFT",root,"TOPLEFT",188,y+4)
   if edit.SetAutoFocus then edit:SetAutoFocus(false) end
   if edit.SetMaxLetters then edit:SetMaxLetters(info[3]) end
@@ -93,6 +92,8 @@ function N.Create(parent)
   if current then N.Save(current.db,current.key,{});N.Render(current.tab,current.db,true);status:SetText("Personal note cleared. Guide evidence unchanged.") end
  end)
  status=label(root,16,-190,730,"")
+ status:SetHeight(32);status:SetWordWrap(true)
+ ForeverCompanionVisualTheme.Font(status,11)
  root:Hide()
 end
 function N.Render(tab,db,reload)

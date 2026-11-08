@@ -316,8 +316,13 @@ function D.Create(parent,openPage,ctx)
     focusLabels[i]=label
   end
   lowerWidgets={steps,focus}
-  safePlate=panel(0,-495,846,55,"READ-ONLY ADVISOR   •   NO AUTOMATION   •   CHECK /fcdiag FOR API SUPPORT",nil)
-  values.sources=text(safePlate,safePlate,16,-34,805,"Quest data: awaiting scan   |   Professions: awaiting scan   |   Materials: manually entered","GameFontHighlightSmall",MUTED)
+  safePlate=CreateFrame("Frame",nil,root)
+  safePlate:SetPoint("TOPLEFT",root,"TOPLEFT",0,-492);safePlate:SetSize(846,48)
+  ForeverCompanionInterface.Surface(safePlate)
+  local statusTitle=text(safePlate,safePlate,14,-7,805,"DATA STATUS","GameFontHighlightSmall",MUTED)
+  ForeverCompanionVisualTheme.Font(statusTitle,10)
+  values.sources=text(safePlate,safePlate,14,-26,805,"Quest data: awaiting scan   |   Professions: awaiting scan   |   Materials: manually entered","GameFontHighlightSmall",MUTED)
+  values.sources:SetHeight(15);values.sources:SetWordWrap(false)
   setCompact(false)
   return root
 end

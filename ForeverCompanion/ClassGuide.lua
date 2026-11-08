@@ -140,8 +140,8 @@ function Guide.Render(class,label,level,role,mode)
  local view=Guide.GetView()
  for _,b in ipairs(topics) do
   local active=b.view==view
-  b.bg:SetColorTexture(active and .06 or .025,active and .17 or .028,active and .30 or .034,1)
-  b.rail:SetColorTexture(active and .95 or .38,active and .76 or .32,active and .38 or .23,1)
+  ForeverCompanionVisualTheme.SelectRow(b,b.bg,active)
+  b.rail:SetColorTexture(.82,.68,.43,active and 1 or 0)
  end
  if view=="Talents" then
   topicTitle:Hide();topicBody:Hide();topicLink:Hide()

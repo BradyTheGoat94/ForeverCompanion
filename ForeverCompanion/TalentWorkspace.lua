@@ -3,7 +3,8 @@ local W={}
 ForeverCompanionTalentWorkspace=W
 local planner=ForeverCompanionTalentPlanner
 local state,root,tabs,buttons,budgetLabel,summary,details,selectionTitle,status,levelLabel,openingLabel,buildButton,resetButton
-local recommendationButton,openingTitle,summaryTitle,guideField
+local recommendationButton,openingTitle,summaryTitle,guideField,sidePanel,footerHelp,footerCredit
+local referenceFields={}
 local function text(parent,x,y,width,label,size,gold)
  local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetWidth(width);f:SetJustifyH("LEFT")
@@ -26,7 +27,7 @@ end
 
 function W.Create(parent)
  root=CreateFrame("Frame","ForeverCompanionTalentPlannerFrame",parent)
- root:SetPoint("TOPLEFT",parent,"TOPLEFT",0,0);root:SetSize(770,602)
+ root:SetPoint("TOPLEFT",parent,"TOPLEFT",0,0);root:SetSize(770,676)
  W.root=root
  text(root,16,-13,730,"Talent Tree & Build Planner",18,true)
  text(root,16,-42,530,"Plan here, then spend points in the game’s talent window.",11)
@@ -64,13 +65,15 @@ function W.Create(parent)
  buttons={}
  for i=1,28 do
   local b=CreateFrame("Button",nil,root)
-  b:SetSize(113,52)
-  b.bg=ForeverCompanionVisualTheme.Button(b,113,52)
-  b.icon=b:CreateTexture(nil,"ARTWORK");b.icon:SetSize(20,20)
-  b.icon:SetPoint("TOPLEFT",b,"TOPLEFT",5,-6)
-  b.label=text(b,30,-5,80,"",9)
+  b:SetSize(113,60)
+  b.bg=ForeverCompanionVisualTheme.Button(b,113,60)
+  b.icon=b:CreateTexture(nil,"ARTWORK");b.icon:SetSize(24,24)
+  b.icon:SetPoint("TOPLEFT",b,"TOPLEFT",5,-8)
+  b.label=text(b,33,-7,76,"",10)
+  b.label:SetHeight(36);b.label:SetWordWrap(true)
   if b.label.SetMaxLines then b.label:SetMaxLines(3) end
-  b.ranks=text(b,6,-38,101,"",10,true)
+  b.ranks=text(b,6,-45,101,"",10,true)
+  b.ranks:SetHeight(13);b.ranks:SetWordWrap(false)
   if b.RegisterForClicks then b:RegisterForClicks("LeftButtonUp","RightButtonUp") end
   b:SetScript("OnClick",function(self,mouseButton)
    local node=self.node
@@ -97,8 +100,9 @@ function W.Create(parent)
  end
  W.buttons=buttons;W.tabs=tabs
  local side=CreateFrame("Frame",nil,root)
- side:SetSize(246,392);side:SetPoint("TOPLEFT",root,"TOPLEFT",507,-130)
- ForeverCompanionVisualTheme.Panel(side,246,392)
+ sidePanel=side
+ side:SetSize(246,448);side:SetPoint("TOPLEFT",root,"TOPLEFT",507,-130)
+ ForeverCompanionVisualTheme.Panel(side,246,448)
  openingTitle=text(side,12,-12,221,"",15,true)
  openingLabel=text(side,12,-38,222,"",11)
  buildButton=control(side,12,-91,220,"Load opening ranks",function()
@@ -120,11 +124,12 @@ function W.Create(parent)
  selectionTitle=text(side,12,-242,222,"",13,true)
  details=text(side,12,-273,222,"",11)
  status=text(side,12,-341,222,"",11,true)
- text(root,16,-530,736,"Draft controls: left click adds a rank, right click refunds. Shift-click + or - changes level by 10.",11)
- text(root,16,-551,736,"Grid adapted from Zephras (CC BY 4.0). Names and icon references belong to Blizzard.",10)
+ footerHelp=text(root,16,-600,736,"Draft controls: left click adds a rank, right click refunds. Shift-click + or - changes level by 10.",11)
+ footerCredit=text(root,16,-620,736,"Grid adapted from Zephras (CC BY 4.0). Names and icon references belong to Blizzard.",10)
  local function reference(x,width,url)
   local field=ForeverCompanionInterface.EditBox(root)
-  field:SetSize(width,22);field:SetPoint("TOPLEFT",root,"TOPLEFT",x,-570)
+  field:SetSize(width,22);field:SetPoint("TOPLEFT",root,"TOPLEFT",x,-644)
+  field.referenceX=x;referenceFields[#referenceFields+1]=field
   if field.SetAutoFocus then field:SetAutoFocus(false) end
   field.url=url
   field:SetText(url)
@@ -165,6 +170,7 @@ function W.Render(class,spec)
  for i,tab in ipairs(tabs) do
   local points=planner.Total(class,allocation,i)
   tab:SetText((i==state.tree and "› " or "")..data.trees[i].." ("..points..")")
+  ForeverCompanionInterface.StyleButton(tab,nil,i==state.tree)
   totals[i]=points
  end
  if preview then
@@ -203,17 +209,21 @@ function W.Render(class,spec)
    local b=buttons[i]
    b.node=node
    b:ClearAllPoints()
-   b:SetPoint("TOPLEFT",root,"TOPLEFT",16+(node[4]-1)*122,-130-(node[3]-1)*56)
+   b:SetPoint("TOPLEFT",root,"TOPLEFT",16+(node[4]-1)*122,-130-(node[3]-1)*64)
    b.icon:SetTexture(node[8]>0 and node[8] or ForeverCompanionIcons.unknown)
    b.label:SetText(node[9])
    local rank=planner.Rank(allocation,node)
    b.ranks:SetText(rank.."/"..node[6]..(not preview and goals[node[1]] and "  ·  Goal" or ""))
    local eligible=not preview and planner.CanAdd(class,allocation,node,budget)
-   if state.selected==node then b.bg:SetColorTexture(.16,.24,.34,1)
-   elseif prereqs[node[1]] then b.bg:SetColorTexture(.26,.15,.31,1)
-   elseif rank>0 then b.bg:SetColorTexture(.19,.14,.07,1)
-   elseif eligible then b.bg:SetColorTexture(.09,.12,.17,1)
-   else b.bg:SetColorTexture(.04,.05,.07,1) end
+   ForeverCompanionVisualTheme.SelectRow(b,b.bg,state.selected==node)
+   if state.selected~=node then
+    if prereqs[node[1]] then b.bg:SetColorTexture(.085,.065,.11,1)
+    elseif rank>0 then b.bg:SetColorTexture(.06,.07,.08,1)
+    elseif eligible then b.bg:SetColorTexture(.045,.055,.072,1)
+    else b.bg:SetColorTexture(.027,.033,.044,1) end
+   end
+   local readable=rank>0 or eligible or preview
+   b.label:SetTextColor(readable and .94 or .56,readable and .95 or .62,readable and .97 or .70)
    b:Show()
   end
  end
@@ -239,6 +249,22 @@ function W.Render(class,spec)
   details:SetText("Choose a talent to see its requirements. The opening is a leveling suggestion.")
  end
  status:SetText(state.message or (preview and "Read-only preview\nData build "..ForeverCompanionTalentData.build) or (left<0 and ("Draft exceeds this level by "..(-left).." points.") or (left.." points available\nData build "..ForeverCompanionTalentData.build)))
+ local titleHeight=math.max(18,selectionTitle:GetStringHeight()+4)
+ selectionTitle:SetHeight(titleHeight)
+ local detailTop=242+titleHeight+10
+ details:ClearAllPoints();details:SetPoint("TOPLEFT",sidePanel,"TOPLEFT",12,-detailTop)
+ local detailHeight=math.max(38,details:GetStringHeight()+4);details:SetHeight(detailHeight)
+ local statusTop=math.max(341,detailTop+detailHeight+12)
+ status:ClearAllPoints();status:SetPoint("TOPLEFT",sidePanel,"TOPLEFT",12,-statusTop)
+ local sideHeight=math.max(448,statusTop+status:GetStringHeight()+16)
+ ForeverCompanionVisualTheme.ResizePanel(sidePanel,sideHeight)
+ local footerY=math.max(600,130+sideHeight+22)
+ footerHelp:ClearAllPoints();footerHelp:SetPoint("TOPLEFT",root,"TOPLEFT",16,-footerY)
+ footerCredit:ClearAllPoints();footerCredit:SetPoint("TOPLEFT",root,"TOPLEFT",16,-footerY-20)
+ for _,field in ipairs(referenceFields) do
+  field:ClearAllPoints();field:SetPoint("TOPLEFT",root,"TOPLEFT",field.referenceX,-footerY-44)
+ end
+ root:SetHeight(footerY+76)
  root:Show()
 end
 

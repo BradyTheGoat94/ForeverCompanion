@@ -189,6 +189,6 @@ function W.Render(tab,class,mode,level,role,fallback,playerClass)
  for _,button in ipairs(buttons) do
   local active=button.mode==mode
   button.name:SetTextColor(active and 1 or .88,active and .84 or .86,active and .52 or .82)
-  button.bg:SetColorTexture(active and .055 or .025,active and .16 or .028,active and .30 or .034,1)
+  ForeverCompanionVisualTheme.SelectRow(button,button.bg,active)
  end
 end

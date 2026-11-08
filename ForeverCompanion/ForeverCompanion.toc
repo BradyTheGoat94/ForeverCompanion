@@ -37,6 +37,7 @@ ProfessionFieldGuide.lua
 CampingGuide.lua
 CampingReadiness.lua
 CraftingPlanner.lua
+MaterialWorkspace.lua
 RecipePlans.lua
 CraftingAdvice.lua
 CraftCosts.lua

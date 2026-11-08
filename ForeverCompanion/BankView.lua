@@ -2,7 +2,7 @@
 local B={}
 ForeverCompanionBankView=B
 local bankOpen,pending
-local root,header,search,back,nextPage,pageLabel,rows
+local root,header,search,back,nextPage,pageLabel,rows,empty
 local page=1
 local pageSize=16
 
@@ -77,7 +77,7 @@ function B.Create(parent)
  header:SetPoint("TOPLEFT",17,-22)
  header:SetWidth(735)
  header:SetJustifyH("LEFT")
- search=ForeverCompanionInterface.EditBox(root)
+ search=ForeverCompanionInterface.EditBox(root,"Search your saved bank…")
  search:SetSize(246,24);search:SetPoint("TOPLEFT",20,-47);if search.SetAutoFocus then search:SetAutoFocus(false) end
  search:SetScript("OnTextChanged",function() page=1;B.Render() end)
  search:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
@@ -92,9 +92,11 @@ function B.Create(parent)
   bg:SetAllPoints(row);bg:SetColorTexture(.08,.11,.16,1)
   row.icon=row:CreateTexture(nil,"ARTWORK");row.icon:SetSize(25,25);row.icon:SetPoint("LEFT",5,0)
   row.name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  row.name:SetPoint("TOPLEFT",38,-5);row.name:SetWidth(312);row.name:SetJustifyH("LEFT")
+  row.name:SetPoint("TOPLEFT",38,-5);row.name:SetWidth(254);row.name:SetJustifyH("LEFT");row.name:SetWordWrap(false);row.name:SetHeight(16)
+  row.count=ForeverCompanionInterface.Text(row,11)
+  row.count:SetPoint("TOPRIGHT",row,"TOPRIGHT",-7,-5);row.count:SetWidth(48);row.count:SetJustifyH("RIGHT")
   row.tab=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  row.tab:SetPoint("TOPLEFT",38,-19);row.tab:SetTextColor(.62,.76,.83)
+  row.tab:SetPoint("TOPLEFT",38,-19);row.tab:SetTextColor(.60,.67,.75);row.tab:SetWidth(306);row.tab:SetWordWrap(false);row.tab:SetHeight(13)
   row:EnableMouse(true)
   row:SetScript("OnEnter",function(self)
    if self.item and GameTooltip then
@@ -108,6 +110,8 @@ function B.Create(parent)
  end
  back=makeButton(root,17,-381,"Previous",function() page=page-1;B.Render() end)
  nextPage=makeButton(root,108,-381,"Next",function() page=page+1;B.Render() end)
+ empty=ForeverCompanionInterface.Text(root,14)
+ empty:SetPoint("TOPLEFT",root,"TOPLEFT",32,-168);empty:SetWidth(706);empty:SetHeight(65);empty:SetWordWrap(true);empty:SetJustifyH("CENTER")
  pageLabel=root:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  pageLabel:SetPoint("LEFT",nextPage,"RIGHT",14,0)
  root:Hide()
@@ -134,11 +138,14 @@ function B.Render()
   if entry then
    local item=entry.item
    row.icon:SetTexture(item.icon or 134400)
-   row.name:SetText(("%s  ×%d"):format(entry.name,item.count))
+   row.name:SetText(entry.name)
+   row.count:SetText("×"..tostring(item.count or 1))
    row.tab:SetText(item.tab)
    row:Show()
   else row:Hide() end
  end
+ empty:SetShown(#matches==0)
+ empty:SetText(type(items)~="table" and "Your bank snapshot is empty. Visit a banker to save your items here." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this bank snapshot."))
  back:SetEnabled(page>1);nextPage:SetEnabled(page<pages)
  pageLabel:SetText(("%d matches  ·  Page %d of %d"):format(#matches,page,pages))
 end

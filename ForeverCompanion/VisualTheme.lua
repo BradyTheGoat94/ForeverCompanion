@@ -57,3 +57,16 @@ function T.Button(parent,w,h)
  end
  return bg
 end
+
+-- Selected list rows retain a quiet surface and a distinct edge cue.
+function T.SelectRow(row,background,selected)
+ background:SetColorTexture(selected and .075 or .035,selected and .090 or .043,selected and .115 or .058,1)
+ if not row.fcSelection then
+  row.fcSelection=row:CreateTexture(nil,"ARTWORK")
+  row.fcSelection:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
+  row.fcSelection:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",0,0)
+  row.fcSelection:SetWidth(2)
+  row.fcSelection:SetColorTexture(unpack(T.colors.accent))
+ end
+ row.fcSelection:SetShown(selected)
+end

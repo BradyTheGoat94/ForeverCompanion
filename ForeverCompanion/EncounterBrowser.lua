@@ -50,11 +50,12 @@ local function entry(parent,y,w,h,action)
  b:SetSize(w,h);b:SetPoint("TOPLEFT",parent,"TOPLEFT",8,y)
  b.bg=theme.Button(b,w,h)
  b.name=label(b,8,-6,w-16,"",11)
+ b.name:SetWordWrap(false);b.name:SetHeight(17)
  b:SetScript("OnClick",action)
  return b
 end
 local function tint(row,selected)
- row.bg:SetColorTexture(selected and .20 or .055,selected and .155 or .07,selected and .085 or .10,1)
+ theme.SelectRow(row,row.bg,selected)
  row.name:SetTextColor(selected and 1 or .85,selected and .83 or .88,selected and .48 or .93)
 end
 local function column(x,w,name)
@@ -72,7 +73,7 @@ function E.Create(parent,navigate,onPrep)
  subtitle=label(root,16,-44,440)
  button(root,614,-10,140,"Prep & notes",onPrep)
  label(root,456,-46,60,"Search")
- E.searchBox=ForeverCompanionInterface.EditBox(root)
+ E.searchBox=ForeverCompanionInterface.EditBox(root,"Search bosses or drops…")
  E.searchBox:SetSize(176,22);E.searchBox:SetPoint("TOPLEFT",root,"TOPLEFT",505,-39)
  if E.searchBox.SetAutoFocus then E.searchBox:SetAutoFocus(false) end
  if E.searchBox.SetMaxLetters then E.searchBox:SetMaxLetters(120) end
