@@ -3,7 +3,7 @@
 local M={}
 ForeverCompanionQuestMap=M
 
-local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton,styleButton,terrain,townButton
+local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton,styleButton,terrain,townButton,pickupButton
 local pins,servicePins,zoomPoint={},{},nil
 local modeNames={focus="Focus",all="All",off="Off"}
 local nextMode={all="focus",focus="off",off="all"}
@@ -100,6 +100,7 @@ local function createPin(canvas)
  pin.ring:SetVertexColor(.22,.91,1,.95)
  sharpenOverlay(pin.ring)
  local outline=pin:CreateTexture(nil,"BACKGROUND")
+ pin.outline=outline
  outline:SetAllPoints(pin)
  outline:SetColorTexture(.03,.08,.11,1)
  sharpenOverlay(outline)
@@ -115,8 +116,10 @@ local function createPin(canvas)
   local entry=self.entry
   GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
   GameTooltip:SetText(entry.quest.title)
-  GameTooltip:AddLine(entry.pickup and "Reported quest pickup - check requirements in game" or (entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective")),1,1,1,true)
+  GameTooltip:AddLine(entry.pickup and (entry.reference and "Quest giver - confirm availability in game" or "Quest pickup reported by Blizzard") or (entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective")),1,1,1,true)
   GameTooltip:AddLine(entry.target.label or entry.target.source,.68,.75,.82,true)
+  if entry.reference then GameTooltip:AddLine("Level, race, class and quest-chain checks passed. Profession, reputation and event requirements may still apply.",.95,.76,.35,true) end
+  if self.pickups and #self.pickups>1 then GameTooltip:AddLine("Shift-click to choose another quest at this location",.95,.76,.35,true) end
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
   for _,nearby in ipairs(self.nearby or {}) do
    GameTooltip:AddLine(nearby.quest.title,.81,.87,.92,true)
@@ -129,6 +132,12 @@ local function createPin(canvas)
  end)
  pin:SetScript("OnClick",function(self)
   local entry=self.entry
+  if entry.pickup and IsShiftKeyDown and IsShiftKeyDown() and self.pickups and #self.pickups>1 then
+   self.pickupIndex=(self.pickupIndex or 1)%#self.pickups+1
+   self.entry=self.pickups[self.pickupIndex]
+   self:GetScript("OnEnter")(self)
+   return
+  end
   if entry.pickup then
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
   elseif self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
@@ -267,7 +276,7 @@ end
 
 local function createGuide(map)
  local bar=CreateFrame("Frame",nil,map)
- bar:SetSize(451,68)
+ bar:SetSize(451,94)
  -- Recalculate as the world-map window is resized; no external map addon.
  local function fitToolbar()
   if not map.GetWidth then return end
@@ -303,38 +312,60 @@ local function createGuide(map)
  hint:SetWidth(423)
  hint:SetTextColor(.62,.82,.89)
  title:SetTextColor(.90,.97,1)
- modeButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ modeButton=ForeverCompanionInterface.Button(bar)
  modeButton:SetSize(100,22)
- modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,5)
+ modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,32)
  modeButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapMode=nextMode[mode()]
   M.Refresh()
  end)
- zoomButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ zoomButton=ForeverCompanionInterface.Button(bar)
  zoomButton:SetSize(100,22)
- zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,5)
+ zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,32)
  zoomButton:SetText("Zoom focus")
  zoomButton:SetScript("OnClick",function()
   if zoomPoint and type(map.PanAndZoomTo)=="function" then
    map:PanAndZoomTo(zoomPoint.x,zoomPoint.y)
   end
  end)
- styleButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ styleButton=ForeverCompanionInterface.Button(bar)
  styleButton:SetSize(112,22)
- styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,5)
+ styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,32)
  styleButton:SetScript("OnClick",function()
   cycleMapStyle()
   M.Refresh()
  end)
- townButton=CreateFrame("Button",nil,bar,"UIPanelButtonTemplate")
+ townButton=ForeverCompanionInterface.Button(bar)
  townButton:SetSize(100,22)
- townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,5)
+ townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,32)
  townButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapHideTowns=townsEnabled()
   M.Refresh()
  end)
+ pickupButton=ForeverCompanionInterface.Button(bar)
+ pickupButton:SetSize(108,22);pickupButton:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,5)
+ pickupButton:SetScript("OnClick",function()
+  ForeverCompanionDB=ForeverCompanionDB or {}
+  ForeverCompanionDB.questMapHidePickups=not ForeverCompanionDB.questMapHidePickups
+  M.Refresh()
+ end)
+ pickupButton:SetScript("OnEnter",function(self)
+  if GameTooltip then
+   GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+   GameTooltip:SetText("Unaccepted quests")
+   GameTooltip:AddLine("Shown in Map: All. Click ! to navigate; Shift-click cycles shared quest givers.",.8,.9,1,true)
+   GameTooltip:AddLine(ForeverCompanionQuestWaypoints.PickupStatus or "Blizzard pickups plus Forever QuestieDB reference locations",.95,.78,.4,true)
+   GameTooltip:Show()
+  end
+ end)
+ pickupButton:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ local legend=ForeverCompanionInterface.Text(bar,10)
+ legend:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",132,8);legend:SetWidth(305)
+ legend:SetText("! Quest pickups   /   ? Turn-ins   /   Shift-click: cycle")
+ title:SetWordWrap(false);title:SetHeight(17)
+ hint:SetWordWrap(false);hint:SetHeight(14)
  return bar,title,hint
 end
 
@@ -476,6 +507,7 @@ function M.Refresh()
  local style=mapStyle()
  styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
  townButton:SetText(townsEnabled() and "Towns: On" or "Towns: Off")
+ pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  if style=="atlas" then showTerrain(canvas) end
  local serviceNotice=showServices(canvas,mapID,scale)
  guideTitle:SetText(focus and focus.title or "Companion map")
@@ -499,8 +531,14 @@ function M.Refresh()
  end
  if view=="all" then
   addOtherQuests(groups,locations,focus,width*scale,height*scale)
+  local pickupPoints={}
   for _,entry in ipairs(ForeverCompanionQuestWaypoints.MapPickups(mapID,quests)) do
-   groups[#groups+1]={entry=entry,focused=false,samples=1,nearby={}}
+   pickupPoints[#pickupPoints+1]={x=entry.target.x,y=entry.target.y,symbol="!",label=entry.quest.title,entry=entry}
+  end
+  for _,cluster in ipairs(ForeverCompanionServiceClusters.Build(pickupPoints,width*scale,height*scale,20)) do
+   local pickups,nearby={},{}
+   for i,point in ipairs(cluster) do pickups[i]=point.entry;if i>1 then nearby[#nearby+1]=point.entry end end
+   groups[#groups+1]={entry=pickups[1],pickups=pickups,focused=false,samples=#pickups,nearby=nearby}
   end
  end
 
@@ -510,6 +548,7 @@ function M.Refresh()
   local entry=group.entry
   local target=entry.target
   pin.entry,pin.focused,pin.samples,pin.nearby=entry,group.focused,group.samples,group.nearby
+  pin.pickups,pin.pickupIndex=group.pickups,1
   local shared=group.nearby and #group.nearby>0
   local size=group.focused and 22 or (shared and 17 or 13)
   if group.focused and not focus.complete then
@@ -524,7 +563,17 @@ function M.Refresh()
   if group.focused then pin.badge:SetColorTexture(.32,.92,1,1)
   elseif entry.quest.complete then pin.badge:SetColorTexture(.48,.91,.52,.93)
   else pin.badge:SetColorTexture(.93,.76,.40,.86) end
-  pin.symbol:SetText(entry.pickup and "!" or (shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or ""))))
+  if entry.pickup then
+   pin.outline:Hide()
+   pin.badge:SetTexture("Interface\\GossipFrame\\AvailableQuestIcon")
+   pin.symbol:SetText(shared and tostring(#group.pickups) or "")
+   pin.symbol:SetTextColor(1,1,1)
+   pin:SetSize(22,26)
+  else
+   pin.outline:Show()
+   pin.symbol:SetTextColor(.05,.08,.12)
+   pin.symbol:SetText(shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or "")))
+  end
   pin:ClearAllPoints()
   pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
   pin:Show()
@@ -561,7 +610,9 @@ local events=CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 pcall(events.RegisterEvent,events,"QUEST_POI_UPDATE")
+pcall(events.RegisterEvent,events,"PLAYER_LEVEL_UP")
+pcall(events.RegisterEvent,events,"QUEST_TURNED_IN")
 events:SetScript("OnEvent",function(_,event,name)
  if event=="ADDON_LOADED" and name~="Blizzard_WorldMap" then return end
- if event=="QUEST_POI_UPDATE" then M.Refresh() else attach() end
+ if event=="QUEST_POI_UPDATE" or event=="PLAYER_LEVEL_UP" or event=="QUEST_TURNED_IN" then M.Refresh() else attach() end
 end)

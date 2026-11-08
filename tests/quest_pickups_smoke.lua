@@ -17,3 +17,14 @@ assert(pickups[1].target.source=='WoW quest pickup')
 C_QuestLog.GetQuestsOnMap=function() error('unavailable') end
 assert(#ForeverCompanionQuestWaypoints.MapPickups(100,{})==0)
 print('PASS: native pickups reject active quests, duplicates, other maps, missing titles and invalid coordinates')
+
+local reference={quest={id=1,title="Reference"},target={map=100,x=.2,y=.3},pickup=true,reference=true}
+ForeverCompanionAvailableQuests={ForMap=function() return {reference} end}
+C_QuestLog.GetQuestsOnMap=function() return {{questID=1,mapID=100,isQuestStart=true,x=.2,y=.3}} end
+local combined=ForeverCompanionQuestWaypoints.MapPickups(100,{})
+assert(#combined==1 and not combined[1].reference,"native pickup takes precedence over matching reference")
+C_QuestLog.GetQuestsOnMap=nil
+combined=ForeverCompanionQuestWaypoints.MapPickups(100,{})
+assert(#combined==1 and combined[1].reference,"database pickups still work without native map POIs")
+ForeverCompanionDB={questMapHidePickups=true}
+assert(#ForeverCompanionQuestWaypoints.MapPickups(100,{})==0)

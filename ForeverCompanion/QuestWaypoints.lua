@@ -104,10 +104,14 @@ end
 -- Only native, explicitly reported quest starts. This is not an eligibility
 -- inference: the player must inspect and accept the quest in the game.
 function W.MapPickups(map,quests)
+ if ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups then return {} end
+ local extra,status={}
+ if ForeverCompanionAvailableQuests then extra,status=ForeverCompanionAvailableQuests.ForMap(map,quests) end
+ W.PickupStatus=status
  local api=C_QuestLog
- if type(api)~="table" then return {} end
+ if type(api)~="table" then return extra end
  local records=read(api.GetQuestsOnMap,map)
- if type(records)~="table" then return {} end
+ if type(records)~="table" then return extra end
  local active,seen,result={},{},{}
  for _,q in ipairs(quests or {}) do if q.id then active[q.id]=true end end
  for _,entry in ipairs(records) do
@@ -123,6 +127,10 @@ function W.MapPickups(map,quests)
    local key=candidate.quest.id..":"..candidate.target.x..":"..candidate.target.y
    if not seen[key] then seen[key]=true;result[#result+1]=candidate end
   end
+ end
+ for _,entry in ipairs(extra) do
+  local key=entry.quest.id..":"..entry.target.x..":"..entry.target.y
+  if not seen[key] then seen[key]=true;result[#result+1]=entry end
  end
  table.sort(result,function(a,b)
   if a.quest.id~=b.quest.id then return a.quest.id<b.quest.id end

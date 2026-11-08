@@ -160,7 +160,7 @@ end
 toc:close()
 local addonFrame
 for _,f in ipairs(frames) do
- if f.events and f.events.ADDON_LOADED and f.events.PLAYER_LEVEL_UP then addonFrame=f;break end
+ if f.events and f.events.ADDON_LOADED and f.events.PLAYER_XP_UPDATE and f.events.DISPLAY_SIZE_CHANGED then addonFrame=f;break end
 end
 assert(addonFrame and addonFrame.OnEvent,"addon loaded handler missing")
 ForeverCompanionDB={role={},professions=false,position=true,checks={Dungeons=3,Legacy={true}}}
@@ -637,6 +637,29 @@ do
  C_QuestLog.GetInfo,C_QuestLog.GetNumQuestLogEntries=originalInfo,originalCount
  C_QuestLog.GetQuestsOnMap=nil
  assert(planner.Sync())
+ local oldPOIs,oldTitle=C_QuestLog.GetQuestsOnMap,C_QuestLog.GetTitleForQuestID
+ C_QuestLog.GetTitleForQuestID=function(id) return "Available quest "..id end
+ C_QuestLog.GetQuestsOnMap=function()
+  return {{questID=777,mapID=1429,isQuestStart=true,x=.3,y=.3},{questID=888,mapID=1429,isQuestStart=true,x=.3,y=.3}}
+ end
+ provider:OnMapChanged()
+ local pickupPin
+ for _,f in ipairs(frames) do if f.parent==canvas.id and f.visible and f.entry and f.entry.pickup then pickupPin=f end end
+ assert(pickupPin and #pickupPin.pickups==2 and pickupPin.badge.texture=="Interface\\GossipFrame\\AvailableQuestIcon","unaccepted quests use native exclamation artwork and cluster")
+ local oldPickupShift,oldPickupNav=IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate
+ IsShiftKeyDown=function() return true end
+ pickupPin:OnClick()
+ assert(pickupPin.entry.quest.id==888,"shift click chooses the second unaccepted quest")
+ local chosenPickup
+ IsShiftKeyDown=function() return false end
+ ForeverCompanionQuestWaypoints.Navigate=function(target) chosenPickup=target;return "Quest pickup selected" end
+ pickupPin:OnClick()
+ assert(chosenPickup==pickupPin.entry.target,"click navigates to actual quest-giver location")
+ IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate=oldPickupShift,oldPickupNav
+ mapModeButton("Pickups: On"):OnClick()
+ assert(not pickupPin.visible,"pickup toggle hides unaccepted quests")
+ mapModeButton("Pickups: Off"):OnClick()
+ C_QuestLog.GetQuestsOnMap,C_QuestLog.GetTitleForQuestID=oldPOIs,oldTitle
  provider:OnHide()
  assert(visiblePins()==0 and not area.visible)
  WorldMapFrame.IsShown=function() return false end
