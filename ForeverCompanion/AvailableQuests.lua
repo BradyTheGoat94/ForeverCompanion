@@ -76,6 +76,7 @@ local function build(db,who)
   if cursor<=#ids then C_Timer.After(.01,batch)
   else
    loading=false
+   if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
    if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
   end
  end
@@ -100,8 +101,8 @@ local function requirements(record,active,completed)
  end
  return true
 end
-function A.ForMap(map,quests)
- if ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups then return {} end
+function A.ForMap(map,quests,ignoreVisibility)
+ if not ignoreVisibility and ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups then return {} end
  local db=ForeverCompanionQuestLocations.Provider()
  if not db or read(db.RequireContract,4)~=true or type(db.Quest.GetAllIds)~='function' then return {},'Install current Forever QuestieDB for more quest pickups' end
  if not C_QuestLog or type(C_QuestLog.IsQuestFlaggedCompleted)~='function' then return {},'Quest completion API unavailable; native pickups only' end

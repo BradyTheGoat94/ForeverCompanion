@@ -103,10 +103,10 @@ end
 
 -- Only native, explicitly reported quest starts. This is not an eligibility
 -- inference: the player must inspect and accept the quest in the game.
-function W.MapPickups(map,quests)
- if ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups then return {} end
+function W.MapPickups(map,quests,ignoreVisibility)
+ if not ignoreVisibility and ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups then return {} end
  local extra,status={}
- if ForeverCompanionAvailableQuests then extra,status=ForeverCompanionAvailableQuests.ForMap(map,quests) end
+ if ForeverCompanionAvailableQuests then extra,status=ForeverCompanionAvailableQuests.ForMap(map,quests,ignoreVisibility) end
  W.PickupStatus=status
  local api=C_QuestLog
  if type(api)~="table" then return extra end

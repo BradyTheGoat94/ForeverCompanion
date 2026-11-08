@@ -28,3 +28,5 @@ combined=ForeverCompanionQuestWaypoints.MapPickups(100,{})
 assert(#combined==1 and combined[1].reference,"database pickups still work without native map POIs")
 ForeverCompanionDB={questMapHidePickups=true}
 assert(#ForeverCompanionQuestWaypoints.MapPickups(100,{})==0)
+
+assert(#ForeverCompanionQuestWaypoints.MapPickups(100,{},true)==1,"discovery ignores marker visibility")

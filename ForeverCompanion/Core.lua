@@ -660,9 +660,10 @@ local function render()
     end
   end
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
+  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests",scrollChild,questListBottom)
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom,Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
+  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -975,6 +976,7 @@ local function createUI()
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
+  ForeverCompanionQuestDiscovery.Create(child)
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then
