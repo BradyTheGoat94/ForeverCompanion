@@ -52,7 +52,7 @@ local function exportNative(path)
 end
 local function widget(kind)
  local w={kind=kind,visible=true,children={},text="",id=#frames+1}
- function w:SetText(v) self.text=tostring(v or "") end
+ function w:SetText(v) self.text=tostring(v or "");if self.fontString then self.fontString:SetText(v) end end
  function w:GetText() return self.text end
  function w:GetStringHeight()
   local size=self.font and self.font[2] or 12
@@ -64,6 +64,7 @@ local function widget(kind)
  function w:Show() self.visible=true end
  function w:Hide() self.visible=false end
  function w:IsShown() return self.visible end
+ function w:SetShown(value) self.visible=value end
  function w:SetScript(name,fn) self[name]=fn end
  function w:GetScript(name) return self[name] end
  function w:RegisterEvent(name) self.events=self.events or {};self.events[name]=true end
@@ -111,6 +112,8 @@ local function widget(kind)
  function w:SetTexCoord(...) self.texCoord={...} end
  function w:SetAlpha(value) self.alpha=value end
  function w:SetNormalTexture() end
+ function w:SetFontString(value) self.fontString=value end
+ function w:GetFontString() return self.fontString or self end
  function w:SetHighlightTexture() end
  function w:SetPushedTexture() end
  function w:ClearAllPoints() self.point=nil;self.points={} end
@@ -656,6 +659,7 @@ do
   if frame.OnClick and frame.text=="Find on map" and frame.enabled then found=true end
  end
  assert(found,"leveling route shows map action for a live quest")
+ exportNative("ui_journey_native.json")
  SlashCmdList.FOREVERCOMPANION("open quests")
 end
 do

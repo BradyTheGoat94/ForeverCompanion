@@ -115,6 +115,7 @@ end
 
 local root,kind,title,detail,hint,mapButton,stageText,previous,nextStage,rows
 local overrideStage,actionQuest,actionIndex,zoneNote
+local queueRows,queueEmpty,levelBadge,queueStatus
 local function label(parent,x,y,w,size,color)
  local text=parent:CreateFontString(nil,"OVERLAY","GameFontHighlight")
  text:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
@@ -126,7 +127,7 @@ local function label(parent,x,y,w,size,color)
 end
 
 local function button(parent,x,y,width,caption,click)
- local widget=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
+ local widget=ForeverCompanionInterface.Button(parent)
  widget:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
  widget:SetSize(width,24)
  widget:SetText(caption)
@@ -148,7 +149,8 @@ function J.Create(parent,navigate)
  root:SetSize(770,398)
  local gold,white,muted={1,.81,.43},{.93,.96,1},{.69,.79,.86}
  local task=card(0,0,770,158)
- kind=label(task,15,-12,735,13,{.38,.87,1})
+ kind=label(task,15,-12,580,13,{.38,.87,1})
+ levelBadge=label(task,641,-12,112,12,gold)
  title=label(task,15,-38,735,21,white)
  detail=label(task,15,-72,735,13,muted)
  hint=label(task,316,-121,437,12,muted)
@@ -159,27 +161,51 @@ function J.Create(parent,navigate)
   hint:SetText(ForeverCompanionQuestWaypoints.Show(quest))
  end)
  button(task,170,-117,129,"Quest journal",function() navigate("Quests") end)
- local route=card(0,-171,770,217)
- stageText=label(route,15,-12,450,16,gold)
- previous=button(route,514,-8,73,"Previous",function() J.ChangeStage(-1) end)
- button(route,595,-8,77,"My level",function() J.ChangeStage(0) end)
- nextStage=button(route,680,-8,73,"Next",function() J.ChangeStage(1) end)
+ local route=card(0,-171,470,217)
+ local queue=card(482,-171,288,217)
+ label(queue,15,-12,175,13,gold):SetText("UP NEXT")
+ queueStatus=label(queue,194,-12,78,11,muted)
+ queueEmpty=label(queue,15,-63,258,13,muted)
+ queueEmpty:SetHeight(80)
+ queueRows={}
+ for i=1,3 do
+  local item=CreateFrame("Frame",nil,queue)
+  item:SetPoint("TOPLEFT",queue,"TOPLEFT",12,-43-(i-1)*45);item:SetSize(264,40)
+  local bg=item:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(item);bg:SetColorTexture(.045,.052,.065,1)
+  local number=label(item,7,-9,20,12,gold);number:SetText(i)
+  item.title=label(item,30,-6,170,12,white);item.title:SetWordWrap(false);item.title:SetHeight(17)
+  item.status=label(item,30,-23,170,10,muted);item.status:SetWordWrap(false);item.status:SetHeight(14)
+  item.view=button(item,205,-7,52,"View",function()
+   local p=ForeverCompanionQuestPlanner
+   if item.stop and p.IsSupported() and p.GetLive()[item.stop.index]==item.stop.quest then
+    p.Select(item.stop.index);navigate("Quests")
+   end
+  end)
+  queueRows[i]=item
+ end
+ stageText=label(route,15,-12,440,15,gold)
+ previous=button(route,15,-181,83,"Previous",function() J.ChangeStage(-1) end)
+ button(route,106,-181,96,"My level",function() J.ChangeStage(0) end)
+ nextStage=button(route,210,-181,83,"Next",function() J.ChangeStage(1) end)
  rows={}
  for i=1,3 do
   local y=-44-(i-1)*42
   local row=CreateFrame("Frame",nil,route)
   row:SetPoint("TOPLEFT",route,"TOPLEFT",13,y)
-  row:SetSize(744,37)
+  row:SetSize(444,37)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row);bg:SetColorTexture(.075,.11,.16,1)
-  row.title=label(row,11,-10,275,14,white)
-  row.detail=label(row,294,-11,327,12,muted)
-  row.map=button(row,634,-6,96,"Open map",function()
+  row.title=label(row,11,-10,221,13,white)
+  row.title:SetWordWrap(false);row.title:SetHeight(18)
+  row.detail=label(row,237,-11,122,10,muted)
+  row.detail:SetWordWrap(false);row.detail:SetHeight(15)
+  row.map=button(row,370,-6,65,"Open map",function()
    if row.zone then ForeverCompanionQuestWaypoints.OpenMap(row.zone[2]) end
   end)
   rows[i]=row
  end
- zoneNote=label(route,15,-183,735,11,muted)
+ zoneNote=label(queue,15,-183,258,10,muted)
+ zoneNote:SetHeight(28)
  root:Hide()
 end
 
@@ -208,15 +234,29 @@ function J.Show(show,level)
  local map=C_Map and read(C_Map.GetBestMapForUnit,"player")
  local planner=ForeverCompanionQuestPlanner
  actionQuest,actionIndex=nil,nil
+ local upcoming={}
+ levelBadge:SetText("LEVEL "..tostring(level or "?"))
  if planner.IsSupported() then
   local quests=planner.GetLive()
   local locations=map and ForeverCompanionQuestWaypoints.MapLocations(map,quests) or {}
   local position=map and C_Map and read(C_Map.GetPlayerMapPosition,map,"player")
   local x,y
   if position then x,y=read(position.GetXY,position) end
-  local stops=J.LocalRoute(quests,locations,x,y,1)
+  local stops=J.LocalRoute(quests,locations,x,y,3)
+  upcoming=stops
   if stops[1] then actionQuest,actionIndex=stops[1].quest,stops[1].index
   else actionQuest,actionIndex=J.Recommend(quests,locations,planner.GetSelected()) end
+ end
+ queueStatus:SetText(#upcoming>0 and (#upcoming.." STOPS") or "NO ROUTE")
+ queueEmpty:SetShown(#upcoming==0)
+ queueEmpty:SetText("No reported destinations nearby. Open the quest journal to choose a quest or another zone.")
+ for i,item in ipairs(queueRows) do
+  local stop=upcoming[i]
+  item.stop=stop;item:SetShown(stop~=nil)
+  if stop then
+   item.title:SetText(stop.quest.title)
+   item.status:SetText(planner.IsPinned(stop.quest) and "Pinned priority" or (stop.quest.complete and "Ready to turn in" or "Quest objective"))
+  end
  end
  local quest=actionQuest
  if quest then
@@ -244,12 +284,12 @@ function J.Show(show,level)
   if zone then
    local info=C_Map and read(C_Map.GetMapInfo,zone[2])
    row.title:SetText(info and info.name or zone[1])
-   row.detail:SetText(map==zone[2] and "You are here" or zone[3] or "Suggested questing zone")
+   row.detail:SetText(map==zone[2] and "You are here" or zone[3] or "Questing zone")
    row.map:SetEnabled(info~=nil)
    row:Show()
   else row:Hide() end
  end
- zoneNote:SetText(#zones>0 and "Pick one zone near you. Finish nearby objectives together, then return to town." or
+ zoneNote:SetText(#zones>0 and "Approximate map order. Check terrain and remaining objectives." or
   "Follow the quests near your starting camp. Zone suggestions appear when your race and faction are available.")
 end
 

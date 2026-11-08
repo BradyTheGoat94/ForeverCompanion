@@ -9,6 +9,7 @@ GuideData.lua
 Icons.lua
 Ornaments.lua
 VisualTheme.lua
+InterfaceKit.lua
 AdvancedGuides.lua
 Rotations.lua
 BeginnerCoach.lua
