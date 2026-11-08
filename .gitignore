@@ -5,3 +5,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Local verification output
+work/
+__pycache__/
+ui_*snapshot.txt
+ui_*native.json

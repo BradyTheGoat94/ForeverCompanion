@@ -7,8 +7,8 @@ local pastIndex=1
 local rowCount=4
 local ROW_HEIGHT=25
 local ROW_STEP=27
-local BASE_HEIGHT=164
-local ROW_TOP=88
+local BASE_HEIGHT=170
+local ROW_TOP=94
 local windowWidth=320
 local selectedRow=nil
 local detailOpen=false
@@ -260,6 +260,31 @@ local function build()
  local close=CreateFrame("Button",nil,frame,"UIPanelCloseButton")
  close:SetPoint("TOPRIGHT",frame,"TOPRIGHT",2,2)
  close:SetScript("OnClick",function() M.Hide() end)
+ local layoutButton=CreateFrame("Button",nil,frame,"UIPanelButtonTemplate")
+ layoutButton:SetSize(38,20)
+ layoutButton:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-28,-10)
+ layoutButton:SetText("Size")
+ layoutButton:SetScript("OnClick",function()
+  local current=saved().layout or "standard"
+  M.SetLayout(current=="compact" and "standard" or (current=="standard" and "expanded" or "compact"))
+ end)
+ layoutButton:SetScript("OnEnter",function(self)
+  if GameTooltip then
+   GameTooltip:SetOwner(self,"ANCHOR_TOP")
+   GameTooltip:SetText("Cycle compact / standard / expanded")
+   GameTooltip:Show()
+  end
+ end)
+ layoutButton:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ local playerColumn=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ playerColumn:SetPoint("TOPLEFT",frame,"TOPLEFT",58,-78)
+ playerColumn:SetText("PLAYER")
+ playerColumn:SetTextColor(.58,.7,.78)
+ local amountColumn=frame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+ amountColumn:SetPoint("TOPRIGHT",frame,"TOPRIGHT",-18,-78)
+ amountColumn:SetText("AMOUNT")
+ amountColumn:SetTextColor(.58,.7,.78)
+ frame.amountColumn=amountColumn
  modeButton=button(frame,"Damage",65,9,function()
   for _=1,#metrics do
    metricIndex=metricIndex%#metrics+1
@@ -551,19 +576,21 @@ local function build()
   stripe:SetColorTexture(i%2==0 and .045 or .065,i%2==0 and .075 or .095,i%2==0 and .105 or .135,.85)
   local spellBar=CreateFrame("StatusBar",nil,detailPanel)
   spellBar:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-88-(i-1)*27)
-  spellBar:SetSize(285,3)
+  spellBar:SetSize(176,3)
   spellBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
   spellBar:SetStatusBarColor(.72,.38,.85,.95)
   spellBar:SetMinMaxValues(0,1)
   spellBar:SetValue(0)
   local spellPercent=detailPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  spellPercent:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",332,-77-(i-1)*27)
+  spellPercent:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",332,-80-(i-1)*27)
   spellPercent:SetWidth(58)
+  spellPercent:SetHeight(11)
+  spellPercent:SetWordWrap(false)
   spellPercent:SetJustifyH("RIGHT")
   spellPercent:SetTextColor(.77,.67,.92)
   local spellTrack=detailPanel:CreateTexture(nil,"BACKGROUND")
   spellTrack:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",34,-88-(i-1)*27)
-  spellTrack:SetSize(285,3)
+  spellTrack:SetSize(176,3)
   spellTrack:SetColorTexture(.24,.14,.29,.8)
   local spellAccent=detailPanel:CreateTexture(nil,"OVERLAY")
   spellAccent:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",8,-66-(i-1)*27)
@@ -655,8 +682,17 @@ function M.Refresh()
  else
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
  end
+ if frame.amountColumn then frame.amountColumn:SetText(metrics[metricIndex][1]:upper()) end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
+ if frame.meterFooter then
+  local duration=type(data)=="table" and data.durationSeconds
+  local suffix=""
+  if safeNumber(duration) and duration>=0 then
+   suffix=string.format("  /  %d:%02d",math.floor(duration/60),math.floor(duration%60))
+  end
+  frame.meterFooter:SetText(sessions[sessionIndex][1].."  /  "..#sources.." players"..suffix)
+ end
  if selectedRow and selectedRow>rowCount then selectedRow=nil;detailOpen=false end
  local colors=RAID_CLASS_COLORS or {}
  for i,row in ipairs(rows) do
@@ -711,7 +747,7 @@ function M.Refresh()
    -- A per-source maximum can make every player's bar appear full.
    -- Pass secret numeric values only to secret-safe native status-bar methods.
    local maximum=data and data.maxAmount
-   if (issecretvalue and issecretvalue(maximum)) or maximum~=nil then
+   if (issecretvalue and issecretvalue(maximum)) or (safeNumber(maximum) and maximum>0) then
     row.fill:SetMinMaxValues(0,maximum)
     row.fill:SetValue(source.totalAmount)
    else

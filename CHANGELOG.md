@@ -1,3 +1,13 @@
+## 3.29.0-beta — Meter readability, map services, and live quest guidance
+
+- Rebuilt meter text/texture layers above the native bars; separated header controls, added column labels and a layout toggle, constrained footer text, and corrected spell breakdown row collisions. Both skins share the detail-panel styling.
+- Retained direct native secret-value display; invalid public maxima produce empty bars. Duration is shown only when safely inspectable.
+- Replaced generic service pictures with Blizzard minimap tracking textures. Deterministic screen-distance clustering combines nearby service categories; Shift-click chooses a member, and ordinary click navigates to its provider coordinate.
+- Added only native-reported, titled quest pickup markers with explicit player navigation.
+- Added current-map quest-stop suggestions with pins, turn-ins, and approximate distance priority, plus beginner hub, travel, dungeon and alternate-character preparation guidance. Suggestions do not evaluate terrain or quest prerequisites.
+- Added Lua regression suites and fixed stale width, event-handler and map-style assumptions in the existing mock tests.
+- Client verification remains pending; see docs/SPRINT_3_29_VERIFICATION.md for coverage and release-gate limitations.
+
 ## 3.28.0-beta
 
 - Show all active quests with a known destination on the displayed map by default. Nearby quests share a marker and the focused quest keeps its cyan highlight.

@@ -25,4 +25,11 @@ jobs:
         run: |
           find ForeverCompanion tests -type f -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
       - name: Run offline smoke tests
-        run: lua5.1 tests/offline_smoke.lua
+        run: |
+          lua5.1 tests/offline_smoke.lua
+          lua5.1 tests/combat_meter_ui_smoke.lua
+          lua5.1 tests/service_clusters_smoke.lua
+          lua5.1 tests/journey_route_smoke.lua
+          lua5.1 tests/quest_locations_smoke.lua
+          lua5.1 tests/quest_pickups_smoke.lua
+          lua5.1 tests/mock_ui.lua

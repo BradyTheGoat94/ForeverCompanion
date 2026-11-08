@@ -85,6 +85,8 @@ class PackageTests(unittest.TestCase):
             builder.validate()
 
     def test_case_insensitive_collision(self):
+        if (builder.ADDON / "core.lua").exists():
+            self.skipTest("Requires a case-sensitive filesystem to create two colliding files")
         self.manifest()
         (builder.ADDON / "core.lua").write_text("return true\n", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "Case-insensitive filename collision"):

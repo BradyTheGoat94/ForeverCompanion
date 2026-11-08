@@ -65,6 +65,7 @@ local function widget(kind)
  function w:Hide() self.visible=false end
  function w:IsShown() return self.visible end
  function w:SetScript(name,fn) self[name]=fn end
+ function w:GetScript(name) return self[name] end
  function w:RegisterEvent(name) self.events=self.events or {};self.events[name]=true end
  function w:CreateTexture(_,layer) local child=widget("Texture");child.parent=self.id;child.layer=layer;return child end
  function w:CreateFontString(_,layer,template) local child=widget("FontString");child.parent=self.id;child.layer=layer;child.template=template;return child end
@@ -100,6 +101,9 @@ local function widget(kind)
  function w:SetAllPoints(target) self.all=target and target.id or self.parent end
  function w:SetJustifyH(value) self.justify=value end
  function w:SetJustifyV() end
+ function w:SetWordWrap() end
+ function w:SetShadowOffset() end
+ function w:SetShadowColor() end
  function w:SetSpacing() end
  function w:SetTextColor(...) self.textColor={...} end
  function w:SetFontObject() end
@@ -153,7 +157,7 @@ end
 toc:close()
 local addonFrame
 for _,f in ipairs(frames) do
- if f.events and f.events.ADDON_LOADED and not f.events.QUEST_POI_UPDATE then addonFrame=f;break end
+ if f.events and f.events.ADDON_LOADED and f.events.PLAYER_LEVEL_UP then addonFrame=f;break end
 end
 assert(addonFrame and addonFrame.OnEvent,"addon loaded handler missing")
 ForeverCompanionDB={role={},professions=false,position=true,checks={Dungeons=3,Legacy={true}}}
@@ -485,6 +489,8 @@ do
  styleButton:OnClick()
  assert(not terrain.visible and visiblePins()==4,"original terrain keeps all quest markers")
  styleButton:OnClick()
+ assert(not terrain.visible,"original style keeps native artwork unobstructed")
+ styleButton:OnClick()
  assert(terrain.visible,"atlas style can be restored")
  local modeButton=assert(mapModeButton("Map: All"))
  modeButton:OnClick()
@@ -533,7 +539,7 @@ do
   Npc={GetAllIds=function() return {1,2,3} end,npcFlags=function(id) return id==1 and 256 or 4 end,
    friendlyToFaction=function(id) return id==3 and "H" or "A" end,
    name=function(id) return id==1 and "Test banker" or "Test vendor" end,
-   spawns=function(id) return {[12]={{40+id*5,70}}} end},
+   spawns=function(id) return {[12]={{44+id,70}}} end},
  }
  provider:OnMapChanged()
  assert(scheduled,"town services are indexed asynchronously")
@@ -545,12 +551,28 @@ do
   end
   return count
  end
- assert(townPins()==2,"only friendly town service pins should be visible")
+ assert(townPins()==1,"nearby friendly service types should cluster together")
  local townsButton=assert(mapModeButton("Towns: On"))
  townsButton:OnClick()
  assert(townPins()==0 and visiblePins()==4,"town services toggle independently of quests")
  townsButton:OnClick()
- assert(townPins()==2)
+ assert(townPins()==1)
+ local servicePin
+ for _,f in ipairs(frames) do if f.parent==canvas.id and f.locations and f.visible then servicePin=f end end
+ assert(servicePin and #servicePin.locations==2 and servicePin.count.text=="2")
+ local oldShift,oldNavigate=IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate
+ IsShiftKeyDown=function() return true end
+ servicePin:OnClick()
+ assert(servicePin.locationIndex==2,"shift click selects another clustered service")
+ local chosen
+ IsShiftKeyDown=function() return false end
+ ForeverCompanionQuestWaypoints.Navigate=function(target) chosen=target;return "Selected service" end
+ servicePin:OnClick()
+ assert(chosen==servicePin.locations[2],"navigation retains real selected service coordinates")
+ IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate=oldShift,oldNavigate
+ mapID=1430;provider:OnMapChanged()
+ assert(townPins()==0,"old service pins disappear on map change")
+ mapID=1429;provider:OnMapChanged()
  LibQuestieDB,UnitFactionGroup,C_Timer=oldProvider,oldFaction,oldTimer
  provider:OnMapChanged()
  local activePin

@@ -44,7 +44,7 @@ for _,layout in ipairs({'compact','standard','expanded'}) do
  assert(m.SetLayout(layout))
  m.Refresh()
  local window=ForeverCompanionCombatMeterWindow
- assert(window:GetHeight()==164+ForeverCompanionDB.combatMeter.rows*27)
+ assert(window:GetHeight()==170+ForeverCompanionDB.combatMeter.rows*27)
  for _,o in ipairs(objects) do
   if o.kind=='FontString' and o.text==secret then
    if o.parent~=window then
@@ -56,6 +56,37 @@ for _,layout in ipairs({'compact','standard','expanded'}) do
 end
 assert(m.SetSkin('recount'));assert(m.SetSkin('details'))
 assert(m.SetRows(4));assert(m.SetWidth(280));m.Refresh()
+local calls=0
+source.sourceGUID="Player-Test"
+C_DamageMeter.GetCombatSessionSourceFromType=function()
+ calls=calls+1
+ local spells={}
+ for i=1,10 do spells[i]={spellID=i,totalAmount=100-i} end
+ return {combatSpells=spells}
+end
+C_Spell={GetSpellInfo=function(id) return {name="Native spell "..id,iconID=id} end}
+local playerRow
+for _,o in ipairs(objects) do if rawget(o,"OnMouseDown") then playerRow=o;break end end
+assert(playerRow)
+playerRow.OnMouseDown(playerRow,"LeftButton")
+assert(calls>0 and m.SelectedRow()==1,'selected player reads native breakdown out of combat')
+local nextPage
+for _,o in ipairs(objects) do
+ if o.kind=='Button' and o.text==">" and o.parent and rawget(o.parent,"width")==600 then nextPage=o end
+end
+assert(nextPage)
+nextPage.OnClick()
+local found=false
+for _,o in ipairs(objects) do if o.text=="Native spell 9" then found=true end end
+assert(found,'spell pagination displays the next native spell entries')
+local before=calls
+InCombatLockdown=function() return true end
+m.Refresh()
+assert(calls==before,'no source inspection during combat')
+InCombatLockdown=function() return false end
+assert(m.SetMode('healing'))
+playerRow.OnMouseDown(playerRow,"LeftButton")
+assert(m.SelectedRow()==1)
 C_DamageMeter=nil;m.Refresh()
 print('PASS: meter layouts, overlay frame levels, native secret display, missing API')
 
