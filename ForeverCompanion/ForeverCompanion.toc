@@ -47,6 +47,7 @@ QuestLocations.lua
 TownServices.lua
 QuestDirection.lua
 QuestWaypoints.lua
+ServiceClusters.lua
 QuestMap.lua
 PartyMap.lua
 PartyMinimap.lua

@@ -146,39 +146,24 @@ end
 -- Built-in Blizzard icon textures; no letter tiles or external assets.
 -- All paths use shipped game artwork. Unknown services use a bag icon.
 local serviceArtwork={
- B="Interface\\Icons\\INV_Misc_Bag_10",
- AH="Interface\\Icons\\INV_Misc_Coin_01",
- F="Interface\\Icons\\Ability_Mount_Wyvern_01",
- I="Interface\\Icons\\INV_Misc_Food_15",
- R="Interface\\Icons\\Trade_BlackSmithing",
- V="Interface\\Icons\\INV_Misc_Bag_08",
- T="Interface\\Icons\\INV_Misc_Book_09",
- M="Interface\\Icons\\INV_Letter_15",
+ B="Interface\\Minimap\\Tracking\\Banker",
+ AH="Interface\\Minimap\\Tracking\\Auctioneer",
+ F="Interface\\Minimap\\Tracking\\FlightMaster",
+ I="Interface\\Minimap\\Tracking\\Innkeeper",
+ R="Interface\\Minimap\\Tracking\\Repair",
+ V="Interface\\Minimap\\Tracking\\Reagents",
+ T="Interface\\Minimap\\Tracking\\Class",
+ M="Interface\\Minimap\\Tracking\\Mailbox",
 }
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
- local groups,ordered={},{}
- -- Recycled pins must never survive a map, zoom, or visibility change.
- for _,oldPin in ipairs(servicePins) do oldPin:Hide() end
- -- Show all documented service types on every mapped zone. At broad zoom
- -- cluster same-category markers; zooming in reveals individual NPCs.
+ -- Pixel-distance clustering crosses service categories, so a banker,
+ -- repair vendor and trainer at the same building remain accessible.
  local detailed=scale>=1.25
- local radius=detailed and 18 or 42
- for _,point in ipairs(points) do
-  -- Display every supported service category in every mapped zone.
-  -- Broad zoom groups nearby pins by category to limit clutter.
-  if point.symbol and point.x and point.y then
-   -- At close zoom, retain each known NPC rather than collapsing nearby
-   -- vendors into one icon. Broad zoom still groups by service and location.
-   local key=detailed and (point.symbol..":"..point.label..":"..string.format("%.5f",point.x)..":"..string.format("%.5f",point.y))
-    or (point.symbol..":"..math.floor(point.x*width/radius+.5)..":"..math.floor(point.y*height/radius+.5))
-   local group=groups[key]
-   if not group then group={point};groups[key]=group;ordered[#ordered+1]=group
-   else group[#group+1]=point end
-  end
- end
+ local ordered=ForeverCompanionServiceClusters.Build(points,width,height,detailed and 22 or 26)
+ for _,oldPin in ipairs(servicePins) do oldPin:Hide();oldPin.locations=nil end
  for i,group in ipairs(ordered) do
   local pin=servicePins[i]
   if not pin then
@@ -193,8 +178,11 @@ local function showServices(canvas,mapID,scale)
    local icon=pin:CreateTexture(nil,"ARTWORK")
    icon:SetPoint("TOPLEFT",pin,"TOPLEFT",3,-3)
    icon:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",-3,3)
-   icon:SetTexCoord(.07,.93,.07,.93)
+   icon:SetTexCoord(0,1,0,1)
    pin.icon=icon
+   pin.count=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+   pin.count:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",5,-3)
+   pin.count:SetShadowOffset(1,-1)
    sharpenOverlay(icon)
    local border=pin:CreateTexture(nil,"OVERLAY")
    border:SetPoint("TOPLEFT",pin,"TOPLEFT",-1,1)
@@ -206,14 +194,16 @@ local function showServices(canvas,mapID,scale)
     if self.border then self.border:SetVertexColor(1,1,1,1) end
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-    GameTooltip:SetText(self.locations[1].service)
+    local active=self.locations[self.locationIndex or 1]
+    GameTooltip:SetText(active.service.."  -  "..active.label)
     local seen,count,displayed={},0,0
     for _,entry in ipairs(self.locations) do
-     if not seen[entry.label] then
-      seen[entry.label]=true
+     local key=entry.service..":"..entry.label
+     if not seen[key] then
+      seen[key]=true
       count=count+1
       if displayed<6 then
-       GameTooltip:AddLine(entry.label,.8,.9,1,true)
+       GameTooltip:AddLine(entry.service..": "..entry.label,.8,.9,1,true)
        displayed=displayed+1
       end
      end
@@ -231,15 +221,24 @@ local function showServices(canvas,mapID,scale)
     if GameTooltip then GameTooltip:Hide() end
    end)
    pin:SetScript("OnClick",function(self)
-    local target=self.locations[1]
+    if IsShiftKeyDown and IsShiftKeyDown() and #self.locations>1 then
+     self.locationIndex=(self.locationIndex or 1)%#self.locations+1
+     local active=self.locations[self.locationIndex]
+     self.icon:SetTexture(serviceArtwork[active.symbol] or serviceArtwork.V)
+     self:GetScript("OnEnter")(self)
+     return
+    end
+    local target=self.locations[self.locationIndex or 1]
     guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,target.label))
    end)
    servicePins[i]=pin
   end
   local point=group[1]
   pin.locations=group
+  pin.locationIndex=1
+  pin.count:SetText(#group>1 and tostring(#group) or "")
   -- Smaller, less intrusive POI icons at both zoom levels.
-  pin:SetSize(detailed and 20 or 16,detailed and 20 or 16)
+  pin:SetSize(detailed and 24 or 22,detailed and 24 or 22)
   pin.icon:SetTexture(serviceArtwork[point.symbol] or serviceArtwork.V)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
