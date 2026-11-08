@@ -1,3 +1,12 @@
+## 3.34.0-beta — Compact Details-style meter
+
+- Replaced the large branded header, control rows and stacked footer with a compact title bar, five native-art toolbar controls and a single status line. Eight player rows now fit in 320 by 218 pixels; compact is 280 by 134 and expanded is 440 by 302.
+- Added full-list mouse-wheel scrolling, absolute ranking numbers, a visible rank range and stable player selection across scrolling, resizing and native ranking changes. The visible row count no longer limits which raid members can be inspected.
+- Added separate total and per-second columns for damage/healing views, outlined text, bounded name/value wells, a selected-row underline and larger-text support. Single-value mode remains available. Secret values continue to pass directly to native display without concatenation or arithmetic.
+- Added title-bar display/segment menus, named native combat sessions, right-click quick displays, Ctrl-wheel display cycling, and a complete options menu for layouts, rows, columns, type size, skins, lock and position recovery.
+- Added a native combat-data reset with an explicit confirmation and combat-state recheck. Reset affects Blizzard's shared combat sessions; missing APIs disable the confirmation action. Resetting window appearance preserves combat data.
+- Retained both Details-inspired and Recount-inspired skins and the native spell breakdown. Added geometry, 40-source scrolling, selection, history, reset and options regressions plus empty-state previews for all presets and themes. In-game validation and full Details feature parity are not claimed.
+
 ## 3.33.0-beta — Quest-giver analysis and readable combat values
 
 - Expanded Discover Quests with selected-giver details, per-location source labels, navigation feedback, level filtering, reset controls and sorting by name, level, client evidence or approximate map proximity. Unknown levels stay visible; proximity is not a terrain-aware route or yard measurement.
