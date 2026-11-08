@@ -2,7 +2,7 @@
 ## Title: Brady's Forever Companion
 ## Notes: Class guides, gear, dungeons, loot and progression (Forever client verification pending)
 ## Author: Brady and Forever Companion Contributors
-## Version: 3.31.0-beta
+## Version: 3.32.0-beta
 ## SavedVariablesPerCharacter: ForeverCompanionDB
 ## OptionalDeps: QuestieDB
 GuideData.lua
@@ -50,6 +50,7 @@ TownServices.lua
 QuestDirection.lua
 QuestWaypoints.lua
 AvailableQuests.lua
+QuestDiscovery.lua
 ServiceClusters.lua
 QuestMap.lua
 PartyMap.lua

@@ -114,7 +114,7 @@ function J.FormatLocalRoute()
 end
 
 local root,kind,title,detail,hint,mapButton,stageText,previous,nextStage,rows
-local overrideStage,actionQuest,actionIndex,zoneNote
+local overrideStage,actionQuest,actionIndex,zoneNote,actionPickup
 local queueRows,queueEmpty,levelBadge,queueStatus
 local function label(parent,x,y,w,size,color)
  local text=parent:CreateFontString(nil,"OVERLAY","GameFontHighlight")
@@ -155,6 +155,7 @@ function J.Create(parent,navigate)
  detail=label(task,15,-72,735,13,muted)
  hint=label(task,316,-121,437,12,muted)
  mapButton=button(task,15,-117,143,"Find on map",function()
+  if actionPickup then ForeverCompanionQuestWaypoints.Navigate(actionPickup.target,true,actionPickup.quest.title);return end
   if not actionQuest or not ForeverCompanionQuestPlanner.IsSupported() then return end
   local quest=actionQuest
   ForeverCompanionQuestPlanner.Select(actionIndex)
@@ -233,7 +234,7 @@ function J.Show(show,level)
  local zones=J.Route(stage,level,faction,race)
  local map=C_Map and read(C_Map.GetBestMapForUnit,"player")
  local planner=ForeverCompanionQuestPlanner
- actionQuest,actionIndex=nil,nil
+ actionQuest,actionIndex,actionPickup=nil,nil,nil
  local upcoming={}
  levelBadge:SetText("LEVEL "..tostring(level or "?"))
  if planner.IsSupported() then
@@ -259,7 +260,19 @@ function J.Show(show,level)
   end
  end
  local quest=actionQuest
- if quest then
+ if not quest and map then
+  local pickups=ForeverCompanionQuestWaypoints.MapPickups(map,planner.GetLive(),true)
+  -- Prefer client-reported starts over database reference locations.
+  for _,pickup in ipairs(pickups) do
+   if not actionPickup or (actionPickup.reference and not pickup.reference) then actionPickup=pickup end
+  end
+ end
+ if actionPickup then
+  kind:SetText("NEXT STEP   ·   PICK UP A QUEST")
+  title:SetText(actionPickup.quest.title)
+  detail:SetText("Visit "..(actionPickup.target.label or "the quest giver").." and inspect the quest in game.")
+  hint:SetText(actionPickup.reference and "Database reference; confirm additional requirements with the giver." or "Quest start reported by your client. Select Find on map to navigate.")
+ elseif quest then
   kind:SetText(quest.complete and "NEXT STEP   ·   TURN IN" or "NEXT STEP   ·   QUEST OBJECTIVE")
   title:SetText(quest.title)
   local step
@@ -275,7 +288,7 @@ function J.Show(show,level)
   detail:SetText("Look for a yellow ! near the starter camp or town. Accept a quest to see its next step here.")
   hint:SetText("")
  end
- mapButton:SetEnabled(quest~=nil)
+ mapButton:SetEnabled(quest~=nil or actionPickup~=nil)
  stageText:SetText(("Levels %d–%d  ·  %s"):format(band[1],band[2],band[3]))
  previous:SetEnabled(stage>1);nextStage:SetEnabled(stage<#brackets)
  for i,row in ipairs(rows) do
