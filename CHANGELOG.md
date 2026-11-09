@@ -1,3 +1,10 @@
+## 3.44.0-beta — Transparent map overlay
+
+- Added an independent click-through native zone map with adjustable opacity, size, monochrome art, saved position and an explicit drag/edit mode.
+- Shows the player and focused quest; optional service markers respect map category filters.
+- Toggle with /fc overlay or the expanded map dock. Options: /fc overlay options. Tab targeting remains unchanged.
+- Missing map artwork or coordinates clear stale terrain/markers. Phase artwork changes refresh the tiles.
+
 ## 3.43.0-beta â€” Map dock and service atlas
 
 - Replaced the large central map toolbar with a compact, draggable bottom-left dock. Expand its controls when needed; saved placement and a reset are available. Native map terrain is the default for new preferences; existing style choices remain supported. Atlas tint/grid are more restrained.

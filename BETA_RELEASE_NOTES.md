@@ -1,4 +1,8 @@
-# Forever Companion 3.43.0-beta release notes (draft)
+# Forever Companion 3.44.0-beta release notes (draft)
+
+## Transparent map overlay
+
+Use `/fc overlay` to toggle; `/fc overlay options` adjusts opacity, size and markers. Drag with `/fc overlay edit`, then `/fc overlay lock`. This uses translucent native zone art and needs in-game beta verification.
 
 ## What the beta includes
 

@@ -381,7 +381,7 @@ local function createGuide(map)
  townButton=button(354,-4,154,'',function() db.questMapHideTowns=townsEnabled();M.Refresh() end)
  pickupButton=button(12,-35,108,'',function() db.questMapHidePickups=not db.questMapHidePickups;M.Refresh() end)
  local services
- services=button(128,-35,144,'Service filters',function()
+ services=button(128,-35,126,'Service filters',function()
   if type(db.questMapHiddenServices)~='table' then db.questMapHiddenServices={} end
   local hidden=db.questMapHiddenServices;local entries={}
   for _,entry in ipairs(ForeverCompanionServiceAtlas.Categories) do if entry[1]~='all' then
@@ -390,8 +390,9 @@ local function createGuide(map)
   entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};M.Refresh() end}
   U.Menu(services,'MAP SERVICES',entries)
  end)
- button(280,-35,146,'Stop navigation',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
- local appearance;appearance=button(434,-35,74,'Style...',function() M.OpenAppearance(appearance) end)
+ button(262,-35,94,'Overlay map',function() ForeverCompanionMapOverlay.Toggle() end)
+ button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
+ local appearance;appearance=button(442,-35,66,'Style...',function() M.OpenAppearance(appearance) end)
  local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Right-click service clusters to choose · Drag header to move dock')
  return bar,title,hint
 end

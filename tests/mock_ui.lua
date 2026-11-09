@@ -99,7 +99,8 @@ local function widget(kind)
  function w:SetVerticalScroll(offset) self.verticalScroll=offset end
  function w:StartMoving() end
  function w:StopMovingOrSizing() end
- function w:EnableMouse() end
+ function w:EnableMouse(v) self.mouse=v end
+ function w:SetDesaturated(v) self.desaturated=v end
  function w:RegisterForClicks() end
  function w:SetVertexColor(...) self.vertexColor={...} end
  function w:SetDrawLayer(value) self.layer=value end
@@ -2029,4 +2030,23 @@ do
  ForeverCompanionDB.serviceAtlas.source='all';ForeverCompanionServiceAtlas.Refresh()
  ForeverCompanionServiceAtlas.Toggle();assert(not panel.visible)
  C_Map,ForeverCompanionTownServices.ForMap,ForeverCompanionQuestWaypoints.Navigate=oldMap,oldServices,oldNavigate
+end
+
+-- Native artwork API fixture; file IDs do not simulate real client terrain.
+do
+ C_Map={GetBestMapForUnit=function() return 1429 end,GetMapArtID=function() return 1 end,
+ GetMapArtLayers=function() return {{layerWidth=1002,layerHeight=668,tileWidth=256,tileHeight=256}} end,
+ GetMapArtLayerTextures=function() local f={};for i=1,12 do f[i]=i end;return f end,
+ GetMapInfo=function() return {name='SAMPLE overlay zone'} end,
+ GetPlayerMapPosition=function() return {GetXY=function() return .4,.6 end} end}
+ GetPlayerFacing=function() return .5 end
+ ForeverCompanionQuestPlanner.IsSupported=function() return false end
+ SlashCmdList.FOREVERCOMPANION('overlay show')
+ local panel;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapOverlayFrame' then panel=f end end
+ assert(panel and panel.visible and panel.mouse==false and panel.width==600)
+ SlashCmdList.FOREVERCOMPANION('overlay edit');assert(panel.mouse==true)
+ SlashCmdList.FOREVERCOMPANION('overlay lock');assert(panel.mouse==false)
+ ForeverCompanionMapOverlay.Options()
+ exportNative('ui_overlay_sample_native.json')
+ SlashCmdList.FOREVERCOMPANION('overlay hide');assert(not panel.visible)
 end
