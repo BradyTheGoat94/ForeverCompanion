@@ -1,3 +1,13 @@
+## 3.35.0-beta — Objective field guide and live quest tracker
+
+- Added a quest field guide with live objective counts, known/unknown progress, completed states, matched objective locations, multiple source choices, explicit navigation feedback and a separate turn-in view. Short quests use a shorter panel rather than four empty objective slots.
+- Added an optional movable, collapsible quest tracker with remaining-objective previews, addon-only pins, ready/current-zone priorities, two/four-quest layouts, paging, map actions and field-guide shortcuts. It refreshes while the main window is hidden and never changes Blizzard's watched quests.
+- Fixed the full modern quest-log enumeration path losing objective type and required-count metadata. Both modern paths now preserve type, fulfilled/required counts and quest level; legacy objectives retain their reported type. Failed scans preserve the last successful snapshot.
+- Matched provider locations retain exact objective indices. General native quest POIs stay separate from objective-specific locations, and completed objectives cannot keep stale navigation actions.
+- Expanded pickup discovery to browse either the player's zone or the zone selected on the world map. Map changes refresh the browser and clear old giver selection. Added active-marker right-click actions for field guides and pins, plus progress context in map tooltips.
+- Added /fc tracker and /fc discover, quest-journal shortcuts and a tracker toggle in the briefing. Unknown or cached progress is labeled, and navigation is disabled when the quest snapshot is unavailable.
+- Added two Lua suites plus broader UI regression checks for matching, counts, deduplication, stale snapshots, tracker updates and source selection. New field-guide/tracker previews use explicitly labeled fixtures. Real-client acceptance and Questie feature parity remain unverified.
+
 ## 3.34.0-beta — Compact Details-style meter
 
 - Replaced the large branded header, control rows and stacked footer with a compact title bar, five native-art toolbar controls and a single status line. Eight player rows now fit in 320 by 218 pixels; compact is 280 by 134 and expanded is 440 by 302.
