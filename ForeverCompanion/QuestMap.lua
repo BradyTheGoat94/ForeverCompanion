@@ -85,6 +85,7 @@ local function showTerrain(canvas)
 end
 
 local function hidePins()
+ if ForeverCompanionMapTools then ForeverCompanionMapTools.HideMap() end
  for _,pin in ipairs(pins) do pin:Hide() end
  for _,pin in ipairs(servicePins) do pin:Hide() end
  if area then area:Hide() end
@@ -120,6 +121,7 @@ local function createPin(canvas)
   GameTooltip:SetText(entry.quest.title)
   GameTooltip:AddLine(entry.pickup and (entry.reference and "Quest giver - confirm availability in game" or "Quest pickup reported by Blizzard") or (entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective")),1,1,1,true)
   GameTooltip:AddLine(entry.target.label or entry.target.source,.68,.75,.82,true)
+  GameTooltip:AddLine(ForeverCompanionQuestWaypoints.Describe(entry.target),.75,.85,1,true)
   if not entry.pickup and ForeverCompanionQuestFieldGuide then
    local done,total,known=ForeverCompanionQuestFieldGuide.Progress(entry.quest)
    if total>0 then GameTooltip:AddLine(done..' / '..total..' objectives complete'..(known<total and ' · some progress unknown' or ''),.7,.85,.75,true) end
@@ -392,7 +394,11 @@ local function createGuide(map)
  end)
  button(262,-35,94,'Overlay map',function() ForeverCompanionMapOverlay.Toggle() end)
  button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
- local appearance;appearance=button(442,-35,66,'Style...',function() M.OpenAppearance(appearance) end)
+ local appearance;appearance=button(442,-35,66,'Tools...',function() ForeverCompanionInterface.Menu(appearance,'MAP TOOLS',{
+  {label='Map appearance',action=function() M.OpenAppearance(appearance) end},
+  {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
+  {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(appearance) end},
+ }) end)
  local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Right-click service clusters to choose · Drag header to move dock')
  return bar,title,hint
 end
@@ -546,6 +552,7 @@ function M.Refresh()
  guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)
  guide:Show()
+ if ForeverCompanionMapTools then ForeverCompanionMapTools.DrawMap(canvas,mapID,width,height,scale) end
  if view=="off" or (view=="focus" and not focus) then return end
  -- All-mode must still display live quest locations when no quest is focused.
  -- A missing focus is not an empty quest log.
@@ -557,7 +564,9 @@ function M.Refresh()
  if #groups>0 then
   zoomPoint=groups[1].entry.target
   zoomButton:SetEnabled(type(worldMap.PanAndZoomTo)=="function")
-  guideHint:SetText(focus.complete and "Turn-in  ·  Click marker for arrow" or "Highlighted destinations  ·  Click marker for arrow")
+  guideHint:SetText(focus.complete and "Turn-in  ·  Click marker for arrow" or ForeverCompanionQuestWaypoints.Describe(groups[1].entry.target))
+ elseif focus then
+  guideHint:SetText(ForeverCompanionQuestWaypoints.Explain(focus,mapID))
  elseif view=="all" then
   guideHint:SetText("Click a quest marker to focus it")
  end

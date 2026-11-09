@@ -89,13 +89,14 @@ function R.SetAside(stop)
  deferred[key]=true;R.page=1;R.Refresh();return true
 end
 function R.RestoreDeferred() deferred={};R.page=1;R.Refresh() end
-function R.NavigateNext(quest)
+function R.NavigateNext(quest,exclude)
  local p=ForeverCompanionQuestPlanner
  if not p or not p.IsSupported() then return 'Quest snapshot unavailable. Open the quest log first.' end
  local quests=p.GetLive()
  local options={order=settings().order,filter=quest and 'selected' or settings().filter,selected=quest or p.GetSelected()}
  local stops=snapshot(quests,options)
- local stop=stops[1]
+ local stop
+ for _,candidate in ipairs(stops) do if not same(candidate.target,exclude) then stop=candidate;break end end
  if not stop then return 'No matched unfinished objective on this map. Open the field guide for other locations.' end
  local q,index,target=R.Resolve(stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets)
  if not target then return 'This objective changed. Choose it again.' end
@@ -196,7 +197,7 @@ function R.Refresh()
   local stop=current[(R.page-1)*4+i];row.stop=stop;row:SetShown(stop~=nil)
   if stop then
    row.title:SetText(((R.page-1)*4+i)..'. '..stop.quest.title)
-   row.detail:SetText((stop.turnin and 'Turn in' or stop.text)..' · '..(stop.target.reference and 'Reference location' or 'Client reported'))
+   row.detail:SetText((stop.turnin and 'Turn in' or stop.text)..' · '..ForeverCompanionQuestWaypoints.Describe(stop.target))
    row.go:SetText(stop.turnin and 'Go to giver' or 'Go to objective');row.go:SetEnabled(p.IsSupported())
   end
  end

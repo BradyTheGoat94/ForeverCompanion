@@ -1,4 +1,8 @@
-# Forever Companion 3.44.0-beta release notes (draft)
+# Forever Companion 3.45.0-beta release notes (draft)
+
+## Map tools update
+
+Open `/fc notes` for personal map notes and nearby services. `/fc note <name>` saves your current position; `/fc nearest repair` offers current-zone repairs. Other service types include mail, inn, flight, vendor, bank, auction and trainer. `/fc overlay exploring`, `questing` and `town` apply coordinated presets. Location evidence is clearer, and the arrow has a nearby-arrival cue plus a manual Another objective action. In-game acceptance remains pending.
 
 ## Transparent map overlay
 

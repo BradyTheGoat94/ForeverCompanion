@@ -115,14 +115,15 @@ end
 function U.CloseMenu()
  if popup then popup:Hide();popup=nil end
 end
-function U.Menu(anchor,title,entries,palette)
+function U.Menu(anchor,title,entries,palette,width)
  U.CloseMenu()
  local p=palette or U.palette
  local shade=CreateFrame('Button',nil,UIParent)
  shade:SetAllPoints(UIParent);shade:SetFrameStrata('FULLSCREEN_DIALOG')
  shade:SetScript('OnClick',U.CloseMenu)
  local panel=CreateFrame('Frame',nil,shade,'BackdropTemplate')
- panel:SetSize(224,40+#entries*27)
+ width=width or 224
+ panel:SetSize(width,40+#entries*27)
  panel:SetPoint('TOPLEFT',anchor,'BOTTOMLEFT',0,-5)
  panel:SetClampedToScreen(true)
  panel:SetFrameLevel(shade:GetFrameLevel()+1)
@@ -133,18 +134,22 @@ function U.Menu(anchor,title,entries,palette)
   panel:SetBackdropBorderColor(unpack(p.border or U.palette.border))
  end
  local heading=U.Text(panel,11,p.muted)
- heading:SetPoint('TOPLEFT',12,-12);heading:SetWidth(175);heading:SetText(title)
+ heading:SetPoint('TOPLEFT',12,-12);heading:SetWidth(width-49);heading:SetText(title)
  local close=U.Button(panel,p)
  close:SetPoint('TOPRIGHT',-6,-5);close:SetSize(24,24);close:SetText('x')
  close:SetScript('OnClick',U.CloseMenu)
  for i,entry in ipairs(entries) do
   local row=U.Button(panel,p)
-  row:SetSize(208,25);row:SetPoint('TOPLEFT',8,-34-(i-1)*27)
+  row:SetSize(width-16,25);row:SetPoint('TOPLEFT',8,-34-(i-1)*27)
   row:SetText(entry.label)
   U.StyleButton(row,p,entry.selected)
   row:SetEnabled(entry.enabled~=false)
   if entry.enabled==false then row:GetFontString():SetTextColor(.35,.4,.46) end
   row:SetScript('OnClick',function() U.CloseMenu();entry.action() end)
+  if entry.tooltip then
+   row:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(entry.label);GameTooltip:AddLine(entry.tooltip,.8,.85,.9,true);GameTooltip:Show() end end)
+   row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+  end
  end
  shade:SetScript('OnHide',function() if popup==shade then popup=nil end end)
  if shade.EnableKeyboard and shade.SetPropagateKeyboardInput then

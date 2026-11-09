@@ -2,6 +2,7 @@
 local D={}
 ForeverCompanionQuestDirection=D
 local frame,arrow,title,status,target,elapsed,progressFill
+local currentPoint,arrivalDistance,near
 local atan2=math.atan2
 local function settings()
  ForeverCompanionDB=ForeverCompanionDB or {}
@@ -42,14 +43,17 @@ local function update(_,dt)
  elapsed=0
  local ok,angle,distance=pcall(bearing,target)
  if not ok or not distance then
+  arrivalDistance=nil;near=false
   arrow:Hide()
   status:SetText("Direction unavailable here")
   if progressFill then progressFill:SetWidth(0.01) end
  elseif distance<=12 then
+  arrivalDistance=distance;near=true
   arrow:Hide()
-  status:SetText("Near your destination")
+  status:SetText("Arrived nearby · inspect destination")
   if progressFill then progressFill:SetWidth(221) end
  else
+  arrivalDistance=distance;near=false
   arrow:SetRotation(angle)
   arrow:Show()
   status:SetText(("%d yd  ·  Straight-line direction"):format(math.floor(distance+.5)))
@@ -60,7 +64,7 @@ end
 
 local function create()
  frame=CreateFrame("Frame",'ForeverCompanionDirectionFrame',UIParent)
- frame:SetSize(245,98)
+ frame:SetSize(245,126)
  frame:SetPoint("TOP",UIParent,"TOP",0,-115)
  frame:SetFrameStrata("HIGH")
  frame:EnableMouse(true);frame:SetMovable(true);frame:SetClampedToScreen(true)
@@ -109,8 +113,8 @@ local function create()
  progressFill:SetSize(.01,3)
  progressFill:SetColorTexture(.18,.83,.96,.95)
  arrow=frame:CreateTexture(nil,"ARTWORK")
- arrow:SetSize(68,68)
- arrow:SetPoint("TOP",0,10)
+ arrow:SetSize(48,48)
+ arrow:SetPoint("TOP",0,-3)
  arrow:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\QuestDirectionArrow")
  title=frame:CreateFontString(nil,"OVERLAY","GameFontNormal")
  title:SetWidth(183)
@@ -135,6 +139,11 @@ local function create()
   end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
  end)
+ local nextObjective=ForeverCompanionInterface.Button(frame);nextObjective:SetSize(154,22);nextObjective:SetPoint('TOP',0,-54);nextObjective:SetText('Another objective >')
+ nextObjective:SetScript('OnClick',function()
+  local result=ForeverCompanionObjectiveRoute.NavigateNext(nil,currentPoint)
+  if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(result) end
+ end)
  frame:SetScript("OnUpdate",update)
  frame:Hide()
 end
@@ -154,6 +163,7 @@ function D.Start(point,label)
  if not readable or not angle then return false end
  if not frame then create() end
  if not arrow.SetRotation then return false end
+ currentPoint={map=point.map,x=point.x,y=point.y};arrivalDistance=nil;near=false
  target=destination
  title:SetText(label or point.label or "Quest destination")
  elapsed=.10
@@ -162,6 +172,8 @@ function D.Start(point,label)
  return true
 end
 
+function D.Arrival() return near==true,arrivalDistance end
+function D.Current() return currentPoint and {map=currentPoint.map,x=currentPoint.x,y=currentPoint.y} end
 function D.IsActive() return target~=nil end
 function D.ApplyScale()
  if frame then local size=settings().scale;frame:SetScale((size==.85 or size==1.2) and size or 1) end
@@ -183,7 +195,7 @@ end
 
 function D.Stop()
  if not target then return false end
- target=nil
+ target=nil;currentPoint=nil;arrivalDistance=nil;near=false
  if frame then frame:Hide() end
  return true
 end

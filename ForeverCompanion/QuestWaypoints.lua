@@ -100,6 +100,30 @@ function W.Targets(quest)
  return result
 end
 
+-- A coordinate is a reference point, not proof of exact objective position.
+function W.Describe(target)
+ if type(target)~='table' then return 'Location unavailable' end
+ if target.source=='Personal map note' then return 'Personal saved position' end
+ if target.observed then return 'Visited nearby · player position at interaction' end
+ if target.service then return 'Service spawn reference · availability unverified' end
+ if target.kind=='turn-in' then return 'Turn-in reference · inspect the giver in game' end
+ if target.kind=='pickup' then return 'Quest-giver reference · confirm availability' end
+ if target.kind or target.reference then
+  return (target.objectiveIndex or target.objective) and 'Objective search reference · exact position unverified' or 'General quest reference · objective match unknown'
+ end
+ return 'Client-reported quest point · may represent a general search area'
+end
+function W.Explain(quest,map)
+ local targets=W.Targets(quest)
+ if #targets>0 then
+  for _,t in ipairs(targets) do if not map or t.map==map then return W.Describe(t) end end
+  return 'Reported destinations are on other maps. Open the field guide to inspect them.'
+ end
+ local provider=ForeverCompanionQuestLocations and ForeverCompanionQuestLocations.Provider
+ if type(provider)=='function' and not read(provider) then return 'No client destination reported; compatible Forever QuestieDB references are unavailable.' end
+ return 'No destination reported by the client or installed reference data. Read the quest text; no location is guessed.'
+end
+
 function W.MapLocations(map,quests)
  local points=mapPoints(map)
  local result={}
@@ -256,5 +280,5 @@ function W.Show(quest)
   return "Click a highlighted marker to start the arrow."
  end
  if #referenceLocations(quest)>0 then return "Open a zone map to choose a marker." end
- return "No map location for this quest."
+ return W.Explain(quest)
 end

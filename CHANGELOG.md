@@ -1,4 +1,13 @@
-## 3.44.0-beta � Transparent map overlay
+## 3.45.0-beta — Map companion tools
+
+- Cluster crowded overlay quest, service and note markers with count badges. World-map personal-note clusters offer destination choices and separate with zoom.
+- Find nearby repairs, mail, inns, flight masters and other services using straight-line distance when available or explicitly approximate map proximity. Choose a result to navigate; stale records are revalidated.
+- Distinguish objective search references, general client points, turn-ins and unavailable location coverage in the map, overlay and field guide.
+- Add Exploring, Questing and Town overlay presets for opacity, size, color and marker layers.
+- Save up to 100 named personal positions per character; rename, delete or navigate from the browser and world map.
+- Add a nearby-arrival indicator and manual Another objective action. No quest progress changes or automatic navigation advancement.
+
+## 3.44.0-beta — Transparent map overlay
 
 - Added an independent click-through native zone map with adjustable opacity, size, monochrome art, saved position and an explicit drag/edit mode.
 - Shows the player and focused quest; optional service markers respect map category filters.

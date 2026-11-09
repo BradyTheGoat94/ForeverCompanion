@@ -38,9 +38,16 @@ assert(ForeverCompanionDB.questDirection.position.x==150 and ForeverCompanionDB.
 d.OpenOptions();menu[1].action();assert(ForeverCompanionDB.questDirection.locked)
 frame.dragHandle.OnDragStart();assert(not frame.moving,'locked arrow cannot start moving')
 d.OpenOptions();menu[4].action();assert(frame.scale==1.2,'large arrow changes HUD scale')
+local advances=0
+ForeverCompanionObjectiveRoute={NavigateNext=function(_,exclude) advances=advances+1;assert(exclude.map==1 and exclude.x==.5);return 'Another objective' end}
+position={GetXY=function() return 500,200 end};frame.OnUpdate(frame,.2)
+local near,distance=d.Arrival();assert(near and distance==0 and advances==0,'arrival is informational and never advances automatically')
+for _,o in ipairs(objects) do if o.text=='Another objective >' then o.OnClick() end end
+assert(advances==1,'only the manual button requests another objective')
 position=nil;frame.OnUpdate(frame,.2)
 local unavailable=false
 for _,o in ipairs(objects) do if o.text=='Direction unavailable here' then unavailable=true end end
+assert(not d.Arrival(),'missing position clears arrival state')
 assert(unavailable,'lost player position reports unavailable direction without stale bearing')
 assert(d.Stop() and not frame.shown and not d.IsActive())
 assert(not d.Start({map=1,x=2,y=.1}),'invalid coordinates cannot start navigation')

@@ -2050,3 +2050,37 @@ do
  exportNative('ui_overlay_sample_native.json')
  SlashCmdList.FOREVERCOMPANION('overlay hide');assert(not panel.visible)
 end
+
+-- All six map update entry points load through the real addon manifest.
+do
+ local t=ForeverCompanionMapTools
+ ForeverCompanionDB.mapNotes={}
+ SlashCmdList.FOREVERCOMPANION('note SAMPLE - rare sighting')
+ assert(#t.List()==1 and t.List()[1].label=='SAMPLE - rare sighting')
+ t.SaveHere('SAMPLE - farming loop');t.SaveHere('SAMPLE - revisit this cave')
+ SlashCmdList.FOREVERCOMPANION('notes')
+ local panel;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapToolsPanel' then panel=f end end
+ assert(panel and panel.visible)
+ t.Refresh();exportNative('ui_map_tools_sample_native.json')
+ local canvas=CreateFrame('Frame');canvas:SetSize(1000,668)
+ t.DrawMap(canvas,1429,1000,668,1)
+ local before=#frames;t.DrawMap(canvas,1429,1000,668,1);assert(#frames==before,'map note buttons reuse the current canvas pool')
+ t.HideMap()
+ SlashCmdList.FOREVERCOMPANION('overlay town');assert(ForeverCompanionDB.mapOverlay.preset=='town')
+ ForeverCompanionMapOverlay.Refresh();exportNative('ui_overlay_town_sample_native.json')
+ SlashCmdList.FOREVERCOMPANION('overlay hide');t.Toggle()
+end
+
+do
+ local old=ForeverCompanionTownServices.ForMap
+ ForeverCompanionTownServices.ForMap=function() return {{map=1429,x=.42,y=.61,label='SAMPLE repair specialist',service='Repair',symbol='R',source='Sample provider reference'}} end
+ ForeverCompanionMapTools.Nearest('repair')
+ local menu;for _,f in ipairs(frames) do if f.width==380 and f.visible then menu=f end end
+ assert(menu,'nearby service menu uses a readable width');menu.name='SampleNearbyServicesMenu';exportNative('ui_nearby_services_sample_native.json')
+ ForeverCompanionInterface.CloseMenu();ForeverCompanionTownServices.ForMap=old
+ C_Map.GetWorldPosFromMapPos=function(_,p) local x,y=p:GetXY();return 1,{GetXY=function() return x*1000,y*1000 end} end
+ CreateVector2D=function(x,y) return {GetXY=function() return x,y end} end
+ assert(ForeverCompanionQuestDirection.Start({map=1429,x=.4001,y=.6001},'SAMPLE destination'))
+ assert(ForeverCompanionQuestDirection.Arrival())
+ exportNative('ui_navigation_arrival_sample_native.json');ForeverCompanionQuestDirection.Stop()
+end

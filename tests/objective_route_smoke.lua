@@ -49,6 +49,7 @@ local destination,showMap
 ForeverCompanionQuestWaypoints={Targets=function(q) return data[q] or {} end,Navigate=function(t,open) destination=t;showMap=open;return 'Navigating' end}
 C_Map={GetBestMapForUnit=function() return 1429 end,GetPlayerMapPosition=function() return {GetXY=function() return .1,.1 end} end}
 assert(r.NavigateNext(a)=='Navigating' and destination.x==.2 and showMap==false,'tracker action navigates the live matched objective without forcing map open')
+assert(r.NavigateNext(a,{map=1429,x=.2,y=.1})=='Navigating' and destination.x==.3,'manual advance excludes current destination without changing progress')
 assert(r.SetAside(stops[1]));r.NavigateNext(a)
 assert(destination.x==.3,'set-aside objective is skipped by Next objective')
 assert(not a.objectiveStates[2].done,'setting aside leaves live progress untouched')

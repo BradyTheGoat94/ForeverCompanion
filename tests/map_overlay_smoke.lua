@@ -11,7 +11,7 @@ local function widget(name)
  function w:SetTexCoord(...) self.crop={...} end;function w:SetDesaturated(v) self.gray=v end
  function w:SetRotation(v) self.rotation=v end;function w:CreateTexture() return widget() end
  function w:GetCenter() return 100,200 end;function w:GetEffectiveScale() return 1 end
- for _,k in ipairs({'SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
+ for _,k in ipairs({'SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
  return w
 end
 CreateFrame=function(_,name) return widget(name) end
@@ -45,3 +45,15 @@ m.Toggle(false);n=reads;m.Refresh();assert(reads==n,'hidden refresh does no map 
 m.Toggle(true);assert(not f.mouse,'reopening always starts click-through')
 m.Command('hide');assert(not f.shown and not ForeverCompanionDB.mapOverlay.visible)
 print('PASS: transparent overlay geometry, caching, stale clearing, bounded textures and interaction')
+
+dofile('ForeverCompanion/ServiceClusters.lua')
+ForeverCompanionTownServices={ForMap=function() return {{x=.2,y=.2,label='Repair',symbol='R'},{x=.201,y=.201,label='Vendor',symbol='V'}} end}
+assert(m.Preset('town') and ForeverCompanionDB.mapOverlay.services and not ForeverCompanionDB.mapOverlay.quests and f.width==420)
+local count=0;for _,o in ipairs(objects) do if o.shown and o.text=='2' then count=count+1 end end
+assert(count==1,'nearby mixed service types receive a shared cluster count')
+local before=#objects;for i=1,50 do m.Refresh() end;assert(#objects==before,'cluster badges and icons are reused')
+assert(m.Preset('exploring') and f.width==780 and not ForeverCompanionDB.mapOverlay.services)
+assert(m.Preset('questing') and ForeverCompanionDB.mapOverlay.quests and not ForeverCompanionDB.mapOverlay.services)
+assert(not m.Preset('unknown'))
+C_Map.GetPlayerMapPosition=function() return nil end;m.Refresh()
+for _,o in ipairs(objects) do if o.texture=='Interface\\Minimap\\MinimapArrow' then assert(not o.shown,'lost player coordinates clear the overlay arrow') end end
