@@ -107,6 +107,7 @@ local function widget(kind)
  function w:RegisterForDrag() end
  function w:SetMovable() end
  function w:SetClampedToScreen() end
+ function w:SetClipsChildren(value) self.clipsChildren=value end
  function w:SetResizable() end
  function w:SetBackdrop(...) end
  function w:SetBackdropColor(...) self.backdropColor={...} end
@@ -2192,4 +2193,17 @@ do
  local copied;for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestLocationReport' then copied=f end end
  assert(copied and copied.visible,'saved local reports have a copyable panel');copied:Hide();ForeverCompanionQuestLocations.Restore(q)
  p.GetSelected,p.GetLive,p.IsSupported=oldSelected,oldLive,oldSupported;ForeverCompanionQuestWaypoints.Targets=oldTargets
+end
+
+do
+ local launcher;for _,f in ipairs(frames) do if f.section=='Training' then launcher=f end end
+ assert(launcher,'Training Guide is discoverable in main navigation')
+ local prior=ForeverCompanionDB.tab
+ launcher.OnClick(launcher)
+ local training;for _,f in ipairs(frames) do if f.name=='ForeverCompanionTrainingPanel' then training=f end end
+ assert(training and training.visible and ForeverCompanionDB.tab==prior,'navigation opens training without selecting an unsupported main page')
+ exportNative('ui_training_refined_sample_native.json');ForeverCompanionTraining.Toggle()
+ local viewport=ForeverCompanionUIState.scrollFrame
+ local clipped=false;for _,f in ipairs(frames) do if f.kind=='ScrollFrame' and f.clipsChildren then clipped=true end end
+ assert(clipped,'main scroll viewport explicitly clips child panels above the footer')
 end

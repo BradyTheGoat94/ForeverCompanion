@@ -1,3 +1,11 @@
+## 3.49.1-beta — Visible training guide and viewport fix
+
+- Add Training Guide directly below Class Guides in the main navigation. The command `/fc training` remains available.
+- Give training three direct views: At your level, Coming soon and At this trainer. Add larger client spell icons, localized rank text, clear level/cost columns, colored status, concise currency and less technical default labels. Unknown live prices stay unknown.
+- Use client spell texture and legacy localized-name fallbacks when metadata is incomplete; keep unknown spell icons explicit.
+- Clip the main scrolling viewport so route panels cannot draw over footer controls. Size the Leveling Route parent to include the itinerary; fit the extra sidebar entry in compact mode.
+- Offline checks passed; live-client visual acceptance remains pending.
+
 ## 3.49.0-beta — Detailed maps, quest clarity, training and dungeon coverage
 
 - Add 1–4× overlay zoom, drag-to-pan inspection, hover details, location actions and native landmarks. Locked mode stays click-through.

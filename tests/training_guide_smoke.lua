@@ -35,3 +35,12 @@ assert(t.Money(12345)=='1g 23s 45c' and t.Money(nil)=='Price unavailable')
 local file=assert(io.open('ForeverCompanion/TrainingData.lua'));local source=file:read('*a');file:close()
 assert(source:find('MIT License',1,true) and source:find('Copyright (c) 2019',1,true) and source:find(data.commit,1,true),'shipped dataset preserves upstream attribution and license')
 print('PASS: nine-class training reference, eligibility, rank/prerequisite states, live trainer observations and MIT attribution')
+
+assert(t.Money(95)=='95c' and t.Money(0)=='Free' and t.Money(100)=='1s')
+C_Spell.GetSpellInfo=function() return nil end
+C_Spell.GetSpellTexture=function() return 456 end
+GetSpellInfo=function(id) return 'Localized spell '..id,'Rank 2',789 end
+C_Spell.GetSpellSubtext=function() return 'Rank 3' end
+events[1].OnEvent(nil,'SPELLS_CHANGED')
+local enriched=t.Current()[1]
+assert(enriched.icon==456 and enriched.name:find('Localized spell',1,true) and enriched.rank=='Rank 3','client texture, localized name fallback and native rank text')

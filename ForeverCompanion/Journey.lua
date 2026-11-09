@@ -240,6 +240,7 @@ function J.Show(show,level)
  if not show then root:Hide();overrideStage=nil;return end
  root:Show()
  ForeverCompanionObjectiveRoute.Refresh()
+ root:SetHeight(J.GetHeight())
  currentStage=J.Stage(level)
  local stage=overrideStage or currentStage
  local band=brackets[stage]

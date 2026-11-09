@@ -1,4 +1,6 @@
-# Forever Companion 3.49.0-beta release notes (draft)
+# Forever Companion 3.49.1-beta release notes (draft)
+
+Training Guide now has a sidebar entry below Class Guides and a cleaner spell/rank/level/price layout. Main scrolling panels are clipped above the footer to address the reported route overlap. `/fc training` also opens the guide. Live-client verification remains pending.
 
 - Add 1–4× overlay zoom, drag-to-pan inspection, hover details, location actions and native landmarks. Locked mode stays click-through.
 - Draw the native explored-terrain layer in outdoor zones, including power-of-two edge cropping. Add Detailed preset and exploration refresh events.

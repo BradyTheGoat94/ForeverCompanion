@@ -2,6 +2,8 @@
 local T={page=1};ForeverCompanionTraining=T
 local root,search,summary,rows,notice,previous,nextPage,counter,filterButton
 local cache,trainerOpen=false,false
+local viewButtons={}
+local viewLabels={ready='At your level',upcoming='Coming soon',available='At this trainer',missing='All unlearned',requirements='Requirements',quest='Quest rewards',unknown='Needs checking',known='Already learned',ignored='Hidden by you',all='All spells'}
 local currentObserved={}
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 local function textValue(s) return not(issecretvalue and issecretvalue(s)) and type(s)=='string' and s~='' and s or nil end
@@ -109,7 +111,11 @@ function T.Current()
  for _,r in ipairs(cache) do
   local info=C_Spell and read(C_Spell.GetSpellInfo,r.id)
   r.name=type(info)=='table' and textValue(info.name) or ('Spell #'..r.id)
-  r.icon=type(info)=='table' and info.iconID or nil
+  r.icon=type(info)=='table' and info.iconID or read(C_Spell and C_Spell.GetSpellTexture,r.id)
+  local oldName,oldRank,oldIcon=read(GetSpellInfo,r.id)
+  if r.name==('Spell #'..r.id) and textValue(oldName) then r.name=oldName end
+  r.icon=r.icon or oldIcon
+  r.rank=textValue(read(C_Spell and C_Spell.GetSpellSubtext,r.id)) or textValue(oldRank)
   local observed=p.observed[r.id]
   if type(observed)=='table' and textValue(observed.name) and textValue(observed.state) then r.observation=observed;r.live=trainerOpen and currentObserved[r.id]==observed end
  end
@@ -125,26 +131,38 @@ function T.Filter(records,query,filter)
 end
 function T.Money(cost)
  if not finite(cost) or cost<0 then return 'Price unavailable' end
- return ('%dg %ds %dc'):format(math.floor(cost/10000),math.floor(cost/100)%100,math.floor(cost)%100)
+ if cost==0 then return 'Free' end
+ local parts={};local g,s,c=math.floor(cost/10000),math.floor(cost/100)%100,math.floor(cost)%100
+ if g>0 then parts[#parts+1]=g..'g' end;if s>0 then parts[#parts+1]=s..'s' end;if c>0 then parts[#parts+1]=c..'c' end
+ return table.concat(parts,' ')
 end
 local function text(parent,x,y,w,size,value)
  local f=ForeverCompanionInterface.Text(parent,size);f:SetPoint('TOPLEFT',x,y);f:SetWidth(w);f:SetText(value or '');return f
 end
 function T.Refresh()
  if not root or not root:IsShown() then return end
- local p=prefs();local all=T.Current();local found=T.Filter(all,search:GetText(),p.filter or 'missing')
- local pages=math.max(1,math.ceil(#found/7));T.page=math.max(1,math.min(T.page,pages));filterButton:SetText(p.filter or 'missing')
+ local p=prefs();local all=T.Current();local found=T.Filter(all,search:GetText(),p.filter or 'ready')
+ local pages=math.max(1,math.ceil(#found/7));T.page=math.max(1,math.min(T.page,pages));filterButton:SetText(viewButtons[p.filter or 'ready'] and 'More views' or (viewLabels[p.filter] or 'More views'))
+ for key,b in pairs(viewButtons) do ForeverCompanionInterface.StyleButton(b,nil,key==(p.filter or 'ready')) end
  local counts={};for _,r in ipairs(all) do counts[r.state]=(counts[r.state] or 0)+1 end
- summary:SetText((counts.ready or 0)..' unlearned references · '..(counts.upcoming or 0)..' upcoming · '..(counts.requirements or 0)..' prerequisite checks · '..#found..' matches\nReference prices precede discounts. A level reference does not confirm that a trainer can teach you.')
+ summary:SetText((counts.ready or 0)..' at your level   ·   '..(counts.upcoming or 0)..' coming soon   ·   '..(counts.known or 0)..' learned / covered\n'..(trainerOpen and 'Trainer open: current offerings and prices are shown when the client identifies the spell.' or 'Plan your next trainer visit. Prices below are base estimates before discounts.'))
  for i,row in ipairs(rows) do
   local r=found[(T.page-1)*7+i];row.record=r;row:SetShown(r~=nil)
   if r then
-   row.icon:SetTexture(r.icon or 'Interface\\Icons\\INV_Misc_Book_09');row.title:SetText(r.name..' · level '..r.level..' · #'..r.id)
-   row.detail:SetText(r.status..' · '..(r.quest and 'Quest' or ('Base '..T.Money(r.cost))))
-   row.observed:SetText(r.observation and ('Observed at '..r.observation.name..' · '..r.observation.state..' · '..T.Money(r.observation.cost)..(r.live and ' (current visit)'  or ' (saved visit; recheck)')) or 'Reference only · visit a trainer to record current offerings')
+   row.icon:SetTexture(r.icon or 'Interface\\Icons\\INV_Misc_QuestionMark');row.title:SetText(r.name..(r.rank and (' · '..r.rank) or ''))
+   local live=r.live and r.observation.state=='available'
+   local price=r.cost;if live then price=r.observation.cost end
+   row.level:SetText('Level '..r.level)
+   row.cost:SetText(r.quest and 'Quest reward' or T.Money(price))
+   row.detail:SetText(live and 'Available at this trainer' or ({ready='At your level · confirm at a class trainer',upcoming='Learn at a later level',requirements='A talent or earlier skill may be needed',known='Already learned or covered by a higher rank',unknown='Spellbook information needs checking',quest='Earned through a quest',ignored='Hidden by you'})[r.state] or r.status)
+   row.detail:SetTextColor(live and .45 or (r.state=='ready' and .55 or .7),live and .9 or (r.state=='ready' and .83 or .76),live and .62 or .85)
+   row.observed:SetText(r.observation and (r.observation.name..(r.live and ' · current visit' or ' · previous visit; check again')) or (r.quest and 'Open the tooltip for quest details' or 'Visit a trainer to check availability and your actual price'))
+
   end
  end
- root.empty:SetShown(#found==0);root.empty:SetText('No entries match this view. Try All or clear the search.\n\nClass data is a credited Forever reference, not a guarantee of complete trainer coverage.')
+ root.empty:SetShown(#found==0);root.empty:SetText((p.filter or 'ready')=='ready' and 'No unlearned spells are currently listed at your level.\n\nTry Coming soon to plan ahead, or More views to check requirements and quest rewards.' or 'No spells match this view. Try another tab or clear your search.')
+ if #all==0 then root.empty:SetText('Your class training information is unavailable.\n\nCheck that the addon finished loading, then choose Refresh. This does not mean that you have learned every spell.')
+ elseif #found==0 and (p.filter or 'ready')=='ready' and (counts.unknown or 0)>0 then root.empty:SetText('Some spellbook information could not be checked.\n\nChoose More views → Needs checking, or visit a trainer. We will not guess which spells you can learn.') end
  previous:SetEnabled(T.page>1);nextPage:SetEnabled(T.page<pages);counter:SetText(T.page..' / '..pages)
 end
 function T.Toggle()
@@ -153,21 +171,26 @@ function T.Toggle()
   root=CreateFrame('Frame','ForeverCompanionTrainingPanel',UIParent);root:SetSize(760,700);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');root:SetMovable(true);root:SetClampedToScreen(true);root:EnableMouse(true);U.Surface(root);U.PreparePanel(root,'ForeverCompanionTrainingPanel',760,700)
   local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT');drag:SetSize(710,40);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton');drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
   text(root,18,-13,650,17,'TRAINING GUIDE');U.CloseButton(root,function() root:Hide() end)
-  search=U.EditBox(root,'Search spell name or ID');search:SetSize(470,28);search:SetPoint('TOPLEFT',18,-51);search:SetMaxLetters(100);search:HookScript('OnTextChanged',function() T.page=1;T.Refresh() end);search:SetScript('OnEscapePressed',function() root:Hide() end)
-  filterButton=U.Button(root);filterButton:SetSize(150,28);filterButton:SetPoint('TOPLEFT',498,-51);filterButton:SetScript('OnClick',function()
+  search=U.EditBox(root,'Search spell name or ID');search:SetSize(440,28);search:SetPoint('TOPLEFT',18,-51);search:SetMaxLetters(100);search:HookScript('OnTextChanged',function() T.page=1;T.Refresh() end);search:SetScript('OnEscapePressed',function() root:Hide() end)
+  filterButton=U.Button(root);filterButton:SetSize(180,28);filterButton:SetPoint('TOPLEFT',468,-51);filterButton:SetScript('OnClick',function()
    local choices={};for _,pair in ipairs({{'available','Available at current trainer'},{'missing','Missing / upcoming'},{'ready','Unlearned references'},{'upcoming','Upcoming levels'},{'requirements','Prerequisite checks'},{'quest','Quest rewards'},{'unknown','Unknown ownership'},{'known','Known / superseded'},{'ignored','Ignored'},{'all','All entries'}}) do local key,label=pair[1],pair[2];choices[#choices+1]={label=label,action=function() prefs().filter=key;T.page=1;T.Refresh() end} end;U.Menu(filterButton,'TRAINING VIEW',choices)
   end)
   local refresh=U.Button(root);refresh:SetSize(84,28);refresh:SetPoint('TOPRIGHT',-18,-51);refresh:SetText('Refresh');refresh:SetScript('OnClick',function() cache=nil;if trainerOpen then T.ScanTrainer() end;T.Refresh() end)
-  summary=text(root,18,-92,724,11,'');summary:SetHeight(36);summary:SetWordWrap(true);rows={}
+  for i,pair in ipairs({{'ready','At your level'},{'upcoming','Coming soon'},{'available','At this trainer'}}) do
+   local key,label=pair[1],pair[2];local b=U.Button(root);b:SetSize(234,29);b:SetPoint('TOPLEFT',18+(i-1)*245,-91);b:SetText(label);b:SetScript('OnClick',function() prefs().filter=key;T.page=1;T.Refresh() end);viewButtons[key]=b
+  end
+  summary=text(root,18,-130,724,11,'');summary:SetHeight(36);summary:SetWordWrap(true);rows={}
   for i=1,7 do
-   local row=CreateFrame('Button',nil,root);row:SetSize(724,60);row:SetPoint('TOPLEFT',18,-143-(i-1)*65);row:RegisterForClicks('RightButtonUp');U.Surface(row)
-   row.icon=row:CreateTexture(nil,'ARTWORK');row.icon:SetSize(30,30);row.icon:SetPoint('LEFT',8,0)
-   row.title=text(row,48,-6,665,12,'');row.detail=text(row,48,-25,665,10,'');row.observed=text(row,48,-43,665,9,'')
-   row:SetScript('OnEnter',function(self) if GameTooltip and self.record then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetSpellByID(self.record.id);GameTooltip:AddLine(self.record.status,.8,.85,.9,true);for _,id in ipairs(self.record.requiredIds or {}) do GameTooltip:AddLine('Prerequisite spell #'..id,.8,.85,.9,true) end;for _,req in ipairs(self.record.skills or {}) do GameTooltip:AddLine('Skill #'..req.skill..' rank '..req.level..' required',.9,.8,.5,true) end;if self.record.quest then GameTooltip:AddLine('Quest rewards: '..table.concat(self.record.quests or {},', '),.8,.85,.9,true) end;GameTooltip:AddLine('Right-click to ignore / restore this reference. Training must be purchased manually at a trainer.',.9,.75,.4,true);GameTooltip:Show() end end)
+   local row=CreateFrame('Button',nil,root);row:SetSize(724,55);row:SetPoint('TOPLEFT',18,-179-(i-1)*59);row:RegisterForClicks('RightButtonUp');U.Surface(row)
+   row.icon=row:CreateTexture(nil,'ARTWORK');row.icon:SetSize(38,38);row.icon:SetPoint('LEFT',8,0)
+   row.title=text(row,58,-5,470,13,'');row.detail=text(row,58,-24,530,10,'');row.observed=text(row,58,-40,530,9,'')
+   row.level=text(row,586,-7,125,11,'');row.level:SetJustifyH('RIGHT')
+   row.cost=text(row,586,-29,125,11,'');row.cost:SetJustifyH('RIGHT');row.cost:SetTextColor(1,.81,.43)
+   row:SetScript('OnEnter',function(self) if GameTooltip and self.record then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetSpellByID(self.record.id);GameTooltip:AddLine('Level '..self.record.level..' · Spell #'..self.record.id,.7,.75,.8,true);GameTooltip:AddLine(self.record.status,.8,.85,.9,true);for _,id in ipairs(self.record.requiredIds or {}) do GameTooltip:AddLine('Prerequisite spell #'..id,.8,.85,.9,true) end;for _,req in ipairs(self.record.skills or {}) do GameTooltip:AddLine('Skill #'..req.skill..' rank '..req.level..' required',.9,.8,.5,true) end;if self.record.quest then GameTooltip:AddLine('Quest rewards: '..table.concat(self.record.quests or {},', '),.8,.85,.9,true) end;GameTooltip:AddLine('Right-click to ignore / restore this reference. Training must be purchased manually at a trainer.',.9,.75,.4,true);GameTooltip:Show() end end)
    row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
    row:SetScript('OnClick',function(self) if self.record then local id=self.record.id;U.Menu(self,'TRAINING REFERENCE',{{label=prefs().ignored[id] and 'Restore entry' or 'Ignore entry',action=function() prefs().ignored[id]=not prefs().ignored[id];cache=nil;T.Refresh() end}}) end end);rows[i]=row
   end
-  root.empty=text(root,36,-180,688,14,'');root.empty:SetHeight(120);root.empty:SetWordWrap(true)
+  root.empty=text(root,36,-210,688,14,'');root.empty:SetHeight(120);root.empty:SetWordWrap(true)
   notice=text(root,18,-613,724,10,"Forever reference data adapted from What's Training? (MIT). Not affiliated; no second addon required.");notice:SetHeight(30);notice:SetWordWrap(true)
   previous=U.Button(root);previous:SetSize(90,26);previous:SetPoint('BOTTOMLEFT',18,16);previous:SetText('Previous');previous:SetScript('OnClick',function() T.page=T.page-1;T.Refresh() end)
   nextPage=U.Button(root);nextPage:SetSize(90,26);nextPage:SetPoint('BOTTOMRIGHT',-18,16);nextPage:SetText('Next');nextPage:SetScript('OnClick',function() T.page=T.page+1;T.Refresh() end)

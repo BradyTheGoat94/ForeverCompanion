@@ -8,7 +8,7 @@ local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
 local DB, window, titleText, content, currentTab, headerMeta
 ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
-local tabs = {"Overview", "Journey", "Leveling", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "Bank", "PvP", "Settings"}
+local tabs = {"Overview", "Journey", "Leveling", "Training", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "Bank", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
@@ -229,7 +229,7 @@ local function render()
   end
   for i,b in ipairs(tabButtons) do
     local selected=b.section==currentTab
-    local height,step=DB.compact and 29 or 32,DB.compact and 31 or 35
+    local height,step=DB.compact and 26 or 30,DB.compact and 28 or 33
     b:ClearAllPoints();b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-134-(i-1)*step)
     b:SetHeight(height);b.navAccent:SetHeight(height)
     colorTexture(b.navBackground,selected and .085 or .025,selected and .10 or .031,selected and .13 or .041,1)
@@ -708,6 +708,7 @@ end
 local function openSection(name)
   if type(name)~="string" then return false end
   local aliases={["home"]="Overview",["leveling route"]="Journey",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
+  if name:lower()=="training" or name:lower()=="training guide" then ForeverCompanionTraining.Toggle();return true end
   name=aliases[name:lower()] or name
   for _,section in ipairs(tabs) do
     if section:lower()==name:lower() then
@@ -877,6 +878,7 @@ local function createUI()
     "Interface\\Icons\\Ability_DualWield",
     "Interface\\Icons\\INV_Gizmo_02"
   }
+  table.insert(navIcons,4,"Interface\\Icons\\INV_Misc_Book_07")
   for i, section in ipairs(tabs) do
     local b = CreateFrame("Button", nil, window)
     b:SetSize(164, 31)
@@ -911,7 +913,7 @@ local function createUI()
     colorTexture(b.navGlow,0.08,0.18,0.36,0)
     b.navLabel=b:CreateFontString(nil,"OVERLAY","GameFontHighlight")
     b.navLabel:SetPoint("LEFT",b,"LEFT",40,0)
-    local labels={Overview="Home",Journey="Leveling Route",Leveling="Class Guides",Quests="Quest Log",Alts="Alt Leveling",Dungeons="Dungeon Journal",Loot="Loot Catalog",PvP="PvP Guide"}
+    local labels={Overview="Home",Journey="Leveling Route",Leveling="Class Guides",Training="Training Guide",Quests="Quest Log",Alts="Alt Leveling",Dungeons="Dungeon Journal",Loot="Loot Catalog",PvP="PvP Guide"}
     b.navLabel:SetText(labels[section] or section)
     b.navLabel:SetWidth(112);b.navLabel:SetHeight(18);b.navLabel:SetWordWrap(false);b.navLabel:SetJustifyH("LEFT")
     if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.navLabel,12) end
@@ -936,6 +938,7 @@ local function createUI()
   -- the reading area remains flexible in compact mode.
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
+  scroll:SetClipsChildren(true)
   scroll:SetPoint("TOPLEFT", 216, -163)
   sectionHeader=CreateFrame("Frame",nil,window)
   sectionHeader:SetPoint("TOPLEFT",window,"TOPLEFT",210,-106)
