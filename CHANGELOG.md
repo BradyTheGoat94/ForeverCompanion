@@ -1,3 +1,9 @@
+## 3.40.1-beta — Movable player breakdown
+
+- Drag the player breakdown title bar to position the analysis window independently of the meter. Saves the position per character and suppresses automatic side docking after manual movement.
+- Added Reset breakdown position to meter options. Reset appearance and /fcmeter resetpos also restore automatic docking. The window remains screen-clamped and its close/paging controls remain separate from the drag region.
+- Added regression coverage for dragging, position persistence during refresh/reopen and restoring automatic placement.
+
 ## 3.40.0-beta — Live objective itinerary and scoped performance sampling
 
 - Added a live objective itinerary under Leveling Route. Plans individual unfinished objectives and known turn-ins from explicitly matched locations, instead of limiting the list to one stop per quest. General quest POIs remain separate.

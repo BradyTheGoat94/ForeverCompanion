@@ -121,6 +121,18 @@ for _,o in ipairs(objects) do if rawget(o,"OnMouseDown") then playerRow=o;break 
 assert(playerRow)
 playerRow.OnMouseDown(playerRow,"LeftButton")
 assert(calls>0 and m.SelectedRow()==1,'selected player reads native breakdown out of combat')
+local detail
+for _,o in ipairs(objects) do if o.kind=='Frame' and rawget(o,'width')==640 and rawget(o,'dragHandle') then detail=o end end
+assert(detail,'breakdown needs a dedicated drag handle')
+UIParent.GetCenter=function() return 500,400 end
+detail.GetCenter=function() return 850,650 end
+detail.dragHandle.OnDragStart();detail.dragHandle.OnDragStop()
+assert(ForeverCompanionDB.combatMeter.detailPosition.x==350 and ForeverCompanionDB.combatMeter.detailPosition.y==250)
+assert(detail.point[1]=='CENTER' and detail.point[2]==UIParent and detail.detached)
+m.Refresh();assert(detail.point[1]=='CENTER','automatic docking must not overwrite a user position')
+m.Hide();m.Show();assert(detail.point[1]=='CENTER','reopening meter must retain independent breakdown placement')
+m.ResetDetailPosition();assert(not detail.detached and ForeverCompanionDB.combatMeter.detailPosition==nil)
+
 local nextPage
 for _,o in ipairs(objects) do
  if o.kind=='Button' and o.text==">" and o.parent and rawget(o.parent,"width")==640 then nextPage=o end

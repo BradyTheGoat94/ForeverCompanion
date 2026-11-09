@@ -428,6 +428,27 @@ local function build()
  detailPanel:SetSize(640,390)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  detailPanel:SetClampedToScreen(true)
+ detailPanel:SetMovable(true)
+ detailPanel:EnableMouse(true)
+ local position=saved().detailPosition
+ if type(position)=='table' and safeNumber(position.x) and safeNumber(position.y) then
+  detailPanel:ClearAllPoints();detailPanel:SetPoint('CENTER',UIParent,'CENTER',position.x,position.y)
+  detailPanel.detached=true
+ end
+ local detailDrag=CreateFrame('Frame',nil,detailPanel)
+ detailDrag:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',0,0);detailDrag:SetSize(604,29)
+ detailDrag:EnableMouse(true);detailDrag:RegisterForDrag('LeftButton')
+ detailDrag:SetScript('OnDragStart',function() detailPanel.detached=true;detailPanel:StartMoving() end)
+ detailDrag:SetScript('OnDragStop',function()
+  detailPanel:StopMovingOrSizing()
+  local x,y=detailPanel:GetCenter()
+  local px,py=UIParent:GetCenter()
+  if safeNumber(x) and safeNumber(y) and safeNumber(px) and safeNumber(py) then
+   saved().detailPosition={x=x-px,y=y-py}
+   detailPanel:ClearAllPoints();detailPanel:SetPoint('CENTER',UIParent,'CENTER',x-px,y-py)
+  end
+ end)
+ detailPanel.dragHandle=detailDrag
  if detailPanel.SetBackdrop then
   detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
   detailPanel:SetBackdropColor(.035,.055,.085,.96)
@@ -757,7 +778,7 @@ function M.Refresh()
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if detailPanel and detailOpen and selectedRow then
   -- Keep the details readable when the meter is docked near the right edge.
-  if not (InCombatLockdown and InCombatLockdown()) and frame.GetRight and UIParent and UIParent.GetRight then
+  if not detailPanel.detached and not (InCombatLockdown and InCombatLockdown()) and frame.GetRight and UIParent and UIParent.GetRight then
    local right,screenRight=frame:GetRight(),UIParent:GetRight()
    if safeNumber(right) and safeNumber(screenRight) then
     -- The expanded analysis pane is 600px wide, not the old 300px.
@@ -1090,6 +1111,14 @@ function M.OpenQuickMenu(anchor)
  entries[#entries+1]={label='Meter options...',action=function() M.OpenOptions(anchor) end}
  ForeverCompanionInterface.Menu(anchor or frame,'QUICK DISPLAYS',entries,skin())
 end
+function M.ResetDetailPosition()
+ saved().detailPosition=nil
+ if detailPanel then
+  detailPanel.detached=false;detailPanel.anchorSide=nil
+  detailPanel:ClearAllPoints();detailPanel:SetPoint('TOPLEFT',frame,'TOPRIGHT',5,0)
+ end
+ M.Refresh()
+end
 function M.OpenOptions(anchor)
  local entries={}
  for _,layout in ipairs({'compact','standard','expanded'}) do
@@ -1111,8 +1140,10 @@ function M.OpenOptions(anchor)
  entries[#entries+1]={label='Details-inspired skin',selected=skinName=='details',action=function() M.SetSkin('details') end}
  entries[#entries+1]={label='Recount-inspired skin',selected=skinName=='recount',action=function() M.SetSkin('recount') end}
  entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
+ entries[#entries+1]={label='Reset breakdown position',action=M.ResetDetailPosition}
  entries[#entries+1]={label='Reset window appearance',action=function()
   saved().locked=false;saved().position=nil;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
+  M.ResetDetailPosition()
   M.SetSkin('details');M.SetLayout('standard');rowOffset=0
   frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()
  end}
@@ -1154,6 +1185,7 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
   if selectedRow then detailOpen=not detailOpen;M.Refresh() else M.Show() end
  elseif msg=="resetpos" then
   saved().position=nil
+  M.ResetDetailPosition()
   if frame then frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0) end
  elseif msg:match("^width%s+") then
   local width=tonumber(msg:match("^width%s+(%d+)$"))
