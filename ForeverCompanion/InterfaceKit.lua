@@ -2,7 +2,7 @@
 -- explicit selection menus. Contains no gameplay or combat-data processing.
 local U={}
 ForeverCompanionInterface=U
-U.palette={background={.018,.022,.029,.99},surface={.045,.055,.070,1},border={.17,.21,.26,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.57,.65,.73,1}}
+U.palette={background={.025,.032,.044,.99},surface={.065,.080,.103,1},border={.23,.28,.35,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
 local function paint(texture,color) texture:SetColorTexture(unpack(color)) end
@@ -24,14 +24,20 @@ function U.Surface(parent,palette)
  paint(edge,p.border or U.palette.border)
  local bottom=parent:CreateTexture(nil,'BORDER')
  bottom:SetPoint('BOTTOMLEFT',0,0);bottom:SetPoint('BOTTOMRIGHT',0,0);bottom:SetHeight(1)
- bottom:SetColorTexture(.08,.10,.14,1)
+ paint(bottom,p.border or U.palette.border)
+ for _,side in ipairs({'LEFT','RIGHT'}) do
+  local line=parent:CreateTexture(nil,'BORDER')
+  line:SetPoint('TOP'..side,parent,'TOP'..side,0,0)
+  line:SetPoint('BOTTOM'..side,parent,'BOTTOM'..side,0,0)
+  line:SetWidth(1);paint(line,p.border or U.palette.border)
+ end
  return bg,edge
 end
 function U.Button(parent,palette)
  local b=CreateFrame('Button',nil,parent)
  local p=palette or U.palette
  local bg,edge=U.Surface(b,{background=p.surface or U.palette.surface,border=p.border})
- local text=U.Text(b,11,p.text)
+ local text=U.Text(b,12,p.text)
  text:ClearAllPoints();text:SetPoint('LEFT',b,'LEFT',7,0);text:SetPoint('RIGHT',b,'RIGHT',-7,0)
  text:SetJustifyH('CENTER')
  b:SetFontString(text)
@@ -42,7 +48,28 @@ function U.Button(parent,palette)
  b:SetPushedTexture('Interface\\Buttons\\WHITE8X8','ADD')
  local pushed=b.GetPushedTexture and b:GetPushedTexture()
  if pushed then pushed:SetVertexColor(.2,.4,.6,.18) end
- controls[b]={background=bg,edge=edge,text=text}
+ local marker=b:CreateTexture(nil,'ARTWORK')
+ marker:SetPoint('TOPLEFT',b,'TOPLEFT',0,-1)
+ marker:SetPoint('BOTTOMLEFT',b,'BOTTOMLEFT',0,1)
+ marker:SetWidth(2);paint(marker,p.accent or U.palette.accent);marker:Hide()
+ controls[b]={background=bg,edge=edge,text=text,marker=marker,palette=p}
+ -- Explicit states keep custom font strings legible without relying on a
+ -- stock template's font objects. Focus and selection have separate cues.
+ local function state()
+  local parts=controls[b]
+  local enabled=not b.IsEnabled or b:IsEnabled()
+  text:SetTextColor(unpack(enabled and (parts.active and (parts.palette.accent or U.palette.accent) or (parts.palette.text or U.palette.text)) or {.43,.49,.57,1}))
+  bg:SetAlpha(enabled and 1 or .5)
+  marker:SetShown(enabled and parts.active or false)
+ end
+ b:HookScript('OnEnable',state);b:HookScript('OnDisable',state)
+ b:HookScript('OnEnter',function()
+  if not b.IsEnabled or b:IsEnabled() then paint(edge,controls[b].palette.accent or U.palette.accent) end
+ end)
+ b:HookScript('OnLeave',function()
+  local parts=controls[b]
+  paint(edge,parts.active and (parts.palette.accent or U.palette.accent) or (parts.palette.border or U.palette.border))
+ end)
  return b
 end
 -- Search and note fields share the same inset and focus treatment.
@@ -78,9 +105,12 @@ function U.StyleButton(button,palette,active)
  local parts=controls[button]
  if not parts then return end
  local p=palette or U.palette
+ parts.palette=p;parts.active=active and true or false
  paint(parts.background,active and (p.rail or U.palette.surface) or (p.surface or U.palette.surface))
  paint(parts.edge,active and (p.accent or U.palette.accent) or (p.border or U.palette.border))
- parts.text:SetTextColor(unpack(active and (p.accent or U.palette.accent) or (p.text or U.palette.text)))
+ local enabled=not button.IsEnabled or button:IsEnabled()
+ parts.text:SetTextColor(unpack(enabled and (active and (p.accent or U.palette.accent) or (p.text or U.palette.text)) or {.43,.49,.57,1}))
+ parts.marker:SetShown(enabled and parts.active or false)
 end
 function U.CloseMenu()
  if popup then popup:Hide();popup=nil end

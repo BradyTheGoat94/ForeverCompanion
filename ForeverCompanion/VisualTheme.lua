@@ -6,7 +6,7 @@ T.citadel="Interface\\AddOns\\ForeverCompanion\\Media\\Citadel.tga"
 T.crest="Interface\\AddOns\\ForeverCompanion\\Media\\Crest.tga"
 T.warrior="Interface\\AddOns\\ForeverCompanion\\Media\\Warrior.tga"
 -- Shared type scale: display 22/18, body 13, labels 11. Native game fonts.
-T.colors={background={.018,.022,.029,1},surface={.032,.040,.052,1},raised={.052,.064,.081,1},border={.16,.19,.24,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.60,.67,.75,1}}
+T.colors={background={.025,.032,.044,1},surface={.038,.048,.064,1},raised={.065,.080,.103,1},border={.23,.28,.35,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
 function T.Font(widget,size,display)
  if widget and type(widget.SetFont)=="function" then
   pcall(widget.SetFont,widget,display and "Fonts\\FRIZQT__.TTF" or "Fonts\\ARIALN.TTF",size,"")
@@ -22,7 +22,7 @@ function T.Panel(parent,w,h)
  -- One surface and one perimeter. No stacked bevels or competing corner art.
  local bg=parent:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(parent)
  bg:SetColorTexture(unpack(T.colors.surface))
- local band=strip(parent,1,-1,w-2,34,.047,.056,.071,1,"BORDER")
+ local band=strip(parent,1,-1,w-2,34,.065,.080,.103,1,"BORDER")
  local top=strip(parent,0,0,w,1,.25,.28,.33,1)
  local bottom=strip(parent,0,-h+1,w,1,.14,.17,.22,1)
  local left=strip(parent,0,0,1,h,.14,.17,.22,1)
@@ -60,7 +60,7 @@ end
 
 -- Selected list rows retain a quiet surface and a distinct edge cue.
 function T.SelectRow(row,background,selected)
- background:SetColorTexture(selected and .075 or .035,selected and .090 or .043,selected and .115 or .058,1)
+ background:SetColorTexture(selected and .11 or .045,selected and .13 or .056,selected and .17 or .075,1)
  if not row.fcSelection then
   row.fcSelection=row:CreateTexture(nil,"ARTWORK")
   row.fcSelection:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)

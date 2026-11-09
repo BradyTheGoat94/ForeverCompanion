@@ -1,3 +1,10 @@
+## 3.37.0-beta — Interface finish pass
+
+- Unified dark surface, border and secondary-text tones across shared panels and controls; raised title bands separate headings from content.
+- Added complete control outlines, more readable button labels, explicit disabled contrast and warm hover feedback. Active controls now retain a left selection cue as well as an accent edge.
+- Refined the main shell, journal headings, quest-zone labels and journal hover contrast. Native meter themes and combat-data handling are preserved.
+- Validated with offline widget captures and regression checks. Real-client font rendering and compatibility still require in-game acceptance.
+
 ## 3.36.0-beta — Zone quest catalog and personal turn-in history
 
 - Added Find quests, Zone catalog and Turn-in history tabs beneath the objective field guide. Added /fc questbook and /fc history, plus tracker-menu shortcuts.
