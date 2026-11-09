@@ -25,6 +25,7 @@ assert(#points==3,"kill, item and event locations must be found, while invalid m
 assert(points[1].map==1429 and points[1].x==.42 and points[1].label=="Forest Wolf")
 assert(points[2].kind=="drop" and points[2].label=="River Crawler")
 assert(points[3].kind=="event" and points[3].x==.63)
+assert(points[1].objectiveIndex==1 and points[2].objectiveIndex==2 and points[3].objectiveIndex==4,'provider matches preserve the exact live objective index')
 quest.objectiveStates[1].done=true
 quest.objectives[2]="Something unrelated"
 assert(#R.ForQuest(quest)==1,"completed and unmatched objectives must disappear")

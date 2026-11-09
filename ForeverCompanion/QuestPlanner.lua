@@ -72,6 +72,23 @@ end
 
 -- Read-only quest-log synchronization. Never accepts/turns in quests or changes tracking.
 local auto = {entries={}, supported=false, scanned=false, lastCount=0, selected=1, filter="all"}
+-- Keep the same objective contract across both modern log enumerators.
+local function quantity(value)
+ if issecretvalue and issecretvalue(value) then return nil end
+ local n=tonumber(value)
+ if type(n)=='number' and n==n and n>=0 and n<math.huge then return n end
+end
+local function objectiveState(obj)
+ local ok,state=pcall(function()
+  local current,required=quantity(obj.numFulfilled),quantity(obj.numRequired)
+  local known,done=false,false
+  if type(obj.finished)=='boolean' then known,done=true,obj.finished
+  elseif type(obj.isComplete)=='boolean' then known,done=true,obj.isComplete
+  elseif current and required and required>0 then known,done=true,current>=required end
+  return {known=known,done=done,current=current,required=required,kind=type(obj.type)=='string' and obj.type or nil}
+ end)
+ return ok and state or {known=false,done=false}
+end
 local function questRows()
   local rows={}
   local modern=C_QuestLog
@@ -106,22 +123,13 @@ local function questRows()
                   for _,obj in ipairs(items) do
                     if type(obj)=="table" and type(obj.text)=="string" then
                       objectives[#objectives+1]=clean(obj.text,140)
-                      local known,done=false,false
-                      local stateOK,stateKnown,stateDone=pcall(function()
-                        if type(obj.finished)=="boolean" then return true,obj.finished end
-                        if type(obj.isComplete)=="boolean" then return true,obj.isComplete end
-                        local current,required=tonumber(obj.numFulfilled),tonumber(obj.numRequired)
-                        if current and required and required>0 then return true,current>=required end
-                        return false,false
-                      end)
-                      if stateOK then known,done=stateKnown,stateDone end
-                      objectiveStates[#objectiveStates+1]={known=known,done=done}
+                      objectiveStates[#objectiveStates+1]=objectiveState(obj)
                     end
                   end
                 end
               end
               local zone=type(info.zoneName)=="string" and info.zoneName or nil
-              result[#result+1]={id=id,title=clean(info.title,100),
+              result[#result+1]={id=id,title=clean(info.title,100),level=quantity(info.level),
                 zone=zone and clean(zone,70) or "Unspecified zone",zoneKnown=zone~=nil,
                 complete=completed,objectives=objectives,objectiveStates=objectiveStates}
             end
@@ -160,21 +168,7 @@ local function questRows()
               for _,obj in ipairs(items) do
                 if type(obj)=="table" and type(obj.text)=="string" then
                   objectives[#objectives+1]=clean(obj.text,140)
-                  local known,done=false,false
-                  local stateOK,stateKnown,stateDone=pcall(function()
-                    if type(obj.finished)=="boolean" then return true,obj.finished end
-                    if type(obj.isComplete)=="boolean" then return true,obj.isComplete end
-                    local current=tonumber(obj.numFulfilled)
-                    local required=tonumber(obj.numRequired)
-                    if current and required and required>0 then return true,current>=required end
-                    return false,false
-                  end)
-                  if stateOK then known,done=stateKnown,stateDone end
-                  local detailsOK,kind,required=pcall(function()
-                    return type(obj.type)=="string" and obj.type or nil,tonumber(obj.numRequired)
-                  end)
-                  objectiveStates[#objectiveStates+1]={known=known,done=done,
-                    kind=detailsOK and kind or nil,required=detailsOK and required or nil}
+                  objectiveStates[#objectiveStates+1]=objectiveState(obj)
                 end
               end
             end
@@ -182,7 +176,7 @@ local function questRows()
           local directZone=type(info.zoneName)=="string" and info.zoneName~="" and info.zoneName
             or (type(info.zone)=="string" and info.zone~="" and info.zone)
           local zoneKnown=not not (directZone or headerKnown)
-          rows[#rows+1]={id=id,title=clean(info.title,100),zone=zoneKnown and clean(directZone or header,70) or "Unspecified zone",zoneKnown=zoneKnown,complete=completed,objectives=objectives,objectiveStates=objectiveStates}
+          rows[#rows+1]={id=id,title=clean(info.title,100),level=quantity(info.level),zone=zoneKnown and clean(directZone or header,70) or "Unspecified zone",zoneKnown=zoneKnown,complete=completed,objectives=objectives,objectiveStates=objectiveStates}
         end
       end
     end
@@ -210,16 +204,16 @@ local function questRows()
           local countOK,objectiveCount=pcall(GetNumQuestLeaderBoards,i)
           if countOK and type(objectiveCount)=="number" and objectiveCount>=0 and objectiveCount<=100 then
             for j=1,objectiveCount do
-              local itemOK,description,_,finished=pcall(GetQuestLogLeaderBoard,j,i)
+              local itemOK,description,objectiveKind,finished=pcall(GetQuestLogLeaderBoard,j,i)
               if itemOK and type(description)=="string" and description~="" then
                 objectives[#objectives+1]=clean(description,140)
-                objectiveStates[#objectiveStates+1]={known=type(finished)=="boolean",done=finished==true}
+                objectiveStates[#objectiveStates+1]={known=type(finished)=="boolean",done=finished==true,kind=type(objectiveKind)=="string" and objectiveKind or nil}
               end
             end
           end
         end
         rows[#rows+1]={
-          id=type(questID)=="number" and questID or nil,
+          id=type(questID)=="number" and questID or nil,level=quantity(questLevel),
           title=clean(title,100),zone=headerKnown and header or "Unspecified zone",zoneKnown=headerKnown,
           complete=isComplete==true or isComplete==1,
           objectives=objectives,objectiveStates=objectiveStates

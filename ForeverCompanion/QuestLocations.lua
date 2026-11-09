@@ -132,6 +132,7 @@ function R.ForQuest(quest)
   local states=quest.objectiveStates or {}
   for i,state in ipairs(states) do
    if state.known and not state.done then
+    local first=#result+1
     local kind,text=state.kind,quest.objectives[i]
     local list=kind and groups[kind]
     local row=list and objectiveMatch(list,text,state.required)
@@ -153,6 +154,7 @@ function R.ForQuest(quest)
       append(result,zones,trigger[2],"event",trigger[1],text)
      end
     end
+    for j=first,#result do result[j].objectiveIndex=i end
    end
   end
  end

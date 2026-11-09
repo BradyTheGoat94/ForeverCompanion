@@ -71,6 +71,34 @@ function W.Location(quest)
  if type(quest)~="table" or type(quest.id)~="number" or quest.id<=0 then return end
  return read(clientLocation,quest.id) or uniqueReference(quest)
 end
+-- Collect all actual destinations without pretending a general native POI
+-- belongs to a specific objective. Provider matches retain objective indices.
+function W.Targets(quest)
+ if type(quest)~='table' or type(quest.id)~='number' or quest.id<=0 then return {} end
+ local result,seen={},{}
+ local function add(target,reference)
+  if not target or not point(target.map,target.x,target.y,target.source) then return end
+  local key=target.map..':'..target.x..':'..target.y..':'..tostring(target.objectiveIndex or target.objective or 'quest')
+  if seen[key] then return end
+  seen[key]=true
+  local copy={}
+  for k,v in pairs(target) do copy[k]=v end
+  copy.reference=reference==true
+  result[#result+1]=copy
+ end
+ add(read(nextWaypoint,quest.id),false)
+ local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
+ if map then for _,target in pairs(mapPoints(map)[quest.id] or {}) do add(target,false) end end
+ for _,target in ipairs(referenceLocations(quest)) do add(target,true) end
+ table.sort(result,function(a,b)
+  if a.reference~=b.reference then return not a.reference end
+  if a.map~=b.map then return a.map<b.map end
+  if a.x~=b.x then return a.x<b.x end
+  if a.y~=b.y then return a.y<b.y end
+  return (a.objectiveIndex or 0)<(b.objectiveIndex or 0)
+ end)
+ return result
+end
 
 function W.MapLocations(map,quests)
  local points=mapPoints(map)
