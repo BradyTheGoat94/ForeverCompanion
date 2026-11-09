@@ -740,15 +740,6 @@ local function cyclePreviewClass()
   DB.role=nil
   render()
 end
-local function cyclePreviewRole()
-  local roles=classRoles[classToken()] or {"Damage"}
-  local nextIndex=1
-  for i,role in ipairs(roles) do
-    if DB.role==role then nextIndex=(i % #roles)+1 end
-  end
-  DB.role=roles[nextIndex]
-  render()
-end
 local function resetPreviewClass()
   DB.previewClass=nil
   DB.role=nil
@@ -1135,7 +1126,18 @@ local function createUI()
   specButton=ForeverCompanionInterface.Button(window)
   specButton:SetSize(195,26)
   specButton:SetPoint("TOPRIGHT",window,"TOPRIGHT",-180,-62)
-  specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); render() end)
+  specButton:SetScript('OnClick',function()
+    local class=classToken()
+    local _,selected=ForeverCompanionSpecPlanner.Get(class)
+    local entries={}
+    for i,choice in ipairs(ForeverCompanionSpecs[class] or {}) do
+      local index=i
+      entries[#entries+1]={label=choice[1],selected=index==selected,action=function()
+        ForeverCompanionSpecPlanner.Select(class,index);render()
+      end}
+    end
+    ForeverCompanionInterface.Menu(specButton,'CHOOSE SPECIALIZATION',entries)
+  end)
   specButton:Hide()
   -- Two-row profession handbook selector with fantasy-themed icons.
   for i=1,9 do
@@ -1279,7 +1281,14 @@ local function createUI()
   ForeverCompanionUIState.roleButton = ForeverCompanionInterface.Button(window)
   ForeverCompanionUIState.roleButton:SetSize(145, 26)
   ForeverCompanionUIState.roleButton:SetPoint("BOTTOMRIGHT", -25, 45)
-  ForeverCompanionUIState.roleButton:SetScript("OnClick",cyclePreviewRole)
+  ForeverCompanionUIState.roleButton:SetScript('OnClick',function()
+    local entries={}
+    for _,name in ipairs(classRoles[classToken()] or {'Damage'}) do
+      local role=name
+      entries[#entries+1]={label=role,selected=DB.role==role,action=function() DB.role=role;render() end}
+    end
+    ForeverCompanionInterface.Menu(ForeverCompanionUIState.roleButton,'CHOOSE GUIDE ROLE',entries)
+  end)
   ForeverCompanionUIState.compactButton=ForeverCompanionInterface.Button(window)
   ForeverCompanionUIState.compactButton:SetSize(92,23)
   ForeverCompanionUIState.compactButton:SetPoint("BOTTOMRIGHT",-25,16)
@@ -1319,9 +1328,13 @@ addon:SetScript("OnEvent", function(_, event, arg)
     fitWindow()
     render()
   elseif DB and event == "SPELLS_CHANGED" then
-    if window and window:IsShown() and currentTab=="Leveling" then render() end
+    if window and window:IsShown() and currentTab=="Leveling" then
+      ForeverCompanionRefreshQueue.Schedule('page',function() if window:IsShown() then render() end end)
+    end
   elseif DB and (event == "PLAYER_LEVEL_UP" or event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_XP_UPDATE" or event == "SKILL_LINES_CHANGED" or event == "CHAT_MSG_SKILL") then
-    if window and window:IsShown() then render() end
+    if window and window:IsShown() then
+      ForeverCompanionRefreshQueue.Schedule('page',function() if window:IsShown() then render() end end)
+    end
   end
 end)
 SLASH_FOREVERCOMPANION1 = "/fc"
@@ -1329,6 +1342,11 @@ SLASH_FOREVERCOMPANION2 = "/forevercompanion"
 SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
+  if msg=='setup' then ForeverCompanionQuestSetup.Toggle();return end
+  if msg=='performance' then
+    for line in ForeverCompanionRefreshQueue.Summary():gmatch('[^\n]+') do say(line) end
+    return
+  end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
   if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
   if msg=='discover' then questExplorerView='discover';openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end

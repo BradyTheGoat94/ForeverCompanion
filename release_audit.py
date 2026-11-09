@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 root=Path("ForeverCompanion")
 toc=root/"ForeverCompanion.toc"
-lines=toc.read_text().splitlines()
+lines=toc.read_text(encoding="utf-8-sig").splitlines()
 entries=[x.strip() for x in lines if x.strip() and not x.startswith("#")]
 issues=[]
 if len(entries)!=len(set(entries)): issues.append("Duplicate manifest entries")
@@ -11,14 +11,21 @@ for name in entries:
  if not (root/name).is_file(): issues.append("Missing: "+name)
 for path in root.glob("*.lua"):
  if path.name not in entries: issues.append("Unlisted: "+path.name)
-source="\n".join(path.read_text() for path in root.glob("*.lua"))
-for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellByName(", "RunMacroText(", "CastSpell(", "TargetUnit(", "UseAction(", "SendChatMessage(", "C_Timer.After(", "loadstring(", "load(", "HttpRequest(", "C_HTTP.", "C_Network.", "AcceptQuest(", "CompleteQuest(", "AbandonQuest(", "SelectQuestLogEntry(", "SetQuestLogSelection(", "C_QuestLog.SetSelectedQuest(", "C_QuestLog.SetAbandonQuest("]:
+# Reviewed read-only batching/debounce sites; new timer sites require review.
+# Callback bodies remain covered by the separate protected-action audit.
+reviewed_timers={"AvailableQuests.lua":2,"TownServices.lua":2,"BankView.lua":1,"QuestPlanner.lua":1}
+import re
+for path in root.glob("*.lua"):
+ count=len(re.findall(r"C_Timer\s*\.\s*After\s*\(",path.read_text(encoding="utf-8-sig")))
+ if count!=reviewed_timers.get(path.name,0): issues.append("Timer call sites changed; review: "+path.name)
+source="\n".join(path.read_text(encoding="utf-8-sig") for path in root.glob("*.lua"))
+for pattern in ["GetNumSpellTabs(", "CombatLogGetCurrentEventInfo(", "CastSpellByName(", "RunMacroText(", "CastSpell(", "TargetUnit(", "UseAction(", "SendChatMessage(", "loadstring(", "load(", "HttpRequest(", "C_HTTP.", "C_Network.", "AcceptQuest(", "CompleteQuest(", "AbandonQuest(", "SelectQuestLogEntry(", "SetQuestLogSelection(", "C_QuestLog.SetSelectedQuest(", "C_QuestLog.SetAbandonQuest("]:
  if pattern in source: issues.append("Review legacy or automated API: "+pattern)
 # The ZIP must contain source and client-native references, not extracted
 # Blizzard artwork or executable payloads. Keep any future assets explicitly
 # reviewed instead of silently expanding the allowed package surface.
 allowed_extensions={".lua",".toc"}
-reviewed_assets={"Media/Citadel.tga":(1024,256,24),"Media/Crest.tga":(256,256,32),"Media/Warrior.tga":(1024,256,24)}
+reviewed_assets={"Media/Citadel.tga":(1024,256,24),"Media/Crest.tga":(256,256,32),"Media/Warrior.tga":(1024,256,24),"Media/QuestDirectionArrow.tga":(64,64,32),"Media/QuestLocationRing.tga":(64,64,32)}
 for path in root.rglob("*"):
  if path.is_file() and path.relative_to(root).as_posix() in reviewed_assets:
   import struct

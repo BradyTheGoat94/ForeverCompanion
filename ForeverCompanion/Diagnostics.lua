@@ -7,7 +7,7 @@ end
 function D.Version()
  local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata
  local ok,version=pcall(metadata or GetAddOnMetadata,"ForeverCompanion","Version")
- return ok and type(version)=="string" and version or "3.38.1-beta"
+ return ok and type(version)=="string" and version or "3.39.0-beta"
 end
 function D.Collect()
  local rows={}
@@ -62,6 +62,7 @@ function D.Collect()
   end
  end
  rows[#rows+1]="These checks show API presence only; they do not prove safe or correct behavior."
+ if ForeverCompanionRefreshQueue then rows[#rows+1]=ForeverCompanionRefreshQueue.Summary() end
  return table.concat(rows,"\n")
 end
 SLASH_FOREVERCOMPANIONDIAGNOSTICS1="/fcdiag"

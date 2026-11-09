@@ -41,7 +41,9 @@ function B.Create(parent)
   values={}
   local summary=card(root,0,376,"JOURNAL AT A GLANCE")
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
-  values.zone=label(summary,16,-75,344,"Quest locations","GameFontHighlightSmall",{0.68,0.75,0.82})
+  values.zone=ForeverCompanionInterface.Button(summary)
+  values.zone:SetPoint('TOPLEFT',16,-72);values.zone:SetSize(344,24)
+  values.zone:SetScript('OnClick',function() ForeverCompanionQuestSetup.Toggle() end)
   values.status=label(summary,16,-124,215,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
   trackerButton=ForeverCompanionInterface.Button(summary)
   trackerButton:SetSize(112,22);trackerButton:SetPoint('TOPRIGHT',summary,'TOPRIGHT',-12,-119)
@@ -68,11 +70,13 @@ function B.Create(parent)
   values.hint=label(focus,15,-125,282,"","GameFontHighlightSmall",{0.77,0.76,0.66})
   mapButton=ForeverCompanionInterface.Button(focus)
   mapButton:SetSize(119,22);mapButton:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-9)
-  mapButton:SetText("Show on map")
+  mapButton:SetText("Next objective")
   mapButton:SetScript("OnClick",function()
     local planner=ForeverCompanionQuestPlanner
     if planner.IsSupported() then
-      mapMessage=ForeverCompanionQuestWaypoints.Show(planner.GetSelected())
+      local q=planner.GetSelected()
+      mapMessage=ForeverCompanionQuestWaypoints.Show(q)
+      if q and ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(q.id) end
       B.Render()
     end
   end)
@@ -117,7 +121,7 @@ function B.Render()
     values.status:SetText("Manual quest notes remain available")
   end
   local reference=ForeverCompanionQuestLocations.IsAvailable()
-  values.zone:SetText(reference and "Map data  ·  Blizzard + Forever QuestieDB" or "Map data  ·  Blizzard client")
+  values.zone:SetText(reference and "Quest data: Native + references / Setup" or "Quest data: Native only / Setup")
   fill:SetWidth(valid and count>0 and math.max(1,math.floor(BAR_WIDTH*ready/count)) or 1)
   local selected=planner.GetSelected and planner.GetSelected() or nil
   local questKey=selected and (selected.id or selected.title)

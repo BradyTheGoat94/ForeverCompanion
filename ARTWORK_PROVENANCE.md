@@ -77,3 +77,12 @@ character. Compose for a shallow wide class banner crop.
 
 - `ForeverCompanion/Media/QuestDirectionArrow.tga` is an original chevron drawn
   from simple polygons for the player's direction display.
+
+## Release-policy review (3.39)
+
+The two original navigation textures above are reviewed 64×64 RGBA uncompressed
+TGA files. The root audit now checks their exact dimensions and format alongside
+the three original header/crest assets. New assets still require explicit review.
+Read-only timers in AvailableQuests/TownServices batch indexing; BankView debounces
+bank reads; QuestPlanner debounces quest scans. The audit pins these timer-site
+counts per module and retains the independent protected-action scan.

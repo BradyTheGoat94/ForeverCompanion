@@ -6,6 +6,19 @@ Brady's Forever Companion is an independent, free World of Warcraft addon projec
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Quest setup and validation (3.39 beta)
+
+Click **Quest data: … / Setup** in the journal, use Settings → **Quest data & setup**,
+or type `/fc setup` to see which quest sources are available and why markers may
+be missing. **Next objective** opens the field guide while retaining player-started
+map navigation. Specialization and role buttons now offer direct choice menus.
+
+`/fc performance` reports queued page-refresh requests, merged work and measured
+batch timings where the client exposes a profiling clock. It does not measure
+frame rate or total addon CPU. Run `python tools/validate_all.py` for the same
+offline acceptance used by every workflow; Lua 5.1 is required (the optional local
+lupa runtime is also supported). Manual CurseForge uploads remain the release path.
+
 ## Interface review (3.38 beta, develop)
 
 Class reference pages use measured reading cards. Gear priorities sit beside

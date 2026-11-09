@@ -206,3 +206,19 @@ function A.Invalidate()
  generation=generation+1
  database,identity,index,loading=nil,nil,nil,false
 end
+-- Read existing indexing state for setup/diagnostics without starting a scan.
+function A.Status(map)
+ local db=ForeverCompanionQuestLocations.Provider()
+ local contract=db and read(db.RequireContract,4)==true or false
+ local who=db and character(db)
+ local current=database==db and who and identity==who.key
+ local count,locations,seen=0,0,{}
+ if not loading and current then
+  for _,entry in ipairs(index and index[map] or {}) do
+   locations=locations+1
+   if not seen[entry.record.id] then seen[entry.record.id]=true;count=count+1 end
+  end
+ end
+ return {provider=db~=nil,contract=contract,loading=loading,initialized=current and index~=nil or false,
+  quests=count,locations=locations,completion=C_QuestLog and type(C_QuestLog.IsQuestFlaggedCompleted)=='function' or false}
+end

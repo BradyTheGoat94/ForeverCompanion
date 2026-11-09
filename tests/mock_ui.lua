@@ -983,6 +983,21 @@ local specControl
 for _,w in ipairs(frames) do if w.OnClick and w.text=="Spec: Arms" then specControl=w end end
 assert(specControl and specControl.parent==mainWindow.id,"header specialization selector must avoid scroll-child clipping")
 do
+ local saved=ForeverCompanionDB.specSelections.WARRIOR
+ specControl.OnClick()
+ local fury
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Fury' and f.OnClick then fury=f end end
+ assert(fury,'specialization control must expose direct choices');fury.OnClick()
+ assert(ForeverCompanionDB.specSelections.WARRIOR==2,'menu choice must persist the selected specialization')
+ ForeverCompanionDB.specSelections.WARRIOR=saved;ForeverCompanionRefresh()
+ local role=ForeverCompanionDB.role
+ ForeverCompanionUIState.roleButton.OnClick()
+ local tank
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Tank' and f.OnClick then tank=f end end
+ assert(tank);tank.OnClick();assert(ForeverCompanionDB.role=='Tank')
+ ForeverCompanionDB.role=role;ForeverCompanionRefresh()
+end
+do
  local previousCompact=ForeverCompanionDB.compact
  for _,compact in ipairs({false,true}) do
   ForeverCompanionDB.compact=compact;ForeverCompanionRefresh()
@@ -1256,6 +1271,9 @@ end
 assert(addonFrame.events.SPELLS_CHANGED,"guide must subscribe to spellbook changes")
 mainWindow:Show()
 addonFrame.OnEvent(addonFrame,"SPELLS_CHANGED")
+addonFrame.OnEvent(addonFrame,"SPELLS_CHANGED")
+assert(refreshes==0,"event bursts should wait for one queued refresh")
+ForeverCompanionRefreshQueue.Flush()
 assert(refreshes>0,"visible class guide refreshes when the spellbook changes")
 mainWindow:Hide()
 refreshes=0
@@ -1334,6 +1352,7 @@ overviewButton.OnClick(overviewButton)
 assert(not frames[frames[classHeading.parent].parent].visible,"class guide should hide outside Leveling")
 mockXP=2000
 addonFrame.OnEvent(addonFrame,"PLAYER_XP_UPDATE")
+ForeverCompanionRefreshQueue.Flush()
 local xpUpdated=false
 for _,w in ipairs(frames) do if w.kind=="FontString" and w.text=="67%" then xpUpdated=true end end
 assert(xpUpdated,"XP event should refresh live progress")
@@ -1829,3 +1848,12 @@ do
  SlashCmdList.FOREVERCOMPANION('discover')
  assert(not book.visible,'discovery tab must replace the book view')
 end
+
+-- The setup panel must be reachable, readable and reversible without map writes.
+SlashCmdList.FOREVERCOMPANION('setup')
+local setupPanel
+for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestSetupPanel' then setupPanel=f end end
+assert(setupPanel and setupPanel.visible)
+exportNative('ui_setup_native.json')
+SlashCmdList.FOREVERCOMPANION('setup')
+assert(not setupPanel.visible)

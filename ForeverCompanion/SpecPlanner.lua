@@ -32,6 +32,11 @@ function P.Next(class)
  if total==0 then return end
  db()[class]=(index%total)+1
 end
+function P.Select(class,index)
+ local choices=type(class)=='string' and ForeverCompanionSpecs[class]
+ if not choices or type(index)~='number' or index~=math.floor(index) or not choices[index] then return false end
+ db()[class]=index;return true
+end
 -- Some planner alternatives are illustrative rather than confirmed client specs.
 -- Keep them visible for reference, but never silently present them as verified.
 function P.Evidence(class)

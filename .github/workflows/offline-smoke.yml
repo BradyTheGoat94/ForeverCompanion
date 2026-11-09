@@ -24,18 +24,5 @@ jobs:
       - name: Syntax-check addon and test files
         run: |
           find ForeverCompanion tests -type f -name '*.lua' -print0 | xargs -0 -r luac5.1 -p
-      - name: Run offline smoke tests
-        run: |
-          lua5.1 tests/offline_smoke.lua
-          lua5.1 tests/combat_meter_ui_smoke.lua
-          lua5.1 tests/service_clusters_smoke.lua
-          lua5.1 tests/journey_route_smoke.lua
-          lua5.1 tests/quest_locations_smoke.lua
-          lua5.1 tests/quest_pickups_smoke.lua
-          lua5.1 tests/quest_discovery_smoke.lua
-          lua5.1 tests/quest_guide_smoke.lua
-          lua5.1 tests/quest_sync_metadata_smoke.lua
-          lua5.1 tests/quest_history_smoke.lua
-          lua5.1 tests/available_quests_smoke.lua
-          lua5.1 tests/material_workspace_smoke.lua
-          lua5.1 tests/mock_ui.lua
+      - name: Run unified offline acceptance
+        run: python3 tools/validate_all.py

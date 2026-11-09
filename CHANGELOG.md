@@ -1,3 +1,13 @@
+## 3.39.0-beta — Quest setup and reliable acceptance checks
+
+- Added Quest data & setup from the journal, Settings and /fc setup. Reports native support, compatible provider/contract, indexing, current-character map coverage and unknown completion eligibility without starting background scans.
+- Next objective keeps player-started map navigation and opens the live objective field guide. Specialization and guide-role controls now expose explicit choice menus instead of cycling blindly.
+- Coalesced visible-page refresh event bursts into a 50 ms frame queue, with idle teardown and safe handling of refreshes queued during a flush. /fc performance and /fcdiag report measured queued-work timing when a client clock is available; no FPS or overall CPU claims are inferred.
+- Added one offline acceptance command used by all three workflows. Candidate version is checked against the TOC and submission handoff, not an obsolete hard-coded release.
+- Reviewed original navigation texture formats/dimensions and existing read-only timer sites. New timer sites and unknown artwork still fail policy checks; protected-gameplay checks remain separate.
+- Updated publishing records to project 1793299 and owner-reported pending review. 3.39 is a new candidate and has not been uploaded automatically. License decision and full client acceptance remain separate.
+- Added setup, queue, choice-menu and negative release-policy tests. All 19 Lua suites and 14 Python tests pass; one Windows case-collision test is skipped.
+
 ## 3.38.1-beta — Header overlap fix
 
 - Fixed the Combat Meter button overlapping the role selector on Class Guides. Meter, specialization and role now occupy three separate header slots with consistent heights and spacing.

@@ -15,22 +15,8 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y lua5.1
       - name: Parse all packaged Lua files
         run: find ForeverCompanion -type f -name '*.lua' -print0 | xargs -0 -n1 luac5.1 -p
-      - name: Run addon offline smoke tests
-        run: lua5.1 tests/offline_smoke.lua
-      - name: Run study-board interaction tests
-        run: lua5.1 tests/study_board_smoke.lua
-      - name: Verify Python release tooling compiles
-        run: python3 -m py_compile tools/build_curseforge_beta.py tools/audit_forever_apis.py tools/audit_no_combat_automation.py tools/audit_curseforge_submission.py
-      - name: Test combat automation release gate
-        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
-      - name: Scan for removed legacy API calls
-        run: python3 tools/audit_forever_apis.py
-      - name: Reject combat automation indicators
-        run: python3 tools/audit_no_combat_automation.py
-      - name: Validate CurseForge submission metadata and beta disclosures
-        run: python3 tools/audit_curseforge_submission.py
-      - name: Validate addon manifest and bundled files
-        run: python3 tools/build_curseforge_beta.py --check-only
+      - name: Run unified offline acceptance
+        run: python3 tools/validate_all.py
       - name: Build reproducible installable beta ZIP
         run: python3 tools/build_curseforge_beta.py --output dist
       - name: Verify deterministic archive output

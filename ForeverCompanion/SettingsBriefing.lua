@@ -78,6 +78,10 @@ function S.Create(parent,context)
   values.spellbook=label(right,16,-113,349,"Spellbook API: checking","GameFontHighlightSmall",{0.69,0.75,0.81})
   values.xp=label(right,16,-135,349,"XP API: checking","GameFontHighlightSmall",{0.69,0.75,0.81})
   values.warning=label(root,14,-238,740,"Use /fcdiag for a full client report.","GameFontHighlightSmall",{0.93,0.71,0.38})
+  values.warning:SetWidth(500)
+  local setup=ForeverCompanionInterface.Button(root)
+  setup:SetPoint('TOPRIGHT',root,'TOPRIGHT',-2,-237);setup:SetSize(180,26);setup:SetText('Quest data & setup')
+  setup:SetScript('OnClick',function() ForeverCompanionQuestSetup.Toggle() end)
   actions={
     button(root,0,"AUTO-DETECT CLASS",ctx.autoClass),
     button(root,264,"CENTER WINDOW",ctx.centerWindow),
