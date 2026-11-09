@@ -31,7 +31,7 @@ local sectionDescriptions={
   Leveling="Class priorities, specialization reference and leveling notes",
   Legacy="Earn points and plan perks",
   Alts="Plan your next character",
-  Quests="Track objectives, turn-ins and pinned quests",
+  Quests="Objective field guide, quest discovery and live tracking",
   Dungeons="Choose a dungeon, then a boss",
   Loot="Find gear, check its source, and save your targets",
   Professions="Browse recipes and track materials",
@@ -139,7 +139,7 @@ local function render()
   if sectionHeader then
     if isOverview or isJournal or currentTab=="Leveling" then sectionHeader:Hide()
     else
-      sectionTitle:SetText(string.upper(currentTab).." GUIDE")
+      sectionTitle:SetText(currentTab=='Quests' and 'QUEST JOURNAL' or (string.upper(currentTab).." GUIDE"))
       sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
       sectionIcon:SetTexture(sectionIcons[currentTab] or "Interface\\Icons\\INV_Misc_Book_09")
       sectionHeader:Show()
@@ -502,7 +502,7 @@ local function render()
     local live=ForeverCompanionQuestPlanner.GetLive()
     local visible=ForeverCompanionQuestPlanner.GetVisible()
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
-    lines = {ForeverCompanionQuestPlanner.FormatOverview(), "", ForeverCompanionQuestPlanner.FormatFocused(), "", "NEXT STEP", ForeverCompanionQuestPlanner.Recommend(), "", ForeverCompanionJourney.FormatLocalRoute(), "", "PERSONAL NOTES", ForeverCompanionQuestPlanner.Format()}
+    lines = {ForeverCompanionQuestPlanner.Format()}
     if not ForeverCompanionQuestPlanner.IsSupported() then
       table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
     end
@@ -557,7 +557,7 @@ local function render()
     questListBottom=pageY+52
     if questEmpty then
       questEmpty:SetShown(shown==0)
-      questEmpty:SetText(not ForeverCompanionQuestPlanner.IsSupported() and "Quest data is unavailable. Open your in-game quest log and try again." or (#live==0 and "No quests accepted yet. Open the world map and enable Pickups to find your next quest giver." or "No quests match this view. Change the Show filter to see your other quests."))
+      questEmpty:SetText(not ForeverCompanionQuestPlanner.IsSupported() and "Quest data is unavailable. Open your in-game quest log and try again." or (#live==0 and "No quests accepted yet. Choose Find new quests to browse reported quest givers." or "No quests match this view. Change the Show filter to see your other quests."))
     end
     if pageBack then pageBack:ClearAllPoints();pageBack:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-pageY) end
     if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
@@ -660,11 +660,13 @@ local function render()
     end
   end
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
-  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests",scrollChild,questListBottom)
+  ForeverCompanionQuestFieldGuide.Show(currentTab=="Quests",scrollChild,questListBottom)
+  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests",scrollChild,questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
   if questDiscoveryButton then questDiscoveryButton:SetShown(currentTab=="Quests") end
+  if ForeverCompanionUIState.questFieldGuideButton then ForeverCompanionUIState.questFieldGuideButton:SetShown(currentTab=='Quests') end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
+  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -978,10 +980,28 @@ local function createUI()
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   ForeverCompanionQuestDiscovery.Create(child)
+  ForeverCompanionQuestFieldGuide.Create(child)
+  ForeverCompanionOpenQuestGuide=function(id)
+    if type(id)~='number' or id<=0 then return false end
+    for index,q in ipairs(ForeverCompanionQuestPlanner.GetLive()) do
+      if q.id==id then ForeverCompanionQuestPlanner.Select(index);openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom);return true end
+    end
+    return false
+  end
+  ForeverCompanionQuestTracker.Configure(function(q,index)
+    ForeverCompanionQuestPlanner.Select(index);openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom)
+  end,function()
+    openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
+  end)
+  if ForeverCompanionQuestTracker.IsShown() then ForeverCompanionQuestTracker.Show() end
+  local fieldGuideButton=ForeverCompanionInterface.Button(child)
+  fieldGuideButton:SetSize(142,23);fieldGuideButton:SetPoint('TOPLEFT',child,'TOPLEFT',455,-182);fieldGuideButton:SetText('Objective details')
+  fieldGuideButton:SetScript('OnClick',function() scroll:SetVerticalScroll(questListBottom) end)
+  fieldGuideButton:Hide();ForeverCompanionUIState.questFieldGuideButton=fieldGuideButton
   questDiscoveryButton=ForeverCompanionInterface.Button(child)
   questDiscoveryButton:SetSize(172,23);questDiscoveryButton:SetPoint("TOPLEFT",child,"TOPLEFT",606,-181)
   questDiscoveryButton:SetText("Find new quests")
-  questDiscoveryButton:SetScript("OnClick",function() scroll:SetVerticalScroll(questListBottom) end)
+  questDiscoveryButton:SetScript("OnClick",function() scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
   questDiscoveryButton:Hide()
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
@@ -1255,6 +1275,8 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
+  if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
+  if msg=='discover' then openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end
   if msg == "meter" or msg == "combat" then
     if ForeverCompanionCombatMeter and ForeverCompanionCombatMeter.Toggle then ForeverCompanionCombatMeter.Toggle()
     else say("Combat meter module is unavailable.") end
@@ -1331,6 +1353,9 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   say("Unknown command; type /fc help")
 end
 
-ForeverCompanionRefresh = function() if DB and window and window:IsShown() then render() end end
+ForeverCompanionRefresh = function()
+ if ForeverCompanionQuestTracker then ForeverCompanionQuestTracker.Refresh() end
+ if DB and window and window:IsShown() then render() end
+end
 
 

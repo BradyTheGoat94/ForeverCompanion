@@ -11,6 +11,11 @@ assert(#D.Filter(entries,'SCOUT',false)==1)
 assert(#D.Filter(entries,'',true)==1)
 assert(#D.Filter(entries,'[',false)==0,'search must be literal')
 assert(#D.Filter({},'',false)==0)
+C_Map={GetBestMapForUnit=function() return 1429 end}
+WorldMapFrame={GetMapID=function() return 1436 end}
+assert(D.MapID()==1429 and D.SetZoneMode('viewed') and D.MapID()==1436)
+WorldMapFrame=nil;assert(D.MapID()==nil,'missing world map cannot silently reuse another zone')
+assert(D.SetZoneMode('player') and D.MapID()==1429 and not D.SetZoneMode('invalid'))
 local mixed={e(7,'Mixed','Far reference',true,.9),e(7,'Mixed','Near client',nil,.1),e(7,'Mixed','Duplicate',false,.1)}
 local grouped=D.Filter(mixed,'',false)
 assert(#grouped==1 and #grouped[1].targets==2 and grouped[1].reference==false)

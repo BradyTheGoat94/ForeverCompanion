@@ -1674,3 +1674,53 @@ for _,f in ipairs(frames) do
 end
 exportNative('ui_meter_options_native.json')
 ForeverCompanionCombatMeter.Hide()
+do
+ SlashCmdList.FOREVERCOMPANION('open quests')
+ local planner=ForeverCompanionQuestPlanner
+ local originalSelected,originalTargets,originalNavigate=planner.GetSelected,ForeverCompanionQuestWaypoints.Targets,ForeverCompanionQuestWaypoints.Navigate
+ local q={id=900002,title='Sample: Supplies for the camp',complete=false,objectives={'Sample: Gather camp supplies'},objectiveStates={{known=true,done=false,current=2,required=5,kind='item'}}}
+ planner.GetSelected=function() return q,1 end
+ local locations={{map=1429,x=.2,y=.3,label='Sample supply source',source='QuestieDB drop',objectiveIndex=1,reference=true},{map=1429,x=.6,y=.4,label='Sample alternative source',source='QuestieDB drop',objectiveIndex=1,reference=true}}
+ ForeverCompanionQuestWaypoints.Targets=function() return locations end
+ local navigated
+ ForeverCompanionQuestWaypoints.Navigate=function(target) navigated=target;return 'Test objective selected' end
+ ForeverCompanionQuestFieldGuide.Refresh()
+ local guide,go,cycle
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestFieldGuidePanel' then guide=f end end
+ assert(guide)
+ for _,f in ipairs(frames) do
+  if f.kind=='Button' and f.parent and frames[f.parent].parent==guide.id then
+   if f.text=='Navigate to objective' then go=f elseif f.text=='Location 1 / 2' then cycle=f end
+  end
+ end
+ assert(go and go.enabled and cycle and cycle.enabled)
+ cycle.OnClick(cycle);go.OnClick(go);assert(navigated.x==.6)
+ locations={locations[2],locations[1]};ForeverCompanionQuestFieldGuide.Refresh();go.OnClick(go)
+ assert(navigated.x==.6,'field guide keeps the selected objective location after reordering')
+ exportNative('ui_fieldguide_native.json')
+ q.objectiveStates[1].done=true;ForeverCompanionQuestFieldGuide.Refresh()
+ assert(go.enabled==false,'completed objective cannot retain stale navigation')
+ planner.GetSelected=originalSelected;ForeverCompanionQuestWaypoints.Targets=originalTargets;ForeverCompanionQuestWaypoints.Navigate=originalNavigate
+ ForeverCompanionQuestFieldGuide.Refresh()
+ ForeverCompanionQuestTracker.Show()
+ exportNative('ui_tracker_native.json')
+ local tracker,first
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestTrackerFrame' then tracker=f end end
+ assert(tracker and tracker.visible and ForeverCompanionQuestTracker.IsShown())
+ for _,f in ipairs(frames) do if f.parent==tracker.id and f.item then first=f;break end end
+ assert(first and first.item.quest)
+ first.OnClick(first,'LeftButton')
+ assert(planner.GetSelected()==first.item.quest and ForeverCompanionDB.tab=='Quests','tracker opens the actual quest field guide')
+ ForeverCompanionDB.questTracker.collapsed=true;ForeverCompanionQuestTracker.Refresh()
+ assert(tracker.height==28 and not first.visible)
+ ForeverCompanionDB.questTracker.collapsed=false
+ local main
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionMainFrame' then main=f end end
+ assert(main);main:Hide()
+ local supported=planner.IsSupported;planner.IsSupported=function() return false end
+ ForeverCompanionRefresh();assert(first.map.enabled==false,'tracker must keep updating and reject cached navigation while the main window is hidden')
+ planner.IsSupported=supported
+ main:Show();ForeverCompanionRefresh()
+ ForeverCompanionQuestTracker.Hide();assert(not tracker.visible and not ForeverCompanionQuestTracker.IsShown())
+ assert(ForeverCompanionOpenQuestGuide(-1)==false)
+end

@@ -93,7 +93,7 @@ end
 local function createPin(canvas)
  local pin=CreateFrame("Button",nil,canvas)
  pin:EnableMouse(true)
- pin:RegisterForClicks("LeftButtonUp")
+ pin:RegisterForClicks("LeftButtonUp","RightButtonUp")
  pin.ring=pin:CreateTexture(nil,"BACKGROUND",nil,-1)
  pin.ring:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\QuestLocationRing")
  pin.ring:SetPoint("CENTER")
@@ -118,6 +118,11 @@ local function createPin(canvas)
   GameTooltip:SetText(entry.quest.title)
   GameTooltip:AddLine(entry.pickup and (entry.reference and "Quest giver - confirm availability in game" or "Quest pickup reported by Blizzard") or (entry.quest.complete and "Turn-in destination" or (entry.target.objective or "Quest objective")),1,1,1,true)
   GameTooltip:AddLine(entry.target.label or entry.target.source,.68,.75,.82,true)
+  if not entry.pickup and ForeverCompanionQuestFieldGuide then
+   local done,total,known=ForeverCompanionQuestFieldGuide.Progress(entry.quest)
+   if total>0 then GameTooltip:AddLine(done..' / '..total..' objectives complete'..(known<total and ' · some progress unknown' or ''),.7,.85,.75,true) end
+   GameTooltip:AddLine('Right-click: quest actions and field guide',.82,.74,.55,true)
+  end
   if entry.reference then GameTooltip:AddLine("Level, race, class and quest-chain checks passed. Profession, reputation and event requirements may still apply.",.95,.76,.35,true) end
   if self.pickups and #self.pickups>1 then GameTooltip:AddLine("Shift-click to choose another quest at this location",.95,.76,.35,true) end
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
@@ -130,8 +135,17 @@ local function createPin(canvas)
  pin:SetScript("OnLeave",function()
   if GameTooltip then GameTooltip:Hide() end
  end)
- pin:SetScript("OnClick",function(self)
+ pin:SetScript("OnClick",function(self,button)
   local entry=self.entry
+  if button=='RightButton' and not entry.pickup and ForeverCompanionInterface then
+   ForeverCompanionInterface.Menu(self,'QUEST ACTIONS',{
+    {label='Open quest field guide',action=function() if ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(entry.quest.id) end end},
+    {label=ForeverCompanionQuestPlanner.IsPinned(entry.quest) and 'Unpin quest' or 'Pin quest',action=function()
+     for index,q in ipairs(ForeverCompanionQuestPlanner.GetLive()) do if q.id==entry.quest.id then ForeverCompanionQuestPlanner.TogglePin(index);break end end
+    end},
+   })
+   return
+  end
   if entry.pickup and IsShiftKeyDown and IsShiftKeyDown() and self.pickups and #self.pickups>1 then
    self.pickupIndex=(self.pickupIndex or 1)%#self.pickups+1
    self.entry=self.pickups[self.pickupIndex]
@@ -482,6 +496,7 @@ end
 
 function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
+ if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
  hidePins()
  zoomPoint=nil
  local planner=ForeverCompanionQuestPlanner

@@ -2,7 +2,7 @@
 -- Navigation changes only the user waypoint when the player clicks.
 local B={}
 ForeverCompanionQuestBriefing=B
-local root, values, fill, mapButton, clearPin, autoFocusButton
+local root, values, fill, mapButton, clearPin, autoFocusButton,trackerButton
 local shownQuest, shownComplete, mapMessage
 local BAR_WIDTH=320
 local function paint(t,r,g,b,a)
@@ -42,7 +42,10 @@ function B.Create(parent)
   local summary=card(root,0,376,"JOURNAL AT A GLANCE")
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
   values.zone=label(summary,16,-75,344,"Quest locations","GameFontHighlightSmall",{0.68,0.75,0.82})
-  values.status=label(summary,16,-124,344,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
+  values.status=label(summary,16,-124,215,"Quest log","GameFontHighlightSmall",{0.76,0.70,0.57})
+  trackerButton=ForeverCompanionInterface.Button(summary)
+  trackerButton:SetSize(112,22);trackerButton:SetPoint('TOPRIGHT',summary,'TOPRIGHT',-12,-119)
+  trackerButton:SetScript('OnClick',function() ForeverCompanionQuestTracker.Toggle();B.Render() end)
   autoFocusButton=ForeverCompanionInterface.Button(summary)
   autoFocusButton:SetSize(106,22);autoFocusButton:SetPoint("TOPRIGHT",summary,"TOPRIGHT",-12,-9)
   autoFocusButton:SetScript("OnClick",function()
@@ -86,6 +89,7 @@ function B.Create(parent)
 end
 function B.Render()
   if not root then return end
+  trackerButton:SetText(ForeverCompanionQuestTracker.IsShown() and 'Hide tracker' or 'Show tracker')
   local planner=ForeverCompanionQuestPlanner
   if not planner then
     values.count:SetText("Quest planner unavailable")
@@ -104,7 +108,7 @@ function B.Render()
     values.status:SetText("Open the in-game quest log to check availability")
   elseif valid then
     values.count:SetText(tostring(count).." active  |  "..tostring(ready).." ready  |  "..tostring(report.pinned or 0).." pinned")
-    values.status:SetText("Map: All shows active quests with locations")
+    values.status:SetText("Map: active quest locations")
   elseif stale then
     values.count:SetText(tostring(count).." cached quests  |  "..tostring(ready).." last ready")
     values.status:SetText("Cached. Check your quest log.")

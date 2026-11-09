@@ -1,10 +1,11 @@
 -- Browse real quest-giver locations without changing map marker preferences.
 local D={page=1}
 ForeverCompanionQuestDiscovery=D
-local root,search,summary,empty,counter,back,forward,rows,modeButton,sortButton,levelButton
+local root,search,summary,empty,counter,back,forward,rows,modeButton,sortButton,levelButton,zoneButton
 local detailTitle,detailLocation,detailSource,detailHint,detailGo,detailCycle,detailStatus
 local nativeOnly,nearLevel=false,false
 local sortMode='source'
+local zoneMode='player'
 local selectedID,selectedMap,selectedTarget,selection,currentMap
 local choices={}
 local function read(fn,...)
@@ -16,6 +17,18 @@ local function finite(n)
 end
 local function valid(t)
  return type(t)=='table' and finite(t.map) and t.map>0 and finite(t.x) and t.x>=0 and t.x<=1 and finite(t.y) and t.y>=0 and t.y<=1
+end
+function D.MapID()
+ if zoneMode=='viewed' then
+  local map=WorldMapFrame and read(WorldMapFrame.GetMapID,WorldMapFrame)
+  if finite(map) and map>0 then return map end
+  return nil
+ end
+ return C_Map and read(C_Map.GetBestMapForUnit,'player')
+end
+function D.SetZoneMode(mode)
+ if mode~='player' and mode~='viewed' then return false end
+ zoneMode=mode;D.page=1;D.Refresh();return true
 end
 function D.TargetKey(t) return t.map..':'..t.x..':'..t.y end
 function D.Filter(entries,query,native,options)
@@ -76,7 +89,7 @@ function D.Create(parent)
  local U=ForeverCompanionInterface
  root=CreateFrame('Frame','ForeverCompanionQuestDiscoveryPanel',parent);root:SetSize(770,562);U.Surface(root);root:Hide()
  text(root,16,-13,730,'DISCOVER QUESTS',16)
- text(root,16,-39,730,'Unaccepted quests in your current zone · select a giver, then navigate.',12)
+ text(root,16,-39,730,'Quest pickup locations · browse your zone or the selected world-map zone.',12)
  search=U.EditBox(root,'Search quest or quest giver');search:SetPoint('TOPLEFT',16,-66);search:SetSize(470,27)
  search:SetScript('OnTextChanged',function() D.page=1;D.Refresh() end)
  search:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
@@ -89,8 +102,14 @@ function D.Create(parent)
  end)
  levelButton=U.Button(root);levelButton:SetPoint('TOPLEFT',258,-102);levelButton:SetSize(228,25)
  levelButton:SetScript('OnClick',function() nearLevel=not nearLevel;D.page=1;D.Refresh() end)
- local reset=U.Button(root);reset:SetPoint('TOPLEFT',500,-102);reset:SetSize(254,25);reset:SetText('Reset filters')
- reset:SetScript('OnClick',function() nativeOnly=false;nearLevel=false;sortMode='source';D.page=1;search:SetText('');D.Refresh() end)
+ zoneButton=U.Button(root);zoneButton:SetPoint('TOPLEFT',500,-102);zoneButton:SetSize(126,25)
+ zoneButton:SetScript('OnClick',function() D.SetZoneMode(zoneMode=='player' and 'viewed' or 'player') end)
+ zoneButton:SetScript('OnEnter',function(self)
+  if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_TOP');GameTooltip:SetText('Quest discovery zone');GameTooltip:AddLine('Choose your current zone or the zone selected on the world map. Change the map to browse another zone.',.8,.85,.9,true);GameTooltip:Show() end
+ end)
+ zoneButton:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+ local reset=U.Button(root);reset:SetPoint('TOPLEFT',634,-102);reset:SetSize(120,25);reset:SetText('Reset filters')
+ reset:SetScript('OnClick',function() nativeOnly=false;nearLevel=false;sortMode='source';zoneMode='player';D.page=1;search:SetText('');D.Refresh() end)
  summary=text(root,16,-137,738,'',11)
  rows={}
  for i=1,4 do
@@ -154,7 +173,7 @@ function D.Paint(row)
 end
 function D.Refresh()
  if not root or not root:IsShown() then return end
- local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
+ local map=D.MapID()
  currentMap=map
  if selectedMap~=map then selectedID,selectedTarget,selection=nil,nil,nil;selectedMap=map;choices={};D.page=1;detailStatus:SetText('') end
  local info=map and read(C_Map.GetMapInfo,map)
@@ -165,9 +184,10 @@ function D.Refresh()
  local found=D.Filter(entries,search:GetText(),nativeOnly,{sort=sortMode,nearLevel=nearLevel,level=read(UnitLevel,'player'),x=x,y=y})
  local pages=math.max(1,math.ceil(#found/4));D.page=math.max(1,math.min(D.page,pages))
  modeButton:SetText(nativeOnly and 'Source: client reported' or 'Source: client + database')
+ zoneButton:SetText(zoneMode=='player' and 'Zone: mine' or 'Zone: world map')
  local sortLabels={source='Client reported first',name='Quest name',level='Quest level',proximity='Map proximity'}
  sortButton:SetText('Sort: '..sortLabels[sortMode]);levelButton:SetText(nearLevel and 'Level: within 5 (or unknown)' or 'Level: all eligible')
- summary:SetText((info and info.name or 'Current zone unavailable')..' · '..#found..' quests'..(sortMode=='proximity' and (finite(x) and finite(y) and ' · Approximate map proximity; terrain not evaluated.' or ' · Position unavailable; using source order.') or ' · Click a quest for giver details.'))
+ summary:SetText((info and info.name or (zoneMode=='viewed' and 'Open a zone on the world map' or 'Current zone unavailable'))..' · '..#found..' quests'..(sortMode=='proximity' and (finite(x) and finite(y) and ' · Approximate map proximity; terrain not evaluated.' or ' · Position unavailable; using source order.') or ' · Click a quest for giver details.'))
  selection=nil
  for _,item in ipairs(found) do if item.quest.id==selectedID then selection=item;break end end
  if not selection then selectedID,selectedTarget=nil,nil;detailStatus:SetText('') end
