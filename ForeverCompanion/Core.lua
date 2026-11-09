@@ -1342,6 +1342,9 @@ SLASH_FOREVERCOMPANION2 = "/forevercompanion"
 SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
+  if msg=='minimap' or msg=='minimap show' then ForeverCompanionMinimapButton.SetHidden(false);return end
+  if msg=='minimap hide' then ForeverCompanionMinimapButton.SetHidden(true);return end
+  if msg=='minimap reset' then ForeverCompanionMinimapButton.Reset();return end
   if msg=='setup' then ForeverCompanionQuestSetup.Toggle();return end
   if msg=='performance' then
     for line in ForeverCompanionRefreshQueue.Summary():gmatch('[^\n]+') do say(line) end
@@ -1373,7 +1376,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     else say("Combat meter module is unavailable.") end
     return
   end
-  if msg == "help" then say("/fc map, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end

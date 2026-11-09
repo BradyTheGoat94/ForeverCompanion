@@ -1,3 +1,9 @@
+## 3.48.0-beta — Minimap launcher
+
+- Added a crest button on the minimap. Left-click opens/closes the main addon; right-click offers map, overlay, hide and reset actions.
+- Drag the button around the minimap edge; position and visibility persist per character. Uses no external library.
+- Restore with /fc minimap, hide with /fc minimap hide, or reset with /fc minimap reset.
+
 ## 3.47.0-beta — Map reliability and usability pass
 
 - Reuse the unified search index while typing, paging and selecting; invalidate on quest, zone, note and service-data changes. Refresh results explicitly rebuilds it.

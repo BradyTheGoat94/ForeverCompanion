@@ -2131,3 +2131,17 @@ do
  local t=ForeverCompanionMapTools;local note=t.List()[1];t.ToggleFavorite(note.id);t.Remove(note.id);assert(t.UndoRemove())
  t.Toggle();exportNative('ui_notes_refined_sample_native.json');t.Toggle()
 end
+
+do
+ Minimap=CreateFrame('Frame','SampleMinimap',UIParent);Minimap:SetSize(140,140);Minimap:SetPoint('TOPRIGHT',-20,-20)
+ SlashCmdList.FOREVERCOMPANION('minimap')
+ local launcher;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMinimapLauncher' then launcher=f end end
+ assert(launcher and launcher.visible)
+ local main;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMainFrame' then main=f end end
+ local before=main.visible;launcher.OnClick(launcher,'LeftButton');assert(main.visible~=before,'minimap button toggles the actual main addon')
+ launcher.OnClick(launcher,'RightButton')
+ exportNative('ui_minimap_launcher_sample_native.json')
+ SlashCmdList.FOREVERCOMPANION('minimap hide');assert(not launcher.visible)
+ SlashCmdList.FOREVERCOMPANION('minimap reset');assert(launcher.visible)
+ ForeverCompanionInterface.CloseMenu()
+end

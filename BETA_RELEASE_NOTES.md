@@ -1,4 +1,8 @@
-# Forever Companion 3.47.0-beta release notes (draft)
+# Forever Companion 3.48.0-beta release notes (draft)
+
+## Minimap launcher
+
+A new minimap crest button opens/closes the addon on left-click. Right-click for options and drag to reposition it. Restore with `/fc minimap`; hide with `/fc minimap hide`; reset with `/fc minimap reset`. Position and visibility persist per character. In-game verification remains pending.
 
 ## Reliability and usability pass
 
