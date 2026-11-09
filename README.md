@@ -6,6 +6,21 @@ Brady's Forever Companion is an independent, free World of Warcraft addon projec
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Questing workspace (3.36 beta, develop)
+
+The Quest Log now combines an objective field guide, searchable pickup discovery,
+a mapped quest-giver catalog and observed turn-in history. Use **Objective details**
+for matched destinations and progress, **Find new quests** for discovery, or the
+**Zone catalog** tab to inspect active, completed, blocked and unknown references.
+The catalog explains supported prerequisites and can follow the world-map zone.
+Its coverage is limited to character-compatible giver locations in Forever QuestieDB.
+
+**Show tracker** enables a movable, collapsible companion tracker with pinned and
+ready priorities. **Turn-in history** retains the latest 300 events observed while
+the addon is running, including reported rewards. Older completion flags remain
+separate from dated history. Shortcuts: `/fc tracker`, `/fc discover`,
+`/fc questbook` and `/fc history`.
+
 ## Stat priorities, accurate icon identities and gear browsing (3.18.0-beta, develop)
 
 **Class Guides → Gear & Stats** follows the selected specialization and now has

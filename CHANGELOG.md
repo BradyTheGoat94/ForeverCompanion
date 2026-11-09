@@ -1,3 +1,13 @@
+## 3.36.0-beta — Zone quest catalog and personal turn-in history
+
+- Added Find quests, Zone catalog and Turn-in history tabs beneath the objective field guide. Added /fc questbook and /fc history, plus tracker-menu shortcuts.
+- Expanded the mapped-giver index to retain higher-level character-compatible quests for catalog browsing while continuing to suppress them from available pickup markers. Catalog states distinguish active/ready, completed, pickup references, blocked references and unknown completion.
+- Added supported level/prerequisite/choice/parent/breadcrumb explanations and named prerequisite references. Unknown prerequisite completion stays unknown instead of becoming an availability claim. Catalog counts describe only the indexed mapped-giver scope, not every quest in a zone.
+- Added a per-character ledger of the latest 300 observed turn-ins. Stores reported XP/money, actual observation time when available and the turn-in map, supports repeatable events, and preserves selection as newer records arrive. Old completion flags never create dates, rewards or historical coordinates.
+- Added history search, chronological order, turn-in-map filters and explicit reward-reporting counts. Missing rewards remain unknown. Saved-title truncation preserves UTF-8 boundaries; malformed saved rows are ignored.
+- Catalog search and state filters reuse the current query result rather than repeatedly scanning completion APIs. Zone changes refresh the catalog and discard the old giver selection. History hides irrelevant giver-navigation controls.
+- Added history/catalog regression coverage and UI captures. In-game acceptance and full Questie coverage remain pending.
+
 ## 3.35.0-beta — Objective field guide and live quest tracker
 
 - Added a quest field guide with live objective counts, known/unknown progress, completed states, matched objective locations, multiple source choices, explicit navigation feedback and a separate turn-in view. Short quests use a shorter panel rather than four empty objective slots.
