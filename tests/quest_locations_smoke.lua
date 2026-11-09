@@ -37,3 +37,47 @@ assert(#R.ForQuest(quest)==0,"same ID with a different title must be skipped")
 LibQuestieDB.ModeIndicator.GetStatus=named({expansion="Vanilla"})
 assert(not R.IsAvailable(),"Era data cannot be used on Forever")
 print("PASS: Forever quest objective matching, progress, turn-in, map types, phase and flavor guards")
+
+LibQuestieDB.ModeIndicator.GetStatus=named({expansion='Forever'})
+local chain={[173]={'Nightbane Shadow Weaver',533},[221]={'Nightbane Dark Runner',205},[222]={'Nightbane Vile Fang',206}}
+LibQuestieDB.Quest.name=named('Worgen in the Woods')
+LibQuestieDB.Quest.objectives=function(id) return {{{chain[id][2],nil,6}}} end
+LibQuestieDB.Npc.name=function(id) for _,r in pairs(chain) do if r[2]==id then return r[1] end end end
+for id,r in pairs(chain) do
+ local q={id=id,title='Worgen in the Woods',objectives={r[1]..' slain: 0/6'},objectiveStates={{known=true,kind='monster',required=6}}}
+ local locations=R.ForQuest(q);assert(#locations==1 and locations[1].entityID==r[2],'chain parts must resolve their own exact objective identity')
+end
+local q={id=173,title='Worgen in the Woods',objectives={'Nightbane Shadow Weaver slain: 0/6'},objectiveStates={{known=true,kind='monster',required=6}}}
+local t=R.ForQuest(q)[1];ForeverCompanionDB={}
+assert(not R.IsReported(q,t));R.Report(q,t);assert(R.IsReported(q,t));R.Report(q,t)
+assert(#ForeverCompanionDB.questLocationReports==1,'duplicate reports do not grow storage')
+assert(not R.IsReported({id=221},t),'same-title followup is not excluded')
+assert(R.ReportText(q):find('Quest #173',1,true) and R.ReportText(q):find('533',1,true))
+R.Restore(q);assert(not R.IsReported(q,t))
+print('PASS: Worgen chain identity and reversible local location reports (synthetic coordinates, not live verification)')
+
+local eventQuest={id=7905}
+C_DateAndTime={GetCurrentCalendarTime=function() return {year=2026,month=11,monthDay=9} end}
+assert(R.EventArea(eventQuest)==12)
+assert(R.AllowsLocation(eventQuest,{map=1429,areaID=12}) and not R.AllowsLocation(eventQuest,{map=1412,areaID=215}),'Faire references respect the current event camp')
+assert(R.AllowsLocation(eventQuest,{map=1429}) and not R.AllowsLocation(eventQuest,{map=1412}),'stale native cross-continent points are rejected too')
+C_DateAndTime.GetCurrentCalendarTime=function() return {year=2026,month=12,monthDay=9} end
+assert(R.EventArea(eventQuest)==nil and R.AllowsLocation(eventQuest,{map=1412}),'event-specific rule expires instead of hardcoding Alliance forever')
+C_DateAndTime=nil
+
+C_DateAndTime={GetCurrentCalendarTime=function() return {year=2026,month=11,monthDay=9} end}
+LibQuestieDB.Quest.name=named('The Darkmoon Faire')
+LibQuestieDB.Quest.finishedBy=named({{14828}})
+LibQuestieDB.Npc.name=named('Gelvas Grimegate')
+LibQuestieDB.Npc.spawns=named({[12]={{42,69}},[215]={{36,38}}})
+LibQuestieDB.Support.Get=named({private={areaIdToUiMapId='return {[12]=1429,[215]=1412,}'}})
+C_Map.GetMapInfo=function() return {mapType=3} end
+C_Map.GetBestMapForUnit=function() return 1429 end
+C_QuestLog={GetNextWaypoint=function() return 1412,.36,.38 end,GetQuestsOnMap=function() return {{questID=7905,mapID=1412,isQuestStart=false,x=.36,y=.38}} end}
+dofile('ForeverCompanion/QuestWaypoints.lua')
+local faire={id=7905,title='The Darkmoon Faire',complete=true}
+local way=ForeverCompanionQuestWaypoints
+assert(way.Location(faire).map==1429,'opening-week Faire rejects a stale Kalimdor client waypoint and chooses the existing Elwynn reference')
+assert(#way.Targets(faire)==1 and way.Targets(faire)[1].map==1429)
+assert(#way.MapLocations(1412,{faire})==0,'wrong-continent marker is removed from maps as well')
+print('PASS: opening-week Darkmoon route, destination and map marker agree on Elwynn; no coordinates invented')

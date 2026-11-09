@@ -12,6 +12,17 @@ local function read(fn,...)
  local ok,a=pcall(fn,...);if ok then return a end
 end
 local function finite(v) return type(v)=='number' and v==v and math.abs(v)<math.huge end
+function T.Search(items,query)
+ local term=type(query)=='string' and query:lower():match('^%s*(.-)%s*$') or ''
+ if term=='' then return items end
+ local result={}
+ for _,item in ipairs(items or {}) do
+  local q=item.quest
+  local haystack=table.concat({q.title or '',q.zone or '',tostring(q.id or ''),table.concat(q.objectives or {},' ')},' '):lower()
+  if haystack:find(term,1,true) then result[#result+1]=item end
+ end
+ return result
+end
 function T.Order(quests,mode,zone,pinned)
  local result={}
  for i,q in ipairs(quests or {}) do
@@ -57,7 +68,7 @@ end
 function T.Configure(callback,discover) openQuest=callback;openDiscover=discover end
 local function create()
  local U=ForeverCompanionInterface
- root=CreateFrame('Frame','ForeverCompanionQuestTrackerFrame',UIParent);root:SetSize(334,384);root:SetPoint('RIGHT',UIParent,'RIGHT',-35,0)
+ root=CreateFrame('Frame','ForeverCompanionQuestTrackerFrame',UIParent);root:SetSize(334,424);root:SetPoint('RIGHT',UIParent,'RIGHT',-35,0)
  U.Surface(root);root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true)
  local db=settings()
  if type(db.position)=='table' and finite(db.position.x) and finite(db.position.y) then root:ClearAllPoints();root:SetPoint('CENTER',UIParent,'CENTER',db.position.x,db.position.y) end
@@ -92,11 +103,11 @@ local function create()
  local close=U.Button(root);close:SetSize(24,22);close:SetPoint('TOPRIGHT',-5,-3);close:SetText('x');close:SetScript('OnClick',T.Hide)
  rows={}
  for i=1,4 do
-  local row=CreateFrame('Button',nil,root);row:SetPoint('TOPLEFT',10,-33-(i-1)*82);row:SetSize(314,78);row.bg=U.Surface(row)
-  row.title=label(row,7,-5,246,12)
-  row.preview=label(row,7,-26,300,11);row.preview:SetWordWrap(true);row.preview:SetHeight(31)
-  row.meta=label(row,7,-61,300,10)
-  row.map=U.Button(row);row.map:SetSize(47,22);row.map:SetPoint('TOPRIGHT',-5,-3);row.map:SetText('Map')
+  local row=CreateFrame('Button',nil,root);row:SetPoint('TOPLEFT',10,-33-(i-1)*92);row:SetSize(314,87);row.bg=U.Surface(row)
+  row.title=label(row,9,-6,234,12)
+  row.preview=label(row,9,-29,294,11);row.preview:SetWordWrap(true);row.preview:SetHeight(31)
+  row.meta=label(row,9,-65,294,10)
+  row.map=U.Button(row);row.map:SetSize(58,23);row.map:SetPoint('TOPRIGHT',-5,-3);row.map:SetText('Map')
   row.map:SetScript('OnClick',function()
    if row.item and ForeverCompanionQuestPlanner.IsSupported() then
     footer:SetText(ForeverCompanionObjectiveRoute.NavigateNext(row.item.quest))
@@ -152,7 +163,7 @@ function T.Refresh()
  local live=planner.GetLive();local ordered=T.Order(live,cfg.mode,read(GetRealZoneText) or read(GetZoneText),planner.IsPinned)
  local count=cfg.compact and 2 or 4;local pages=math.max(1,math.ceil(#ordered/count))
  T.page=math.max(1,math.min(T.page,pages))
- root:SetHeight(cfg.collapsed and 28 or (56+math.max(1,math.min(count,#ordered))*82));collapse:SetText(cfg.collapsed and '+' or '-')
+ root:SetHeight(cfg.collapsed and 28 or (56+math.max(1,math.min(count,#ordered))*92));collapse:SetText(cfg.collapsed and '+' or '-')
  heading:SetText('QUESTS · '..#live..' active'..(not planner.IsSupported() and ' · cached' or ''))
  local focused=planner.GetSelected()
  empty:SetShown(not cfg.collapsed and #ordered==0);findQuests:SetShown(not cfg.collapsed and #ordered==0)
@@ -163,14 +174,21 @@ function T.Refresh()
    row.title:SetText((item.pinned and '* ' or '')..item.quest.title)
    row.preview:SetText(T.Preview(item.quest))
    local done,total=ForeverCompanionQuestFieldGuide.Progress(item.quest)
-   row.meta:SetText((item.quest.zone or 'Zone not reported')..' · '..done..'/'..total..' objectives')
+   row.meta:SetText((item.quest.zone or 'Zone unknown')..' · '..done..'/'..total..' complete'..(item.quest.id and (' · #'..item.quest.id) or ''))
+   local actionable=false
+   if planner.IsSupported() then
+    for _,step in ipairs(ForeverCompanionQuestFieldGuide.Steps(item.quest,ForeverCompanionQuestWaypoints.Targets(item.quest))) do
+     if not step.done and #step.targets>0 and not ForeverCompanionQuestFieldGuide.NeedsReview(step) then actionable=true;break end
+    end
+   end
+   row.map:SetText(actionable and (item.quest.complete and 'Turn in' or 'Go') or 'Review')
    row.selected=focused==item.quest;ForeverCompanionVisualTheme.SelectRow(row,row.bg,row.selected)
    row.title:SetTextColor(item.quest.complete and .48 or .94,item.quest.complete and .88 or .95,item.quest.complete and .58 or .97)
    row.map:SetEnabled(planner.IsSupported())
   end
  end
  footer:ClearAllPoints();footer:SetPoint('BOTTOMLEFT',10,7);footer:SetShown(not cfg.collapsed)
- footer:SetText(not planner.IsSupported() and 'Cached / unavailable · check quest log' or (#ordered==0 and 'No quests match this tracker view.' or ('Page '..T.page..'/'..pages..' · Pinned, ready, current zone')))
+ footer:SetText(not planner.IsSupported() and 'Cached / unavailable · check quest log' or (#ordered==0 and 'No quests match this tracker view.' or ('Page '..T.page..'/'..pages..' · Click quest for details')))
  previous:SetShown(not cfg.collapsed);nextPage:SetShown(not cfg.collapsed)
  previous:SetEnabled(T.page>1);nextPage:SetEnabled(T.page<pages)
 end

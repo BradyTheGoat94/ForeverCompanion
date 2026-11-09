@@ -1,7 +1,7 @@
 # CurseForge Beta submission — operator handoff
 
 **Project:** Brady's Forever Companion
-**Version:** 3.48.0-beta
+**Version:** 3.49.0-beta
 **Release channel:** Beta
 **Repository branch:** develop for work; main for promoted candidates
 **CurseForge project:** 1793299
@@ -32,14 +32,19 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 2. Extract the GitHub artifact wrapper. The versioned addon ZIP inside is the upload file; keep `release-audit.json` beside it for review.
 3. Compare the ZIP's SHA-256 to the report and verify that it contains `ForeverCompanion/ForeverCompanion.toc`. For manual installation, extract the addon folder into the Forever client's `Interface/AddOns/` directory. Launch the game, enable the addon and run `/fc` and `/fcdiag`.
 4. In the publisher UI, select **World of Warcraft → Addons → Forever**. Existing Forever projects list **1.60.1**. Confirm that the tested client and the publisher version selector agree before uploading.
-5. Select **Beta**, not Release; version label **3.48.0-beta**.
+5. Select **Beta**, not Release; version label **3.49.0-beta**.
 6. Use the original square PNG project crest from the candidate kit. Capture actual screenshots after the live test and label offline UI renders as previews. [CurseForge project submission guide](https://support.curseforge.com/support/solutions/articles/9000199552)
 7. Choose a license **only after the owner explicitly decides** whether others may modify or redistribute the original code. Review ownership of bundled assets first.
 8. After explicit owner approval, submit for moderation and record the resulting project and file IDs when confirmed.
 
 ## Changelog (paste into CurseForge)
 
-**3.48.0-beta**
+**3.49.0-beta**
+- Beginner quest pass: search by quest/zone/objective/ID, clearer next steps and details/back navigation, fewer unrelated controls, and explicit area selection when locations disagree.
+- Correct opening-week Darkmoon Faire destinations to Elwynn using an expiring calendar rule; add local wrong-location reports and reversible exclusions.
+- Add overlay zoom, pan, hover details, native explored outdoor terrain, a Detailed preset and corrected/smoother player arrow.
+- Add an independent class Training Guide with credited MIT reference data and separate spellbook/trainer observations.
+- Show 34 dungeons/wings independently of loot imports. Add 129 sourced loot records, including Stockades, for 256 records across 17 dungeons/wings. Remaining tables are explicitly incomplete.
 - Added a draggable minimap launcher with main-addon toggle, right-click actions and saved position/visibility.
 - Added cached and keyboard-friendly map search, safer navigation handoff, current service revalidation, responsive panels, faster old-zone overlay clearing, starred notes and session-only deletion undo.
 - Added unified map search, a movable quick button, resumable recent destinations, note categories/icons/colors, a compact travel strip and optional overlay combat fading.
@@ -49,7 +54,7 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 - Added spec-specific rotation cards across all five practice modes, with a distinct Protection and Retribution Paladin progression.
 - Add interactive world-map markers and destination highlights. The optional Forever edition of QuestieDB supplies additional objective locations at runtime, without bundling its database.
 - Automatically add active quests to the journal and world map. High-contrast markers distinguish objectives, turn-ins and the focused quest. Highlight the focused objective area when the client provides its boundary.
-- Added a player-clicked quest map pin and native direction arrow where supported. Uses available client quest locations first. An independently installed Forever QuestieDB can supply single-location turn-ins. No third-party database is bundled.
+- Added a player-clicked quest map pin and native direction arrow where supported. Uses available client quest locations first. An independently installed Forever QuestieDB can supply single-location turn-ins. No QuestieDB database is bundled. The separate class-training reference is MIT-licensed and credited.
 - Rebuilt Dungeon Journal around direct dungeon and boss selection, item icons and one-click loot details. Consolidated loot actions and kept longer profession notes behind a toggle.
 - Added 100 equipment entries from six Forever dungeon guides, for 127 entries across nine dungeons. The catalog includes item IDs and separates reference data from observed drops.
 - Skip window redraws while the addon is closed. Quest tracking keeps its read-only snapshot up to date.
@@ -71,12 +76,12 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 | Gate | Status |
 | --- | --- |
 | Automated build and package integrity | Confirm on exact candidate commit |
-| Correct project title/version in TOC | PASS — 3.48.0-beta |
+| Correct project title/version in TOC | PASS — 3.49.0-beta |
 | License choice and third-party asset review | BLOCKED — owner decision/review |
 | Original logo and truthful showcase images | Square crest prepared. Live screenshots pending. |
 | Correct CurseForge game/version selection | NEEDS PUBLISHER UI |
 | Live-client installation, icons, SavedVariables and protected actions | UNVERIFIED |
-| CurseForge project/file approval | Owner-reported submission; approval unverified. 3.48.0 candidate not uploaded. |
+| CurseForge project/file approval | Owner-reported submission; approval unverified. 3.49.0 candidate not uploaded. |
 
 **Do not claim publication, approval, perfect visual fidelity, or verified Forever-specific DPS optimization until independently confirmed.**
 

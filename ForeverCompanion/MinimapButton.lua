@@ -42,6 +42,7 @@ function M.Create()
   if key=='RightButton' then
    ForeverCompanionInterface.Menu(button,"FOREVER COMPANION",{
     {label='Open / close addon',action=function() SlashCmdList.FOREVERCOMPANION('') end},
+    {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
     {label='Map companion',action=function() ForeverCompanionMapHub.Open() end},
     {label='Toggle transparent map',action=function() ForeverCompanionMapOverlay.Toggle() end},
     {label='Hide minimap button',action=function() M.SetHidden(true) end},

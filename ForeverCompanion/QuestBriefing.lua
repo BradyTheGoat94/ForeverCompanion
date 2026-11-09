@@ -70,12 +70,12 @@ function B.Create(parent)
   values.hint=label(focus,15,-125,282,"","GameFontHighlightSmall",{0.77,0.76,0.66})
   mapButton=ForeverCompanionInterface.Button(focus)
   mapButton:SetSize(119,22);mapButton:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-9)
-  mapButton:SetText("Next objective")
+  mapButton:SetText("Quest details")
   mapButton:SetScript("OnClick",function()
     local planner=ForeverCompanionQuestPlanner
     if planner.IsSupported() then
       local q=planner.GetSelected()
-      mapMessage=ForeverCompanionQuestWaypoints.Show(q)
+      mapMessage=nil
       if q and ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(q.id) end
       B.Render()
     end

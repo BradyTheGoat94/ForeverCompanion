@@ -8,7 +8,7 @@ local d={id=4,title='Unmatched',objectives={'Unmatched objective'}}
 local e={id=5,title='No objective details'}
 local function point(map,x,index,kind) return {map=map,x=x,y=.1,objectiveIndex=index,kind=kind} end
 local data={
- [a]={point(1429,.11,1),point(1429,.8,2),point(1429,.2,2),point(1429,.3,3),point(1429,.01,nil)},
+ [a]={point(1429,.11,1),point(1429,.4,2),point(1429,.2,2),point(1429,.3,3),point(1429,.01,nil)},
  [b]={point(1429,.6,nil,'turn-in')},[c]={point(1430,.2,1)},[d]={point(1429,.01,nil)},
 }
 local stops,stats=r.Build({a,b,c,d,e},data,1429,.1,.1,function(q) return q==a end)
@@ -27,7 +27,7 @@ local selected=r.Build({a,b},data,1429,.1,.1,nil,{filter='selected',selected={id
 assert(#selected==2 and selected[1].quest==a,'focused quest filter survives replacement snapshots')
 assert(#r.Build({a,b},data,1429,.1,.1,nil,{filter='selected'})==0,'no focused quest cannot expand to all quests')
 local log=r.Build({a},data,1429,.1,.1,nil,{order='log'})
-assert(log[1].target.x==.8,'quest-log ordering does not silently apply nearest-location ordering')
+assert(log[1].target.x==.4,'quest-log ordering does not silently apply nearest-location ordering')
 local unordered,unknown=r.Build({a,b},data,1429,nil,nil)
 assert(not unknown.positionKnown and unordered[1].quest==b,'unknown position preserves priority, without claiming distance order')
 local q,index,target=r.Resolve(stops[1],{a,b},function(quest) return data[quest] or {} end)
@@ -59,3 +59,10 @@ a.objectiveStates[2].done=false;r.NavigateNext(a);assert(destination.x==.2,'comp
 supported=false;destination=nil
 r.NavigateNext(a);assert(destination==nil,'unavailable live snapshot cannot start navigation')
 print('PASS: objective itinerary matching, completed removal, multiple steps, unknown positions, missing coverage, stale navigation and bounded work')
+
+local distant={id=99,title='Travel reference',objectives={'Hunt'},objectiveStates={{known=true,kind='monster'}}}
+local mixed={point(1429,.1,1),point(1430,.2,1)}
+local uncertain,review=r.Build({distant},{[distant]=mixed},1429,.1,.1)
+assert(#uncertain==0 and review.review==1,'cross-map objective references require a deliberate area choice')
+mixed[2]=point(1429,.9,1)
+assert(#r.Build({distant},{[distant]=mixed},1429,.1,.1)==0,'distant spawn clusters cannot be selected automatically')

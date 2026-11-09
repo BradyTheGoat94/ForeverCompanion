@@ -107,3 +107,18 @@ print('PASS: combined slot, acquisition, wishlist, dungeon and boss filters')
 
 local combinedSummary=loot.FilterSummary('','',true,db,'','obtained',target.slot)
 assert(combinedSummary:find('1 matching drops',1,true) and combinedSummary:find('Acquisition (manual): Obtained',1,true),'text summary must match filtered native list')
+
+dofile('ForeverCompanion/LootExpansion.lua')
+dofile('ForeverCompanion/DungeonCatalog.lua')
+assert(#loot.records==256 and #loot.DungeonNames()==17,'129 new records across eight additional dungeons')
+assert(#loot.BossDrops('The Stockade','Bazil Thredd')==4)
+assert(loot.Find('Blackrock Harness').itemID==273805)
+assert(loot.Find('Library Walkers').itemID==274294)
+assert(loot.Find('Band of Crimson Light').itemID==274295)
+assert(#ForeverCompanionDungeonCatalog.Names('Stockades')==1 and ForeverCompanionDungeonCatalog.Names('Stockades')[1]=='The Stockade')
+assert(#ForeverCompanionDungeonCatalog.Names()>=34,'directory includes dungeons with no imported loot')
+assert(#loot.BossNames('Blackmaw Hold')==0,'unknown drops must not be invented to populate the directory')
+for _,record in ipairs(loot.records) do assert(not record.dropRate and record.source and record.status) end
+print('PASS: expanded Forever loot, Stockades aliases, and independent dungeon directory')
+
+assert(#browser.Results('The Stockade','Stockades')==7,'dungeon aliases also keep the matching boss list visible')

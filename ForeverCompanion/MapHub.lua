@@ -175,6 +175,7 @@ function H.Menu(anchor)
  U.Menu(anchor or quick or root or UIParent,'MAP QUICK ACTIONS',{
   {label='Search map companion',action=function() H.Open() end},
   {label='Recent destinations',action=function() H.Open('',true) end},
+  {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
   {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(anchor or quick or root) end},
   {label='Toggle transparent map',action=function() ForeverCompanionMapOverlay.Toggle() end},

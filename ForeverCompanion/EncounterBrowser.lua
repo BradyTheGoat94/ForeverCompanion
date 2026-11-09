@@ -8,9 +8,11 @@ function E.Results(dungeon,query)
  local result={}
  if type(dungeon)~="string" or dungeon=="" then return result end
  local term=type(query)=="string" and query:lower():gsub("^%s+",""):gsub("%s+$","") or ""
+ local directoryMatch=false
+ if term~='' and ForeverCompanionDungeonCatalog then for _,name in ipairs(ForeverCompanionDungeonCatalog.Names(term)) do if name==dungeon then directoryMatch=true;break end end end
  for _,name in ipairs(ForeverCompanionLoot.BossNames(dungeon)) do
   local drops=ForeverCompanionLoot.BossDrops(dungeon,name)
-  local matches=term=="" or name:lower():find(term,1,true) or dungeon:lower():find(term,1,true)
+  local matches=term=="" or directoryMatch or name:lower():find(term,1,true) or dungeon:lower():find(term,1,true)
   for _,drop in ipairs(drops) do if drop.item:lower():find(term,1,true) then matches=true end end
   if matches then result[#result+1]={boss=name,count=#drops} end
  end
@@ -20,6 +22,7 @@ function E.SelectDungeon(name)
  E.dungeon=name
  E.boss=ForeverCompanionLoot.BossNames(name)[1] or ""
  E.page=1;E.dropPage=1;E.query=""
+ if ForeverCompanionDungeonCatalog then for i,n in ipairs(ForeverCompanionDungeonCatalog.Names()) do if n==name then E.dungeonPage=math.floor((i-1)/9)+1;break end end end
  if E.searchBox then E.searchBox:SetText("") end
 end
 function E.Focus(dungeon,boss)
@@ -28,7 +31,7 @@ function E.Focus(dungeon,boss)
  for i,entry in ipairs(E.Results(dungeon,"")) do
   if entry.boss==boss then E.page=math.floor((i-1)/E.pageSize)+1;break end
  end
- for i,name in ipairs(ForeverCompanionLoot.DungeonNames()) do
+ for i,name in ipairs((ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Names() or ForeverCompanionLoot.DungeonNames())) do
   if name==dungeon then E.dungeonPage=math.floor((i-1)/9)+1;break end
  end
 end
@@ -73,7 +76,7 @@ function E.Create(parent,navigate,onPrep)
  subtitle=label(root,16,-44,440)
  button(root,614,-10,140,"Prep & notes",onPrep)
  label(root,456,-46,60,"Search")
- E.searchBox=ForeverCompanionInterface.EditBox(root,"Search bosses or drops…")
+ E.searchBox=ForeverCompanionInterface.EditBox(root,"Search dungeons, bosses, drops…")
  E.searchBox:SetSize(176,22);E.searchBox:SetPoint("TOPLEFT",root,"TOPLEFT",505,-39)
  if E.searchBox.SetAutoFocus then E.searchBox:SetAutoFocus(false) end
  if E.searchBox.SetMaxLetters then E.searchBox:SetMaxLetters(120) end
@@ -106,7 +109,8 @@ function E.Create(parent,navigate,onPrep)
  E.nextBossPage=nextPage
  pageLabel=label(center,83,-275,60)
  pageLabel:SetJustifyH("CENTER")
- E.emptyBosses=label(center,12,-48,198,"No matching bosses or items.",11)
+ E.emptyBosses=label(center,12,-48,198,'',11)
+ E.emptyBosses:SetWordWrap(true);E.emptyBosses:SetHeight(150)
  bossTitle=label(right,10,-41,290,"",13,true)
  local function open(record)
   if E.boss=="" then return end
@@ -127,22 +131,30 @@ function E.Create(parent,navigate,onPrep)
  openLoot=button(right,8,-270,188,"Open boss loot",function() open() end)
  dropBack=button(right,205,-270,46,"<",function() E.dropPage=E.dropPage-1;ForeverCompanionRefresh() end)
  dropNext=button(right,258,-270,46,">",function() E.dropPage=E.dropPage+1;ForeverCompanionRefresh() end)
- label(root,16,-383,738,"Catalog is partial. Hover for item stats. Select an item to open its loot details.",10)
+ label(root,16,-383,738,"Dungeon directory includes entries without loot. Imported drops remain source-attributed references.",10)
  root:Hide()
 end
 function E.Render(tab,db)
  if not root then return end
  if tab~="Dungeons" then root:Hide();return end
  local loot=ForeverCompanionLoot
- local names=loot.DungeonNames()
+ local names=ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Names() or loot.DungeonNames()
+ if E.query~='' and ForeverCompanionDungeonCatalog then
+  local filtered,seen=ForeverCompanionDungeonCatalog.Names(E.query),{}
+  for _,n in ipairs(filtered) do seen[n]=true end
+  for _,n in ipairs(names) do if not seen[n] and #E.Results(n,E.query)>0 then filtered[#filtered+1]=n end end
+  table.sort(filtered);names=filtered
+ end
  if E.dungeon=="" then E.SelectDungeon(names[1] or "") end
- subtitle:SetText(E.dungeon.."  /  "..#loot.BossNames(E.dungeon).." bosses listed")
+ subtitle:SetText((ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Summary(E.dungeon) or E.dungeon).." · "..#loot.BossNames(E.dungeon).." loot sources")
  local dungeonPages=math.max(1,math.ceil(#names/#dungeons))
  E.dungeonPage=math.max(1,math.min(dungeonPages,E.dungeonPage))
  for i,row in ipairs(dungeons) do
   row.dungeon=names[(E.dungeonPage-1)*#dungeons+i]
   if row.dungeon then
    row.name:SetText(row.dungeon);tint(row,row.dungeon==E.dungeon);row:Show()
+   row:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.dungeon);GameTooltip:AddLine(ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Summary(self.dungeon) or '',.8,.85,.9,true);GameTooltip:AddLine(#loot.BossNames(self.dungeon)..' imported loot sources · coverage is partial',.8,.72,.5,true);GameTooltip:Show() end end)
+   row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   else row:Hide() end
  end
  if dungeonPages>1 then dungeonBack:Show();dungeonNext:Show() else dungeonBack:Hide();dungeonNext:Hide() end
@@ -157,7 +169,9 @@ function E.Render(tab,db)
    row.name:SetText(item.boss);row.count:SetText(item.count);tint(row,row.boss==E.boss);row:Show()
   else row:Hide() end
  end
- if #matches==0 then E.emptyBosses:Show() else E.emptyBosses:Hide() end
+ if #matches==0 then
+  E.emptyBosses:SetText(#loot.BossNames(E.dungeon)==0 and ('Loot research pending.\n\n'..E.dungeon..' is in the directory; no verified encounter records have been imported yet.') or 'No matching bosses or items. Clear search to see this dungeon’s records.');E.emptyBosses:Show()
+ else E.emptyBosses:Hide() end
  if pages>1 then previous:Show();nextPage:Show();pageLabel:Show() else previous:Hide();nextPage:Hide();pageLabel:Hide() end
  previous:SetEnabled(E.page>1);nextPage:SetEnabled(E.page<pages);pageLabel:SetText(E.page.." / "..pages)
  local drops=loot.BossDrops(E.dungeon,E.boss)

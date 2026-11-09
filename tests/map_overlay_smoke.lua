@@ -11,7 +11,7 @@ local function widget(name)
  function w:SetTexCoord(...) self.crop={...} end;function w:SetDesaturated(v) self.gray=v end
  function w:SetRotation(v) self.rotation=v end;function w:CreateTexture() return widget() end
  function w:GetCenter() return 100,200 end;function w:GetEffectiveScale() return 1 end
- for _,k in ipairs({'SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
+ for _,k in ipairs({'EnableMouseWheel','SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
  return w
 end
 CreateFrame=function(_,name) return widget(name) end
@@ -66,3 +66,29 @@ UIParent:SetSize(500,400);m.Refresh();assert(f.width<=450 and f.height<=320,'ove
 id=14;f.OnUpdate(f,.2)
 for _,o in ipairs(objects) do if type(o.texture)=='number' then assert(not o.shown,'fast updates clear old-zone art before the slower rebuild') end end
 m.Refresh();assert(f.shown)
+
+local view={zoom=2,centerX=.5,centerY=.5};local px,py,visible=m.Project(.5,.5,600,400,view)
+assert(px==300 and py==200 and visible)
+assert(not select(3,m.Project(0,0,600,400,view)),'off-view markers are hidden')
+local tile={x=0,y=0,w=300,h=200,u=1,v=1};local clip=m.Clip(tile,600,400,view)
+assert(clip.x==0 and clip.y==0 and clip.w==300 and clip.h==200 and clip.u1==.5 and clip.v1==.5,'zoom crops tile UVs rather than stretching the full map')
+assert(m.SetZoom(4));assert(ForeverCompanionDB.mapOverlay.zoom==4);m.Pan(99,-99)
+assert(ForeverCompanionDB.mapOverlay.centerX==.875 and ForeverCompanionDB.mapOverlay.centerY==.125,'pan remains within the zoomed map')
+assert(not m.SetZoom(0/0));m.Inspect(true);assert(f.mouse);m.Inspect(false);assert(not f.mouse)
+m.SetZoom(1);assert(ForeverCompanionDB.mapOverlay.centerX==.5 and ForeverCompanionDB.mapOverlay.centerY==.5)
+
+assert(m.FacingAngle(0,600,400)==0)
+assert(m.FacingAngle(math.pi/2,600,400)==math.pi/2,'west-facing must rotate counterclockwise, not east')
+assert(math.abs(m.FacingAngle(math.pi/2,600,400,900,600)-math.pi/2)<.00001)
+assert(math.abs(m.FacingAngle(math.pi/4,600,400,600,800)-math.atan2(1,.5))<.00001,'world/art aspect correction')
+assert(not m.FacingAngle(nil,600,400),'unavailable facing must not imply north')
+local detail=m.ExplorationLayout(layer,{{offsetX=100,offsetY=50,textureWidth=300,textureHeight=270,fileDataIDs={101,102,103,104}}},501)
+assert(#detail==4 and detail[1].x==50 and detail[1].y==25)
+assert(detail[2].w==22 and detail[2].u==44/64 and detail[4].v==14/16,'native power-of-two edge cropping differs from base tiles')
+assert(#m.ExplorationLayout(layer,{{offsetX=0,offsetY=0,textureWidth=256,textureHeight=256,fileDataIDs={1},isShownByMouseOver=true}},600)==0,'hover-only highlights do not become permanent terrain')
+assert(#m.ExplorationLayout(layer,{{offsetX=0/0,offsetY=0,textureWidth=256,textureHeight=256,fileDataIDs={1}}},600)==0)
+C_MapExplorationInfo={GetExploredMapTextures=function() return {{offsetX=100,offsetY=50,textureWidth=300,textureHeight=270,fileDataIDs={101,102,103,104}}} end}
+m.Preset('detailed');local explored=0
+for _,o in ipairs(objects) do if o.shown and type(o.texture)=='number' and o.texture>=101 then explored=explored+1 end end
+assert(explored==4,'outdoor detail is actually drawn, not merely projected')
+print('PASS: facing, map aspects and outdoor explored-terrain layer')

@@ -4,6 +4,7 @@ ForeverCompanionQuestFieldGuide=G
 local root,title,summary,empty,rows,detailPanel,detailTitle,detailLocation,detailSource,detailHint,message,go,cycle,previous,nextPage,counter,mapButton
 local panelHeight=490
 local selectedQuest,selectedStep,steps,questKey,targetKey,choice= nil,1,{},nil,nil,1
+local areaChosen,showDetails=false,false
 local function read(fn,...)
  if type(fn)~='function' then return end
  local ok,a=pcall(fn,...);if ok then return a end
@@ -41,6 +42,42 @@ function G.Progress(quest)
  for i=1,total do local state=(quest.objectiveStates or {})[i];if state and state.known then known=known+1;if state.done then done=done+1 end end end
  return done,total,known
 end
+-- Widely separated or cross-map references need a deliberate location choice.
+-- A quest-log zone is not a safe constraint: travel quests can leave that zone.
+function G.NeedsReview(step)
+ local first=step and step.targets and step.targets[1]
+ if not first then return false end
+ for _,t in ipairs(step.targets) do
+  if t.map~=first.map or (t.x-first.x)^2+(t.y-first.y)^2>.35^2 then return true end
+ end
+ return false
+end
+function G.Areas(step,map,x,y)
+ local groups={}
+ for i,t in ipairs(step and step.targets or {}) do
+  local group
+  for _,g in ipairs(groups) do if g.map==t.map and (t.x-g.x)^2+(t.y-g.y)^2<=.15^2 then group=g;break end end
+  if not group then group={map=t.map,x=t.x,y=t.y,index=i};groups[#groups+1]=group end
+  if t.map==map and finite(x) and finite(y) then
+   local distance=(t.x-x)^2+(t.y-y)^2
+   if not group.distance or distance<group.distance then group.index=i;group.distance=distance end
+  end
+ end
+ return groups
+end
+local reportPanel,reportEdit
+function G.CopyReport(q)
+ if not reportPanel then
+  local U=ForeverCompanionInterface
+  reportPanel=CreateFrame('Frame','ForeverCompanionQuestLocationReport',UIParent);reportPanel:SetSize(640,160);reportPanel:SetPoint('CENTER');reportPanel:SetFrameStrata('DIALOG');U.Surface(reportPanel);U.PreparePanel(reportPanel,'ForeverCompanionQuestLocationReport',640,160)
+  local heading=U.Text(reportPanel,15);heading:SetPoint('TOPLEFT',16,-14);heading:SetText('Quest location report · saved on this character')
+  local hint=U.Text(reportPanel,11);hint:SetPoint('TOPLEFT',16,-44);hint:SetText('Select the text and press Ctrl+C to share it. Nothing is sent automatically.')
+  reportEdit=U.EditBox(reportPanel);reportEdit:SetSize(608,32);reportEdit:SetPoint('TOPLEFT',16,-70)
+  reportEdit:SetScript('OnEscapePressed',function() reportPanel:Hide() end)
+  local close=U.Button(reportPanel);close:SetSize(90,25);close:SetPoint('BOTTOMRIGHT',-16,12);close:SetText('Close');close:SetScript('OnClick',function() reportPanel:Hide() end)
+ end
+ reportEdit:SetText(ForeverCompanionQuestLocations.ReportText(q):gsub('\n',' / '));reportPanel:Show();reportEdit:SetFocus();if reportEdit.HighlightText then reportEdit:HighlightText() end
+end
 local instructions={monster='Defeat the enemies named in the objective.',item='Collect the requested item. Listed drop sources are references, not guaranteed drops.',object='Interact with the object named in the objective.',event='Follow the quest instructions in the reported area.'}
 local function text(parent,x,y,width,value,size)
  local f=ForeverCompanionInterface.Text(parent,size or 12)
@@ -49,8 +86,9 @@ end
 function G.Create(parent)
  local U=ForeverCompanionInterface
  root=CreateFrame('Frame','ForeverCompanionQuestFieldGuidePanel',parent);root:SetSize(770,490);U.Surface(root);root:Hide()
- text(root,16,-12,500,'QUEST FIELD GUIDE',16)
- mapButton=U.Button(root);mapButton:SetPoint('TOPRIGHT',-16,-12);mapButton:SetSize(174,25);mapButton:SetText('Quest map destination')
+ text(root,16,-12,400,'QUEST DETAILS',16)
+ local back=U.Button(root);back:SetSize(110,25);back:SetPoint('TOPRIGHT',-200,-12);back:SetText('Back to list');back:SetScript('OnClick',function() if ForeverCompanionShowQuestList then ForeverCompanionShowQuestList() end end)
+ mapButton=U.Button(root);mapButton:SetPoint('TOPRIGHT',-16,-12);mapButton:SetSize(174,25);mapButton:SetText('View quest map')
  mapButton:SetScript('OnClick',function() if selectedQuest and ForeverCompanionQuestPlanner.IsSupported() then message:SetText(ForeverCompanionQuestWaypoints.Show(selectedQuest)) end end)
  title=text(root,16,-45,738,'Choose an active quest',14)
  summary=text(root,16,-72,738,'',11)
@@ -63,7 +101,7 @@ function G.Create(parent)
   row.progress=CreateFrame('StatusBar',nil,row);row.progress:SetPoint('BOTTOMLEFT',10,1);row.progress:SetSize(530,2)
   row.progress:SetStatusBarTexture('Interface\\Buttons\\WHITE8X8');row.progress:SetStatusBarColor(.48,.76,.58,1);row.progress:SetMinMaxValues(0,1)
   row:SetScript('OnClick',function()
-   if row.step then selectedStep=(G.page-1)*4+i;targetKey=nil;choice=1;message:SetText('');G.Refresh() end
+   if row.step then selectedStep=(G.page-1)*4+i;targetKey=nil;choice=1;areaChosen=false;message:SetText('');G.Refresh() end
   end)
   row:SetScript('OnEnter',function(self)
    self.bg:SetColorTexture(.075,.09,.115,1)
@@ -82,6 +120,7 @@ function G.Create(parent)
  go=U.Button(detail);go:SetPoint('TOPRIGHT',-12,-12);go:SetSize(142,26);go:SetText('Navigate to objective')
  go:SetScript('OnClick',function()
   local step=steps[selectedStep];local t=step and step.targets[choice]
+  if G.NeedsReview(step) and not areaChosen then message:SetText('Choose an area first. These locations disagree, so no destination has been picked for you.');return end
   local planner=ForeverCompanionQuestPlanner
   if not t or not planner.IsSupported() then message:SetText('Open the quest log to refresh objective information.');return end
   local stop={quest=selectedQuest,objectiveIndex=step.index,turnin=step.turnin,target=t}
@@ -91,7 +130,32 @@ function G.Create(parent)
   message:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,quest.title,quest.id))
  end)
  cycle=U.Button(detail);cycle:SetPoint('TOPRIGHT',-12,-49);cycle:SetSize(142,25)
- cycle:SetScript('OnClick',function() local step=steps[selectedStep];if step and #step.targets>1 then choice=choice%#step.targets+1;targetKey=key(step.targets[choice]);message:SetText('');G.Refresh() end end)
+ local function areaMenu(page)
+  local step=steps[selectedStep];if not step then return end
+  local map=C_Map and read(C_Map.GetBestMapForUnit,'player');local pos=map and read(C_Map.GetPlayerMapPosition,map,'player')
+  local x,y;if pos and type(pos.GetXY)=='function' then local ok,a,b=pcall(pos.GetXY,pos);if ok then x,y=a,b end end
+  local areas=G.Areas(step,map,x,y);local entries={};page=page or 1
+  for i=(page-1)*8+1,math.min(page*8,#areas) do
+   local index=areas[i].index;local t=step.targets[index];local info=C_Map and read(C_Map.GetMapInfo,t.map)
+   entries[#entries+1]={label=(info and info.name or ('Map '..t.map))..(' · %.1f, %.1f'):format(t.x*100,t.y*100),selected=areaChosen and choice==index,action=function() choice=index;targetKey=key(t);areaChosen=true;message:SetText('Area selected. Check the location below, then choose Go.');G.Refresh() end}
+  end
+  if page>1 then entries[#entries+1]={label='Previous areas',action=function() areaMenu(page-1) end} end
+  if page*8<#areas then entries[#entries+1]={label='More areas',action=function() areaMenu(page+1) end} end
+  U.Menu(cycle,'CHOOSE A SEARCH AREA',entries,nil,340)
+ end
+ cycle:SetScript('OnClick',function() areaMenu(1) end)
+ local locationOptions=U.Button(detail);locationOptions:SetPoint('TOPRIGHT',-12,-86);locationOptions:SetSize(142,25);locationOptions:SetText('Location options')
+ locationOptions:SetScript('OnClick',function()
+  local q=selectedQuest;local step=steps[selectedStep];local t=step and step.targets[choice]
+  U.Menu(locationOptions,'QUEST LOCATION',{
+   {label=showDetails and 'Hide source and coordinates' or 'Show source and coordinates',action=function() showDetails=not showDetails;G.Refresh() end},
+   {label='Wrong destination: exclude this point',enabled=q~=nil and t~=nil and t.reference==true,action=function()
+    message:SetText(ForeverCompanionQuestLocations.Report(q,t));targetKey=nil;choice=1;areaChosen=false;G.Refresh()
+   end},
+   {label='Copy saved location reports',enabled=q~=nil,action=function() G.CopyReport(q) end},
+   {label='Restore excluded locations for this quest',enabled=q~=nil,action=function() ForeverCompanionQuestLocations.Restore(q);G.Refresh();message:SetText('Excluded locations restored for this quest.') end},
+  },nil,380)
+ end)
  message=text(root,16,-439,738,'',11)
  previous=U.Button(root);previous:SetPoint('BOTTOMLEFT',16,9);previous:SetSize(100,25);previous:SetText('Previous')
  nextPage=U.Button(root);nextPage:SetPoint('BOTTOMRIGHT',-16,9);nextPage:SetSize(100,25);nextPage:SetText('Next')
@@ -105,7 +169,7 @@ function G.Refresh()
  local q=planner.GetSelected();selectedQuest=q
  local identity=q and (q.id or q.title)
  local changed=identity~=questKey
- if changed then questKey=identity;selectedStep=1;G.page=1;targetKey=nil;choice=1;message:SetText('') end
+ if changed then questKey=identity;selectedStep=1;G.page=1;targetKey=nil;choice=1;areaChosen=false;message:SetText('') end
  steps=G.Steps(q,q and ForeverCompanionQuestWaypoints.Targets(q) or {})
  if changed then for i,step in ipairs(steps) do if not step.done then selectedStep=i;G.page=math.floor((i-1)/4)+1;break end end end
  local detailTop=113+47*math.max(1,math.min(4,#steps))
@@ -114,9 +178,9 @@ function G.Refresh()
  message:ClearAllPoints();message:SetPoint('TOPLEFT',16,-detailTop-138)
  counter:ClearAllPoints();counter:SetPoint('TOPLEFT',132,-panelHeight+24)
  selectedStep=math.max(1,math.min(selectedStep,#steps))
- title:SetText(q and q.title or 'Choose an active quest')
+ title:SetText(q and (q.title..(showDetails and q.id and (' · #'..q.id) or '')) or 'Choose an active quest')
  local done,total,known=G.Progress(q)
- summary:SetText(not planner.IsSupported() and 'Cached or unavailable quest data. Check the in-game quest log before navigating.' or (q and q.complete and 'Ready to turn in · choose a reported giver below.' or (done..' / '..total..' objectives complete'..(known<total and (' · '..(total-known)..' with unknown progress') or '')..' · Click an objective to inspect its locations.')))
+ summary:SetText(not planner.IsSupported() and 'Open your in-game quest log to refresh this quest before traveling.' or (q and q.complete and 'All done! Your next step is to return to the quest giver.' or (done..' of '..total..' tasks complete'..(known<total and ' · Some progress needs checking in your quest log.' or ' · Choose a task to see where to go.'))))
  local pages=math.max(1,math.ceil(#steps/4));G.page=math.max(1,math.min(G.page,pages))
  for i,row in ipairs(rows) do
   local absolute=(G.page-1)*4+i;local step=steps[absolute]
@@ -127,25 +191,28 @@ function G.Refresh()
    local counts=finite(step.current) and finite(step.required) and step.required>0 and (' · '..step.current..'/'..step.required) or ''
    row.state:SetText((step.turnin and 'Ready to turn in' or (step.done and 'Complete' or (step.known and 'In progress' or 'Progress unknown')))..counts)
    row.state:SetTextColor(step.done and .48 or .8,step.done and .88 or .83,step.done and .58 or .87)
-   row.locations:SetText(step.done and 'Finished objective' or (#step.targets>0 and (#step.targets..' reported locations') or 'Location not reported'))
+   row.locations:SetText(step.done and 'Done' or (G.NeedsReview(step) and 'Choose an area below' or (#step.targets>0 and 'Search area available' or 'Read quest instructions')))
    row.progress:SetShown(step.ratio~=nil);row.progress:SetValue(step.ratio or 0)
   end
  end
  empty:SetShown(#steps==0)
  local step=steps[selectedStep]
  choice=math.min(choice,step and math.max(1,#step.targets) or 1)
- if step and targetKey then for i,t in ipairs(step.targets) do if key(t)==targetKey then choice=i;break end end end
+ if step and targetKey then
+  local found=false;for i,t in ipairs(step.targets) do if key(t)==targetKey then choice=i;found=true;break end end
+  if not found then areaChosen=false;targetKey=nil end
+ end
  local t=step and step.targets[choice]
  if t then targetKey=key(t) end
- detailTitle:SetText(step and step.text or 'No objective selected')
+ detailTitle:SetText(step and (step.turnin and 'Next: return to the quest giver' or (step.done and 'Task complete' or 'Your next step')) or 'Choose a quest to get started')
  local info=t and C_Map and read(C_Map.GetMapInfo,t.map)
- detailLocation:SetText(t and ((t.label or 'Reported location')..' · '..(info and info.name or ('Map '..t.map))..(' · %.1f, %.1f'):format(t.x*100,t.y*100)) or 'No objective-specific location reported')
- detailSource:SetText(t and ForeverCompanionQuestWaypoints.Describe(t) or (q and ForeverCompanionQuestWaypoints.Explain(q) or 'Select a quest to inspect location coverage.'))
- detailHint:SetText(step and (step.done and 'This objective is complete. Choose an unfinished objective to continue.' or (step.turnin and 'Return to the listed giver and inspect the turn-in in game.' or (instructions[step.kind] or 'Read the objective and follow the quest instructions.'))) or 'Select a quest in the active list above to begin.')
- cycle:SetText(t and ('Location '..choice..' / '..#step.targets) or 'No location reported')
+ detailLocation:SetText(t and ((t.label or 'Search area')..' · '..(info and info.name or ('Map '..t.map))..(showDetails and (' · %.1f, %.1f'):format(t.x*100,t.y*100) or '')) or 'We do not have a reliable location for this task yet.')
+ detailSource:SetText(t and (showDetails and ((t.source or 'Unknown source')..' · '..ForeverCompanionQuestWaypoints.Describe(t)) or 'This is a search area. The quest target may move or the data may be out of date.') or 'Read the quest instructions in your game’s quest log before traveling.')
+ detailHint:SetText(step and (step.done and 'Choose an unfinished task above to continue.' or (G.NeedsReview(step) and not areaChosen and 'These locations cover different areas. Choose an area first; no arrow will start until you choose.' or (step.turnin and 'Speak to the quest giver when you arrive.' or (instructions[step.kind] or 'Follow the instructions for this task.')))) or 'Select a quest in the active list above to begin.')
+ cycle:SetText(t and (areaChosen and 'Change area' or 'Choose area') or 'No area known')
  local supported=planner.IsSupported()
- cycle:SetEnabled(supported and step~=nil and #step.targets>1);go:SetEnabled(supported and t~=nil)
- go:SetText(step and step.turnin and 'Navigate to giver' or 'Navigate to objective')
+ cycle:SetShown(step~=nil and #G.Areas(step)>1);cycle:SetEnabled(supported and step~=nil and #step.targets>1);go:SetEnabled(supported and t~=nil and (not G.NeedsReview(step) or areaChosen))
+ go:SetText(step and step.turnin and 'Go to quest giver' or 'Go to search area')
  mapButton:SetEnabled(supported and q~=nil)
  previous:SetEnabled(G.page>1);nextPage:SetEnabled(G.page<pages);counter:SetText('Objectives · '..G.page..' / '..pages)
 end

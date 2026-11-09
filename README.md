@@ -2,6 +2,10 @@
 
 Brady's Forever Companion is an independent, free World of Warcraft addon project for class-aware leveling, dungeon, profession, and PvP reference guides.
 
+## Maps, quests, training and dungeons (3.49 beta)
+
+Use `/fc overlay detailed` for richer outdoor terrain, `/fc overlay inspect` for wheel zoom, drag-to-pan and location details, and `/fc training` for the class training reference. Quest Log now includes search and a details/back flow. Location options in quest details can exclude a wrong reference point and copy a local report. The dungeon directory includes Stockades independently of partial loot imports. See docs/SPRINT_3_49.md and docs/LOOT_RESEARCH_2026_11_09.md for scope and remaining gaps.
+
 ## Status
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.

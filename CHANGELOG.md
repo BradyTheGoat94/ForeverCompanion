@@ -1,3 +1,16 @@
+## 3.49.0-beta — Detailed maps, quest clarity, training and dungeon coverage
+
+- Add 1–4× overlay zoom, drag-to-pan inspection, hover details, location actions and native landmarks. Locked mode stays click-through.
+- Draw the native explored-terrain layer in outdoor zones, including power-of-two edge cropping. Add Detailed preset and exploration refresh events.
+- Correct player-arrow facing direction and compensate for differences between world and artwork proportions; align marker projection with zoom/pan.
+- Add a nine-class Training Guide using MIT-licensed What's Training Forever reference data, spellbook checks, rank coverage, search, requirements, quest rewards and read-only current-trainer observations. `/fc training`.
+- Lead quest details with a plain-language next step; hide technical details and unrelated class controls. Give quest rows more room, add literal quest/zone/objective/ID search and a focused details/back flow. Distinguish same-title chain parts by quest ID.
+- Require an explicit area choice for cross-map or widely separated objective references. Add reversible per-character bad-location exclusions and copyable local reports.
+- For Faire breadcrumbs #7905/#7926, filter destinations to the documented Elwynn opening camp on November 9–15, 2026, using the client calendar and provider map mapping. This rule expires; no permanent faction-based event location is assumed.
+- Separate the dungeon directory from loot imports: 34 dungeon/wing entries remain visible even without imported loot. Add Stockades and Sunken Temple search aliases.
+- Add 129 source-attributed loot records across Stockades, Gnomeregan, Razorfen Kraul, four Scarlet Monastery wings and Razorfen Downs: 256 total across 17 dungeons/wings. Rare and trash sources stay explicit; no drop rates inferred.
+- Automated offline checks cover these changes. In-game location, artwork, training and loot verification remains pending; Worgen coordinates have not been independently verified.
+
 ## 3.48.0-beta — Minimap launcher
 
 - Added a crest button on the minimap. Left-click opens/closes the main addon; right-click offers map, overlay, hide and reset actions.

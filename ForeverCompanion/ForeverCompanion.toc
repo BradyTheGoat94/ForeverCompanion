@@ -2,7 +2,7 @@
 ## Title: Brady's Forever Companion
 ## Notes: Class guides, gear, dungeons, loot and progression (Forever client verification pending)
 ## Author: Brady and Forever Companion Contributors
-## Version: 3.48.0-beta
+## Version: 3.49.0-beta
 ## SavedVariablesPerCharacter: ForeverCompanionDB
 ## OptionalDeps: QuestieDB
 GuideData.lua
@@ -26,6 +26,8 @@ ForeverClassChanges.lua
 ClassChangeIndex.lua
 DungeonPreparation.lua
 LootAtlas.lua
+LootExpansion.lua
+DungeonCatalog.lua
 LootWorkspace.lua
 PvPPreparation.lua
 SpecPlanner.lua
@@ -87,6 +89,8 @@ StudyBoard.lua
 EncounterBrowser.lua
 ResearchNotebook.lua
 CombatMeter.lua
+TrainingData.lua
+TrainingGuide.lua
 MinimapButton.lua
 Core.lua
 

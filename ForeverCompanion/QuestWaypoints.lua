@@ -56,7 +56,12 @@ local function clientLocation(id)
 end
 
 local function referenceLocations(quest)
- return read(ForeverCompanionQuestLocations.ForQuest,quest) or {}
+ local result={}
+ for _,t in ipairs(read(ForeverCompanionQuestLocations.ForQuest,quest) or {}) do
+  local reported=ForeverCompanionQuestLocations.IsReported
+  if (not reported or not reported(quest,t)) and (not ForeverCompanionQuestLocations.AllowsLocation or ForeverCompanionQuestLocations.AllowsLocation(quest,t)) then result[#result+1]=t end
+ end
+ return result
 end
 
 local function uniqueReference(quest)
@@ -70,7 +75,10 @@ end
 
 function W.Location(quest)
  if type(quest)~="table" or type(quest.id)~="number" or quest.id<=0 then return end
- return read(clientLocation,quest.id) or uniqueReference(quest)
+ local native=read(clientLocation,quest.id)
+ local allows=ForeverCompanionQuestLocations.AllowsLocation
+ if native and (not allows or allows(quest,native)) then return native end
+ return uniqueReference(quest)
 end
 -- Collect all actual destinations without pretending a general native POI
 -- belongs to a specific objective. Provider matches retain objective indices.
@@ -79,6 +87,7 @@ function W.Targets(quest)
  local result,seen={},{}
  local function add(target,reference)
   if not target or not point(target.map,target.x,target.y,target.source) then return end
+  if ForeverCompanionQuestLocations.AllowsLocation and not ForeverCompanionQuestLocations.AllowsLocation(quest,target) then return end
   local key=target.map..':'..target.x..':'..target.y..':'..tostring(target.objectiveIndex or target.objective or 'quest')
   if seen[key] then return end
   seen[key]=true
@@ -142,7 +151,7 @@ function W.MapLocations(map,quests)
     end
    end
    for _,target in pairs(locations) do
-    result[#result+1]={quest=quest,target=target,index=index}
+    if not ForeverCompanionQuestLocations.AllowsLocation or ForeverCompanionQuestLocations.AllowsLocation(quest,target) then result[#result+1]={quest=quest,target=target,index=index} end
    end
   end
  end
@@ -243,6 +252,7 @@ end
 
 function W.Navigate(target,showMap,label,questID)
  if type(target)~='table' or not point(target.map,target.x,target.y) then return "No valid map location for this destination." end
+ if questID and ForeverCompanionQuestLocations and ForeverCompanionQuestLocations.AllowsLocation and not ForeverCompanionQuestLocations.AllowsLocation({id=questID},target) then return 'This destination conflicts with the published current event area. Open quest details.' end
  local direction=ForeverCompanionQuestDirection
  local hud=direction.Start(target,label)
  local pinned=false

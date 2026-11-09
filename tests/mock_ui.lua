@@ -122,6 +122,10 @@ local function widget(kind)
  function w:SetFontObject() end
  function w:SetTextInsets(...) self.textInsets={...} end
  function w:SetAutoFocus(v) self.autoFocus=v end
+ function w:SetFocus() self.focused=true;if self.OnEditFocusGained then self.OnEditFocusGained(self) end end
+ function w:ClearFocus() self.focused=false;if self.OnEditFocusLost then self.OnEditFocusLost(self) end end
+ function w:HasFocus() return self.focused==true end
+ function w:HighlightText() self.highlighted=true end
  function w:SetMaxLetters(v) self.maxLetters=v end
  function w:SetDisabledFontObject() end
  function w:SetFont(path,size,flags) self.font={path,size,flags} end
@@ -404,10 +408,12 @@ do
  briefing.Render()
  assert(briefing.mapButton.enabled and writes==0 and opens==0,"render never changes the user's map")
  briefing.mapButton:OnClick()
- assert(writes==1 and opens==1 and tracked and briefing.clearPin.enabled,"one click sets pin and starts arrow")
+ assert(writes==0 and opens==0,"Quest details opens the field guide without navigating a general quest point")
+ navigation.Show(selected);briefing.Render()
+ assert(writes==1 and opens==1 and tracked and briefing.clearPin.enabled,"explicit quest map action starts navigation")
  marker=UiMapPoint.CreateFromCoordinates(1429,.18,.37)
  assert(not navigation.Clear() and marker,"must preserve a waypoint the player set afterward")
- briefing.mapButton:OnClick()
+ navigation.Show(selected);briefing.Render()
  briefing.clearPin:OnClick()
  assert(not marker and not briefing.clearPin.enabled,"clear removes the addon waypoint")
  C_QuestLog.GetNextWaypoint=nil
@@ -1621,6 +1627,7 @@ assert(not browser.rows[1].visible and browser.boss=="Sneed","empty filter must 
 buttonWithText("Clear").OnClick()
 assert(browser.query=="" and browser.searchBox:GetText()=="")
 local function pickDungeon(name)
+ browser.Focus(name,ForeverCompanionLoot.BossNames(name)[1]);ForeverCompanionRefresh()
  for _,row in ipairs(browser.dungeonRows) do
   if row.dungeon==name then row:OnClick();return end
  end
@@ -1630,7 +1637,7 @@ pickDungeon("Wailing Caverns")
 assert(browser.dungeon=="Wailing Caverns" and browser.boss=="Kresh" and browser.page==1)
 pickDungeon("Blackfathom Deeps")
 assert(browser.dungeon=="Blackfathom Deeps" and browser.boss=="Aku'mai" and #ForeverCompanionLoot.BossDrops(browser.dungeon,browser.boss)==3)
-assert(#browser.dungeonRows==9 and browser.dungeonRows[9]:IsShown(),"all nine dungeons can be selected directly")
+assert(#browser.dungeonRows==9 and browser.dungeonRows[9]:IsShown(),"directory pages remain populated")
 exportSnapshot("ui_encounter_snapshot.txt")
 exportNative("ui_encounter_native.json")
 local secondDrop=browser.lootRows[2].record
@@ -1791,11 +1798,15 @@ do
  assert(guide)
  for _,f in ipairs(frames) do
   if f.kind=='Button' and f.parent and frames[f.parent].parent==guide.id then
-   if f.text=='Navigate to objective' then go=f elseif f.text=='Location 1 / 2' then cycle=f end
+   if f.text=='Go to search area' then go=f elseif f.text=='Choose area' then cycle=f end
   end
  end
- assert(go and go.enabled and cycle and cycle.enabled)
- cycle.OnClick(cycle);go.OnClick(go);assert(navigated.x==.6)
+ assert(go and not go.enabled and cycle and cycle.enabled,'conflicting areas cannot start navigation before a choice')
+ go.OnClick(go);assert(navigated==nil,'guard is enforced by the handler too')
+ cycle.OnClick(cycle)
+ local areaChoice;for _,f in ipairs(frames) do if f.kind=='Button' and f.visible and f.text and f.text:find('60.0, 40.0',1,true) then areaChoice=f end end
+ assert(areaChoice);areaChoice.OnClick(areaChoice);assert(go.enabled)
+ go.OnClick(go);assert(navigated.x==.6)
  locations={locations[2],locations[1]};ForeverCompanionQuestFieldGuide.Refresh();go.OnClick(go)
  assert(navigated.x==.6,'field guide keeps the selected objective location after reordering')
  exportNative('ui_fieldguide_native.json')
@@ -2144,4 +2155,41 @@ do
  SlashCmdList.FOREVERCOMPANION('minimap hide');assert(not launcher.visible)
  SlashCmdList.FOREVERCOMPANION('minimap reset');assert(launcher.visible)
  ForeverCompanionInterface.CloseMenu()
+end
+
+do
+ local o=ForeverCompanionMapOverlay
+ C_AreaPoiInfo={GetAreaPOIForMap=function() return {1} end,GetAreaPOIInfo=function() return {name='SAMPLE - ruined tower',description='Client-reported landmark description',position={GetXY=function() return .5,.5 end}} end}
+ o.Toggle(true);o.SetZoom(2);o.Inspect(true);o.Refresh()
+ local panel;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapOverlayFrame' then panel=f end end
+ assert(panel and panel.mouse)
+ local hit;for _,f in ipairs(frames) do if f.group and f.parent==panel.id and f.visible then hit=f end end
+ assert(hit and hit.OnEnter and hit.OnClick,'inspect mode creates interactive location details')
+ exportNative('ui_overlay_zoom_sample_native.json');o.Inspect(false);assert(not panel.mouse);o.Toggle(false)
+ local oldKnown=ForeverCompanionKnownSpell;ForeverCompanionKnownSpell=function(id) return id==6673 end
+ C_Spell={GetSpellInfo=function(id) return {name=({[100]='Charge',[772]='Rend',[6673]='Battle Shout'})[id] or ('SAMPLE spell '..id),iconID=136048} end}
+ SlashCmdList.FOREVERCOMPANION('training')
+ local training;for _,f in ipairs(frames) do if f.name=='ForeverCompanionTrainingPanel' then training=f end end
+ assert(training and training.visible);exportNative('ui_training_sample_native.json')
+ ForeverCompanionTraining.Toggle();ForeverCompanionKnownSpell=oldKnown
+end
+
+-- Explicit samples of the new quest and Stockades layouts; not in-game captures.
+do
+ SlashCmdList.FOREVERCOMPANION('open dungeon journal')
+ local b=ForeverCompanionEncounterBrowser;b.Focus('The Stockade','Bazil Thredd');ForeverCompanionRefresh();exportNative('ui_stockades_sample_native.json')
+ b.searchBox:SetText('Stockades');b.searchBox.OnTextChanged(b.searchBox,true)
+ assert(b.dungeonRows[1].dungeon=='The Stockade' and not b.dungeonRows[2].visible,'Stockades alias finds the dungeon')
+ b.query='';b.searchBox:SetText('')
+ local p=ForeverCompanionQuestPlanner;local oldSelected,oldLive,oldSupported,oldTargets=p.GetSelected,p.GetLive,p.IsSupported,ForeverCompanionQuestWaypoints.Targets
+ local q={id=173,title='SAMPLE - Worgen in the Woods',zone='Duskwood',objectives={'Nightbane Shadow Weaver slain: 2/6'},objectiveStates={{known=true,kind='monster',current=2,required=6}}}
+ p.GetSelected=function() return q end;p.GetLive=function() return {q} end;p.IsSupported=function() return true end
+ ForeverCompanionQuestWaypoints.Targets=function() return {{map=1429,x=.42,y=.69,reference=true,objectiveIndex=1,label='SAMPLE - search point',source='Synthetic fixture'}} end
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestFieldGuidePanel' then f:Show() end end
+ ForeverCompanionQuestFieldGuide.Refresh();exportNative('ui_quest_details_sample_native.json')
+ ForeverCompanionQuestTracker.Show();exportNative('ui_tracker_refined_sample_native.json');ForeverCompanionQuestTracker.Hide()
+ local target=ForeverCompanionQuestWaypoints.Targets(q)[1];ForeverCompanionQuestLocations.Report(q,target);ForeverCompanionQuestFieldGuide.CopyReport(q)
+ local copied;for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestLocationReport' then copied=f end end
+ assert(copied and copied.visible,'saved local reports have a copyable panel');copied:Hide();ForeverCompanionQuestLocations.Restore(q)
+ p.GetSelected,p.GetLive,p.IsSupported=oldSelected,oldLive,oldSupported;ForeverCompanionQuestWaypoints.Targets=oldTargets
 end

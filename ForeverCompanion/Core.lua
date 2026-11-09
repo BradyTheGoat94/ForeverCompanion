@@ -24,6 +24,7 @@ local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
 local questSectionLabel,questEmpty,questDiscoveryButton
 local questListBottom=650
+local questSearch,questQuery=nil,''
 local questExplorerView='discover'
 local questExplorerTabs,questExplorerButtons=nil,{}
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
@@ -195,13 +196,14 @@ local function render()
   -- The class page uses a reference-style class strip and moves redundant
   -- footer controls out of the reading area; every action remains accessible.
   if ForeverCompanionUIState.classButton then
-    if currentTab=="Leveling" then ForeverCompanionUIState.classButton:Hide() else ForeverCompanionUIState.classButton:Show() end
+    if currentTab=="Leveling" or currentTab=="Quests" then ForeverCompanionUIState.classButton:Hide() else ForeverCompanionUIState.classButton:Show() end
   end
   if ForeverCompanionUIState.footer then
     if currentTab=="Leveling" then ForeverCompanionUIState.footer:Hide() else ForeverCompanionUIState.footer:Show() end
   end
   if ForeverCompanionUIState.roleButton then
     local role=ForeverCompanionUIState.roleButton
+    role:SetShown(currentTab~="Quests")
     role:ClearAllPoints()
     role:SetPoint(currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",window,currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",-25,currentTab=="Leveling" and -62 or 45)
   end
@@ -214,6 +216,7 @@ local function render()
     meter:SetHeight(currentTab=='Leveling' and 26 or 24)
   end
   if resetClassButton then
+    resetClassButton:SetShown(currentTab~="Quests")
     resetClassButton:ClearAllPoints()
     if currentTab=="Leveling" then resetClassButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,16)
     else resetClassButton:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-125,16) end
@@ -255,6 +258,7 @@ local function render()
   for _, b in ipairs(questRows) do b:Hide() end
   if questEmpty then questEmpty:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
+  if questSearch then questSearch:SetShown(currentTab=='Quests') end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
   if questRows.pinControl then
     if currentTab=="Quests" then
@@ -510,14 +514,14 @@ local function render()
     end
   elseif currentTab == "Quests" then
     local live=ForeverCompanionQuestPlanner.GetLive()
-    local visible=ForeverCompanionQuestPlanner.GetVisible()
+    local visible=ForeverCompanionQuestTracker.Search(ForeverCompanionQuestPlanner.GetVisible(),questQuery)
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
-    lines = {ForeverCompanionQuestPlanner.Format()}
+    lines = #ForeverCompanionQuestPlanner.GetAll()>0 and {ForeverCompanionQuestPlanner.Format()} or {}
     if not ForeverCompanionQuestPlanner.IsSupported() then
       table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
     end
     if questSectionLabel then
-      questSectionLabel:SetText("QUEST LOG  |  "..#live.." active  |  "..ForeverCompanionQuestPlanner.ReadyCount().." ready  |  "..ForeverCompanionQuestPlanner.PinnedCount().." pinned")
+      questSectionLabel:SetText("ACTIVE QUESTS · Click a quest to see your next step")
       questSectionLabel:Show()
     end
     if filterButton then filterButton:SetText("Show: "..ForeverCompanionQuestPlanner.GetFilter()) end
@@ -541,13 +545,13 @@ local function render()
       ForeverCompanionVisualTheme.SelectRow(btn,btn.bg,selected)
       colorTexture(btn.trim,.82,.68,.43,0)
       btn.selected=selected
-      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex) end)
+      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex);render();scrollFrame:SetVerticalScroll(questListBottom) end)
       btn:SetScript("OnEnter",function(self)
         colorTexture(self.bg,.11,.14,.19,1)
         if GameTooltip then
           GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
           GameTooltip:SetText(q.title or "Quest",1,0.8,0.3)
-          if q.zone then GameTooltip:AddLine(q.zone,0.8,0.8,0.8) end
+          if q.zone then GameTooltip:AddLine(q.zone..(q.id and (" · #"..q.id) or ""),0.8,0.8,0.8) end
           for j=1,math.min(12,#(q.objectives or {})) do
             local state=q.objectiveStates and q.objectiveStates[j]
             local done=state and state.known and state.done
@@ -563,14 +567,14 @@ local function render()
       btn:Show()
     end
     local shown=math.max(0,math.min(#questRows,#visible-(questPage-1)*#questRows))
-    local pageY=210+math.max(3,shown)*25+12
+    local pageY=244+math.max(2,shown)*34+12
     questListBottom=pageY+52
     if questEmpty then
       questEmpty:SetShown(shown==0)
-      questEmpty:SetText(not ForeverCompanionQuestPlanner.IsSupported() and "Quest data is unavailable. Open your in-game quest log and try again." or (#live==0 and "No quests accepted yet. Choose Find new quests to browse reported quest givers." or "No quests match this view. Change the Show filter to see your other quests."))
+      questEmpty:SetText(not ForeverCompanionQuestPlanner.IsSupported() and "Quest data is unavailable. Open your in-game quest log and try again." or (#live==0 and "No quests accepted yet. Choose Find new quests to browse reported quest givers." or "No quests match. Clear the search or change the Show filter."))
     end
     if pageBack then pageBack:ClearAllPoints();pageBack:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-pageY) end
-    if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
+    if pageLabel then pageLabel:SetText(questPage.." / "..pages.." · "..#visible.." quests") end
     if pageBack then pageBack:SetEnabled(questPage>1); pageForward:SetEnabled(questPage<pages) end
   elseif currentTab == "Settings" then
     lines = {}
@@ -1093,6 +1097,12 @@ local function createUI()
     ForeverCompanionQuestPlanner.CycleSort()
   end)
   sortButton:Hide()
+  questSearch=ForeverCompanionInterface.EditBox(child,'Search quest, zone, objective or quest ID…')
+  questSearch:SetSize(770,26);questSearch:SetPoint('TOPLEFT',child,'TOPLEFT',8,-210);questSearch:SetMaxLetters(120)
+  questSearch:SetScript('OnTextChanged',function(self,userInput) if userInput then questQuery=self:GetText();questPage=1;render() end end)
+  questSearch:SetScript('OnEscapePressed',function(self) self:SetText('');questQuery='';self:ClearFocus();questPage=1;render() end)
+  questSearch:Hide()
+  ForeverCompanionShowQuestList=function() scroll:SetVerticalScroll(0) end
   questRows.pinControl=ForeverCompanionInterface.Button(child)
   questRows.pinControl:SetSize(140,23)
   questRows.pinControl:SetPoint("TOPLEFT",child,"TOPLEFT",8,-182)
@@ -1175,16 +1185,16 @@ local function createUI()
   questSectionLabel:SetTextColor(.82,.68,.43)
   questSectionLabel:Hide()
   -- Native journal rows replace stock gray buttons; all selection is addon-local.
-  for i=1,15 do
+  for i=1,8 do
     local row=CreateFrame("Button",nil,child)
-    row:SetSize(754,24)
-    row:SetPoint("TOPLEFT",child,"TOPLEFT",8,-210-(i-1)*25)
+    row:SetSize(754,32)
+    row:SetPoint("TOPLEFT",child,"TOPLEFT",8,-244-(i-1)*34)
     row.bg=row:CreateTexture(nil,"BACKGROUND")
     row.bg:SetAllPoints(row)
     colorTexture(row.bg,0.085,0.11,0.15,1)
     row.trim=row:CreateTexture(nil,"ARTWORK")
     row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
-    row.trim:SetSize(3,24)
+    row.trim:SetSize(3,32)
     colorTexture(row.trim,0.30,0.28,0.21,1)
     row.title=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     row.title:SetPoint("LEFT",row,"LEFT",13,0)
@@ -1207,7 +1217,7 @@ local function createUI()
     questRows[i]=row
   end
   questEmpty=ForeverCompanionInterface.Text(child,14)
-  questEmpty:SetPoint("TOPLEFT",child,"TOPLEFT",24,-225);questEmpty:SetWidth(710);questEmpty:SetHeight(65);questEmpty:SetWordWrap(true);questEmpty:SetJustifyH("CENTER");questEmpty:Hide()
+  questEmpty:SetPoint("TOPLEFT",child,"TOPLEFT",24,-252);questEmpty:SetWidth(710);questEmpty:SetHeight(65);questEmpty:SetWordWrap(true);questEmpty:SetJustifyH("CENTER");questEmpty:Hide()
   content:SetWidth(760)
   ForeverCompanionVisualTheme.Font(content,13)
   if content.SetSpacing then content:SetSpacing(4) end
@@ -1342,6 +1352,7 @@ SLASH_FOREVERCOMPANION2 = "/forevercompanion"
 SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
+  if msg=='training' or msg=='train' then ForeverCompanionTraining.Toggle();return end
   if msg=='minimap' or msg=='minimap show' then ForeverCompanionMinimapButton.SetHidden(false);return end
   if msg=='minimap hide' then ForeverCompanionMinimapButton.SetHidden(true);return end
   if msg=='minimap reset' then ForeverCompanionMinimapButton.Reset();return end
@@ -1376,7 +1387,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     else say("Combat meter module is unavailable.") end
     return
   end
-  if msg == "help" then say("/fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc training, /fc overlay inspect, /fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end

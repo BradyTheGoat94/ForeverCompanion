@@ -24,7 +24,7 @@ function R.Build(quests,targets,map,x,y,pinned,options)
  targets=targets or {}
  options=type(options)=='table' and options or {}
  if not finite(map) or map<=0 then map=nil end
- local candidates,stats={},{remaining=0,matched=0,unlocated=0,otherMaps=0,unknownQuests=0,excluded=0,deferred=0,positionKnown=point(x,y)}
+ local candidates,stats={},{remaining=0,matched=0,unlocated=0,otherMaps=0,unknownQuests=0,excluded=0,deferred=0,review=0,positionKnown=point(x,y)}
  for index,q in ipairs(quests or {}) do
   local isPinned=pinned and pinned(q)==true or false
   local include=not options.filter or options.filter=='all' or options.filter=='pinned' and isPinned or options.filter=='turnin' and q.complete==true or options.filter=='selected' and (q==options.selected or options.selected and q.id and q.id==options.selected.id)
@@ -37,7 +37,8 @@ function R.Build(quests,targets,map,x,y,pinned,options)
    if stepKey and options.deferred and options.deferred[stepKey] then stats.deferred=stats.deferred+1 else
    local localTargets={}
    for _,t in ipairs(step.targets) do if t.map==map then localTargets[#localTargets+1]=t end end
-   if #localTargets>0 then
+   if ForeverCompanionQuestFieldGuide.NeedsReview and ForeverCompanionQuestFieldGuide.NeedsReview(step) then stats.review=stats.review+1
+   elseif #localTargets>0 then
     stats.matched=stats.matched+1
     candidates[#candidates+1]={quest=q,index=index,step=step,targets=localTargets,pinned=isPinned}
    elseif #step.targets>0 then stats.otherMaps=stats.otherMaps+1
@@ -97,7 +98,10 @@ function R.NavigateNext(quest,exclude)
  local stops=snapshot(quests,options)
  local stop
  for _,candidate in ipairs(stops) do if not same(candidate.target,exclude) then stop=candidate;break end end
- if not stop then return 'No matched unfinished objective on this map. Open the field guide for other locations.' end
+ if not stop then
+  if quest and ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(quest.id) end
+  return 'Review this quest in the field guide: no single nearby area can be chosen safely.'
+ end
  local q,index,target=R.Resolve(stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets)
  if not target then return 'This objective changed. Choose it again.' end
  p.Select(index)
@@ -192,7 +196,7 @@ function R.Refresh()
  local noticeY=90+math.max(1,visible)*55
  notice:ClearAllPoints();notice:SetPoint('TOPLEFT',root,'TOPLEFT',16,-noticeY)
  ForeverCompanionVisualTheme.ResizePanel(root,noticeY+70)
- summary:SetText((cfg.filter or 'all')..' quests · '..#current..' / '..stats.matched..' mapped steps · '..stats.deferred..' set aside · '..stats.unlocated..' unlocated · '..stats.otherMaps..' on other maps · '..stats.unknownQuests..' without objectives')
+ summary:SetText(#current..' steps on this map · '..stats.review..' need an area choice · '..stats.unlocated..' without locations · '..stats.otherMaps..' on other maps')
  for i,row in ipairs(rows) do
   local stop=current[(R.page-1)*4+i];row.stop=stop;row:SetShown(stop~=nil)
   if stop then

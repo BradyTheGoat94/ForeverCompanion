@@ -38,8 +38,23 @@ end
 
 R.Provider=provider
 R.AreaMaps=maps
+-- The opening Forever Faire is in Elwynn, Nov 9–15 2026. This rule expires;
+-- faction alone cannot locate a neutral event that rotates between continents.
+-- https://www.wowhead.com/forever/guide/darkmoon-faire-event-overview-guide
+function R.EventArea(quest)
+ if not quest or (quest.id~=7905 and quest.id~=7926) then return end
+ local now=C_DateAndTime and read(C_DateAndTime.GetCurrentCalendarTime)
+ if type(now)=='table' and now.year==2026 and now.month==11 and type(now.monthDay)=='number' and now.monthDay>=9 and now.monthDay<=15 then return 12 end
+end
+function R.AllowsLocation(quest,target)
+ local area=R.EventArea(quest)
+ if not area then return true end
+ if target.areaID then return target.areaID==area end
+ local db=provider();local map=db and maps(db)[area]
+ return map~=nil and target.map==map
+end
 
-local function append(result,zoneMaps,spawns,kind,name,objective)
+local function append(result,zoneMaps,spawns,kind,name,objective,entityID)
  if type(spawns)~="table" then return end
  for area,coords in pairs(spawns) do
   local map=zoneMaps[area]
@@ -51,7 +66,7 @@ local function append(result,zoneMaps,spawns,kind,name,objective)
     if type(xy)=="table" then
      local x,y,phase=xy[1],xy[2],xy[3]
      if type(x)=="number" and type(y)=="number" and x>=0 and x<=100 and y>=0 and y<=100 and (not phase or phase==0) then
-      result[#result+1]={map=map,x=x/100,y=y/100,source="QuestieDB "..kind,kind=kind,label=name,objective=objective}
+      result[#result+1]={map=map,x=x/100,y=y/100,source="QuestieDB "..kind,kind=kind,label=name,objective=objective,entityID=entityID,areaID=area}
      end
     end
    end
@@ -63,7 +78,7 @@ local function entity(result,mapsByArea,db,kind,id,action,objective)
  if not db or type(id)~="number" or id<=0 then return end
  local spawns=read(db.spawns,id)
  local name=read(db.name,id)
- append(result,mapsByArea,spawns,action or kind,name,objective)
+ append(result,mapsByArea,spawns,action or kind,name,objective,id)
 end
 
 local function normalized(text)
@@ -120,11 +135,19 @@ function R.ForQuest(quest)
  local result={}
  if normalized(read(db.Quest.name,quest.id))~=normalized(quest.title) then return result end
  local zones=maps(db)
- if quest.complete then
+ if quest.complete or quest.id==7905 or quest.id==7926 then
   local endings=read(db.Quest.finishedBy,quest.id)
   if type(endings)=="table" then
    for _,id in ipairs(type(endings[1])=="table" and endings[1] or {}) do entity(result,zones,db.Npc,"npc",id,"turn-in") end
    for _,id in ipairs(type(endings[2])=="table" and endings[2] or {}) do entity(result,zones,db.Object,"object",id,"turn-in") end
+  end
+  if not quest.complete then
+   -- These two breadcrumb quests explicitly deliver a voucher to the Faire.
+   -- Keep it a general event destination unless an objective is known.
+   for _,t in ipairs(result) do
+    t.kind='event-destination'
+    if #(quest.objectives or {})==1 and quest.objectiveStates and quest.objectiveStates[1] and quest.objectiveStates[1].known and not quest.objectiveStates[1].done then t.objectiveIndex=1 end
+   end
   end
  else
   local objectives=read(db.Quest.objectives,quest.id)
@@ -161,4 +184,43 @@ function R.ForQuest(quest)
  return result
 end
 
+local function reportKey(quest,target)
+ if not quest or type(quest.id)~='number' or type(target)~='table' or type(target.map)~='number' or type(target.x)~='number' or type(target.y)~='number' then return end
+ return string.format('%d:%s:%s:%.5f:%.5f',quest.id,tostring(target.objectiveIndex or target.kind or 'quest'),target.map,target.x,target.y)
+end
+function R.IsReported(quest,target)
+ local key=reportKey(quest,target)
+ local reports=ForeverCompanionDB and ForeverCompanionDB.questLocationReports
+ if key and type(reports)=='table' then for _,entry in ipairs(reports) do if entry.key==key then return true end end end
+ return false
+end
+function R.Report(quest,target)
+ local key=reportKey(quest,target);if not key then return 'Choose a reported quest location first.' end
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ local db=ForeverCompanionDB
+ if type(db.questLocationReports)~='table' then db.questLocationReports={} end
+ if R.IsReported(quest,target) then return 'This location is already excluded for this character.' end
+ local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
+ local pos=map and read(C_Map.GetPlayerMapPosition,map,'player')
+ local x,y
+ if pos and type(pos.GetXY)=='function' then local ok,a,b=pcall(pos.GetXY,pos);if ok then x,y=a,b end end
+ db.questLocationReports[#db.questLocationReports+1]={key=key,questID=quest.id,title=quest.title,objectiveIndex=target.objectiveIndex,
+  map=target.map,x=target.x,y=target.y,source=target.source,entityID=target.entityID,areaID=target.areaID,label=target.label,
+  playerMap=map,playerX=x,playerY=y}
+ while #db.questLocationReports>100 do table.remove(db.questLocationReports,1) end
+ return 'Saved locally and excluded this destination. Use Location options to copy the report or restore it.'
+end
+function R.ReportText(quest)
+ local lines={'Forever Companion quest location report (player-reported; not a verified correction)'}
+ for _,r in ipairs(ForeverCompanionDB and ForeverCompanionDB.questLocationReports or {}) do
+  if not quest or r.questID==quest.id then
+   lines[#lines+1]=string.format('Quest #%d: %s | objective %s | map %s %.5f, %.5f | %s | entity %s | area %s | player map %s %s, %s',r.questID,r.title or '',tostring(r.objectiveIndex or 'quest'),tostring(r.map),r.x,r.y,r.source or 'unknown',tostring(r.entityID or '?'),tostring(r.areaID or '?'),tostring(r.playerMap or '?'),tostring(r.playerX or '?'),tostring(r.playerY or '?'))
+  end
+ end
+ return table.concat(lines,'\n')
+end
+function R.Restore(quest)
+ local reports=ForeverCompanionDB and ForeverCompanionDB.questLocationReports
+ if type(reports)=='table' then for i=#reports,1,-1 do if reports[i].questID==quest.id then table.remove(reports,i) end end end
+end
 function R.IsAvailable() return provider()~=nil end

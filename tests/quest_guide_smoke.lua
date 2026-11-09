@@ -43,3 +43,6 @@ assert(destinations[1].reference==false and destinations[3].reference==true and 
 assert(reference.reference==nil,'provider records must remain unchanged')
 assert(#ForeverCompanionQuestWaypoints.Targets(nil)==0)
 print('PASS: objective-specific targets, progress unknowns, completed removal, turn-ins, tracker priorities and remaining-objective previews')
+
+local found=T.Search({{quest={id=173,title='Worgen in the Woods',zone='Duskwood',objectives={'Nightbane Shadow Weaver'}}},{quest={id=221,title='Worgen in the Woods',zone='Duskwood',objectives={'Nightbane Dark Runner'}}}},'173')
+assert(#found==1 and found[1].quest.id==173,'quest search distinguishes identically named chain parts')
