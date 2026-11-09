@@ -35,6 +35,7 @@ jobs:
           lua5.1 tests/quest_discovery_smoke.lua
           lua5.1 tests/quest_guide_smoke.lua
           lua5.1 tests/quest_sync_metadata_smoke.lua
+          lua5.1 tests/quest_history_smoke.lua
           lua5.1 tests/available_quests_smoke.lua
           lua5.1 tests/material_workspace_smoke.lua
           lua5.1 tests/mock_ui.lua

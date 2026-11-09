@@ -84,6 +84,8 @@ local function create()
    {label='Standard: four quests',selected=cfg.compact~=true,action=function() cfg.compact=false;T.page=1;T.Refresh() end},
    {label=cfg.locked and 'Unlock tracker' or 'Lock tracker',selected=cfg.locked==true,action=function() cfg.locked=not cfg.locked end},
    {label='Reset tracker position',action=function() cfg.position=nil;root:ClearAllPoints();root:SetPoint('RIGHT',UIParent,'RIGHT',-35,0) end},
+   {label='Quest history',action=function() if ForeverCompanionOpenQuestBook then ForeverCompanionOpenQuestBook('history') end end},
+   {label='Zone quest catalog',action=function() if ForeverCompanionOpenQuestBook then ForeverCompanionOpenQuestBook('catalog') end end},
    {label='Hide tracker',action=T.Hide},
   })
  end)

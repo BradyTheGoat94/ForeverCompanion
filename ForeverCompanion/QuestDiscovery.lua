@@ -30,6 +30,7 @@ function D.SetZoneMode(mode)
  if mode~='player' and mode~='viewed' then return false end
  zoneMode=mode;D.page=1;D.Refresh();return true
 end
+function D.GetZoneMode() return zoneMode end
 function D.TargetKey(t) return t.map..':'..t.x..':'..t.y end
 function D.Filter(entries,query,native,options)
  options=options or {}

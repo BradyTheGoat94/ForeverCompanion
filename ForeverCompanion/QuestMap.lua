@@ -497,6 +497,7 @@ end
 function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
  if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
+ if ForeverCompanionQuestBook then ForeverCompanionQuestBook.Refresh() end
  hidePins()
  zoomPoint=nil
  local planner=ForeverCompanionQuestPlanner

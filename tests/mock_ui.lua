@@ -1724,3 +1724,54 @@ do
  ForeverCompanionQuestTracker.Hide();assert(not tracker.visible and not ForeverCompanionQuestTracker.IsShown())
  assert(ForeverCompanionOpenQuestGuide(-1)==false)
 end
+do
+ local originalCatalog=ForeverCompanionAvailableQuests.Catalog
+ local originalHistory=ForeverCompanionDB.questHistory
+ local originalMap=C_Map
+ local originalDate=date
+ date=function(pattern,at) return os.date(pattern,at) end
+ C_Map={GetBestMapForUnit=function() return 1429 end,GetMapInfo=function() return {name='Sample forest'} end}
+ local q=ForeverCompanionQuestPlanner.GetLive()[1]
+ local targets={{map=1429,x=.2,y=.3,label='Sample quest giver',source='Forever QuestieDB quest giver'}}
+ local catalog={
+  {id=q.id,title=q.title,status='active',ready=q.complete,minimum=1,reason='Currently in the live quest log',dependencies={},targets=targets},
+  {id=900101,title='Sample: Camp patrol',status='available',minimum=10,reason='Basic checks passed; confirm special requirements with the giver',dependencies={},targets=targets},
+  {id=900102,title='Sample: Supply chain',status='locked',minimum=10,reason='Complete one prerequisite quest',dependencies={'Sample: First supplies'},targets=targets},
+  {id=900103,title='Sample: A completed quest',status='completed',minimum=10,reason='Completion flag reported by the client',dependencies={},targets=targets},
+  {id=900104,title='Sample: Unknown completion',status='unknown',minimum=10,reason='Completion state is unavailable',dependencies={},targets=targets},
+ }
+ local calls=0
+ ForeverCompanionAvailableQuests.Catalog=function() calls=calls+1;return catalog end
+ ForeverCompanionOpenQuestBook('catalog')
+ local book,selected,searchBox
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestBookPanel' then book=f end end
+ assert(book and book.visible)
+ for _,f in ipairs(frames) do
+  if f.parent==book.id and f.entry and f.entry.id==900102 then selected=f end
+  if f.parent==book.id and f.kind=='EditBox' then searchBox=f end
+ end
+ assert(selected and searchBox);selected.OnClick(selected)
+ exportNative('ui_catalog_native.json')
+ local before=calls
+ searchBox:SetText('SUPPLY');searchBox.OnTextChanged(searchBox,true)
+ assert(calls==before,'typing a catalog search must not rescan completion APIs')
+ searchBox:SetText('');searchBox.OnTextChanged(searchBox,true)
+ ForeverCompanionDB.questHistory={entries={}}
+ ForeverCompanionQuestHistory.Record(900201,500,12345,{quest={id=900201,title='Sample: Report to camp',zoneKnown=true,zone='Sample forest'},map=1429,at=1400000000})
+ ForeverCompanionQuestHistory.Record(900202,750,nil,{quest={id=900202,title='Sample: Deliver supplies',zoneKnown=true,zone='Sample forest'},map=1429,at=1400000100})
+ ForeverCompanionOpenQuestBook('history')
+ for _,f in ipairs(frames) do if f.parent==book.id and f.entry and f.entry.id==900201 then selected=f end end
+ selected.OnClick(selected)
+ local key=selected.key
+ ForeverCompanionQuestHistory.Record(900203,nil,nil,{quest={id=900203,title='Sample: Another turn-in'},map=1429,at=1400000200})
+ local retained=false
+ for _,f in ipairs(frames) do if f.parent==book.id and f.key==key and f.entry and f.entry.id==900201 then retained=true end end
+ assert(retained,'history selection must retain its event identity when new turn-ins arrive')
+ exportNative('ui_history_native.json')
+ local giverMap
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Show giver map' then giverMap=f end end
+ assert(giverMap and giverMap.enabled==false and not giverMap.visible,'turn-in history cannot invent a historical coordinate')
+ ForeverCompanionAvailableQuests.Catalog=originalCatalog;ForeverCompanionDB.questHistory=originalHistory;C_Map=originalMap;date=originalDate
+ SlashCmdList.FOREVERCOMPANION('discover')
+ assert(not book.visible,'discovery tab must replace the book view')
+end

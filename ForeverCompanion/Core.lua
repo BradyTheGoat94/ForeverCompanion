@@ -24,6 +24,8 @@ local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
 local questSectionLabel,questEmpty,questDiscoveryButton
 local questListBottom=650
+local questExplorerView='discover'
+local questExplorerTabs,questExplorerButtons=nil,{}
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
   Journey="Next quest, navigation and suggested zones",
@@ -661,12 +663,17 @@ local function render()
   end
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   ForeverCompanionQuestFieldGuide.Show(currentTab=="Quests",scrollChild,questListBottom)
-  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests",scrollChild,questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
+  local explorerOffset=questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()
+  questExplorerTabs:SetShown(currentTab=='Quests')
+  questExplorerTabs:ClearAllPoints();questExplorerTabs:SetPoint('TOPLEFT',scrollChild,'TOPLEFT',8,-explorerOffset)
+  for view,button in pairs(questExplorerButtons) do ForeverCompanionInterface.StyleButton(button,nil,view==questExplorerView) end
+  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests" and questExplorerView=='discover',scrollChild,explorerOffset+35)
+  ForeverCompanionQuestBook.Show(currentTab=='Quests' and questExplorerView~='discover',scrollChild,explorerOffset+35,questExplorerView)
   if questDiscoveryButton then questDiscoveryButton:SetShown(currentTab=="Quests") end
   if ForeverCompanionUIState.questFieldGuideButton then ForeverCompanionUIState.questFieldGuideButton:SetShown(currentTab=='Quests') end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
+  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+35+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -980,7 +987,19 @@ local function createUI()
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   ForeverCompanionQuestDiscovery.Create(child)
+  ForeverCompanionQuestBook.Create(child)
   ForeverCompanionQuestFieldGuide.Create(child)
+  questExplorerTabs=CreateFrame('Frame',nil,child);questExplorerTabs:SetSize(770,30);questExplorerTabs:Hide()
+  for i,entry in ipairs({{'discover','Find quests'},{'catalog','Zone catalog'},{'history','Turn-in history'}}) do
+    local view=entry[1]
+    local b=ForeverCompanionInterface.Button(questExplorerTabs);b:SetPoint('TOPLEFT',(i-1)*166,0);b:SetSize(160,27);b:SetText(entry[2])
+    b:SetScript('OnClick',function() questExplorerView=view;render();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
+    questExplorerButtons[view]=b
+  end
+  ForeverCompanionOpenQuestBook=function(view)
+    questExplorerView=view=='history' and 'history' or 'catalog'
+    openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
+  end
   ForeverCompanionOpenQuestGuide=function(id)
     if type(id)~='number' or id<=0 then return false end
     for index,q in ipairs(ForeverCompanionQuestPlanner.GetLive()) do
@@ -991,6 +1010,7 @@ local function createUI()
   ForeverCompanionQuestTracker.Configure(function(q,index)
     ForeverCompanionQuestPlanner.Select(index);openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom)
   end,function()
+    questExplorerView='discover'
     openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
   end)
   if ForeverCompanionQuestTracker.IsShown() then ForeverCompanionQuestTracker.Show() end
@@ -1001,7 +1021,7 @@ local function createUI()
   questDiscoveryButton=ForeverCompanionInterface.Button(child)
   questDiscoveryButton:SetSize(172,23);questDiscoveryButton:SetPoint("TOPLEFT",child,"TOPLEFT",606,-181)
   questDiscoveryButton:SetText("Find new quests")
-  questDiscoveryButton:SetScript("OnClick",function() scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
+  questDiscoveryButton:SetScript("OnClick",function() questExplorerView='discover';render();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
   questDiscoveryButton:Hide()
   if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
@@ -1276,7 +1296,8 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if not DB then return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
   if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
-  if msg=='discover' then openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end
+  if msg=='discover' then questExplorerView='discover';openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end
+  if msg=='questbook' or msg=='history' then ForeverCompanionOpenQuestBook(msg=='history' and 'history' or 'catalog');return end
   if msg == "meter" or msg == "combat" then
     if ForeverCompanionCombatMeter and ForeverCompanionCombatMeter.Toggle then ForeverCompanionCombatMeter.Toggle()
     else say("Combat meter module is unavailable.") end
