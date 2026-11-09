@@ -1,4 +1,4 @@
-# Forever Companion 3.42.0-beta release notes (draft)
+# Forever Companion 3.43.0-beta release notes (draft)
 
 ## What the beta includes
 
@@ -35,3 +35,7 @@ Spell search, pet-only analysis, route filters, direct objective navigation, mov
 ## 3.42 update
 
 New observed leveling session tracker with pause/resume and bounded saved summaries; temporary itinerary deferrals; persistent discovery preferences; explicit selection menus; stale pickup and catalog navigation checks. See docs/SPRINT_3_42.md.
+
+## 3.43 map update
+
+Compact map dock, searchable Service Atlas, configurable service pins and local merchant-visit records. Current provider references remain distinct from approximate visited positions. See docs/SPRINT_3_43.md for source, setup and acceptance details.

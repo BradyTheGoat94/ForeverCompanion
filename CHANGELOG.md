@@ -1,3 +1,14 @@
+## 3.43.0-beta — Map dock and service atlas
+
+- Replaced the large central map toolbar with a compact, draggable bottom-left dock. Expand its controls when needed; saved placement and a reset are available. Native map terrain is the default for new preferences; existing style choices remain supported. Atlas tint/grid are more restrained.
+- Added a searchable Service Atlas from Find services, /fc services or /fc vendors. Search NPC names, specialties, service roles and IDs; filter by category/source, browse current or world-map zones, save favorites and navigate revalidated locations.
+- Modernized service markers with slim category-colored borders, stable icon sizes, source pips, hover names, optional labels and tighter-cluster settings. Right-click a cluster to select a service, or Shift-click to cycle.
+- Added unobtrusive current-view player coordinates with unavailable-state clearing. Coordinate updates do not rebuild the map overlay.
+- Provider service records now retain NPC IDs, specialty text and source information. Duplicate service coordinates are removed. Rescan reads current data/corrections from the installed compatible Forever QuestieDB provider.
+- Observed merchant visits supplement provider references. Records are per character, bounded to 100 NPC/map visits, can be disabled or cleared, and explicitly use the player's position during interaction rather than claiming an exact NPC coordinate. Distinct observations do not overwrite database references.
+- Added click-time service and pickup-marker validation, provider-index completion refresh for the standalone atlas, and map-change handling.
+- Added service-index/atlas coverage and populated UI checks for the atlas and collapsed/expanded map dock. Latest provider release checked: QuestieDB 1.0.13 Forever. Provider data is not bundled or automatically updated.
+
 ## 3.42.0-beta — Leveling sessions and flexible quest planning
 
 - New My Leveling Session window from the Overview shortcut, /fc session and route options. Shows tracked time, observed XP, XP/hour, observed turn-ins, reported rewards and six recent turn-ins.

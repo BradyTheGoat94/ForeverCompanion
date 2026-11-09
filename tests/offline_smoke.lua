@@ -1118,7 +1118,7 @@ do
  ForeverCompanionDB={}
  dofile("ForeverCompanion/QuestMap.lua")
  local map=ForeverCompanionQuestMap
- assertEqual(map.MapStyle(),"atlas","standalone map defaults to atlas presentation")
+ assertEqual(map.MapStyle(),"clear","standalone map defaults to unobstructed native terrain")
  assertEqual(map.SetMapStyle("clear"),true,"standalone clear style available")
  assertEqual(map.MapStyle(),"clear","clear style persists")
  assertEqual(ForeverCompanionDB.questMapStyle,"clear","clear style saved")

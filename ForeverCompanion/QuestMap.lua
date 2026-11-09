@@ -7,6 +7,7 @@ local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,z
 local pins,servicePins,zoomPoint={},{},nil
 local modeNames={focus="Focus",all="All",off="Off"}
 local nextMode={all="focus",focus="off",off="all"}
+local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 
 local function mode()
  local saved=ForeverCompanionDB and ForeverCompanionDB.questMapMode
@@ -16,8 +17,9 @@ end
 local function mapStyle()
  local db=ForeverCompanionDB
  if db and db.questMapStyle=="clear" then return "clear" end
+ if db and db.questMapStyle=='atlas' then return 'atlas' end
  if db and db.questMapOriginalTerrain==true then return "original" end
- return "atlas"
+ return "clear"
 end
 
 local function cycleMapStyle()
@@ -55,16 +57,16 @@ local function showTerrain(canvas)
   terrain:EnableMouse(false)
   local tint=terrain:CreateTexture(nil,"BACKGROUND")
   tint:SetAllPoints(terrain)
-  tint:SetColorTexture(.08,.15,.22,.065)
+  tint:SetColorTexture(.08,.15,.22,.025)
   sharpenOverlay(tint)
   for i=1,9 do
    local vertical=terrain:CreateTexture(nil,"ARTWORK")
    vertical:SetWidth(1)
-   vertical:SetColorTexture(.25,.56,.69,i==5 and .16 or .07)
+   vertical:SetColorTexture(.25,.56,.69,i==5 and .075 or .025)
    sharpenOverlay(vertical)
    local horizontal=terrain:CreateTexture(nil,"ARTWORK")
    horizontal:SetHeight(1)
-   horizontal:SetColorTexture(.25,.56,.69,i==5 and .16 or .07)
+   horizontal:SetColorTexture(.25,.56,.69,i==5 and .075 or .025)
    sharpenOverlay(horizontal)
    terrain[i]={vertical,horizontal}
   end
@@ -153,7 +155,10 @@ local function createPin(canvas)
    return
   end
   if entry.pickup then
-   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
+   local map=worldMap:GetMapID()
+   local target=ForeverCompanionQuestDiscovery.Resolve(ForeverCompanionQuestWaypoints.MapPickups(map,ForeverCompanionQuestPlanner.GetLive()),entry.quest.id,entry.target)
+   if not target then M.Refresh();guideHint:SetText('This quest pickup changed. Choose a current marker.');return end
+   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,entry.quest.title))
   elseif self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
    if not self.focused then ForeverCompanionQuestPlanner.Select(entry.index) end
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
@@ -168,36 +173,25 @@ local function townsEnabled()
  return not ForeverCompanionDB or ForeverCompanionDB.questMapHideTowns~=true
 end
 
--- Built-in Blizzard icon textures; no letter tiles or external assets.
--- All paths use shipped game artwork. Unknown services use a bag icon.
-local serviceArtwork={
- B="Interface\\Minimap\\Tracking\\Banker",
- AH="Interface\\Minimap\\Tracking\\Auctioneer",
- F="Interface\\Minimap\\Tracking\\FlightMaster",
- I="Interface\\Minimap\\Tracking\\Innkeeper",
- R="Interface\\Minimap\\Tracking\\Repair",
- V="Interface\\Minimap\\Tracking\\Reagents",
- T="Interface\\Minimap\\Tracking\\Class",
- M="Interface\\Minimap\\Tracking\\Mailbox",
-}
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  points=ForeverCompanionServiceClusters.Filter(points,ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices)
+ local cfg=ForeverCompanionDB or {}
+ local iconSize=(cfg.mapServiceIconSize==20 or cfg.mapServiceIconSize==28) and cfg.mapServiceIconSize or 24
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  -- Pixel-distance clustering crosses service categories, so a banker,
  -- repair vendor and trainer at the same building remain accessible.
- local detailed=scale>=1.25
- local ordered=ForeverCompanionServiceClusters.Build(points,width,height,detailed and 22 or 26)
+ local ordered=ForeverCompanionServiceClusters.Build(points,width,height,cfg.mapServiceTight and iconSize or iconSize+6)
  for _,oldPin in ipairs(servicePins) do oldPin:Hide();oldPin.locations=nil end
  for i,group in ipairs(ordered) do
   local pin=servicePins[i]
   if not pin then
    pin=CreateFrame("Button",nil,canvas)
-   pin:RegisterForClicks("LeftButtonUp")
+   pin:RegisterForClicks("LeftButtonUp","RightButtonUp")
    pin:SetSize(25,25)
    local bg=pin:CreateTexture(nil,"BACKGROUND")
-   bg:SetAllPoints(pin)
+   bg:SetPoint('TOPLEFT',1,-1);bg:SetPoint('BOTTOMRIGHT',-1,1)
    bg:SetColorTexture(.015,.025,.04,.94)
    pin.background=bg
    sharpenOverlay(bg)
@@ -209,19 +203,23 @@ local function showServices(canvas,mapID,scale)
    pin.count=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
    pin.count:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",5,-3)
    pin.count:SetShadowOffset(1,-1)
+   local label=ForeverCompanionInterface.Text(pin,10)
+   label:SetPoint('TOP',pin,'BOTTOM',0,-3);label:SetWidth(132);label:SetJustifyH('CENTER');label:SetHeight(15);label:Hide();pin.nameLabel=label
+   local pip=pin:CreateTexture(nil,'OVERLAY');pip:SetSize(4,4);pip:SetPoint('TOPLEFT',-1,1);pip:SetColorTexture(.25,.90,.92,1);pin.visitPip=pip
    sharpenOverlay(icon)
-   local border=pin:CreateTexture(nil,"OVERLAY")
-   border:SetPoint("TOPLEFT",pin,"TOPLEFT",-1,1)
-   border:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",1,-1)
-   border:SetTexture("Interface\\Buttons\\UI-Quickslot2")
+   local border=pin:CreateTexture(nil,"BACKGROUND",nil,-1)
+   border:SetAllPoints(pin)
+   border:SetColorTexture(1,1,1,1)
    pin.border=border
    sharpenOverlay(border)
    pin:SetScript("OnEnter",function(self)
     if self.border then self.border:SetVertexColor(1,1,1,1) end
+    if self.nameLabel and self.locations then self.nameLabel:SetText(self.locations[self.locationIndex or 1].label);self.nameLabel:Show() end
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     local active=self.locations[self.locationIndex or 1]
     GameTooltip:SetText(active.service.."  -  "..active.label)
+    if active.subtitle then GameTooltip:AddLine(active.subtitle,.85,.9,1,true) end
     local seen,count,displayed={},0,0
     for _,entry in ipairs(self.locations) do
      local key=entry.service..":"..entry.label
@@ -237,26 +235,42 @@ local function showServices(canvas,mapID,scale)
     if count>displayed then
      GameTooltip:AddLine("+"..(count-displayed).." more nearby locations",.65,.78,.85)
     end
-    GameTooltip:AddLine("QuestieDB reference  ·  Click for arrow",.65,.78,.85)
+    GameTooltip:AddLine(active.source or 'Forever QuestieDB reference',.65,.78,.85,true)
+    if active.observed then GameTooltip:AddLine('Your position during a merchant visit, not an exact NPC location. Vendors may move.',.95,.76,.35,true) end
+    GameTooltip:AddLine('Click: navigate · Right-click: choose service',.65,.78,.85,true)
     if #self.locations>1 then GameTooltip:AddLine('Shift-click: cycle nearby services',.95,.76,.35,true) end
     GameTooltip:Show()
    end)
    pin:SetScript("OnLeave",function(self)
+    if self.nameLabel then self.nameLabel:SetShown((ForeverCompanionDB or {}).mapServiceLabels==true and self.labelAllowed) end
     if self.border and self.markerColor then
      self.border:SetVertexColor(self.markerColor[1],self.markerColor[2],self.markerColor[3],1)
     end
     if GameTooltip then GameTooltip:Hide() end
    end)
-   pin:SetScript("OnClick",function(self)
+   pin:SetScript("OnClick",function(self,button)
+    if not self.locations then return end
+    if button=='RightButton' then
+     local choices={}
+     for _,point in ipairs(self.locations) do
+      local target=point
+      choices[#choices+1]={label=point.service..': '..point.label,action=function() guideHint:SetText(ForeverCompanionServiceAtlas.Navigate(target)) end}
+      if #choices>=12 then break end
+     end
+     choices[#choices+1]={label='Open searchable service atlas',action=function() ForeverCompanionServiceAtlas.Toggle(true) end}
+     ForeverCompanionInterface.Menu(self,'NEARBY SERVICES',choices);return
+    end
     if IsShiftKeyDown and IsShiftKeyDown() and #self.locations>1 then
      self.locationIndex=(self.locationIndex or 1)%#self.locations+1
      local active=self.locations[self.locationIndex]
-     self.icon:SetTexture(serviceArtwork[active.symbol] or serviceArtwork.V)
+     ForeverCompanionServiceAtlas.SetIcon(self.icon,active.symbol)
+     self.visitPip:SetShown(active.observed==true)
      self:GetScript("OnEnter")(self)
      return
     end
     local target=self.locations[self.locationIndex or 1]
-    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,target.label))
+    if not ForeverCompanionTownServices.Resolve(target) then guideHint:SetText('This service changed. Open the atlas and rescan.');return end
+    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,target.label..(target.observed and ' · visited nearby' or '')))
    end)
    servicePins[i]=pin
   end
@@ -265,8 +279,12 @@ local function showServices(canvas,mapID,scale)
   pin.locationIndex=1
   pin.count:SetText(#group>1 and tostring(#group) or "")
   -- Smaller, less intrusive POI icons at both zoom levels.
-  pin:SetSize(detailed and 24 or 22,detailed and 24 or 22)
-  pin.icon:SetTexture(serviceArtwork[point.symbol] or serviceArtwork.V)
+  pin:SetSize(iconSize,iconSize)
+  pin.visitPip:SetShown(point.observed==true)
+  pin.labelAllowed=i<=12
+  pin.nameLabel:SetText(point.label)
+  pin.nameLabel:SetShown(cfg.mapServiceLabels==true and pin.labelAllowed)
+  ForeverCompanionServiceAtlas.SetIcon(pin.icon,point.symbol)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
    pin.markerColor={1,.8,.35}
@@ -287,115 +305,94 @@ local function showServices(canvas,mapID,scale)
   pin:SetPoint("CENTER",canvas,"TOPLEFT",point.x*width,-point.y*height)
   pin:Show()
  end
- return notice
+ return notice,#points
 end
 
-local function createGuide(map)
- local bar=CreateFrame("Frame","ForeverCompanionMapToolbar",map)
- bar:SetSize(451,120)
- -- Recalculate as the world-map window is resized; no external map addon.
- local function fitToolbar()
-  if not map.GetWidth then return end
-  local width=map:GetWidth()
-  if issecretvalue and issecretvalue(width) then return end
-  if type(width)~="number" or width<=0 then return end
-  local scale=math.min(1,math.max(.65,(width-24)/451))
-  if bar:GetScale()~=scale then bar:SetScale(scale) end
+function M.OpenAppearance(anchor)
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ local db=ForeverCompanionDB;local entries={}
+ for _,preset in ipairs({{'Small service icons',20},{'Standard service icons',24},{'Large service icons',28}}) do
+  local name,size=preset[1],preset[2]
+  entries[#entries+1]={label=name,selected=(db.mapServiceIconSize or 24)==size,action=function() db.mapServiceIconSize=size;M.Refresh() end}
  end
- fitToolbar()
- bar:SetScript("OnShow",fitToolbar)
- if map.HookScript then map:HookScript("OnSizeChanged",fitToolbar) end
- bar:SetPoint("TOP",map,"TOP",0,-38)
- bar:SetFrameLevel(map:GetFrameLevel()+200)
- ForeverCompanionInterface.Surface(bar)
- local accent=bar:CreateTexture(nil,"ARTWORK")
- accent:SetColorTexture(.82,.68,.43,.95)
- accent:SetPoint("TOPLEFT",bar,"TOPLEFT",2,-2)
- accent:SetPoint("TOPRIGHT",bar,"TOPRIGHT",-2,-2)
- accent:SetHeight(2)
- local bottom=bar:CreateTexture(nil,"BORDER")
- bottom:SetColorTexture(.23,.28,.35,1)
- bottom:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",2,2)
- bottom:SetPoint("BOTTOMRIGHT",bar,"BOTTOMRIGHT",-2,2)
- bottom:SetHeight(1)
- local title=bar:CreateFontString(nil,"OVERLAY","GameFontHighlight")
- title:SetPoint("TOP",0,-7)
- title:SetWidth(423)
- local hint=bar:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
- hint:SetPoint("TOP",0,-26)
- hint:SetWidth(423)
- hint:SetTextColor(.66,.72,.80)
- title:SetTextColor(.93,.95,.98)
- ForeverCompanionVisualTheme.Font(title,13)
- ForeverCompanionVisualTheme.Font(hint,11)
- modeButton=ForeverCompanionInterface.Button(bar)
- modeButton:SetSize(100,22)
- modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,58)
- modeButton:SetScript("OnClick",function()
-  ForeverCompanionDB=ForeverCompanionDB or {}
-  ForeverCompanionDB.questMapMode=nextMode[mode()]
-  M.Refresh()
- end)
- zoomButton=ForeverCompanionInterface.Button(bar)
- zoomButton:SetSize(100,22)
- zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,58)
- zoomButton:SetText("Zoom focus")
- zoomButton:SetScript("OnClick",function()
-  if zoomPoint and type(map.PanAndZoomTo)=="function" then
-   map:PanAndZoomTo(zoomPoint.x,zoomPoint.y)
+ entries[#entries+1]={label='Show service names',selected=db.mapServiceLabels==true,action=function() db.mapServiceLabels=not db.mapServiceLabels;M.Refresh() end}
+ entries[#entries+1]={label='Tighter service clusters',selected=db.mapServiceTight==true,action=function() db.mapServiceTight=not db.mapServiceTight;M.Refresh() end}
+ entries[#entries+1]={label='Show player map coordinates',selected=db.mapShowCoordinates~=false,action=function() db.mapShowCoordinates=db.mapShowCoordinates==false;M.Refresh() end}
+ entries[#entries+1]={label='Reset map dock position',action=function() db.mapDockPosition=nil;if guide then guide:ClearAllPoints();guide:SetPoint('BOTTOMLEFT',worldMap,'BOTTOMLEFT',12,12) end end}
+ ForeverCompanionInterface.Menu(anchor or guide,'MAP APPEARANCE',entries)
+end
+local function createGuide(map)
+ local U=ForeverCompanionInterface
+ local bar=CreateFrame('Frame','ForeverCompanionMapToolbar',map)
+ bar:SetSize(520,54);bar:SetPoint('BOTTOMLEFT',map,'BOTTOMLEFT',12,12);bar:SetFrameLevel(map:GetFrameLevel()+200)
+ bar:SetClampedToScreen(true);bar:SetMovable(true);bar:EnableMouse(true);U.Surface(bar)
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ local db=ForeverCompanionDB
+ local position=db.mapDockPosition
+ if type(position)=='table' and finite(position.x) and finite(position.y) then
+  bar:ClearAllPoints();bar:SetPoint('CENTER',map,'CENTER',position.x,position.y)
+ end
+ local drag=CreateFrame('Frame',nil,bar);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(310,28);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
+ drag:SetScript('OnDragStart',function() bar:StartMoving() end)
+ drag:SetScript('OnDragStop',function()
+  bar:StopMovingOrSizing()
+  local x,y=bar:GetCenter();local px,py=map:GetCenter()
+  local fs=bar.GetEffectiveScale and bar:GetEffectiveScale();local ps=map.GetEffectiveScale and map:GetEffectiveScale()
+  if finite(fs) and fs>0 and finite(ps) and ps>0 and finite(px) and finite(py) then px,py=px*ps/fs,py*ps/fs end
+  if finite(x) and finite(y) and finite(px) and finite(py) then
+   db.mapDockPosition={x=x-px,y=y-py};bar:ClearAllPoints();bar:SetPoint('CENTER',map,'CENTER',x-px,y-py)
   end
  end)
- styleButton=ForeverCompanionInterface.Button(bar)
- styleButton:SetSize(112,22)
- styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,58)
- styleButton:SetScript("OnClick",function()
-  cycleMapStyle()
-  M.Refresh()
- end)
- townButton=ForeverCompanionInterface.Button(bar)
- townButton:SetSize(100,22)
- townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,58)
- townButton:SetScript("OnClick",function()
-  ForeverCompanionDB=ForeverCompanionDB or {}
-  ForeverCompanionDB.questMapHideTowns=townsEnabled()
-  M.Refresh()
- end)
- pickupButton=ForeverCompanionInterface.Button(bar)
- pickupButton:SetSize(108,22);pickupButton:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,31)
- pickupButton:SetScript("OnClick",function()
-  ForeverCompanionDB=ForeverCompanionDB or {}
-  ForeverCompanionDB.questMapHidePickups=not ForeverCompanionDB.questMapHidePickups
-  M.Refresh()
- end)
- pickupButton:SetScript("OnEnter",function(self)
-  if GameTooltip then
-   GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-   GameTooltip:SetText("Unaccepted quests")
-   GameTooltip:AddLine("Shown in Map: All. Click ! to navigate; Shift-click cycles shared quest givers.",.8,.9,1,true)
-   GameTooltip:AddLine(ForeverCompanionQuestWaypoints.PickupStatus or "Blizzard pickups plus Forever QuestieDB reference locations",.95,.78,.4,true)
-   GameTooltip:Show()
+ local function fitToolbar()
+  local width=map.GetWidth and map:GetWidth()
+  if finite(width) and width>24 then bar:SetScale(math.min(1,math.max(.5,(width-24)/520))) end
+ end
+ fitToolbar();bar:SetScript('OnShow',fitToolbar);if map.HookScript then map:HookScript('OnSizeChanged',fitToolbar) end
+ local accent=bar:CreateTexture(nil,'ARTWORK');accent:SetColorTexture(.20,.72,.78,1);accent:SetPoint('TOPLEFT',0,0);accent:SetPoint('TOPRIGHT',0,0);accent:SetHeight(2)
+ local title=U.Text(bar,13);title:SetPoint('TOPLEFT',12,-9);title:SetWidth(300);title:SetHeight(18)
+ local hint=U.Text(bar,10,U.palette.muted);hint:SetPoint('TOPLEFT',12,-33);hint:SetWidth(392);hint:SetHeight(14)
+ local coordinates=U.Text(bar,10,{.40,.83,.86,1});coordinates:SetPoint('TOPRIGHT',-12,-33);coordinates:SetWidth(94);coordinates:SetHeight(14);coordinates:SetJustifyH('RIGHT')
+ local function updateCoordinates()
+  coordinates:SetShown(db.mapShowCoordinates~=false);hint:SetWidth(db.mapShowCoordinates==false and 496 or 392)
+  if db.mapShowCoordinates==false then return end
+  local mapID=map:GetMapID()
+  local ok,position=pcall(function() return C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(mapID,'player') end)
+  local x,y
+  if ok and position and not (issecretvalue and issecretvalue(position)) and type(position.GetXY)=='function' then
+   local readable,a,b=pcall(position.GetXY,position);if readable then x,y=a,b end
   end
+  coordinates:SetText(finite(x) and finite(y) and x>=0 and x<=1 and y>=0 and y<=1 and string.format('%.1f / %.1f',x*100,y*100) or 'No position')
+ end
+ local elapsed=0;bar:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=.25 then elapsed=0;updateCoordinates() end end);updateCoordinates()
+ local find=U.Button(bar);find:SetSize(148,26);find:SetPoint('TOPRIGHT',-45,-6);find:SetText('Find services')
+ find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
+ local expand=U.Button(bar);expand:SetSize(26,26);expand:SetPoint('TOPRIGHT',-10,-6)
+ local drawer=CreateFrame('Frame',nil,bar);drawer:SetSize(520,86);drawer:SetPoint('TOPLEFT',0,-54)
+ local function layout()
+  local expanded=db.mapDockExpanded==true;drawer:SetShown(expanded);bar:SetHeight(expanded and 140 or 54);expand:SetText(expanded and '-' or '+')
+ end
+ expand:SetScript('OnClick',function() db.mapDockExpanded=not db.mapDockExpanded;layout() end);layout()
+ local function button(x,y,w,value,fn)
+  local b=U.Button(drawer);b:SetSize(w,23);b:SetPoint('TOPLEFT',x,y);b:SetText(value);b:SetScript('OnClick',fn);return b
+ end
+ modeButton=button(12,-4,100,'',function() db.questMapMode=nextMode[mode()];M.Refresh() end)
+ zoomButton=button(122,-4,100,'Zoom focus',function() if zoomPoint and type(map.PanAndZoomTo)=='function' then map:PanAndZoomTo(zoomPoint.x,zoomPoint.y) end end)
+ styleButton=button(232,-4,112,'',function() cycleMapStyle();M.Refresh() end)
+ townButton=button(354,-4,154,'',function() db.questMapHideTowns=townsEnabled();M.Refresh() end)
+ pickupButton=button(12,-35,108,'',function() db.questMapHidePickups=not db.questMapHidePickups;M.Refresh() end)
+ local services
+ services=button(128,-35,144,'Service filters',function()
+  if type(db.questMapHiddenServices)~='table' then db.questMapHiddenServices={} end
+  local hidden=db.questMapHiddenServices;local entries={}
+  for _,entry in ipairs(ForeverCompanionServiceAtlas.Categories) do if entry[1]~='all' then
+   local key,label=entry[1],entry[2];entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() hidden[key]=not hidden[key];M.Refresh() end}
+  end end
+  entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};M.Refresh() end}
+  U.Menu(services,'MAP SERVICES',entries)
  end)
- pickupButton:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local services=ForeverCompanionInterface.Button(bar);services:SetSize(148,22);services:SetPoint('BOTTOMLEFT',128,31);services:SetText('Service filters')
- services:SetScript('OnClick',function()
-  ForeverCompanionDB=ForeverCompanionDB or {}
-  if type(ForeverCompanionDB.questMapHiddenServices)~='table' then ForeverCompanionDB.questMapHiddenServices={} end
-  local hidden=ForeverCompanionDB.questMapHiddenServices;local entries={}
-  for _,entry in ipairs({{'B','Banks'},{'AH','Auction houses'},{'F','Flight masters'},{'I','Inns'},{'R','Repairs'},{'V','Vendors'},{'T','Trainers'},{'M','Mailboxes'}}) do
-   local key,label=entry[1],entry[2]
-   entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() hidden[key]=not hidden[key];M.Refresh() end}
-  end
-  entries[#entries+1]={label='Show all service types',action=function() ForeverCompanionDB.questMapHiddenServices={};M.Refresh() end}
-  ForeverCompanionInterface.Menu(services,'MAP SERVICES',entries)
- end)
- local stop=ForeverCompanionInterface.Button(bar);stop:SetSize(155,22);stop:SetPoint('BOTTOMLEFT',284,31);stop:SetText('Stop navigation')
- stop:SetScript('OnClick',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
- local legend=ForeverCompanionInterface.Text(bar,10)
- legend:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,8);legend:SetWidth(423)
- legend:SetText("! Quest pickups   /   ? Turn-ins   /   Shift-click: cycle")
- title:SetWordWrap(false);title:SetHeight(17)
- hint:SetWordWrap(false);hint:SetHeight(14)
+ button(280,-35,146,'Stop navigation',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
+ local appearance;appearance=button(434,-35,74,'Style...',function() M.OpenAppearance(appearance) end)
+ local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Right-click service clusters to choose · Drag header to move dock')
  return bar,title,hint
 end
 
@@ -514,14 +511,15 @@ function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
  if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
  if ForeverCompanionQuestBook then ForeverCompanionQuestBook.Refresh() end
+ if ForeverCompanionServiceAtlas then ForeverCompanionServiceAtlas.Refresh() end
  hidePins()
  zoomPoint=nil
  local planner=ForeverCompanionQuestPlanner
  local mapID,canvas=worldMap:GetMapID(),worldMap:GetCanvas()
- if not mapID or not canvas then return end
+ if not finite(mapID) or mapID<=0 or not canvas then return end
  local width,height=canvas:GetWidth(),canvas:GetHeight()
  if (issecretvalue and (issecretvalue(width) or issecretvalue(height))) then return end
- if not width or not height or width<=0 or height<=0 then return end
+ if not finite(width) or not finite(height) or width<=0 or height<=0 then return end
  -- Canvas:GetScale() is often the UI scale, not the map zoom level.
  -- Prefer Blizzard's scroll-container zoom when available.
  local scroll=worldMap.ScrollContainer
@@ -538,12 +536,13 @@ function M.Refresh()
  modeButton:SetText("Map: "..modeNames[view])
  local style=mapStyle()
  styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
- townButton:SetText(townsEnabled() and "Towns: On" or "Towns: Off")
+ townButton:SetText(townsEnabled() and "Services: On" or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  if style=="atlas" then showTerrain(canvas) end
- local serviceNotice=showServices(canvas,mapID,scale)
- guideTitle:SetText(focus and focus.title or "Companion map")
- guideHint:SetText(serviceNotice or (view=="off" and "Companion quest markers hidden" or "No quest destination on this map"))
+ local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
+ local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
+ guideTitle:SetText(ok and type(info)=='table' and info.name or 'COMPANION MAP')
+ guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)
  guide:Show()
  if view=="off" or (view=="focus" and not focus) then return end

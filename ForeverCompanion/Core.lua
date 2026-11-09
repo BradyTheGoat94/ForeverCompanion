@@ -1352,6 +1352,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
   if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
   if msg=='session' then ForeverCompanionSessionProgress.Toggle();return end
+  if msg=='services' or msg=='vendors' then ForeverCompanionServiceAtlas.Toggle();return end
   if msg=='next' then say(ForeverCompanionObjectiveRoute.NavigateNext());return end
   if msg=='arrow' then ForeverCompanionQuestDirection.OpenOptions();return end
   if msg=='arrow reset' then ForeverCompanionQuestDirection.ResetPosition();say('Arrow position reset.');return end
@@ -1362,7 +1363,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     else say("Combat meter module is unavailable.") end
     return
   end
-  if msg == "help" then say("/fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end

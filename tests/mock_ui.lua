@@ -510,9 +510,27 @@ do
  end
  local count,focused,ready,active=visiblePins()
  assert(count==4 and focused==2 and ready==1 and active==1,"All should be the default map view")
+ local dock,expandDock
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapToolbar' then dock=f end end
+ assert(dock and dock.height==54,'map dock starts compact to preserve terrain')
+ for _,f in ipairs(frames) do if f.parent==dock.id and f.text=='+' and f.OnClick then expandDock=f end end
+ assert(expandDock);expandDock.OnClick();assert(dock.height==140)
+ exportNative('ui_map_dock_expanded_native.json')
+ expandDock.OnClick();assert(dock.height==54)
+ local oldPosition=C_Map.GetPlayerMapPosition
+ C_Map.GetPlayerMapPosition=function() return {GetXY=function() return .123,.456 end} end
+ dock.OnUpdate(dock,.3)
+ local coordinates
+ for _,f in ipairs(frames) do if f.parent==dock.id and f.text=='12.3 / 45.6' then coordinates=f end end
+ assert(coordinates,'map dock coordinates use the viewed map position')
+ C_Map.GetPlayerMapPosition=function() return nil end;dock.OnUpdate(dock,.3)
+ assert(coordinates.text=='No position','unavailable map position cannot retain old coordinates')
+ C_Map.GetPlayerMapPosition=oldPosition
  local function mapModeButton(text)
   for _,frame in ipairs(frames) do if frame.OnClick and frame.text==text then return frame end end
  end
+ assert(ForeverCompanionQuestMap.MapStyle()=='clear','new map defaults preserve unobstructed native terrain')
+ ForeverCompanionQuestMap.SetMapStyle('atlas')
  local styleButton=assert(mapModeButton("Style: Atlas"))
  local terrain
  for _,frame in ipairs(frames) do
@@ -585,7 +603,7 @@ do
   return count
  end
  assert(townPins()==1,"nearby friendly service types should cluster together")
- local townsButton=assert(mapModeButton("Towns: On"))
+ local townsButton=assert(mapModeButton("Services: On"))
  townsButton:OnClick()
  assert(townPins()==0 and visiblePins()==4,"town services toggle independently of quests")
  townsButton:OnClick()
@@ -602,6 +620,11 @@ do
  ForeverCompanionQuestWaypoints.Navigate=function(target) chosen=target;return "Selected service" end
  servicePin:OnClick()
  assert(chosen==servicePin.locations[2],"navigation retains real selected service coordinates")
+ servicePin:OnClick('RightButton')
+ local serviceChoice
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Vendor: Test vendor' then serviceChoice=f end end
+ assert(serviceChoice);serviceChoice.OnClick()
+ assert(chosen.label=='Test vendor','cluster menu keeps every real service reachable')
  IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate=oldShift,oldNavigate
  mapID=1430;provider:OnMapChanged()
  assert(townPins()==0,"old service pins disappear on map change")
@@ -684,7 +707,7 @@ do
  IsShiftKeyDown=function() return false end
  ForeverCompanionQuestWaypoints.Navigate=function(target) chosenPickup=target;return "Quest pickup selected" end
  pickupPin:OnClick()
- assert(chosenPickup==pickupPin.entry.target,"click navigates to actual quest-giver location")
+ assert(chosenPickup and chosenPickup.map==pickupPin.entry.target.map and chosenPickup.x==pickupPin.entry.target.x and chosenPickup.y==pickupPin.entry.target.y,"click navigates to revalidated quest-giver coordinates")
  IsShiftKeyDown,ForeverCompanionQuestWaypoints.Navigate=oldPickupShift,oldPickupNav
  mapModeButton("Pickups: On"):OnClick()
  assert(not pickupPin.visible,"pickup toggle hides unaccepted quests")
@@ -1967,4 +1990,43 @@ do
  history.OnClick();assert(panel.heading.text=='MY LEVELING SESSION')
  s.Toggle();assert(not panel.visible)
  GetTime,UnitXP,UnitXPMax,UnitLevel=oldTime,oldXP,oldMax,oldLevel
+end
+
+do
+ local oldMap,oldServices,oldNavigate=C_Map,ForeverCompanionTownServices.ForMap,ForeverCompanionQuestWaypoints.Navigate
+ local fixture={
+  {map=1429,x=.2,y=.3,npcID=9901,label='SAMPLE Trading Post',subtitle='Reagents and supplies',service='Vendor',symbol='V',source='Forever QuestieDB reference'},
+  {map=1429,x=.2,y=.3,npcID=9901,label='SAMPLE Trading Post',subtitle='Reagents and supplies',service='Repairs',symbol='R',source='Forever QuestieDB reference'},
+  {map=1429,x=.4,y=.4,npcID=9902,label='SAMPLE City Banker',service='Bank',symbol='B',source='Forever QuestieDB reference'},
+  {map=1429,x=.5,y=.6,npcID=9903,label='SAMPLE Flight Master',service='Flight master',symbol='F',source='Forever QuestieDB reference'},
+  {map=1429,x=.3,y=.5,npcID=9904,label='SAMPLE Innkeeper',service='Inn',symbol='I',source='Forever QuestieDB reference'},
+  {map=1429,x=.1,y=.2,npcID=9905,label='SAMPLE Visited Merchant',service='Vendor',symbol='V',observed=true,source='Visited nearby · player position at merchant visit'},
+  {map=1429,x=.7,y=.8,npcID=9906,label='SAMPLE Profession Trainer',subtitle='Alchemy',service='Trainer',symbol='T',source='Forever QuestieDB reference'},
+  {map=1429,x=.6,y=.7,npcID=9907,label='SAMPLE Auctioneer',service='Auction house',symbol='AH',source='Forever QuestieDB reference'},
+ }
+ C_Map={GetBestMapForUnit=function() return 1429 end,GetMapInfo=function() return {name='SAMPLE Forest Services'} end,GetPlayerMapPosition=function() return {GetXY=function() return .1,.1 end} end}
+ ForeverCompanionTownServices.ForMap=function() return fixture end
+ local navigated
+ ForeverCompanionQuestWaypoints.Navigate=function(t) navigated=t;return 'Sample navigation' end
+ SlashCmdList.FOREVERCOMPANION('services')
+ local panel,first,source
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionServiceAtlasPanel' then panel=f end end
+ assert(panel and panel.visible)
+ for _,f in ipairs(frames) do
+  if f.parent==panel.id and f.item and not first then first=f end
+  if f.parent==panel.id and f.text=='All sources' then source=f end
+ end
+ assert(first and first.item.target.observed and source,'atlas sorts by real position and exposes source controls')
+ first.favorite.OnClick();assert(ForeverCompanionDB.serviceFavorites[first.item.key])
+ exportNative('ui_service_atlas_sample_native.json')
+ first.go.OnClick();assert(navigated and navigated.observed)
+ local saved=fixture;fixture={};navigated=nil;first.go.OnClick();assert(navigated==nil,'atlas rejects stale location even before UI refresh')
+ fixture=saved;source.OnClick()
+ local referenceOnly
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Provider only' then referenceOnly=f end end
+ assert(referenceOnly);referenceOnly.OnClick();assert(ForeverCompanionDB.serviceAtlas.source=='reference')
+ for _,f in ipairs(frames) do if f.parent==panel.id and f.item and f.visible then assert(not f.item.target.observed) end end
+ ForeverCompanionDB.serviceAtlas.source='all';ForeverCompanionServiceAtlas.Refresh()
+ ForeverCompanionServiceAtlas.Toggle();assert(not panel.visible)
+ C_Map,ForeverCompanionTownServices.ForMap,ForeverCompanionQuestWaypoints.Navigate=oldMap,oldServices,oldNavigate
 end
