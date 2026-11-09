@@ -5,9 +5,10 @@ import csv
 import textwrap
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
+from render_native_preview import native_font
 
 def font(size):
-    return ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',size)
+    return native_font('DejaVuSans.ttf',size)
 
 def render(name,needle):
     rows=list(csv.DictReader(Path(f'ui_{name}_snapshot.txt').open(),delimiter='|'))
