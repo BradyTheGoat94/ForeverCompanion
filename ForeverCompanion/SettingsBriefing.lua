@@ -62,7 +62,7 @@ end
 function S.Create(parent,context)
   ctx=context or {}
   root=CreateFrame("Frame",nil,parent)
-  root:SetSize(770,259)
+  root:SetSize(770,470)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
   values={}
   local left=plate(root,0,376,"PREFERENCES & CHARACTER")
@@ -83,6 +83,22 @@ function S.Create(parent,context)
     button(root,264,"CENTER WINDOW",ctx.centerWindow),
     button(root,528,"TOGGLE COMPACT",ctx.toggleCompact)
   }
+  local commands=CreateFrame('Frame',nil,root)
+  commands:SetPoint('TOPLEFT',0,-276);commands:SetSize(770,186)
+  ForeverCompanionVisualTheme.Panel(commands,770,186)
+  label(commands,16,-12,738,'QUICK REFERENCE','GameFontNormal',ForeverCompanionVisualTheme.colors.accent)
+  local entries={
+    {'/fc help','Show all addon commands'},
+    {'/fcdiag','Print the client compatibility report'},
+    {'/fc tracker','Show or hide the floating quest tracker'},
+    {'/fc discover','Browse quest pickup locations'},
+    {'/fc history','Review your recorded quest turn-ins'},
+  }
+  for i,entry in ipairs(entries) do
+    local y=-46-(i-1)*25
+    label(commands,16,y,150,entry[1],nil,ForeverCompanionVisualTheme.colors.accent)
+    label(commands,180,y,570,entry[2],nil,ForeverCompanionVisualTheme.colors.muted)
+  end
   root:Hide()
   return root
 end

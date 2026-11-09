@@ -2,7 +2,7 @@
 local D={page=1}
 ForeverCompanionQuestDiscovery=D
 local root,search,summary,empty,counter,back,forward,rows,modeButton,sortButton,levelButton,zoneButton
-local detailTitle,detailLocation,detailSource,detailHint,detailGo,detailCycle,detailStatus
+local details,detailTitle,detailLocation,detailSource,detailHint,detailGo,detailCycle,detailStatus
 local nativeOnly,nearLevel=false,false
 local sortMode='source'
 local zoneMode='player'
@@ -132,7 +132,7 @@ function D.Create(parent)
   rows[i]=row
  end
  empty=text(root,28,-179,714,'',13);empty:SetHeight(120);empty:SetWordWrap(true);empty:SetJustifyH('CENTER')
- local details=CreateFrame('Frame',nil,root);details:SetPoint('TOPLEFT',16,-354);details:SetSize(738,144);U.Surface(details)
+ details=CreateFrame('Frame',nil,root);details:SetPoint('TOPLEFT',16,-354);details:SetSize(738,144);U.Surface(details)
  detailTitle=text(details,12,-10,558,'Select a quest to inspect its giver',14)
  detailLocation=text(details,12,-38,558,'',12)
  detailSource=text(details,12,-61,558,'',11)
@@ -148,6 +148,7 @@ function D.Create(parent)
  back=U.Button(root);back:SetPoint('BOTTOMLEFT',16,14);back:SetSize(100,26);back:SetText('Previous')
  forward=U.Button(root);forward:SetPoint('BOTTOMRIGHT',-16,14);forward:SetSize(100,26);forward:SetText('Next')
  counter=text(root,133,-523,500,'',11);counter:SetJustifyH('CENTER')
+ counter:ClearAllPoints();counter:SetPoint('BOTTOM',root,'BOTTOM',0,19)
  back:SetScript('OnClick',function() D.page=math.max(1,D.page-1);D.Refresh() end)
  forward:SetScript('OnClick',function() D.page=D.page+1;D.Refresh() end)
  local events=CreateFrame('Frame',nil,root)
@@ -184,6 +185,12 @@ function D.Refresh()
  if position and position.GetXY then local ok,a,b=pcall(position.GetXY,position);if ok then x,y=a,b end end
  local found=D.Filter(entries,search:GetText(),nativeOnly,{sort=sortMode,nearLevel=nearLevel,level=read(UnitLevel,'player'),x=x,y=y})
  local pages=math.max(1,math.ceil(#found/4));D.page=math.max(1,math.min(D.page,pages))
+ local visible=math.min(4,math.max(0,#found-(D.page-1)*4))
+ local detailY=166+(visible==0 and 3 or visible)*47
+ details:ClearAllPoints();details:SetPoint('TOPLEFT',root,'TOPLEFT',16,-detailY)
+ local priorHeight=root:GetHeight()
+ root:SetHeight(detailY+208)
+ if priorHeight~=root:GetHeight() and D.OnLayout then D.OnLayout(root:GetHeight()-priorHeight) end
  modeButton:SetText(nativeOnly and 'Source: client reported' or 'Source: client + database')
  zoneButton:SetText(zoneMode=='player' and 'Zone: mine' or 'Zone: world map')
  local sortLabels={source='Client reported first',name='Quest name',level='Quest level',proximity='Map proximity'}
@@ -224,4 +231,4 @@ function D.Show(show,parent,offset)
  root:SetShown(show)
  if show then root:ClearAllPoints();root:SetPoint('TOPLEFT',parent,'TOPLEFT',8,-offset);D.Refresh() end
 end
-function D.GetHeight() return 576 end
+function D.GetHeight() return root and root:GetHeight()+14 or 576 end

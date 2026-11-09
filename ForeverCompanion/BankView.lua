@@ -93,10 +93,13 @@ function B.Create(parent)
   row.icon=row:CreateTexture(nil,"ARTWORK");row.icon:SetSize(25,25);row.icon:SetPoint("LEFT",5,0)
   row.name=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   row.name:SetPoint("TOPLEFT",38,-5);row.name:SetWidth(254);row.name:SetJustifyH("LEFT");row.name:SetWordWrap(false);row.name:SetHeight(16)
+  ForeverCompanionVisualTheme.Font(row.name,12)
   row.count=ForeverCompanionInterface.Text(row,11)
   row.count:SetPoint("TOPRIGHT",row,"TOPRIGHT",-7,-5);row.count:SetWidth(48);row.count:SetJustifyH("RIGHT")
   row.tab=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   row.tab:SetPoint("TOPLEFT",38,-19);row.tab:SetTextColor(.60,.67,.75);row.tab:SetWidth(306);row.tab:SetWordWrap(false);row.tab:SetHeight(13)
+  ForeverCompanionVisualTheme.Font(row.tab,10)
+  ForeverCompanionVisualTheme.SelectRow(row,bg,false)
   row:EnableMouse(true)
   row:SetScript("OnEnter",function(self)
    if self.item and GameTooltip then
@@ -111,7 +114,7 @@ function B.Create(parent)
  back=makeButton(root,17,-381,"Previous",function() page=page-1;B.Render() end)
  nextPage=makeButton(root,108,-381,"Next",function() page=page+1;B.Render() end)
  empty=ForeverCompanionInterface.Text(root,14)
- empty:SetPoint("TOPLEFT",root,"TOPLEFT",32,-168);empty:SetWidth(706);empty:SetHeight(65);empty:SetWordWrap(true);empty:SetJustifyH("CENTER")
+ empty:SetPoint("TOPLEFT",root,"TOPLEFT",32,-101);empty:SetWidth(706);empty:SetHeight(65);empty:SetWordWrap(true);empty:SetJustifyH("CENTER")
  pageLabel=root:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  pageLabel:SetPoint("LEFT",nextPage,"RIGHT",14,0)
  root:Hide()
@@ -132,6 +135,13 @@ function B.Render()
  else header:SetText("Visit a banker once to save a copy of your personal bank.") end
  local pages=math.max(1,math.ceil(#matches/pageSize))
  page=math.max(1,math.min(page,pages))
+ local visible=math.min(pageSize,math.max(0,#matches-(page-1)*pageSize))
+ local footerY=94+(visible==0 and 3 or math.ceil(visible/2))*36
+ local priorHeight=root:GetHeight()
+ ForeverCompanionVisualTheme.ResizePanel(root,footerY+44)
+ if priorHeight~=root:GetHeight() and B.OnLayout then B.OnLayout(root:GetHeight()-priorHeight) end
+ back:ClearAllPoints();back:SetPoint('TOPLEFT',root,'TOPLEFT',17,-footerY)
+ nextPage:ClearAllPoints();nextPage:SetPoint('TOPLEFT',root,'TOPLEFT',108,-footerY)
  for i,row in ipairs(rows) do
   local entry=matches[(page-1)*pageSize+i]
   row.item=entry and entry.item
@@ -149,6 +159,8 @@ function B.Render()
  back:SetEnabled(page>1);nextPage:SetEnabled(page<pages)
  pageLabel:SetText(("%d matches  ·  Page %d of %d"):format(#matches,page,pages))
 end
+
+function B.GetHeight() return root and root:GetHeight() or 425 end
 
 function B.Show(show)
  if not root then return end

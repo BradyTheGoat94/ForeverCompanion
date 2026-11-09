@@ -565,7 +565,7 @@ local function render()
     if pageLabel then pageLabel:SetText("Page "..questPage.." / "..pages) end
     if pageBack then pageBack:SetEnabled(questPage>1); pageForward:SetEnabled(questPage<pages) end
   elseif currentTab == "Settings" then
-    lines = {"Commands", "/fc help  •  Command list", "/fcdiag  •  Client diagnostics", "/fc position reset  •  Center the window"}
+    lines = {}
   else
     lines = (currentTab=="Dungeons" or currentTab=="PvP" or currentTab=="Professions") and {} or {string.upper(currentTab).." CHECKLIST"}
     local entries = DATA.checklist[currentTab] or {}
@@ -673,13 +673,14 @@ local function render()
   if ForeverCompanionUIState.questFieldGuideButton then ForeverCompanionUIState.questFieldGuideButton:SetShown(currentTab=='Quests') end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=425,Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+35+ForeverCompanionQuestDiscovery.GetHeight(),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=282,Legacy=646,Alts=646}
+  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight()),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
   if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=198+ForeverCompanionClassGuide.GetTopicHeight() end
   content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
   if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
+  if ForeverCompanionUIState.updateScrollHint then ForeverCompanionUIState.updateScrollHint() end
   -- Keep the player's current scroll position during refresh.
   if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
   if ForeverCompanionUIState.roleButton then ForeverCompanionUIState.roleButton:SetText("Role: "..(DB.role or "Choose")) end
@@ -977,6 +978,21 @@ local function createUI()
   child:SetSize(790, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  local scrollHint=ForeverCompanionInterface.Text(window,11,ForeverCompanionVisualTheme.colors.muted)
+  scrollHint:SetPoint('BOTTOMLEFT',window,'BOTTOMLEFT',216,62);scrollHint:SetWidth(360)
+  local function updateScrollHint()
+    local viewport=tonumber(scroll:GetHeight()) or 0
+    local range=math.max(0,(tonumber(child:GetHeight()) or 0)-viewport)
+    local position=tonumber(scroll.GetVerticalScroll and scroll:GetVerticalScroll()) or 0
+    if viewport>0 and position>range and scroll.SetVerticalScroll then
+      scroll:SetVerticalScroll(range);position=range
+    end
+    scrollHint:SetText(position>=range-2 and 'End of page' or 'More below  ·  Scroll to continue')
+    scrollHint:SetShown(viewport>0 and range>2)
+  end
+  ForeverCompanionUIState.updateScrollHint=updateScrollHint
+  scroll:HookScript('OnVerticalScroll',updateScrollHint)
+  scroll:HookScript('OnSizeChanged',updateScrollHint)
   if ForeverCompanionClassGuide then ForeverCompanionClassGuide.Create(child,openSection) end
   if ForeverCompanionRotationWorkspace then
     ForeverCompanionRotationWorkspace.Create(child,function(index) rotationMode=index;render() end)
@@ -987,6 +1003,16 @@ local function createUI()
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
   ForeverCompanionQuestDiscovery.Create(child)
+  local function resizeContent(delta)
+    child:SetHeight(math.max(420,(child:GetHeight() or 0)+delta))
+    updateScrollHint()
+  end
+  ForeverCompanionQuestDiscovery.OnLayout=function(delta)
+    if currentTab=='Quests' and questExplorerView=='discover' then resizeContent(delta) end
+  end
+  ForeverCompanionBankView.OnLayout=function(delta)
+    if currentTab=='Bank' then resizeContent(delta) end
+  end
   ForeverCompanionQuestBook.Create(child)
   ForeverCompanionQuestFieldGuide.Create(child)
   questExplorerTabs=CreateFrame('Frame',nil,child);questExplorerTabs:SetSize(770,30);questExplorerTabs:Hide()

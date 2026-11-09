@@ -6,6 +6,15 @@ Brady's Forever Companion is an independent, free World of Warcraft addon projec
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Interface review (3.38 beta, develop)
+
+Class reference pages use measured reading cards. Gear priorities sit beside
+comparison advice and reported targets; attribution and beta caveats remain
+available below. Settings has a structured command reference. Discovery and bank
+panels fit short lists, shared rows have consistent hover feedback, and long pages
+show continuation cues. The map toolbar follows the shared visual style.
+Offline previews approximate native fonts and icons; they are not game screenshots.
+
 ## Questing workspace (3.36 beta, develop)
 
 The Quest Log now combines an objective field guide, searchable pickup discovery,

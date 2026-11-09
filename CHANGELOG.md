@@ -1,3 +1,12 @@
+## 3.38.0-beta — Full interface review and reading layouts
+
+- Replaced class-guide text walls with reusable measured reading cards. Gear references now place ranked stats beside item-comparison advice and reported targets, with source attribution and caveats retained below.
+- Added consistent hover feedback to shared selection rows and complete outlines to custom topic controls. Bank item names and tab labels now use the shared type scale.
+- Rebuilt Settings command help into a bounded quick-reference panel. Added continuation/end-of-page cues and clamped stale scroll offsets when page content shrinks.
+- Quest discovery fits its actual visible result count, retaining room for explanations in the empty state. Its details and pagination follow the panel height.
+- Brought the world-map toolbar into the shared charcoal/gold style without changing terrain, marker coordinates or zoom mechanics.
+- Expanded offline review captures to include bank, map toolbar and discovery empty states. Added measured-layout checks across every supported specialization, discovery-height checks and scroll-state regression checks. Client rendering remains unverified.
+
 ## 3.37.0-beta — Interface finish pass
 
 - Unified dark surface, border and secondary-text tones across shared panels and controls; raised title bands separate headings from content.

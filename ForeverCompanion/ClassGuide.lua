@@ -1,14 +1,79 @@
 -- Class-banner and topic navigation. All controls change addon presentation only.
 local Guide={}
 ForeverCompanionClassGuide=Guide
-local root,values,topics,topicPanel,topicTitle,topicBody,topicLink,navigate
+local root,values,topics,topicPanel,topicTitle,topicMeta,topicBody,topicLink,navigate
 local views={"Overview","Talents","Rotations","Leveling","Dungeons","PvP","Gear & Stats","Professions"}
+local readingCards={}
+Guide.readingCards=readingCards
 local function text(parent,x,y,w,value,size,gold)
  local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetWidth(w);f:SetJustifyH("LEFT");f:SetText(value or "")
  ForeverCompanionVisualTheme.Font(f,size or 12)
  f:SetTextColor(gold and .97 or .92,gold and .80 or .90,gold and .48 or .84)
  return f
+end
+-- Reuse measured reading cards as the class/spec changes. Long source notes
+-- and translated text grow vertically instead of pushing into adjacent cards.
+local function readingCard(index,x,y,width,heading,body)
+ local card=readingCards[index]
+ if not card then
+  card=CreateFrame('Frame',nil,topicPanel)
+  card.bg=ForeverCompanionInterface.Surface(card)
+  card.heading=ForeverCompanionInterface.Text(card,11,ForeverCompanionVisualTheme.colors.accent)
+  card.body=ForeverCompanionInterface.Text(card,13)
+  card.heading:SetPoint('TOPLEFT',14,-12)
+  card.body:SetPoint('TOPLEFT',14,-35);card.body:SetWordWrap(true);card.body:SetJustifyV('TOP')
+  if card.body.SetSpacing then card.body:SetSpacing(3) end
+  readingCards[index]=card
+ end
+ card:ClearAllPoints();card:SetPoint('TOPLEFT',topicPanel,'TOPLEFT',x,-y)
+ card:SetWidth(width);card.heading:SetWidth(width-28);card.body:SetWidth(width-28)
+ card.heading:SetText(heading);card.body:SetText(body)
+ local height=math.max(22,card.body:GetStringHeight()+4)
+ card.body:SetHeight(height);card:SetHeight(height+49);card:Show()
+ return height+49
+end
+local function renderReading(class,view,lines)
+ for _,card in ipairs(readingCards) do card:Hide() end
+ local y,index=50,0
+ if view=='Gear & Stats' then
+  local choice=ForeverCompanionSpecPlanner.Get(class)
+  local profile=choice and ForeverCompanionGearStats.Get(class,choice[1])
+  if profile then
+   index=index+1
+   y=y+readingCard(index,16,y,738,'REFERENCE / '..choice[1],profile.scope..' · Reviewed '..ForeverCompanionGearStats.reviewed..'\nSource-reviewed beta theorycraft; not live-tested. Not a PvP or leveling prescription.')+12
+   local ranks={}
+   for rank,stat in ipairs(profile.order) do ranks[#ranks+1]=string.format('%02d   %s',rank,stat) end
+   index=index+1
+   local left=readingCard(index,16,y,280,'STAT PRIORITY',table.concat(ranks,'\n'))
+   index=index+1
+   local right=readingCard(index,308,y,446,'HOW TO COMPARE ITEMS',profile.note)
+   if profile.targets then
+    index=index+1
+    right=right+12+readingCard(index,308,y+right+12,446,'REPORTED TARGETS / BETA',profile.targets)
+   end
+   y=y+math.max(left,right)+12
+   -- Preserve all remaining caveats and source attribution from the same
+   -- published profile; presentation never changes the underlying ranking.
+   for n=5,#lines do
+    local line=lines[n]
+    if not line:find('HOW TO USE:',1,true) and not line:find('REPORTED TARGETS / BETA:',1,true) then
+     local heading,body=line:match('^([^:\n]+):%s*(.+)$')
+     if not heading then heading,body='REFERENCE NOTES',line end
+     index=index+1;y=y+readingCard(index,16,y,738,heading,body)+12
+    end
+   end
+   return y
+  end
+ end
+ for n,line in ipairs(lines) do
+  if n>1 or #line>=90 then
+  local heading,body=line:match('^([^:\n]+):%s*(.+)$')
+  if not heading or #heading>65 then heading,body=string.format('GUIDE NOTE %02d',n),line end
+  index=index+1;y=y+readingCard(index,16,y,738,heading,body)+10
+  end
+ end
+ return y
 end
 function Guide.GetView()
  local wanted=type(ForeverCompanionDB)=="table" and ForeverCompanionDB.classGuideView
@@ -62,7 +127,9 @@ function Guide.Create(parent,openPage)
  end
  topicPanel=CreateFrame("Frame",nil,parent);topicPanel:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-174);topicPanel:SetSize(770,352)
  ForeverCompanionVisualTheme.Panel(topicPanel,770,352)
- topicTitle=text(topicPanel,16,-13,730,"",18,true)
+ topicTitle=text(topicPanel,16,-13,370,"",18,true)
+ topicMeta=ForeverCompanionInterface.Text(topicPanel,11,ForeverCompanionVisualTheme.colors.muted)
+ topicMeta:SetPoint('TOPRIGHT',topicPanel,'TOPRIGHT',-16,-16);topicMeta:SetWidth(350);topicMeta:SetJustifyH('RIGHT')
  topicBody=text(topicPanel,16,-52,730,"",13);topicBody:SetJustifyV("TOP")
  topicLink=ForeverCompanionInterface.Button(topicPanel);topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
  topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
@@ -118,6 +185,7 @@ function Guide.TopicLines(class,view,role)
 end
 function Guide.Render(class,label,level,role,mode)
  if not root then return end
+ for _,card in ipairs(readingCards) do card:Hide() end
  local entry=ForeverCompanionData and ForeverCompanionData.classHandbook and ForeverCompanionData.classHandbook[class] or {}
  local selected=ForeverCompanionSpecPlanner.Get(class)
  values.crumb:SetText("CLASS GUIDES  /  "..string.upper(tostring(label)))
@@ -144,7 +212,7 @@ function Guide.Render(class,label,level,role,mode)
   b.rail:SetColorTexture(.82,.68,.43,active and 1 or 0)
  end
  if view=="Talents" then
-  topicTitle:Hide();topicBody:Hide();topicLink:Hide()
+  topicTitle:Hide();topicMeta:Hide();topicBody:Hide();topicLink:Hide()
   ForeverCompanionTalentWorkspace.Render(class,selected)
   if ForeverCompanionTalentWorkspace.root:IsShown() then
    ForeverCompanionVisualTheme.ResizePanel(topicPanel,ForeverCompanionTalentWorkspace.root:GetHeight()+8)
@@ -161,11 +229,15 @@ function Guide.Render(class,label,level,role,mode)
  if view=="Rotations" then topicPanel:Hide() else
   topicTitle:Show();topicBody:Show()
   topicTitle:SetText(label.." / "..view)
-  topicBody:SetText(table.concat(Guide.TopicLines(class,view,role),view=="Overview" and "\n" or "\n\n"))
+  local lines=Guide.TopicLines(class,view,role)
+  topicMeta:SetText(view=='Gear & Stats' and 'GEARING REFERENCE' or (#lines[1]<90 and lines[1] or 'REFERENCE NOTES'));topicMeta:Show()
+  topicBody:SetText(table.concat(lines,view=="Overview" and "\n" or "\n\n"))
   local bodyHeight=math.max(100,topicBody:GetStringHeight()+12)
   topicBody:SetHeight(bodyHeight)
-  ForeverCompanionVisualTheme.ResizePanel(topicPanel,bodyHeight+110)
-  topicLink:ClearAllPoints();topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-(bodyHeight+67))
+  topicBody:Hide()
+  local readingHeight=renderReading(class,view,lines)
+  ForeverCompanionVisualTheme.ResizePanel(topicPanel,readingHeight+49)
+  topicLink:ClearAllPoints();topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-(readingHeight+5))
   local targets={Dungeons="Dungeons",PvP="PvP",Professions="Professions",["Gear & Stats"]="Loot"}
   topicLink.target=targets[view]
   local linkLabels={Dungeons="Open Dungeon Journal",Loot="Open Loot Catalog",PvP="Open PvP Guide",Professions="Open Professions"}

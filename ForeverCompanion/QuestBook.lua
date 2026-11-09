@@ -189,6 +189,7 @@ function B.Refresh(force)
  cycle:SetText(t and ('Location '..choice..' / '..#selection.targets) or 'No giver selected')
  previous:SetEnabled(B.page>1);nextPage:SetEnabled(B.page<pages);counter:SetText('Page '..B.page..' / '..pages)
 end
+function B.GetHeight() return root and root:GetHeight()+14 or 576 end
 function B.Show(show,parent,offset,view)
  if not root then return end
  root:SetShown(show)

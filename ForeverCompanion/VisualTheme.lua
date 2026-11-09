@@ -47,9 +47,11 @@ function T.Banner(parent,x,y,w,h,alpha)
  return art
 end
 function T.Button(parent,w,h)
- local bg=strip(parent,0,0,w,h,.045,.055,.072,1,"BACKGROUND")
- strip(parent,0,0,w,1,.17,.21,.27,1)
- strip(parent,0,-h+1,w,1,.08,.10,.14,1)
+ local bg=strip(parent,0,0,w,h,.055,.069,.090,1,"BACKGROUND")
+ strip(parent,0,0,w,1,.23,.28,.35,1)
+ strip(parent,0,-h+1,w,1,.16,.20,.26,1)
+ strip(parent,0,0,1,h,.16,.20,.26,1)
+ strip(parent,w-1,0,1,h,.16,.20,.26,1)
  if parent.SetHighlightTexture then
   parent:SetHighlightTexture("Interface\\Buttons\\WHITE8X8","ADD")
   local highlight=parent.GetHighlightTexture and parent:GetHighlightTexture()
@@ -60,6 +62,16 @@ end
 
 -- Selected list rows retain a quiet surface and a distinct edge cue.
 function T.SelectRow(row,background,selected)
+ row.fcSelected=selected and true or false
+ if row.HookScript and not row.fcRowHover then
+  row.fcRowHover=true
+  row:HookScript('OnEnter',function()
+   background:SetColorTexture(.13,.16,.21,1)
+  end)
+  row:HookScript('OnLeave',function()
+   background:SetColorTexture(row.fcSelected and .11 or .045,row.fcSelected and .13 or .056,row.fcSelected and .17 or .075,1)
+  end)
+ end
  background:SetColorTexture(selected and .11 or .045,selected and .13 or .056,selected and .17 or .075,1)
  if not row.fcSelection then
   row.fcSelection=row:CreateTexture(nil,"ARTWORK")

@@ -16,7 +16,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     sections = ('dashboard', 'journey', 'class', 'gear', 'topic', 'quest',
                 'profession', 'loot', 'encounter', 'legacy', 'alts', 'practice',
-                'pvp', 'settings', 'meter', 'meter_compact', 'meter_expanded', 'meter_recount', 'meter_options', 'discovery', 'fieldguide', 'tracker', 'catalog', 'history')
+                'pvp', 'settings', 'bank', 'map_toolbar', 'meter', 'meter_compact', 'meter_expanded', 'meter_recount', 'meter_options', 'discovery', 'discovery_empty', 'fieldguide', 'tracker', 'catalog', 'history')
     cards = []
     for section in sections:
         source = Path('ui_' + section + '_native.json')
@@ -25,9 +25,10 @@ def main():
         target = output / (section + '.png')
         options = {'window_name': 'ForeverCompanionCombatMeterWindow'} if section.startswith('meter') else {}
         if section == 'meter_options': options = {'window_name': 'ForeverCompanionMeterOptionsPreview'}
-        if section == 'discovery': options = {'window_name': 'ForeverCompanionQuestDiscoveryPanel'}
+        if section.startswith('discovery'): options = {'window_name': 'ForeverCompanionQuestDiscoveryPanel'}
         if section == 'fieldguide': options = {'window_name': 'ForeverCompanionQuestFieldGuidePanel'}
         if section == 'tracker': options = {'window_name': 'ForeverCompanionQuestTrackerFrame'}
+        if section == 'map_toolbar': options = {'window_name': 'ForeverCompanionMapToolbar'}
         if section in ('catalog', 'history'): options = {'window_name': 'ForeverCompanionQuestBookPanel'}
         render(source, target, **options)
         label = {'topic': 'Talent planner', 'class': 'Class guides', 'quest': 'Quest journal',

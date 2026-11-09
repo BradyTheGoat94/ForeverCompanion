@@ -207,6 +207,21 @@ for _,widget in ipairs(frames) do
  if widget.kind=="ScrollFrame" then viewport=widget;break end
 end
 assert(viewport.point[3]>questNav.point[3]+questNav.height,"quest scroll viewport must clear both footer buttons")
+do
+ local originalHeight=viewport.GetHeight
+ local childHeight=viewport.child.height
+ viewport.GetHeight=function() return 200 end
+ viewport.child:SetHeight(500);viewport:SetVerticalScroll(0)
+ ForeverCompanionUIState.updateScrollHint()
+ local hint
+ for _,f in ipairs(frames) do if f.text=='More below  ·  Scroll to continue' then hint=f end end
+ assert(hint and hint.visible,'long pages need a visible continuation cue')
+ viewport:SetVerticalScroll(800);ForeverCompanionUIState.updateScrollHint()
+ assert(viewport:GetVerticalScroll()==300 and hint.text=='End of page','shortened pages clamp stale scroll offsets')
+ viewport.child:SetHeight(100);ForeverCompanionUIState.updateScrollHint()
+ assert(not hint.visible and viewport:GetVerticalScroll()==0,'short pages hide continuation cues and return to the top')
+ viewport.GetHeight=originalHeight;viewport.child:SetHeight(childHeight)
+end
 SlashCmdList.FOREVERCOMPANION("overview")
 assert(ForeverCompanionDB.tab=="Overview","direct slash navigation must return to dashboard")
 assert(pcall(SlashCmdList.FOREVERCOMPANION,"status"),"read-only status command must not crash")
@@ -675,6 +690,7 @@ do
  assert(not pickupPin.visible,"pickup toggle hides unaccepted quests")
  mapModeButton("Pickups: Off"):OnClick()
  C_QuestLog.GetQuestsOnMap,C_QuestLog.GetTitleForQuestID=oldPOIs,oldTitle
+ exportNative('ui_map_toolbar_native.json')
  provider:OnHide()
  assert(visiblePins()==0 and not area.visible)
  WorldMapFrame.IsShown=function() return false end
@@ -731,6 +747,8 @@ do
  local found
  for _,frame in ipairs(frames) do if frame.text=="Sample ore" then found=true end end
  assert(ForeverCompanionDB.tab=="Bank" and found,"bank items remain viewable after leaving the banker")
+ assert(ForeverCompanionBankView.GetHeight()<250,'short bank lists should use a compact panel')
+ exportNative('ui_bank_native.json')
  SlashCmdList.FOREVERCOMPANION("open quests")
  C_Bank,C_Container,Enum,GetServerTime,date=originalBank,originalContainer,originalEnum,originalTime,originalDate
 end
@@ -766,6 +784,7 @@ do
  row.cycle.OnClick(row.cycle)
  row.go.OnClick(row.go)
  assert(navigated and navigated.x==.23,'selected reference giver must be navigated instead of first giver')
+ assert(ForeverCompanionQuestDiscovery.GetHeight()<500,'one quest should not leave four rows of empty list space')
  exportNative('ui_discovery_native.json')
  -- Provider refreshes may reorder locations; selection follows coordinates.
  fixture={client,sample};ForeverCompanionQuestDiscovery.Refresh()
@@ -774,6 +793,8 @@ do
  local detailGo
  for _,frame in ipairs(frames) do if frame.kind=='Button' and frame.text=='Navigate to giver' then detailGo=frame end end
  assert(detailGo and detailGo.enabled==false,'stale quest disappears and disables navigation')
+ assert(ForeverCompanionQuestDiscovery.GetHeight()>500,'empty discovery must reserve readable explanation space')
+ exportNative('ui_discovery_empty_native.json')
  ForeverCompanionQuestWaypoints.MapPickups=originalPickups
  ForeverCompanionQuestWaypoints.Navigate=originalNavigate
  C_Map=originalMap
@@ -1243,6 +1264,22 @@ for class,choices in pairs(ForeverCompanionSpecs) do
  for i,choice in ipairs(choices) do
   ForeverCompanionDB.specSelections[class]=i
   local overview=table.concat(guide.TopicLines(class,"Overview")," ")
+  local previousView=ForeverCompanionDB.classGuideView
+  ForeverCompanionDB.classGuideView='Gear & Stats'
+  guide.Render(class,class,60,choice[2])
+  local profile=ForeverCompanionGearStats.Get(class,choice[1])
+  if profile then
+   local cards=guide.readingCards
+   assert(cards[2].body.text:find(profile.order[1],1,true),'priority card must use this specialization profile')
+   assert(cards[3].body.text==profile.note,'comparison card must retain the full source note')
+   for _,card in ipairs(cards) do
+    if card.visible then
+     assert(card.body.height>=card.body:GetStringHeight(),'guide card must grow around wrapped text')
+     assert(-card.point[5]+card.height<=guide.GetTopicHeight(),'reading cards must stay inside the scroll content')
+    end
+   end
+  end
+  ForeverCompanionDB.classGuideView=previousView
   for _,mode in ipairs({"leveling","dungeon","boss","aoe","pvp"}) do
    local steps,title,_,_,_,summary=ForeverCompanionVisiblePriority(class,mode,60,nil,{})
    assert(#steps>=3 and title:find(choice[1],1,true) and summary and summary.opener,choice[1]..": missing "..mode.." instructions")
@@ -1267,12 +1304,16 @@ for class,choices in pairs(ForeverCompanionSpecs) do
 end
 assert(specCount==27)
 ForeverCompanionDB.specSelections=priorSelections
-local originalTopicMeasure=ForeverCompanionClassGuide.topicBody.GetStringHeight
-ForeverCompanionClassGuide.topicBody.GetStringHeight=function() return 480 end
 ForeverCompanionClassGuide.SelectView("Leveling")
-assert(ForeverCompanionClassGuide.topicBody.height>=492,"long topic needs measured body space")
-assert(ForeverCompanionClassGuide.GetTopicHeight()>=602,"topic frame must expand with body")
-ForeverCompanionClassGuide.topicBody.GetStringHeight=originalTopicMeasure
+local readingCard=ForeverCompanionClassGuide.readingCards[2]
+local originalTopicMeasure=readingCard.body.GetStringHeight
+readingCard.body.GetStringHeight=function() return 480 end
+ForeverCompanionClassGuide.SelectView("Leveling")
+assert(readingCard.body.height>=484,"long note needs measured reading space")
+assert(ForeverCompanionClassGuide.GetTopicHeight()>=602,"reading cards must expand the scroll content")
+local following=ForeverCompanionClassGuide.readingCards[3]
+assert(following and following.visible,'the next guide note must remain available')
+readingCard.body.GetStringHeight=originalTopicMeasure
 ForeverCompanionClassGuide.SelectView("Rotations")
 workspace.buttons[1].OnClick()
 rotationControl.OnClick(rotationControl)
@@ -1746,6 +1787,7 @@ do
  local book,selected,searchBox
  for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestBookPanel' then book=f end end
  assert(book and book.visible)
+ assert(viewport.child.height>=-book.point[5]+book.height,'catalog must retain its full scroll extent after discovery shrinks')
  for _,f in ipairs(frames) do
   if f.parent==book.id and f.entry and f.entry.id==900102 then selected=f end
   if f.parent==book.id and f.kind=='EditBox' then searchBox=f end
