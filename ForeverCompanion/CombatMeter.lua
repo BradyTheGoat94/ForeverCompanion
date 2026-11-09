@@ -910,7 +910,18 @@ function M.Refresh()
     if type(spellID)=="number" and C_Spell and type(C_Spell.GetSpellInfo)=="function" then
      info=read(C_Spell.GetSpellInfo,spellID)
     end
-    item.label:SetText((type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i)))
+    local spellName=(type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i))
+    -- Blizzard can return separate player and pet auto-attacks with the
+    -- same spell name. Attribute only when the native unit details confirm
+    -- the source; never assume the second Attack row belongs to a pet.
+    local details=spell.combatSpellDetails
+    if not (issecretvalue and issecretvalue(details)) and type(details)=="table" then
+     local isPet=details.isPet
+     if not (issecretvalue and issecretvalue(isPet)) and isPet==true and spellName=="Attack" then
+      spellName="Pet Attack"
+     end
+    end
+    item.label:SetText(spellName)
     local name=type(info)=='table' and info.name
     item.frame.spellName=not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name or nil
     item.frame.totalAmount=spell.totalAmount
