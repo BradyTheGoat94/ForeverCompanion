@@ -88,6 +88,7 @@ local function start(db,side)
    loaded=true
    if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
    if ForeverCompanionServiceAtlas then ForeverCompanionServiceAtlas.Refresh() end
+   if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
   end
  end
  C_Timer.After(0,batch)
@@ -113,6 +114,7 @@ local function providerMap(map)
 end
 function S.RefreshData()
  database,faction,byMap,loaded,loadError=nil,nil,nil,nil,nil
+ if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
 end
 function S.Key(p)
  if not valid(p) then return end
@@ -129,6 +131,7 @@ function S.RecordVisit(record)
  for i=#records,1,-1 do local old=records[i];if type(old)=='table' and old.map==record.map and old.npcID==record.npcID then table.remove(records,i) end end
  table.insert(records,1,{map=record.map,x=record.x,y=record.y,label=text(record.label),npcID=record.npcID,repair=record.repair==true,at=record.at})
  while #records>100 do table.remove(records) end
+ if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
  return true
 end
 function S.ForMap(map)
@@ -146,10 +149,13 @@ function S.ForMap(map)
  end end
  return result,notice
 end
-function S.ClearVisits() ForeverCompanionDB=ForeverCompanionDB or {};ForeverCompanionDB.visitedMerchants={} end
+function S.ClearVisits()
+ ForeverCompanionDB=ForeverCompanionDB or {};ForeverCompanionDB.visitedMerchants={}
+ if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
+end
 function S.Resolve(target)
  local key=S.Key(target);if not key then return end
- for _,p in ipairs(S.ForMap(target.map)) do if S.Key(p)==key then return target end end
+ for _,p in ipairs(S.ForMap(target.map)) do if S.Key(p)==key and (p.observed==true)==(target.observed==true) then return p end end
 end
 function S.Status(map)
  local points,notice=S.ForMap(map);local counts,unique={},{}

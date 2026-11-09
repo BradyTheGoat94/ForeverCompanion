@@ -50,3 +50,9 @@ for i=1,110 do s.RecordVisit({map=1429,x=.5,y=.5,label='Merchant '..i,npcID=1000
 assert(#ForeverCompanionDB.visitedMerchants==100,'local observations are bounded')
 s.ClearVisits();assert(#ForeverCompanionDB.visitedMerchants==0 and #s.ForMap(1429)==3,'clearing visits preserves provider references')
 print('PASS: service indexing, faction gates, duplicates, corrected provider rescan, visited provenance, literal atlas search, grouping, favorites and stale navigation')
+
+local old=s.ForMap(1429)[1];names[1]='Renamed current smith';s.RefreshData();s.ForMap(1429)
+while #queue>0 do table.remove(queue,1)() end
+local fresh=s.Resolve(old);assert(fresh and fresh~=old and fresh.label=='Renamed current smith','revalidation returns the current record rather than an old label/source')
+local observed={};for k,v in pairs(fresh) do observed[k]=v end;observed.observed=true
+assert(not s.Resolve(observed),'a cleared observed visit cannot impersonate an identical provider reference')

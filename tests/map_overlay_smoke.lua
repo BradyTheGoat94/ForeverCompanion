@@ -61,3 +61,8 @@ for _,o in ipairs(objects) do if o.texture=='Interface\\Minimap\\MinimapArrow' t
 assert(m.ContextAlpha(true,{fadeCombat=true},false)==.3)
 assert(m.ContextAlpha(false,{fadeCombat=true},false)==1)
 assert(m.ContextAlpha(true,{fadeCombat=true},true)==1,'manual override keeps full visibility')
+
+UIParent:SetSize(500,400);m.Refresh();assert(f.width<=450 and f.height<=320,'overlay refits after a viewport change without a manual toggle')
+id=14;f.OnUpdate(f,.2)
+for _,o in ipairs(objects) do if type(o.texture)=='number' then assert(not o.shown,'fast updates clear old-zone art before the slower rebuild') end end
+m.Refresh();assert(f.shown)

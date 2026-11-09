@@ -2,6 +2,7 @@
 local W={}
 ForeverCompanionQuestWaypoints=W
 local owned
+local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 
 local function read(fn,...)
  if type(fn)~="function" then return end
@@ -10,9 +11,9 @@ local function read(fn,...)
 end
 
 local function point(map,x,y,source)
- if type(map)~="number" or map<=0 or map>=math.huge or map%1~=0 then return end
- if type(x)~="number" or not (x>=0 and x<=1) then return end
- if type(y)~="number" or not (y>=0 and y<=1) then return end
+ if not finite(map) or map<=0 or map%1~=0 then return end
+ if not finite(x) or not (x>=0 and x<=1) then return end
+ if not finite(y) or not (y>=0 and y<=1) then return end
  return {map=map,x=x,y=y,source=source}
 end
 
@@ -241,9 +242,8 @@ function W.Clear()
 end
 
 function W.Navigate(target,showMap,label,questID)
- if not target then return "No map location for this quest." end
+ if type(target)~='table' or not point(target.map,target.x,target.y) then return "No valid map location for this destination." end
  local direction=ForeverCompanionQuestDirection
- direction.Stop()
  local hud=direction.Start(target,label)
  local pinned=false
  if C_Map and type(C_Map.SetUserWaypoint)=="function"
@@ -254,13 +254,22 @@ function W.Navigate(target,showMap,label,questID)
    and (type(C_Map.GetUserWaypoint)~="function" or read(sameWaypoint,target)==true)
   if pinned then owned=target end
  end
+ -- Start validates before replacing its previous arrow. Do not stop it merely
+ -- because a new attempt failed; reconcile only after a successful handoff.
+ if pinned and not hud then direction.Stop() end
+ if hud and not pinned and W.HasOwnPin() and type(C_Map.ClearUserWaypoint)=='function' then
+  if pcall(C_Map.ClearUserWaypoint) and not W.HasOwnPin() then owned=nil end
+ end
  if showMap then
   local opened=type(OpenMapToUserWaypoint)=="function" and pinned and pcall(OpenMapToUserWaypoint)
   if not opened then openMap(target.map) end
  end
  if (hud or pinned) and ForeverCompanionMapHub then ForeverCompanionMapHub.Record(target,label,questID) end
  if hud then return "On-screen arrow active" end
- if not pinned then return "Navigation unavailable for this map." end
+ if not pinned then
+  if direction.IsActive and direction.IsActive() then return 'New destination unavailable; previous navigation is still active.' end
+  return "Navigation unavailable for this map."
+ end
  local track=C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint
  local arrow=type(track)=="function" and pcall(track,true)
  local tracking=C_SuperTrack and C_SuperTrack.IsSuperTrackingUserWaypoint

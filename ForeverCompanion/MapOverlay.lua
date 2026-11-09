@@ -4,6 +4,7 @@ local frame,title,message,player,header,legend
 local tiles,pins,badges={},{},{}
 local mapID,artID,layout,editing,elapsed,slow
 local forceVisible=false
+local viewportWidth,viewportHeight
 local function finite(n)
  return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
 end
@@ -85,8 +86,13 @@ local function refreshPins()
 end
 local function updatePlayer()
  player:Hide();if not layout then return end
+ local current=safe(C_Map and C_Map.GetBestMapForUnit,'player')
+ if not finite(current) or current~=mapID then
+  hide(tiles);hide(pins);hide(badges);if legend then legend:Hide() end
+  message:SetText('Updating current zone...');message:Show();return
+ end
  local pos=safe(C_Map and C_Map.GetPlayerMapPosition,mapID,'player')
- if not pos or type(pos.GetXY)~='function' then return end
+ if not pos or (issecretvalue and issecretvalue(pos)) or type(pos.GetXY)~='function' then return end
  local ok,x,y=pcall(pos.GetXY,pos)
  if not ok or not coord(x) or not coord(y) then return end
  player:ClearAllPoints();player:SetPoint('CENTER',frame,'TOPLEFT',x*layout.width,-y*layout.height)
@@ -108,16 +114,20 @@ function M.Refresh(force)
  local id=safe(C_Map and C_Map.GetBestMapForUnit,'player')
  if not finite(id) or id<=0 then id=nil end
  local art=id and safe(C_Map and C_Map.GetMapArtID,id)
- if force or id~=mapID or art~=artID or not layout then
+ if not finite(art) or art<=0 then art=nil end
+ local sw,sh=UIParent:GetWidth(),UIParent:GetHeight()
+ if not finite(sw) then sw=nil end;if not finite(sh) then sh=nil end
+ if force or id~=mapID or art~=artID or not art or not layout or sw~=viewportWidth or sh~=viewportHeight then
+  viewportWidth,viewportHeight=sw,sh
   mapID,artID=id,art;layout=nil;hide(tiles);hide(pins);hide(badges);player:Hide()
   local layers=id and safe(C_Map and C_Map.GetMapArtLayers,id)
   local files=id and safe(C_Map and C_Map.GetMapArtLayerTextures,id,1)
   local d=settings();local width=d.width
-  local sw=UIParent:GetWidth();local sh=UIParent:GetHeight()
   if finite(sw) and sw>100 then width=math.min(width,sw*.9) end
   layout=M.Layout(type(layers)=='table' and layers[1],files,width)
   if layout and finite(sh) and layout.height>sh*.8 then layout=M.Layout(layers[1],files,width*sh*.8/layout.height) end
   frame:SetSize(layout and layout.width or width,layout and layout.height or 100)
+  header:SetWidth(layout and layout.width or width);title:SetWidth(math.max(60,(layout and layout.width or width)-116))
   for i,t in ipairs(layout or {}) do
    local tile=tiles[i];if not tile then tile=frame:CreateTexture(nil,'BACKGROUND');tiles[i]=tile end
    tile:ClearAllPoints();tile:SetPoint('TOPLEFT',t.x,-t.y);tile:SetSize(t.w,t.h);tile:SetTexture(t.file)
@@ -193,8 +203,8 @@ local function create()
  end)
  header=CreateFrame('Frame',nil,frame);header:SetPoint('BOTTOMLEFT',frame,'TOPLEFT',0,4);header:SetSize(420,25)
  title=U.Text(header,12,U.palette.muted);title:SetPoint('LEFT',0,0);title:SetWidth(285)
- local options=U.Button(header);options:SetSize(78,24);options:SetPoint('LEFT',290,0);options:SetText('Options');options:SetScript('OnClick',M.Options)
- local close=U.Button(header);close:SetSize(26,24);close:SetPoint('LEFT',374,0);close:SetText('X');close:SetScript('OnClick',function() M.Toggle(false) end)
+ local options=U.Button(header);options:SetSize(78,24);options:SetPoint('TOPRIGHT',header,'TOPRIGHT',-32,0);options:SetText('Options');options:SetScript('OnClick',M.Options)
+ local close=U.Button(header);close:SetSize(26,24);close:SetPoint('TOPRIGHT',header,'TOPRIGHT',0,0);close:SetText('X');close:SetScript('OnClick',function() M.Toggle(false) end)
  message=U.Text(frame,14,U.palette.muted);message:SetPoint('CENTER')
  legend=U.Text(frame,10,U.palette.muted);legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-6);legend:SetHeight(30);legend:SetWordWrap(true)
  player=frame:CreateTexture(nil,'OVERLAY',nil,7);player:SetSize(26,26);player:SetTexture('Interface\\Minimap\\MinimapArrow')

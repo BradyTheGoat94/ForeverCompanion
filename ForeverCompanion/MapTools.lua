@@ -2,6 +2,7 @@
 local T={page=1};ForeverCompanionMapTools=T
 local root,entry,summary,notice,rows,counter,previous,nextPage,selected
 local mapPins={}
+local lastRemoved,undoButton
 local categoryFilter='all'
 local categories={
  {key='general',name='General',icon='Interface\\Icons\\INV_Misc_Note_01',color={.85,.9,1}},
@@ -46,8 +47,8 @@ function T.Position()
 end
 function T.List(map,category)
  local result={}
- for _,p in ipairs(notes()) do if T.Valid(p) and (not map or p.map==map) and (not category or category=='all' or T.NoteStyle(p).key==category) then result[#result+1]=p end end
- table.sort(result,function(a,b) if a.map~=b.map then return a.map<b.map end;if a.label~=b.label then return a.label<b.label end;return a.id<b.id end)
+ for _,p in ipairs(notes()) do if T.Valid(p) and (not map or p.map==map) and (not category or category=='all' or category=='starred' and p.favorite==true or T.NoteStyle(p).key==category) then result[#result+1]=p end end
+ table.sort(result,function(a,b) if (a.favorite==true)~=(b.favorite==true) then return a.favorite==true end;if a.map~=b.map then return a.map<b.map end;if a.label~=b.label then return a.label<b.label end;return a.id<b.id end)
  return result
 end
 function T.Find(id)
@@ -57,7 +58,7 @@ local function changed()
  if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
  if ForeverCompanionMapOverlay then ForeverCompanionMapOverlay.Refresh() end
  if T.Refresh then T.Refresh() end
- if ForeverCompanionMapHub then ForeverCompanionMapHub.Refresh() end
+ if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
 end
 function T.Add(label,map,x,y)
  label=clean(label)
@@ -85,8 +86,20 @@ function T.CategoryMenu(anchor,id)
  ForeverCompanionInterface.Menu(anchor,'NOTE CATEGORY',entries)
 end
 function T.Remove(id)
- for i,p in ipairs(notes()) do if type(p)=='table' and p.id==id then table.remove(notes(),i);changed();return true end end
+ for i,p in ipairs(notes()) do if T.Valid(p) and p.id==id then
+  lastRemoved={};for k,v in pairs(p) do lastRemoved[k]=v end
+  table.remove(notes(),i);changed();return true
+ end end
  return false
+end
+function T.UndoRemove()
+ if not lastRemoved then return false,'No note deletion to undo this session.' end
+ if #notes()>=100 or T.Find(lastRemoved.id) then return false,'Cannot restore this note: the note limit or identifier is already in use.' end
+ notes()[#notes()+1]=lastRemoved;lastRemoved=nil;changed();return true,'Deleted note restored.'
+end
+function T.ToggleFavorite(id)
+ local p=T.Find(id);if not p then return false end
+ p.favorite=not p.favorite;changed();return true
 end
 function T.Navigate(id)
  local p=T.Find(id);if not p then return 'This note was removed. Choose a current note.' end
@@ -157,22 +170,24 @@ function T.Refresh()
   local p=list[(T.page-1)*5+i];row.note=p;row:SetShown(p~=nil)
   if p then
    local info=C_Map and read(C_Map.GetMapInfo,p.map)
-   row.title:SetText(p.label);row.detail:SetText(T.NoteStyle(p).name..' · '..(info and info.name or ('Map '..p.map))..(' · %.1f, %.1f'):format(p.x*100,p.y*100))
+   row.title:SetText((p.favorite and '* ' or '')..p.label);row.detail:SetText(T.NoteStyle(p).name..' · '..(info and info.name or ('Map '..p.map))..(' · %.1f, %.1f'):format(p.x*100,p.y*100))
    ForeverCompanionInterface.StyleButton(row,nil,selected==p.id)
   end
  end
  previous:SetEnabled(T.page>1);nextPage:SetEnabled(T.page<pages);counter:SetText(T.page..' / '..pages)
+ if undoButton then undoButton:SetEnabled(lastRemoved~=nil) end
 end
 function T.Toggle()
  if not root then
   local U=ForeverCompanionInterface
-  root=CreateFrame('Frame','ForeverCompanionMapToolsPanel',UIParent);root:SetSize(620,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true);root:SetFrameStrata('DIALOG');U.Surface(root)
+  root=CreateFrame('Frame','ForeverCompanionMapToolsPanel',UIParent);root:SetSize(620,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true);root:SetFrameStrata('DIALOG');U.Surface(root);U.PreparePanel(root,'ForeverCompanionMapToolsPanel',620,590)
   local drag=CreateFrame('Frame',nil,root);drag:SetSize(570,38);drag:SetPoint('TOPLEFT');drag:EnableMouse(true);drag:RegisterForDrag('LeftButton');drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
   text(root,18,-13,520,17,'MAP NOTES & NEARBY SERVICES');U.CloseButton(root,function() root:Hide() end)
   summary=text(root,18,-49,420,11,'');summary:SetHeight(36)
   local filterButton=U.Button(root);filterButton:SetSize(150,26);filterButton:SetPoint('TOPRIGHT',-18,-54);filterButton:SetText('All note categories')
   filterButton:SetScript('OnClick',function()
-   local entries={{label='All note categories',action=function() categoryFilter='all';filterButton:SetText('All note categories');T.page=1;T.Refresh() end}}
+   local entries={{label='All note categories',action=function() categoryFilter='all';filterButton:SetText('All note categories');T.page=1;T.Refresh() end},
+    {label='Starred notes',action=function() categoryFilter='starred';filterButton:SetText('Starred notes');T.page=1;T.Refresh() end}}
    for _,c in ipairs(categories) do local key,name=c.key,c.name;entries[#entries+1]={label=name,action=function() categoryFilter=key;filterButton:SetText(name);T.page=1;T.Refresh() end} end
    U.Menu(filterButton,'NOTE CATEGORY FILTER',entries)
   end)
@@ -193,6 +208,7 @@ function T.Toggle()
     if not row.note then return end;local id=row.note.id
     U.Menu(actions,'PERSONAL NOTE',{
      {label='Navigate to saved position',action=function() notice:SetText(T.Navigate(id)) end},
+     {label=row.note.favorite and 'Unstar note' or 'Star note',action=function() T.ToggleFavorite(id) end},
      {label='Category, icon & color',action=function() T.CategoryMenu(actions,id) end},
      {label='Rename (select this note)',action=function() local p=T.Find(id);if p then selected=id;entry:SetText(p.label);T.Refresh() end end},
      {label='Delete note...',action=function() U.Menu(actions,'DELETE THIS NOTE?',{{label='Delete personal note',action=function() T.Remove(id);selected=nil;T.Refresh();notice:SetText('Note removed.') end},{label='Cancel',action=function() end}}) end},
@@ -201,6 +217,7 @@ function T.Toggle()
   end
   notice=text(root,18,-502,584,11,'');notice:SetHeight(38);notice:SetWordWrap(true)
   previous=U.Button(root);previous:SetSize(90,26);previous:SetPoint('BOTTOMLEFT',18,15);previous:SetText('Previous');previous:SetScript('OnClick',function() T.page=T.page-1;T.Refresh() end)
+  undoButton=U.Button(root);undoButton:SetSize(90,26);undoButton:SetPoint('BOTTOMLEFT',120,15);undoButton:SetText('Undo delete');undoButton:SetScript('OnClick',function() local _,msg=T.UndoRemove();notice:SetText(msg) end)
   nextPage=U.Button(root);nextPage:SetSize(90,26);nextPage:SetPoint('BOTTOMRIGHT',-18,15);nextPage:SetText('Next');nextPage:SetScript('OnClick',function() T.page=T.page+1;T.Refresh() end)
   counter=text(root,220,-550,180,11,'');counter:ClearAllPoints();counter:SetPoint('BOTTOM',0,21);counter:SetJustifyH('CENTER');root:Hide()
  end

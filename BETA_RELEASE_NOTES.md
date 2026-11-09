@@ -1,4 +1,8 @@
-# Forever Companion 3.46.0-beta release notes (draft)
+# Forever Companion 3.47.0-beta release notes (draft)
+
+## Reliability and usability pass
+
+Map search now reuses its index while typing and supports Up/Down, Enter and Escape. Failed destination changes keep the previous navigation. Panels fit smaller windows, overlay art clears promptly after zone changes, service actions use current records, and personal notes gain starring plus session-only Undo delete. In-game verification remains pending.
 
 ## Map companion search and compact travel
 

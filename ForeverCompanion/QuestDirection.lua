@@ -155,7 +155,7 @@ end
 function D.Start(point,label)
  if type(point)~="table" or not finite(point.x) or not finite(point.y)
   or point.x<0 or point.x>1 or point.y<0 or point.y>1
-  or not finite(point.map) then return false end
+  or not finite(point.map) or point.map<=0 or point.map%1~=0 then return false end
  if not C_Map or not C_Map.GetWorldPosFromMapPos or not C_Map.GetPlayerMapPosition
   or not C_Map.GetBestMapForUnit or not CreateVector2D or not GetPlayerFacing or not atan2 then return false end
  local ok,continent,north,west=pcall(function()

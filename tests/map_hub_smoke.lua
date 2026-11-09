@@ -52,3 +52,12 @@ assert(w.Navigate({map=12,x=.3,y=.2},false,'Live quest',1)=='On-screen arrow act
 assert(#h.Recent()==1 and h.Recent()[1].questID==1)
 succeeds=false;w.Navigate({map=12,x=.9,y=.9},false,'Unavailable')
 assert(#h.Recent()==1,'failed navigation cannot create a history entry')
+
+local snapshots=0;local original=h.Snapshot
+h.Snapshot=function() snapshots=snapshots+1;return original() end
+h.Invalidate();local index=h.Index();h.Index();h.Query(index,'Repair');assert(snapshots==1,'typing and paging reuse the source snapshot')
+h.Invalidate();h.Index();assert(snapshots==2,'data changes invalidate the index')
+ForeverCompanionDB.mapHub.remember=true;h.ClearRecent()
+h.Record({map=12,x=.4,y=.5,id=7,source='Personal map note'},'Old position')
+h.Record({map=12,x=.8,y=.9,id=7,source='Personal map note'},'Moved note')
+assert(#h.Recent()==1 and h.Recent()[1].target.x==.8,'note history follows stable identity rather than accumulating moved duplicates')

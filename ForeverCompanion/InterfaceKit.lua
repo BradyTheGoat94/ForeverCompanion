@@ -5,6 +5,23 @@ ForeverCompanionInterface=U
 U.palette={background={.025,.032,.044,.99},surface={.065,.080,.103,1},border={.23,.28,.35,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
+local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
+function U.PanelScale(width,height,availableWidth,availableHeight)
+ if not finite(width) or not finite(height) or not finite(availableWidth) or not finite(availableHeight) or width<=0 or height<=0 or availableWidth<=32 or availableHeight<=32 then return 1 end
+ return math.min(1,(availableWidth-32)/width,(availableHeight-32)/height)
+end
+function U.FitPanel(frame,width,height)
+ if UIParent and UIParent.GetWidth and UIParent.GetHeight then frame:SetScale(U.PanelScale(width,height,UIParent:GetWidth(),UIParent:GetHeight())) end
+end
+function U.PreparePanel(frame,name,width,height)
+ U.FitPanel(frame,width,height)
+ frame:RegisterEvent('UI_SCALE_CHANGED');frame:RegisterEvent('DISPLAY_SIZE_CHANGED')
+ frame:SetScript('OnEvent',function() U.FitPanel(frame,width,height) end)
+ if type(UISpecialFrames)=='table' then
+  for _,existing in ipairs(UISpecialFrames) do if existing==name then return end end
+  UISpecialFrames[#UISpecialFrames+1]=name
+ end
+end
 local function paint(texture,color) texture:SetColorTexture(unpack(color)) end
 function U.Text(parent,size,color)
  local text=parent:CreateFontString(nil,'OVERLAY','GameFontHighlightSmall')

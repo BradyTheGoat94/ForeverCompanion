@@ -16,6 +16,9 @@ assert(not t.SetCategory(a.id,'invalid') and t.NoteStyle(b).key=='general','old 
 assert(t.Navigate(a.id)=='Navigating' and navigated==a)
 assert(t.Remove(a.id));navigated=nil;t.Navigate(a.id);assert(not navigated,'deleted notes cannot start old navigation')
 local c=t.SaveHere('New note');assert(c.id>b.id and c.id~=a.id,'deleted IDs are never recycled')
+assert(t.ToggleFavorite(c.id) and t.List()[1].id==c.id and #t.List(nil,'starred')==1)
+assert(t.Remove(c.id));local ok=t.UndoRemove();assert(ok and t.Find(c.id).favorite,'undo restores stable identity and note organization')
+assert(not t.UndoRemove(),'a deletion is restored only once')
 x=nil;assert(not t.SaveHere('Unavailable'));x=.4
 assert(not t.Add('',12,.1,.1));assert(not t.Add('Invalid',12,0/0,.5))
 local unicode=string.rep(string.char(195,169),41);local u=t.SaveHere(unicode);assert(#u.label==80 and u.label:byte(80)==169,'UTF-8 truncation stays on a complete character')

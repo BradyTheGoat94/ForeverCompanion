@@ -1,3 +1,13 @@
+## 3.47.0-beta — Map reliability and usability pass
+
+- Reuse the unified search index while typing, paging and selecting; invalidate on quest, zone, note and service-data changes. Refresh results explicitly rebuilds it.
+- Add Up/Down selection, Enter activation, Escape closing and a visible selection rail in map search.
+- Preserve the previous arrow when a new destination cannot start. Reconcile successful custom/native navigation so obsolete addon-owned pins/arrows do not conflict; preserve player-owned waypoints.
+- Service revalidation returns the fresh record and distinguishes visited observations from provider references at the same coordinate.
+- Fit search, notes and service panels to smaller viewports, react to scale changes and register with the native Escape panel stack.
+- Clear old-zone overlay art on the faster player-update cycle, refit on viewport changes, and keep header controls within the map width.
+- Add starred notes, starred filtering and one-session Undo delete. Recent-note entries deduplicate by stable note identity even if coordinates change.
+
 ## 3.46.0-beta — Search, organized notes and compact travel
 
 - Added a unified Map Companion search for all personal notes, live active quests and reported services in the current zone. Supports literal multi-word queries, type filters, bounded results and source-aware navigation checks.

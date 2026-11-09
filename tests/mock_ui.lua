@@ -2113,3 +2113,21 @@ end
 do
  ForeverCompanionMapTools.Toggle();exportNative('ui_organized_notes_sample_native.json');ForeverCompanionMapTools.Toggle()
 end
+
+do
+ local h=ForeverCompanionMapHub
+ local original=h.Snapshot;local builds=0
+ h.Snapshot=function() builds=builds+1;return original() end
+ h.Open('');assert(builds==1)
+ local panel,edit;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapHubPanel' then panel=f end end
+ for _,f in ipairs(frames) do if f.kind=='EditBox' and f.parent==panel.id then edit=f end end
+ assert(edit and edit.OnKeyDown and edit.OnEnterPressed)
+ edit:SetText('SAMPLE');assert(builds==1,'typing reuses the index')
+ edit.OnKeyDown(edit,'DOWN');assert(builds==1,'keyboard selection reuses the index')
+ exportNative('ui_map_hub_refined_sample_native.json')
+ edit.OnEnterPressed();assert(ForeverCompanionQuestDirection.IsActive(),'Enter starts navigation only after keyboard selection');ForeverCompanionQuestDirection.Stop()
+ edit.OnEscapePressed(edit);assert(not panel.visible,'Escape closes the search panel')
+ h.Snapshot=original
+ local t=ForeverCompanionMapTools;local note=t.List()[1];t.ToggleFavorite(note.id);t.Remove(note.id);assert(t.UndoRemove())
+ t.Toggle();exportNative('ui_notes_refined_sample_native.json');t.Toggle()
+end

@@ -102,7 +102,7 @@ function A.Toggle(viewed)
  if viewed then cfg.zone='viewed' end
  if not root then
   local U=ForeverCompanionInterface
-  root=CreateFrame('Frame','ForeverCompanionServiceAtlasPanel',UIParent);root:SetSize(730,650);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true);root:SetFrameStrata('DIALOG');U.Surface(root)
+  root=CreateFrame('Frame','ForeverCompanionServiceAtlasPanel',UIParent);root:SetSize(730,650);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true);root:SetFrameStrata('DIALOG');U.Surface(root);U.PreparePanel(root,'ForeverCompanionServiceAtlasPanel',730,650)
   local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(685,42);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
   drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
   root.heading=label(root,18,-14,650,17,'SERVICE ATLAS');U.CloseButton(root,function() root:Hide() end)
