@@ -50,6 +50,21 @@ local found={}
 for _,entry in ipairs(points) do found[entry.quest.id]=true;assert(entry.reference and entry.pickup) end
 for _,id in ipairs({1,7,9,12,14}) do assert(found[id],'missing eligible giver '..id) end
 for _,id in ipairs({2,3,4,5,6,8,10,11,13,15,16,17,18,19}) do assert(not found[id],'ineligible quest leaked '..id) end
+local catalog=a.Catalog(1429,{{id=3,title='Live quest title',complete=true}})
+local catalogByID={}
+for _,entry in ipairs(catalog) do catalogByID[entry.id]=entry end
+assert(#catalog==13,'catalog includes mapped character-compatible giver references, including higher-level quests')
+assert(catalogByID[2].status=='completed')
+assert(catalogByID[3].status=='active' and catalogByID[3].ready and catalogByID[3].title=='Live quest title')
+assert(catalogByID[4].status=='locked' and catalogByID[4].reason:find('40',1,true))
+assert(catalogByID[8].status=='locked' and catalogByID[8].dependencies[1]=='Quest 202')
+assert(catalogByID[1].status=='available' and catalogByID[14].targets[1].label=='Notice board')
+local completionAPI=C_QuestLog.IsQuestFlaggedCompleted
+C_QuestLog.IsQuestFlaggedCompleted=function(id) if id==202 then return nil end;return completionAPI(id) end
+catalogByID={};for _,entry in ipairs(a.Catalog(1429,{})) do catalogByID[entry.id]=entry end
+assert(catalogByID[8].status=='unknown' and catalogByID[10].status=='unknown','unknown prerequisites must not become pickup availability claims')
+assert(catalogByID[7].status=='available','one known completed prerequisite is sufficient for an OR group')
+C_QuestLog.IsQuestFlaggedCompleted=completionAPI
 complete[1]=true
 for _,entry in ipairs(a.ForMap(1429,{{id=3}})) do assert(entry.quest.id~=1,'turn-in immediately removes old pickup') end
 race=95
@@ -63,4 +78,5 @@ assert(#a.ForMap(1429,{})==0)
 ForeverCompanionDB={}
 C_QuestLog.IsQuestFlaggedCompleted=nil
 assert(#a.ForMap(1429,{})==0,'missing completion API cannot claim availability')
+for _,entry in ipairs(a.Catalog(1429,{})) do assert(entry.status=='unknown','missing completion API cannot become a completed or available catalog claim') end
 print('PASS: database quest pickups, asynchronous indexing, completion, active, level, race/class, prerequisites, exclusions, objects, phases, Skyborne masks and toggle')
