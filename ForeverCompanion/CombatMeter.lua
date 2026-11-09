@@ -911,15 +911,24 @@ function M.Refresh()
      info=read(C_Spell.GetSpellInfo,spellID)
     end
     local spellName=(type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i))
-    -- Blizzard can return separate player and pet auto-attacks with the
-    -- same spell name. Attribute only when the native unit details confirm
-    -- the source; never assume the second Attack row belongs to a pet.
+    -- Match Blizzard's native damage-meter labeling: creatureName is
+    -- supplied for pet/guardian spells, including duplicate Attack rows.
+    -- This works even when the optional isPet flag is absent.
+    local creatureName=spell.creatureName
+    local petName=nil
+    if not (issecretvalue and issecretvalue(creatureName)) and type(creatureName)=="string" and creatureName~="" then
+     petName=creatureName
+    end
     local details=spell.combatSpellDetails
+    local confirmedPet=false
     if not (issecretvalue and issecretvalue(details)) and type(details)=="table" then
      local isPet=details.isPet
-     if not (issecretvalue and issecretvalue(isPet)) and isPet==true and spellName=="Attack" then
-      spellName="Pet Attack"
-     end
+     confirmedPet=not (issecretvalue and issecretvalue(isPet)) and isPet==true
+    end
+    if petName then
+     spellName=spellName.." ("..petName..")"
+    elseif confirmedPet and spellName=="Attack" then
+     spellName="Pet Attack"
     end
     item.label:SetText(spellName)
     local name=type(info)=='table' and info.name
