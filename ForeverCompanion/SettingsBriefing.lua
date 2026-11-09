@@ -97,7 +97,7 @@ function S.Create(parent,context)
   local entries={
     {'/fc next','Navigate to the next matched objective on this map'},
     {'/fc arrow','Arrow size, position lock and reset'},
-    {'/fcdiag','Print the client compatibility report'},
+    {'/fc session','XP, time, turn-ins and previous leveling sessions'},
     {'/fc tracker','Show or hide the floating quest tracker'},
     {'/fc setup','Check quest data and missing-marker guidance'},
   }

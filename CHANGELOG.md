@@ -1,3 +1,13 @@
+## 3.42.0-beta — Leveling sessions and flexible quest planning
+
+- New My Leveling Session window from the Overview shortcut, /fc session and route options. Shows tracked time, observed XP, XP/hour, observed turn-ins, reported rewards and six recent turn-ins.
+- Pause/resume excludes time, XP gains and quest rewards while paused. End & start new saves a summary; the ten latest manually ended sessions persist per character. Reload starts a fresh current session.
+- XP/hour needs at least 60 seconds and complete public samples. Missing/backwards samples, skipped level thresholds and clock discontinuities suppress the rate. Reported quest rewards are separate from sampled XP and never double counted.
+- Right-click a live itinerary step to set it aside temporarily. Restore from Route options or reload. Completion and removal clear obsolete deferrals; quest progress and watched quests remain unchanged.
+- Discovery source, sort, near-level and zone preferences persist per character. Sort and atlas state choices use explicit menus.
+- Pickup discovery and atlas giver navigation revalidate the current location at click time. Accepted/removed pickups, moved givers and changed maps cannot retain stale navigation.
+- Added session state and populated UI regressions plus expanded route-deferral and stale-pickup checks. This candidate still requires live client acceptance.
+
 ## 3.41.0-beta — Quest navigation, meter analysis and map controls
 
 - Search spell breakdowns by spell or pet name, switch to Pets only, and choose contribution, alphabetical or native ordering. Shares and coverage continue to use the full reported spell set. Secret names and amounts never enter string search or arithmetic.

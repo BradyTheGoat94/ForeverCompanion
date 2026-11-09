@@ -8,6 +8,11 @@ local sortMode='source'
 local zoneMode='player'
 local selectedID,selectedMap,selectedTarget,selection,currentMap
 local choices={}
+local function preferences()
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ if type(ForeverCompanionDB.questDiscovery)~='table' then ForeverCompanionDB.questDiscovery={} end
+ return ForeverCompanionDB.questDiscovery
+end
 local function read(fn,...)
  if type(fn)~='function' then return end
  local ok,a=pcall(fn,...);if ok then return a end
@@ -28,7 +33,7 @@ function D.MapID()
 end
 function D.SetZoneMode(mode)
  if mode~='player' and mode~='viewed' then return false end
- zoneMode=mode;D.page=1;D.Refresh();return true
+ zoneMode=mode;preferences().zone=mode;D.page=1;D.Refresh();return true
 end
 function D.GetZoneMode() return zoneMode end
 function D.TargetKey(t) return t.map..':'..t.x..':'..t.y end
@@ -88,6 +93,10 @@ local function text(parent,x,y,width,value,size)
 end
 function D.Create(parent)
  local U=ForeverCompanionInterface
+ local cfg=preferences()
+ zoneMode=cfg.zone=='viewed' and 'viewed' or 'player'
+ nativeOnly=cfg.nativeOnly==true;nearLevel=cfg.nearLevel==true
+ sortMode=({source=true,name=true,level=true,proximity=true})[cfg.sort] and cfg.sort or 'source'
  root=CreateFrame('Frame','ForeverCompanionQuestDiscoveryPanel',parent);root:SetSize(770,562);U.Surface(root);root:Hide()
  text(root,16,-13,730,'DISCOVER QUESTS',16)
  text(root,16,-39,730,'Quest pickup locations · browse your zone or the selected world-map zone.',12)
@@ -95,14 +104,18 @@ function D.Create(parent)
  search:SetScript('OnTextChanged',function() D.page=1;D.Refresh() end)
  search:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
  modeButton=U.Button(root);modeButton:SetPoint('TOPLEFT',500,-66);modeButton:SetSize(254,27)
- modeButton:SetScript('OnClick',function() nativeOnly=not nativeOnly;D.page=1;D.Refresh() end)
+ modeButton:SetScript('OnClick',function() nativeOnly=not nativeOnly;preferences().nativeOnly=nativeOnly;D.page=1;D.Refresh() end)
  sortButton=U.Button(root);sortButton:SetPoint('TOPLEFT',16,-102);sortButton:SetSize(230,25)
  sortButton:SetScript('OnClick',function()
-  local nextMode={source='name',name='level',level='proximity',proximity='source'}
-  sortMode=nextMode[sortMode];D.page=1;D.Refresh()
+  local entries={}
+  for _,option in ipairs({{'source','Client reported first'},{'name','Quest name'},{'level','Quest level'},{'proximity','Map proximity'}}) do
+   local key,label=option[1],option[2]
+   entries[#entries+1]={label=label,selected=sortMode==key,action=function() sortMode=key;preferences().sort=key;D.page=1;D.Refresh() end}
+  end
+  U.Menu(sortButton,'SORT QUEST PICKUPS',entries)
  end)
  levelButton=U.Button(root);levelButton:SetPoint('TOPLEFT',258,-102);levelButton:SetSize(228,25)
- levelButton:SetScript('OnClick',function() nearLevel=not nearLevel;D.page=1;D.Refresh() end)
+ levelButton:SetScript('OnClick',function() nearLevel=not nearLevel;preferences().nearLevel=nearLevel;D.page=1;D.Refresh() end)
  zoneButton=U.Button(root);zoneButton:SetPoint('TOPLEFT',500,-102);zoneButton:SetSize(126,25)
  zoneButton:SetScript('OnClick',function() D.SetZoneMode(zoneMode=='player' and 'viewed' or 'player') end)
  zoneButton:SetScript('OnEnter',function(self)
@@ -162,8 +175,18 @@ function D.Select(row)
 end
 function D.Navigate()
  if selection then
-  local target=selection.targets[choices[selectedID] or 1]
+  local oldTarget=selection.targets[choices[selectedID] or 1]
+  local map=D.MapID()
+  local entries=map==selectedMap and ForeverCompanionQuestWaypoints.MapPickups(map,ForeverCompanionQuestPlanner.GetLive(),true) or {}
+  local target=D.Resolve(entries,selectedID,oldTarget)
+  if not target then D.Refresh();detailStatus:SetText('This pickup or giver location changed. Choose a current quest reference.');return end
   detailStatus:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,selection.quest.title))
+ end
+end
+function D.Resolve(entries,id,target)
+ if not valid(target) then return end
+ for _,entry in ipairs(entries or {}) do
+  if entry.quest and entry.quest.id==id and valid(entry.target) and D.TargetKey(entry.target)==D.TargetKey(target) then return entry.target end
  end
 end
 function D.Paint(row)

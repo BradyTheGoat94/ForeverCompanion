@@ -16,6 +16,9 @@ assert(#stops==3 and stops[1].quest==a and stops[1].objectiveIndex==2 and stops[
 assert(stops[2].objectiveIndex==3 and stops[3].turnin,'multiple unfinished objectives and separate turn-in stops')
 assert(stats.remaining==5 and stats.matched==3 and stats.unlocated==1 and stats.otherMaps==1 and stats.unknownQuests==1)
 assert(stats.positionKnown)
+local skip={[r.StepKey(stops[1])]=true}
+local remaining,deferred=r.Build({a,b},data,1429,.1,.1,nil,{deferred=skip})
+assert(#remaining==2 and deferred.deferred==1 and not a.objectiveStates[2].done,'set-aside planning never marks a quest objective complete')
 local pinned,filtered=r.Build({a,b,c,d,e},data,1429,.1,.1,function(q) return q==a end,{filter='pinned'})
 assert(#pinned==2 and filtered.excluded==4 and pinned[1].quest==a,'pinned filter retains every unfinished matched step')
 local turnins=r.Build({a,b},data,1429,.1,.1,nil,{filter='turnin'})
@@ -46,6 +49,12 @@ local destination,showMap
 ForeverCompanionQuestWaypoints={Targets=function(q) return data[q] or {} end,Navigate=function(t,open) destination=t;showMap=open;return 'Navigating' end}
 C_Map={GetBestMapForUnit=function() return 1429 end,GetPlayerMapPosition=function() return {GetXY=function() return .1,.1 end} end}
 assert(r.NavigateNext(a)=='Navigating' and destination.x==.2 and showMap==false,'tracker action navigates the live matched objective without forcing map open')
+assert(r.SetAside(stops[1]));r.NavigateNext(a)
+assert(destination.x==.3,'set-aside objective is skipped by Next objective')
+assert(not a.objectiveStates[2].done,'setting aside leaves live progress untouched')
+r.RestoreDeferred();r.NavigateNext(a);assert(destination.x==.2)
+assert(r.SetAside(stops[1]));a.objectiveStates[2].done=true;r.NavigateNext(a)
+a.objectiveStates[2].done=false;r.NavigateNext(a);assert(destination.x==.2,'completed steps release their temporary set-aside keys')
 supported=false;destination=nil
 r.NavigateNext(a);assert(destination==nil,'unavailable live snapshot cannot start navigation')
 print('PASS: objective itinerary matching, completed removal, multiple steps, unknown positions, missing coverage, stale navigation and bounded work')

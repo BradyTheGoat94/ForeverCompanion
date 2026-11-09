@@ -61,6 +61,7 @@ function H.Record(id,xp,money,context)
   mapName=text(info and info.name),questZone=text(q and q.zoneKnown and q.zone),level=number(read(UnitLevel,'player'),1)}
  history.entries[#history.entries+1]=entry
  history.nextSequence=history.nextSequence+1
+ if ForeverCompanionSessionProgress then ForeverCompanionSessionProgress.RecordQuest(entry) end
  while #history.entries>H.limit do table.remove(history.entries,1) end
  if ForeverCompanionQuestBook then ForeverCompanionQuestBook.Refresh() end
  return true,entry

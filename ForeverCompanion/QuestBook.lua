@@ -54,10 +54,13 @@ function B.Create(parent)
  search:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
  filterButton=U.Button(root);filterButton:SetPoint('TOPLEFT',382,-127);filterButton:SetSize(178,27)
  filterButton:SetScript('OnClick',function()
-  if mode=='history' then oldest=not oldest else
-   local nextFilter={all='available',available='active',active='completed',completed='locked',locked='unknown',unknown='all'};filter=nextFilter[filter] or 'all'
+  if mode=='history' then oldest=not oldest;B.page=1;B.Refresh(false);return end
+  local entries={}
+  for _,key in ipairs({'all','available','active','completed','locked','unknown'}) do
+   local state=key
+   entries[#entries+1]={label=labels[state] or 'All quests',selected=filter==state,action=function() filter=state;B.page=1;B.Refresh(false) end}
   end
-  B.page=1;B.Refresh(false)
+  U.Menu(filterButton,'QUEST ATLAS STATE',entries)
  end)
  zoneButton=U.Button(root);zoneButton:SetPoint('TOPLEFT',576,-127);zoneButton:SetSize(178,27)
  zoneButton:SetScript('OnClick',function()
@@ -101,7 +104,13 @@ function B.Create(parent)
  go=U.Button(detail);go:SetPoint('TOPRIGHT',-12,-41);go:SetSize(150,25);go:SetText('Show giver map')
  go:SetScript('OnClick',function()
   local t=selection and mode=='catalog' and selection.targets[choice]
-  if t then message:SetText(ForeverCompanionQuestWaypoints.Navigate(t,true,selection.title)) end
+  if not t then return end
+  local id,title=selection.id,selection.title
+  local map=ForeverCompanionQuestDiscovery.MapID()
+  local entries=map==cachedMap and ForeverCompanionAvailableQuests.Catalog(map,ForeverCompanionQuestPlanner.GetLive()) or {}
+  local target=B.Resolve(entries,id,t)
+  if not target then B.Refresh();message:SetText('This giver location changed. Choose a current catalog entry.');return end
+  message:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,title))
  end)
  cycle=U.Button(detail);cycle:SetPoint('TOPRIGHT',-12,-78);cycle:SetSize(150,25)
  cycle:SetScript('OnClick',function() if mode=='catalog' and selection and #selection.targets>1 then choice=choice%#selection.targets+1;chosenTarget=targetKey(selection.targets[choice]);B.Refresh(false) end end)
@@ -111,6 +120,12 @@ function B.Create(parent)
  previous:SetScript('OnClick',function() B.page=math.max(1,B.page-1);B.Refresh(false) end)
  nextPage:SetScript('OnClick',function() B.page=B.page+1;B.Refresh(false) end)
  counter=text(root,132,-539,500,'',11);counter:SetJustifyH('CENTER')
+end
+function B.Resolve(entries,id,target)
+ if type(target)~='table' then return end
+ for _,entry in ipairs(entries or {}) do if entry.id==id then
+  for _,t in ipairs(entry.targets or {}) do if t.map==target.map and t.x==target.x and t.y==target.y then return t end end
+ end end
 end
 function B.Refresh(force)
  if not root or not root:IsShown() then return end

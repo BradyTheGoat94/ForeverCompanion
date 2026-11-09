@@ -789,7 +789,9 @@ do
  -- Provider refreshes may reorder locations; selection follows coordinates.
  fixture={client,sample};ForeverCompanionQuestDiscovery.Refresh()
  row.go.OnClick(row.go);assert(navigated.x==.23,'giver identity survives provider reordering')
- fixture={};ForeverCompanionQuestDiscovery.Refresh()
+ fixture={};navigated=nil;ForeverCompanionQuestDiscovery.Navigate()
+ assert(navigated==nil,'pickup click must revalidate removal before the next UI refresh')
+ ForeverCompanionQuestDiscovery.Refresh()
  local detailGo
  for _,frame in ipairs(frames) do if frame.kind=='Button' and frame.text=='Navigate to giver' then detailGo=frame end end
  assert(detailGo and detailGo.enabled==false,'stale quest disappears and disables navigation')
@@ -1835,6 +1837,16 @@ do
  searchBox:SetText('SUPPLY');searchBox.OnTextChanged(searchBox,true)
  assert(calls==before,'typing a catalog search must not rescan completion APIs')
  searchBox:SetText('');searchBox.OnTextChanged(searchBox,true)
+ local oldNavigate=ForeverCompanionQuestWaypoints.Navigate
+ local staleNavigation=false
+ ForeverCompanionQuestWaypoints.Navigate=function() staleNavigation=true end
+ local giverButton
+ for _,f in ipairs(frames) do if f.text=='Show giver map' and f.OnClick then giverButton=f end end
+ assert(giverButton)
+ local savedCatalog=catalog;catalog={};giverButton.OnClick()
+ assert(not staleNavigation,'atlas navigation must revalidate current giver coordinates')
+ catalog=savedCatalog;ForeverCompanionQuestWaypoints.Navigate=oldNavigate
+ ForeverCompanionQuestBook.Refresh()
  ForeverCompanionDB.questHistory={entries={}}
  ForeverCompanionQuestHistory.Record(900201,500,12345,{quest={id=900201,title='Sample: Report to camp',zoneKnown=true,zone='Sample forest'},map=1429,at=1400000000})
  ForeverCompanionQuestHistory.Record(900202,750,nil,{quest={id=900202,title='Sample: Deliver supplies',zoneKnown=true,zone='Sample forest'},map=1429,at=1400000100})
@@ -1928,4 +1940,31 @@ do
  exportNative('ui_pet_search_sample_native.json')
  detail.spellSearch:SetText('');m.Hide()
  C_DamageMeter,C_Spell,Enum=oldMeter,oldSpell,oldEnum
+end
+
+do
+ local oldTime,oldXP,oldMax,oldLevel=GetTime,UnitXP,UnitXPMax,UnitLevel
+ local now,xp=100,500
+ GetTime=function() return now end;UnitXP=function() return xp end;UnitXPMax=function() return 5000 end;UnitLevel=function() return 20 end
+ local s=ForeverCompanionSessionProgress
+ s.Start();now=400;xp=1700;s.Sample()
+ for i=1,6 do s.RecordQuest({title='SAMPLE observed quest '..i..': Supplies and preparations for the long journey through the forest',xp=i*75,money=i*100}) end
+ SlashCmdList.FOREVERCOMPANION('session')
+ local panel,body,history
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionSessionPanel' then panel=f end end
+ assert(panel and panel.visible)
+ for _,f in ipairs(frames) do
+  if f.parent==panel.id and f.kind=='FontString' and f.text:find('REPORTED QUEST REWARDS',1,true) then body=f end
+  if f.parent==panel.id and f.text=='Previous sessions' then history=f end
+ end
+ assert(body and history and body:GetStringHeight()<=body.height,'six recent quest titles must fit the session reading area')
+ exportNative('ui_session_sample_native.json')
+ s.NewSession();history.OnClick()
+ local saved
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text:find('1. 0:05:00',1,true) then saved=f end end
+ assert(saved);saved.OnClick()
+ assert(panel.heading.text=='PREVIOUS LEVELING SESSION')
+ history.OnClick();assert(panel.heading.text=='MY LEVELING SESSION')
+ s.Toggle();assert(not panel.visible)
+ GetTime,UnitXP,UnitXPMax,UnitLevel=oldTime,oldXP,oldMax,oldLevel
 end

@@ -31,4 +31,8 @@ assert(D.Filter({e(11,'Far','A',false,.8),e(12,'Near','B',true,.1)},'',false,{so
 local bad=e(50,'Bad','Nowhere');bad.target.x=0/0
 assert(#D.Filter({bad},'',false)==0)
 bad.target.x=2;assert(#D.Filter({bad},'',false)==0)
+local old=e(99,'Old','Giver',false,.2)
+assert(D.Resolve({old},99,old.target)==old.target)
+assert(D.Resolve({},99,old.target)==nil,'accepted or removed pickup cannot retain navigation')
+assert(D.Resolve({e(99,'Moved','Giver',false,.8)},99,old.target)==nil,'changed giver coordinates reject stale navigation')
 print('PASS: discovery grouping, per-location sources, deduplication, literal search, levels, proximity and invalid coordinates')

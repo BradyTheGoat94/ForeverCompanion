@@ -1,7 +1,7 @@
 # CurseForge Beta submission — operator handoff
 
 **Project:** Brady's Forever Companion
-**Version:** 3.41.0-beta
+**Version:** 3.42.0-beta
 **Release channel:** Beta
 **Repository branch:** develop for work; main for promoted candidates
 **CurseForge project:** 1793299
@@ -32,14 +32,14 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 2. Extract the GitHub artifact wrapper. The versioned addon ZIP inside is the upload file; keep `release-audit.json` beside it for review.
 3. Compare the ZIP's SHA-256 to the report and verify that it contains `ForeverCompanion/ForeverCompanion.toc`. For manual installation, extract the addon folder into the Forever client's `Interface/AddOns/` directory. Launch the game, enable the addon and run `/fc` and `/fcdiag`.
 4. In the publisher UI, select **World of Warcraft → Addons → Forever**. Existing Forever projects list **1.60.1**. Confirm that the tested client and the publisher version selector agree before uploading.
-5. Select **Beta**, not Release; version label **3.41.0-beta**.
+5. Select **Beta**, not Release; version label **3.42.0-beta**.
 6. Use the original square PNG project crest from the candidate kit. Capture actual screenshots after the live test and label offline UI renders as previews. [CurseForge project submission guide](https://support.curseforge.com/support/solutions/articles/9000199552)
 7. Choose a license **only after the owner explicitly decides** whether others may modify or redistribute the original code. Review ownership of bundled assets first.
 8. After explicit owner approval, submit for moderation and record the resulting project and file IDs when confirmed.
 
 ## Changelog (paste into CurseForge)
 
-**3.41.0-beta**
+**3.42.0-beta**
 - Show all active quests with known map locations, add optional town service pins and an atlas style, and view a saved personal-bank snapshot anywhere.
 - Added a faction-aware Leveling Route, a simpler quest map with Focus, All and Off modes, and a player-started on-screen navigation arrow.
 - Added spec-specific rotation cards across all five practice modes, with a distinct Protection and Retribution Paladin progression.
@@ -67,12 +67,12 @@ Free class builds, rotation guides, dungeon loot, and progression planning for W
 | Gate | Status |
 | --- | --- |
 | Automated build and package integrity | Confirm on exact candidate commit |
-| Correct project title/version in TOC | PASS — 3.41.0-beta |
+| Correct project title/version in TOC | PASS — 3.42.0-beta |
 | License choice and third-party asset review | BLOCKED — owner decision/review |
 | Original logo and truthful showcase images | Square crest prepared. Live screenshots pending. |
 | Correct CurseForge game/version selection | NEEDS PUBLISHER UI |
 | Live-client installation, icons, SavedVariables and protected actions | UNVERIFIED |
-| CurseForge project/file approval | Owner-reported submission; approval unverified. 3.41.0 candidate not uploaded. |
+| CurseForge project/file approval | Owner-reported submission; approval unverified. 3.42.0 candidate not uploaded. |
 
 **Do not claim publication, approval, perfect visual fidelity, or verified Forever-specific DPS optimization until independently confirmed.**
 

@@ -3,6 +3,11 @@ local R={page=1}
 ForeverCompanionObjectiveRoute=R
 local root,rows,summary,notice,previous,nextPage,counter,optionsButton
 local current={}
+local deferred={}
+function R.StepKey(stop)
+ if type(stop)~='table' or type(stop.quest)~='table' or type(stop.quest.id)~='number' then return end
+ return stop.quest.id..':'..tostring(stop.objectiveIndex)..':'..tostring(stop.turnin==true)..':'..tostring(stop.text)
+end
 local function settings()
  ForeverCompanionDB=ForeverCompanionDB or {}
  if type(ForeverCompanionDB.objectiveRoute)~='table' then ForeverCompanionDB.objectiveRoute={} end
@@ -19,7 +24,7 @@ function R.Build(quests,targets,map,x,y,pinned,options)
  targets=targets or {}
  options=type(options)=='table' and options or {}
  if not finite(map) or map<=0 then map=nil end
- local candidates,stats={},{remaining=0,matched=0,unlocated=0,otherMaps=0,unknownQuests=0,excluded=0,positionKnown=point(x,y)}
+ local candidates,stats={},{remaining=0,matched=0,unlocated=0,otherMaps=0,unknownQuests=0,excluded=0,deferred=0,positionKnown=point(x,y)}
  for index,q in ipairs(quests or {}) do
   local isPinned=pinned and pinned(q)==true or false
   local include=not options.filter or options.filter=='all' or options.filter=='pinned' and isPinned or options.filter=='turnin' and q.complete==true or options.filter=='selected' and (q==options.selected or options.selected and q.id and q.id==options.selected.id)
@@ -28,6 +33,8 @@ function R.Build(quests,targets,map,x,y,pinned,options)
   if #steps==0 then stats.unknownQuests=stats.unknownQuests+1 end
   for _,step in ipairs(steps) do if not step.done then
    stats.remaining=stats.remaining+1
+   local stepKey=R.StepKey({quest=q,objectiveIndex=step.index,turnin=step.turnin,text=step.text})
+   if stepKey and options.deferred and options.deferred[stepKey] then stats.deferred=stats.deferred+1 else
    local localTargets={}
    for _,t in ipairs(step.targets) do if t.map==map then localTargets[#localTargets+1]=t end end
    if #localTargets>0 then
@@ -35,6 +42,7 @@ function R.Build(quests,targets,map,x,y,pinned,options)
     candidates[#candidates+1]={quest=q,index=index,step=step,targets=localTargets,pinned=isPinned}
    elseif #step.targets>0 then stats.otherMaps=stats.otherMaps+1
    else stats.unlocated=stats.unlocated+1 end
+   end
   end end
   else stats.excluded=stats.excluded+1 end
  end
@@ -60,14 +68,27 @@ function R.Build(quests,targets,map,x,y,pinned,options)
  return stops,stats
 end
 local function snapshot(quests,options)
+ options=options or {};options.deferred=deferred
  local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
  if not finite(map) or map<=0 then map=nil end
  local position=map and read(C_Map.GetPlayerMapPosition,map,'player')
  local x,y
  if position and not (issecretvalue and issecretvalue(position)) then x,y=read(position.GetXY,position) end
  local targets={};for _,q in ipairs(quests) do targets[q]=ForeverCompanionQuestWaypoints.Targets(q) end
+ local alive={}
+ for _,q in ipairs(quests) do for _,step in ipairs(ForeverCompanionQuestFieldGuide.Steps(q,targets[q])) do
+  if not step.done then local key=R.StepKey({quest=q,objectiveIndex=step.index,turnin=step.turnin,text=step.text});if key then alive[key]=true end end
+ end end
+ if ForeverCompanionQuestPlanner.IsSupported() then for key in pairs(deferred) do if not alive[key] then deferred[key]=nil end end end
  return R.Build(quests,targets,map,x,y,ForeverCompanionQuestPlanner.IsPinned,options)
 end
+function R.SetAside(stop)
+ local p=ForeverCompanionQuestPlanner
+ if not p or not p.IsSupported() or not R.Resolve(stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets) then return false end
+ local key=R.StepKey(stop);if not key then return false end
+ deferred[key]=true;R.page=1;R.Refresh();return true
+end
+function R.RestoreDeferred() deferred={};R.page=1;R.Refresh() end
 function R.NavigateNext(quest)
  local p=ForeverCompanionQuestPlanner
  if not p or not p.IsSupported() then return 'Quest snapshot unavailable. Open the quest log first.' end
@@ -91,6 +112,9 @@ function R.OpenOptions(anchor)
  choices[#choices+1]={label='Order by approximate distance',selected=cfg.order~='log',action=function() cfg.order='nearest';R.page=1;R.Refresh() end}
  choices[#choices+1]={label='Order by quest log',selected=cfg.order=='log',action=function() cfg.order='log';R.page=1;R.Refresh() end}
  choices[#choices+1]={label='Open map when navigating',selected=cfg.openMap==true,action=function() cfg.openMap=not cfg.openMap;R.Refresh() end}
+ local count=0;for _ in pairs(deferred) do count=count+1 end
+ choices[#choices+1]={label='Restore set-aside objectives ('..count..')',enabled=count>0,action=R.RestoreDeferred}
+ choices[#choices+1]={label='Open leveling session',action=function() ForeverCompanionSessionProgress.Toggle() end}
  ForeverCompanionInterface.Menu(anchor or optionsButton,'OBJECTIVE ITINERARY',choices)
 end
 function R.Resolve(stop,quests,targets)
@@ -119,7 +143,20 @@ function R.Create(parent)
  summary=text(root,16,-45,738,11,'');summary:SetWordWrap(true);summary:SetHeight(33)
  rows={}
  for i=1,4 do
-  local row=CreateFrame('Frame',nil,root);row:SetPoint('TOPLEFT',16,-85-(i-1)*55);row:SetSize(738,51)
+  local row=CreateFrame('Button',nil,root);row:SetPoint('TOPLEFT',16,-85-(i-1)*55);row:SetSize(738,51)
+  row:RegisterForClicks('RightButtonUp')
+  row:SetScript('OnClick',function(self)
+   if not self.stop then return end
+   local stop=self.stop
+   ForeverCompanionInterface.Menu(self,'OBJECTIVE ACTIONS',{
+    {label='Set aside until restored or reload',action=function() R.SetAside(stop) end},
+    {label='Restore set-aside objectives',action=R.RestoreDeferred},
+   })
+  end)
+  row:SetScript('OnEnter',function(self)
+   if GameTooltip and self.stop then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.stop.text);GameTooltip:AddLine('Right-click to set this objective aside. Quest progress stays unchanged.',.8,.85,.9,true);GameTooltip:Show() end
+  end)
+  row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   row.bg=ForeverCompanionInterface.Surface(row)
   row.title=text(row,10,-5,580,12,'');row.detail=text(row,10,-25,580,11,'')
   row.go=ForeverCompanionInterface.Button(row);row.go:SetPoint('TOPRIGHT',-8,-12);row.go:SetSize(120,26);row.go:SetText('Go to objective')
@@ -154,7 +191,7 @@ function R.Refresh()
  local noticeY=90+math.max(1,visible)*55
  notice:ClearAllPoints();notice:SetPoint('TOPLEFT',root,'TOPLEFT',16,-noticeY)
  ForeverCompanionVisualTheme.ResizePanel(root,noticeY+70)
- summary:SetText((cfg.filter or 'all')..' quests · '..#current..' / '..stats.matched..' mapped steps · '..stats.unlocated..' unlocated · '..stats.otherMaps..' on other maps · '..stats.unknownQuests..' without objectives')
+ summary:SetText((cfg.filter or 'all')..' quests · '..#current..' / '..stats.matched..' mapped steps · '..stats.deferred..' set aside · '..stats.unlocated..' unlocated · '..stats.otherMaps..' on other maps · '..stats.unknownQuests..' without objectives')
  for i,row in ipairs(rows) do
   local stop=current[(R.page-1)*4+i];row.stop=stop;row:SetShown(stop~=nil)
   if stop then
