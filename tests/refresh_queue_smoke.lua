@@ -31,4 +31,14 @@ local p=q.Profile('map')
 assert(p.calls==1 and p.measured==1 and p.average==5 and p.maximum==5)
 p.calls=999;assert(q.Profile('map').calls==1,'diagnostic snapshots must not mutate counters')
 q.Reset();assert(q.requested==0 and q.Profile('map').calls==0,'new session sample resets every scope')
+local errors=0
+geterrorhandler=function() return function() errors=errors+1;error('broken error handler') end end
+q.Schedule('a-broken',function() error('panel failure') end)
+q.Schedule('b-working',function() called=called+1;q.Schedule('followup',function() called=called+1 end) end)
+local before=called
+q.Flush()
+assert(called==before+1 and errors==1 and q.failures==1 and q.lastFailedKey=='a-broken','one failing panel or error handler cannot lose unrelated refreshes')
+q.Flush();assert(called==before+2,'follow-up scheduled after a failed callback remains runnable')
+assert(q.Summary():find('Refresh failures: 1',1,true))
+q.Reset();assert(q.failures==0 and q.lastFailedKey==nil)
 print('PASS: refresh burst coalescing, idle teardown, reentrant scheduling and measured/unknown timing')

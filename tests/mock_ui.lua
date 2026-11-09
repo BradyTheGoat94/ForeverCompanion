@@ -1750,8 +1750,11 @@ do
  SlashCmdList.FOREVERCOMPANION('open quests')
  local planner=ForeverCompanionQuestPlanner
  local originalSelected,originalTargets,originalNavigate=planner.GetSelected,ForeverCompanionQuestWaypoints.Targets,ForeverCompanionQuestWaypoints.Navigate
+ local originalLive,originalSelect=planner.GetLive,planner.Select
  local q={id=900002,title='Sample: Supplies for the camp',complete=false,objectives={'Sample: Gather camp supplies'},objectiveStates={{known=true,done=false,current=2,required=5,kind='item'}}}
  planner.GetSelected=function() return q,1 end
+ planner.GetLive=function() return {q} end
+ planner.Select=function(index) assert(index==1) end
  local locations={{map=1429,x=.2,y=.3,label='Sample supply source',source='QuestieDB drop',objectiveIndex=1,reference=true},{map=1429,x=.6,y=.4,label='Sample alternative source',source='QuestieDB drop',objectiveIndex=1,reference=true}}
  ForeverCompanionQuestWaypoints.Targets=function() return locations end
  local navigated
@@ -1770,9 +1773,12 @@ do
  locations={locations[2],locations[1]};ForeverCompanionQuestFieldGuide.Refresh();go.OnClick(go)
  assert(navigated.x==.6,'field guide keeps the selected objective location after reordering')
  exportNative('ui_fieldguide_native.json')
- q.objectiveStates[1].done=true;ForeverCompanionQuestFieldGuide.Refresh()
+ q.objectiveStates[1].done=true;navigated=nil;go.OnClick(go)
+ assert(navigated==nil,'field guide revalidates completion even before the next UI refresh')
+ ForeverCompanionQuestFieldGuide.Refresh()
  assert(go.enabled==false,'completed objective cannot retain stale navigation')
  planner.GetSelected=originalSelected;ForeverCompanionQuestWaypoints.Targets=originalTargets;ForeverCompanionQuestWaypoints.Navigate=originalNavigate
+ planner.GetLive,planner.Select=originalLive,originalSelect
  ForeverCompanionQuestFieldGuide.Refresh()
  ForeverCompanionQuestTracker.Show()
  exportNative('ui_tracker_native.json')
@@ -1893,3 +1899,33 @@ for _,f in ipairs(frames) do if f.name=='ForeverCompanionPerformancePanel' then 
 assert(performancePanel and performancePanel.visible)
 exportNative('ui_performance_native.json')
 SlashCmdList.FOREVERCOMPANION('performance window');assert(not performancePanel.visible)
+
+-- Synthetic layout fixtures are test-only and never ship in the addon.
+do
+ local oldMeter,oldSpell,oldEnum=C_DamageMeter,C_Spell,Enum
+ Enum={DamageMeterType={Dps=1,DamageDone=0,HealingDone=2,Hps=3},DamageMeterSessionType={Current=1,Expired=2,Overall=0}}
+ local sources={}
+ for i=1,12 do sources[i]={name='SAMPLE Player '..i,sourceGUID='Sample-'..i,classFilename=i%2==0 and 'HUNTER' or 'MAGE',totalAmount=1200000-i*45000,amountPerSecond=20000-i*750} end
+ sources[1].name='SAMPLE Long Character Name'
+ local spells={}
+ for i=1,19 do spells[i]={spellID=i,totalAmount=90000-i*1500,creatureName=i%3==0 and 'Sample Wolf' or nil} end
+ C_DamageMeter={GetCombatSessionFromType=function() return {combatSources=sources,maxAmount=sources[1].totalAmount,durationSeconds=90} end,
+  GetCombatSessionSourceFromType=function() return {combatSpells=spells} end}
+ C_Spell={GetSpellInfo=function(id) return {name=id%3==0 and 'Attack' or ('Sample spell '..id),iconID=136048} end}
+ local m=ForeverCompanionCombatMeter
+ m.Show();m.SetMode('DPS');m.SetSession('Current');m.SetLayout('standard');m.Refresh()
+ local first
+ for _,f in ipairs(frames) do if f.sourceGUID=='Sample-1' and f.OnMouseDown then first=f end end
+ assert(first)
+ first.OnMouseDown(first,'LeftButton')
+ exportNative('ui_breakdown_sample_native.json')
+ exportNative('ui_populated_meter_sample_native.json')
+ local detail
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionBreakdownWindow' then detail=f end end
+ assert(detail and detail.spellSearch.width==230 and detail.spellFilter.width==132)
+ assert(detail.spellSearch.point[2]+detail.spellSearch.width<detail.spellFilter.point[2],'search and filter controls must not collide')
+ detail.spellSearch:SetText('sample wolf')
+ exportNative('ui_pet_search_sample_native.json')
+ detail.spellSearch:SetText('');m.Hide()
+ C_DamageMeter,C_Spell,Enum=oldMeter,oldSpell,oldEnum
+end

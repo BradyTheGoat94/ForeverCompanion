@@ -13,7 +13,7 @@ local ROW_STEP=21
 local BASE_HEIGHT=50
 local ROW_TOP=26
 local windowWidth=320
-local selectedRow,selectedSourceGUID=nil,nil
+local selectedRow,selectedSourceKey=nil,nil
 local detailOpen=false
 local detailRows={}
 local detailPanel,detailTitle,detailClose,detailEmpty,detailMessage
@@ -22,6 +22,7 @@ local detailTabs={}
 local detailTab="Spells"
 local spellPage=1
 local spellPageLabel
+local spellQuery=''
 local emptyTitle,emptyBody
 local detailLabel
 local metricIndex,sessionIndex=1,1
@@ -97,6 +98,49 @@ function M.ExactAmount(value)
  if not safeNumber(value) then return nil end
  if value==math.floor(value) then return string.format('%.0f',value) end
  return tostring(value)
+end
+function M.SourceKey(source)
+ if type(source)~='table' then return end
+ local guid=source.sourceGUID
+ if not (issecretvalue and issecretvalue(guid)) and type(guid)=='string' and guid~='' then return 'guid:'..guid end
+ local creature=source.sourceCreatureID
+ if safeNumber(creature) and creature>0 then return 'creature:'..tostring(creature) end
+end
+-- Only public names participate in search/sort; never stringify secret values.
+function M.SpellLabel(spell,index)
+ local id=spell.spellID
+ if issecretvalue and issecretvalue(id) then id=nil end
+ local info=type(id)=='number' and C_Spell and read(C_Spell.GetSpellInfo,id)
+ local name=type(info)=='table' and info.name
+ if (issecretvalue and issecretvalue(name)) or type(name)~='string' or name=='' then name='Spell '..tostring(type(id)=='number' and id or index or '?') end
+ local creature=spell.creatureName
+ local named=not (issecretvalue and issecretvalue(creature)) and type(creature)=='string' and creature~=''
+ local details=spell.combatSpellDetails
+ local flag=not (issecretvalue and issecretvalue(details)) and type(details)=='table' and details.isPet
+ local pet=named or (not (issecretvalue and issecretvalue(flag)) and flag==true)
+ if named then name=name..' ('..creature..')' elseif pet and name=='Attack' then name='Pet Attack' end
+ return name,pet,info
+end
+function M.FilterSpells(spells,query,filter,order)
+ local result={};query=type(query)=='string' and query:lower() or ''
+ local sortable=true
+ for index,spell in ipairs(spells or {}) do
+  if type(spell)=='table' then
+   local name,pet=M.SpellLabel(spell,index)
+   if (filter~='pets' or pet) and (query=='' or name:lower():find(query,1,true)) then
+    result[#result+1]={spell=spell,name=name,index=index}
+    if not safeNumber(spell.totalAmount) then sortable=false end
+   end
+  end
+ end
+ if order=='name' then table.sort(result,function(a,b) if a.name~=b.name then return a.name<b.name end;return a.index<b.index end)
+ elseif order~='native' and sortable then table.sort(result,function(a,b) if a.spell.totalAmount~=b.spell.totalAmount then return a.spell.totalAmount>b.spell.totalAmount end;return a.index<b.index end) end
+ local output={};for i,entry in ipairs(result) do output[i]=entry.spell end
+ return output
+end
+function M.SetSpellQuery(query)
+ if (issecretvalue and issecretvalue(query)) or type(query)~='string' then return false end
+ spellQuery=query:sub(1,120);spellPage=1;M.Refresh();return true
 end
 local function savePosition(target)
  if not target or not UIParent or not target.GetCenter or not UIParent.GetCenter then return end
@@ -405,7 +449,7 @@ local function build()
     M.OpenQuickMenu(rows[i].frame);return
    else
     selectedRow=(selectedRow==rows[i].frame.sourceIndex) and nil or rows[i].frame.sourceIndex
-    selectedSourceGUID=selectedRow and rows[i].frame.sourceGUID or nil
+    selectedSourceKey=selectedRow and rows[i].frame.sourceKey or nil
     spellPage=1
     detailOpen=selectedRow~=nil
    end
@@ -424,8 +468,8 @@ local function build()
   elapsed=elapsed+dt
   if elapsed>=M.GetUpdateInterval() then elapsed=0;M.Refresh() end
  end)
- detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
- detailPanel:SetSize(640,390)
+ detailPanel=CreateFrame("Frame",'ForeverCompanionBreakdownWindow',frame,"BackdropTemplate")
+ detailPanel:SetSize(640,448)
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  detailPanel:SetClampedToScreen(true)
  detailPanel:SetMovable(true)
@@ -468,7 +512,7 @@ local function build()
  detailClose=flatButton(detailPanel)
  detailClose:SetSize(22,22);detailClose:SetText("x")
  detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-7,-7)
- detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;selectedSourceGUID=nil;M.Refresh() end)
+ detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;selectedSourceKey=nil;M.Refresh() end)
  -- Screenshot-inspired tab strip. Only Spells is populated from verified
  -- native breakdown data; unsupported views are explicitly labeled.
  local tabNames={"Spells"}
@@ -489,6 +533,25 @@ local function build()
  dock:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',94,-32)
  dock:SetScript('OnClick',function() M.ResetDetailPosition() end)
  detailPanel.dockButton=dock
+ local search=ForeverCompanionInterface.EditBox(detailPanel,'Search spells or pets')
+ search:SetSize(230,26);search:SetPoint('TOPLEFT',12,-65);search:SetMaxLetters(120)
+ search:HookScript('OnTextChanged',function(self) M.SetSpellQuery(self:GetText() or '') end)
+ search:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
+ detailPanel.spellSearch=search
+ local clear=flatButton(detailPanel);clear:SetSize(55,26);clear:SetPoint('TOPLEFT',248,-65);clear:SetText('Clear')
+ clear:SetScript('OnClick',function() search:SetText('');M.SetSpellQuery('');search:ClearFocus() end)
+ local filter=flatButton(detailPanel);filter:SetSize(132,26);filter:SetPoint('TOPLEFT',309,-65)
+ filter:SetScript('OnClick',function() saved().spellFilter=saved().spellFilter=='pets' and 'all' or 'pets';spellPage=1;M.Refresh() end)
+ detailPanel.spellFilter=filter
+ local sort=flatButton(detailPanel);sort:SetSize(181,26);sort:SetPoint('TOPLEFT',447,-65);sort:SetText('Sort spells')
+ sort:SetScript('OnClick',function()
+  local entries={}
+  for _,option in ipairs({{'amount','Highest contribution'},{'name','Spell name'},{'native','Native order'}}) do
+   local key,label=option[1],option[2]
+   entries[#entries+1]={label=label,selected=(saved().spellOrder or 'amount')==key,action=function() saved().spellOrder=key;spellPage=1;M.Refresh() end}
+  end
+  ForeverCompanionInterface.Menu(sort,'SPELL ORDER',entries,skin())
+ end)
  local prevSpells=flatButton(detailPanel)
  prevSpells:SetSize(24,22)
  prevSpells:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-91,-33)
@@ -511,7 +574,7 @@ local function build()
  detailTrim:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-1,-1)
  detailTrim:SetHeight(3)
  local summaryPanel=CreateFrame("Frame",nil,detailPanel,"BackdropTemplate")
- summaryPanel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-94)
+ summaryPanel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-130)
  summaryPanel:SetSize(216,270)
  if summaryPanel.SetBackdrop then
   summaryPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
@@ -537,13 +600,13 @@ local function build()
   detailSummary[i]=value
  end
  local spellHeader=ForeverCompanionInterface.Text(detailPanel,10,skin().accent)
- spellHeader:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",64,-74)
+ spellHeader:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",64,-110)
  spellHeader:SetText("SPELL BREAKDOWN")
  local valueHeader=ForeverCompanionInterface.Text(detailPanel,10,skin().accent)
- valueHeader:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",398,-74)
+ valueHeader:SetPoint("TOPRIGHT",detailPanel,"TOPLEFT",398,-110)
  valueHeader:SetText("AMOUNT / SHARE")
  detailEmpty=ForeverCompanionInterface.Text(detailPanel,13)
- detailEmpty:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",30,-160)
+ detailEmpty:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",30,-192)
  detailEmpty:SetWidth(350);detailEmpty:SetHeight(90);detailEmpty:SetWordWrap(true)
  detailEmpty:SetJustifyH("CENTER")
  detailMessage=ForeverCompanionInterface.Text(detailPanel,10)
@@ -561,7 +624,7 @@ local function build()
   end)
   row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   row:SetSize(388,32)
-  row:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-94-(i-1)*34)
+  row:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-130-(i-1)*34)
   local stripe=row:CreateTexture(nil,"BACKGROUND")
   stripe:SetAllPoints(row)
   stripe:SetColorTexture(.04,.052,.069,i%2==0 and .6 or .95)
@@ -632,7 +695,7 @@ function M.Refresh()
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if not M.Available() then
   if detailPanel then detailPanel:Hide() end
-  selectedRow=nil;selectedSourceGUID=nil
+  selectedRow=nil;selectedSourceKey=nil
   detailOpen=false
   if detailLabel then detailLabel:SetText("Select a player row for details") end
   for _,row in ipairs(rows) do row.frame:Hide() end
@@ -649,7 +712,7 @@ function M.Refresh()
   local canReadHistory=type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function"
   if canReadHistory then
    local history=availableHistory()
-   if pastIndex>#history then pastIndex=math.max(1,#history);selectedRow=nil;selectedSourceGUID=nil;detailOpen=false end
+   if pastIndex>#history then pastIndex=math.max(1,#history);selectedRow=nil;selectedSourceKey=nil;detailOpen=false end
    local id=historyID(history[pastIndex])
    if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
    if #history==0 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
@@ -679,16 +742,15 @@ function M.Refresh()
    if not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name~='' then frame.meterFooter:SetText(name..suffix) end
   end
  end
- if selectedSourceGUID then
+ if selectedSourceKey then
   local match
   for i,source in ipairs(sources) do
-   local guid=type(source)=="table" and source.sourceGUID
-   if not (issecretvalue and issecretvalue(guid)) and type(guid)=="string" and guid==selectedSourceGUID then match=i;break end
+   if M.SourceKey(source)==selectedSourceKey then match=i;break end
   end
   selectedRow=match
-  if not match then selectedSourceGUID=nil;detailOpen=false end
+  if not match then selectedSourceKey=nil;detailOpen=false end
  end
- if selectedRow and selectedRow>#sources then selectedRow=nil;selectedSourceGUID=nil;detailOpen=false end
+ if selectedRow and selectedRow>#sources then selectedRow=nil;selectedSourceKey=nil;detailOpen=false end
  sourceCount=#sources
  rowOffset=math.max(0,math.min(rowOffset,math.max(0,sourceCount-rowCount)))
  frame.playerRange:SetShown(not isPast and sourceCount>rowCount)
@@ -699,7 +761,7 @@ function M.Refresh()
   local source=i<=rowCount and sources[sourceIndex]
   if type(source)=="table" then
    row.frame:Show()
-   row.frame.sourceIndex=sourceIndex;row.rank:SetText(sourceIndex)
+   row.frame.sourceIndex=sourceIndex;row.frame.sourceKey=M.SourceKey(source);row.rank:SetText(sourceIndex)
    row.selection:SetShown(selectedRow==sourceIndex)
    local guid=source.sourceGUID
    row.frame.sourceGUID=not (issecretvalue and issecretvalue(guid)) and type(guid)=="string" and guid or nil
@@ -782,7 +844,7 @@ function M.Refresh()
   local selected=sources[selectedRow]
   if type(selected)=="table" then
    detailLabel:SetText(selected.name)
-  else selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;detailLabel:SetText("Select a player row for details") end
+  else selectedRow=nil;selectedSourceKey=nil;detailOpen=false;detailLabel:SetText("Select a player row for details") end
  else detailLabel:SetText("Select a player row for details") end
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if detailPanel and detailOpen and selectedRow then
@@ -844,16 +906,6 @@ function M.Refresh()
   for _,spell in ipairs(type(spells)=="table" and spells or {}) do
    if type(spell)~="table" or not safeNumber(spell.totalAmount) then sortable=false;break end
   end
-  if sortable then
-   local ordered={}
-   for i,spell in ipairs(spells) do ordered[#ordered+1]={spell=spell,index=i} end
-   table.sort(ordered,function(a,b)
-    if a.spell.totalAmount~=b.spell.totalAmount then return a.spell.totalAmount>b.spell.totalAmount end
-    return a.index<b.index
-   end)
-   spells={}
-   for i,entry in ipairs(ordered) do spells[i]=entry.spell end
-  end
   local hasSpells=type(spells)=="table" and #spells>0
   detailEmpty:SetShown(not hasSpells)
   detailEmpty:SetText(safeToInspect and "No spell breakdown is available for this player and view yet." or "Spell analysis is available after combat. Your meter continues updating.")
@@ -895,7 +947,14 @@ function M.Refresh()
    detailPanel.nextSpells:SetShown(detailTab=="Spells")
   end
   if spellPageLabel then spellPageLabel:SetShown(detailTab=="Spells") end
-  local pageCount=type(spells)=="table" and math.max(1,math.ceil(#spells/8)) or 1
+  local nativeCount=type(spells)=='table' and #spells or 0
+  spells=M.FilterSpells(type(spells)=='table' and spells or {},spellQuery,saved().spellFilter,saved().spellOrder)
+  detailPanel.spellFilter:SetText(saved().spellFilter=='pets' and 'Pets only' or 'All spells')
+  if nativeCount>0 then
+   detailEmpty:SetShown(#spells==0);detailEmpty:SetText('No spells match this search and filter.')
+   detailMessage:SetText(#spells..' / '..nativeCount..' spells · Shares use all reported spells · Search includes pet names')
+  end
+  local pageCount=math.max(1,math.ceil(#spells/8))
   if spellPage>pageCount then spellPage=pageCount end
   if detailPanel.prevSpells then
    detailPanel.prevSpells:SetEnabled(detailTab=="Spells" and spellPage>1)
@@ -915,32 +974,7 @@ function M.Refresh()
    item.frame:SetShown(type(spell)=="table")
    if type(spell)=="table" then
     item.rank:SetText((spellPage-1)*8+i)
-    local spellID=spell.spellID
-    if issecretvalue and issecretvalue(spellID) then spellID=nil end
-    local info
-    if type(spellID)=="number" and C_Spell and type(C_Spell.GetSpellInfo)=="function" then
-     info=read(C_Spell.GetSpellInfo,spellID)
-    end
-    local spellName=(type(info)=="table" and info.name) or ("Spell "..tostring(spellID or i))
-    -- Match Blizzard's native damage-meter labeling: creatureName is
-    -- supplied for pet/guardian spells, including duplicate Attack rows.
-    -- This works even when the optional isPet flag is absent.
-    local creatureName=spell.creatureName
-    local petName=nil
-    if not (issecretvalue and issecretvalue(creatureName)) and type(creatureName)=="string" and creatureName~="" then
-     petName=creatureName
-    end
-    local details=spell.combatSpellDetails
-    local confirmedPet=false
-    if not (issecretvalue and issecretvalue(details)) and type(details)=="table" then
-     local isPet=details.isPet
-     confirmedPet=not (issecretvalue and issecretvalue(isPet)) and isPet==true
-    end
-    if petName then
-     spellName=spellName.." ("..petName..")"
-    elseif confirmedPet and spellName=="Attack" then
-     spellName="Pet Attack"
-    end
+    local spellName,_,info=M.SpellLabel(spell,(spellPage-1)*8+i)
     item.label:SetText(spellName)
     item.frame.spellName=not (issecretvalue and issecretvalue(spellName)) and type(spellName)=='string' and spellName or nil
     item.frame.totalAmount=spell.totalAmount
@@ -1056,7 +1090,7 @@ function M.SetSession(mode)
  for i,item in ipairs(sessions) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   sessionIndex=i;pastIndex=1;rowOffset=0;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().session=item[1];M.Refresh()
+   sessionIndex=i;pastIndex=1;rowOffset=0;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;saved().session=item[1];M.Refresh()
    return true
   end
  end
@@ -1067,7 +1101,7 @@ function M.SetMode(mode)
  for i,item in ipairs(metrics) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   metricIndex=i;rowOffset=0;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;saved().metric=item[1];M.Refresh()
+   metricIndex=i;rowOffset=0;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;saved().metric=item[1];M.Refresh()
    return true
   end
  end
@@ -1190,7 +1224,7 @@ function M.RequestReset(anchor)
    local current=C_DamageMeter
    if not current or type(current.ResetAllCombatSessions)~='function' then return end
    local ok=pcall(current.ResetAllCombatSessions)
-   if ok then rowOffset=0;pastIndex=1;selectedRow=nil;selectedSourceGUID=nil;detailOpen=false;M.Refresh()
+   if ok then rowOffset=0;pastIndex=1;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;M.Refresh()
    elseif frame then frame.meterFooter:SetText('Native meter could not reset data') end
   end},
   {label='Cancel',action=function() end}
@@ -1229,10 +1263,13 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
 end
 local events=CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
-for _,event in ipairs({"DAMAGE_METER_COMBAT_SESSION_UPDATED","DAMAGE_METER_CURRENT_SESSION_UPDATED","DAMAGE_METER_RESET"}) do
+for _,event in ipairs({"DAMAGE_METER_COMBAT_SESSION_UPDATED","DAMAGE_METER_CURRENT_SESSION_UPDATED","DAMAGE_METER_RESET","PLAYER_REGEN_ENABLED"}) do
  pcall(events.RegisterEvent,events,event)
 end
 events:SetScript("OnEvent",function(_,event,name)
  if event=="ADDON_LOADED" and name=="ForeverCompanion" and saved().visible then M.Show()
- elseif event~="ADDON_LOADED" then M.Refresh() end
+ elseif event~="ADDON_LOADED" and frame and frame:IsShown() then
+  if ForeverCompanionRefreshQueue then ForeverCompanionRefreshQueue.Schedule('meter-event',function() M.Refresh() end)
+  else M.Refresh() end
+ end
 end)

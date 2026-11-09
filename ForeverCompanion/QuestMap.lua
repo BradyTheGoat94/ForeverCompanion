@@ -183,6 +183,7 @@ local serviceArtwork={
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
+ points=ForeverCompanionServiceClusters.Filter(points,ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  -- Pixel-distance clustering crosses service categories, so a banker,
  -- repair vendor and trainer at the same building remain accessible.
@@ -237,6 +238,7 @@ local function showServices(canvas,mapID,scale)
      GameTooltip:AddLine("+"..(count-displayed).." more nearby locations",.65,.78,.85)
     end
     GameTooltip:AddLine("QuestieDB reference  ·  Click for arrow",.65,.78,.85)
+    if #self.locations>1 then GameTooltip:AddLine('Shift-click: cycle nearby services',.95,.76,.35,true) end
     GameTooltip:Show()
    end)
    pin:SetScript("OnLeave",function(self)
@@ -290,7 +292,7 @@ end
 
 local function createGuide(map)
  local bar=CreateFrame("Frame","ForeverCompanionMapToolbar",map)
- bar:SetSize(451,94)
+ bar:SetSize(451,120)
  -- Recalculate as the world-map window is resized; no external map addon.
  local function fitToolbar()
   if not map.GetWidth then return end
@@ -328,7 +330,7 @@ local function createGuide(map)
  ForeverCompanionVisualTheme.Font(hint,11)
  modeButton=ForeverCompanionInterface.Button(bar)
  modeButton:SetSize(100,22)
- modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,32)
+ modeButton:SetPoint("BOTTOM",bar,"BOTTOM",-165,58)
  modeButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapMode=nextMode[mode()]
@@ -336,7 +338,7 @@ local function createGuide(map)
  end)
  zoomButton=ForeverCompanionInterface.Button(bar)
  zoomButton:SetSize(100,22)
- zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,32)
+ zoomButton:SetPoint("BOTTOM",bar,"BOTTOM",-55,58)
  zoomButton:SetText("Zoom focus")
  zoomButton:SetScript("OnClick",function()
   if zoomPoint and type(map.PanAndZoomTo)=="function" then
@@ -345,21 +347,21 @@ local function createGuide(map)
  end)
  styleButton=ForeverCompanionInterface.Button(bar)
  styleButton:SetSize(112,22)
- styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,32)
+ styleButton:SetPoint("BOTTOM",bar,"BOTTOM",55,58)
  styleButton:SetScript("OnClick",function()
   cycleMapStyle()
   M.Refresh()
  end)
  townButton=ForeverCompanionInterface.Button(bar)
  townButton:SetSize(100,22)
- townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,32)
+ townButton:SetPoint("BOTTOM",bar,"BOTTOM",165,58)
  townButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapHideTowns=townsEnabled()
   M.Refresh()
  end)
  pickupButton=ForeverCompanionInterface.Button(bar)
- pickupButton:SetSize(108,22);pickupButton:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,5)
+ pickupButton:SetSize(108,22);pickupButton:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,31)
  pickupButton:SetScript("OnClick",function()
   ForeverCompanionDB=ForeverCompanionDB or {}
   ForeverCompanionDB.questMapHidePickups=not ForeverCompanionDB.questMapHidePickups
@@ -375,8 +377,22 @@ local function createGuide(map)
   end
  end)
  pickupButton:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ local services=ForeverCompanionInterface.Button(bar);services:SetSize(148,22);services:SetPoint('BOTTOMLEFT',128,31);services:SetText('Service filters')
+ services:SetScript('OnClick',function()
+  ForeverCompanionDB=ForeverCompanionDB or {}
+  if type(ForeverCompanionDB.questMapHiddenServices)~='table' then ForeverCompanionDB.questMapHiddenServices={} end
+  local hidden=ForeverCompanionDB.questMapHiddenServices;local entries={}
+  for _,entry in ipairs({{'B','Banks'},{'AH','Auction houses'},{'F','Flight masters'},{'I','Inns'},{'R','Repairs'},{'V','Vendors'},{'T','Trainers'},{'M','Mailboxes'}}) do
+   local key,label=entry[1],entry[2]
+   entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() hidden[key]=not hidden[key];M.Refresh() end}
+  end
+  entries[#entries+1]={label='Show all service types',action=function() ForeverCompanionDB.questMapHiddenServices={};M.Refresh() end}
+  ForeverCompanionInterface.Menu(services,'MAP SERVICES',entries)
+ end)
+ local stop=ForeverCompanionInterface.Button(bar);stop:SetSize(155,22);stop:SetPoint('BOTTOMLEFT',284,31);stop:SetText('Stop navigation')
+ stop:SetScript('OnClick',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
  local legend=ForeverCompanionInterface.Text(bar,10)
- legend:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",132,8);legend:SetWidth(305)
+ legend:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",12,8);legend:SetWidth(423)
  legend:SetText("! Quest pickups   /   ? Turn-ins   /   Shift-click: cycle")
  title:SetWordWrap(false);title:SetHeight(17)
  hint:SetWordWrap(false);hint:SetHeight(14)

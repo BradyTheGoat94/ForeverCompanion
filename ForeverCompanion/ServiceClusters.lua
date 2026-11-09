@@ -1,10 +1,17 @@
 -- Screen-space clusters retain real provider coordinates for navigation.
 local C={}
 ForeverCompanionServiceClusters=C
+local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
+function C.Filter(points,hidden)
+ local result={};hidden=type(hidden)=='table' and hidden or {}
+ for _,p in ipairs(points or {}) do if type(p)=='table' and type(p.symbol)=='string' and hidden[p.symbol]~=true then result[#result+1]=p end end
+ return result
+end
 function C.Build(points,width,height,radius)
+ if not finite(width) or not finite(height) or not finite(radius) or width<=0 or height<=0 or radius<=0 then return {} end
  local ordered={}
  for _,p in ipairs(points or {}) do
-  if type(p.x)=='number' and type(p.y)=='number' and p.x>=0 and p.x<=1 and p.y>=0 and p.y<=1
+  if type(p)=='table' and finite(p.x) and finite(p.y) and p.x>=0 and p.x<=1 and p.y>=0 and p.y<=1
    and type(p.symbol)=='string' and type(p.label)=='string' then ordered[#ordered+1]=p end
  end
  table.sort(ordered,function(a,b)

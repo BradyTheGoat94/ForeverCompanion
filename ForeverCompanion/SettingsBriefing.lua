@@ -95,11 +95,11 @@ function S.Create(parent,context)
   ForeverCompanionVisualTheme.Panel(commands,770,186)
   label(commands,16,-12,738,'QUICK REFERENCE','GameFontNormal',ForeverCompanionVisualTheme.colors.accent)
   local entries={
-    {'/fc help','Show all addon commands'},
+    {'/fc next','Navigate to the next matched objective on this map'},
+    {'/fc arrow','Arrow size, position lock and reset'},
     {'/fcdiag','Print the client compatibility report'},
     {'/fc tracker','Show or hide the floating quest tracker'},
-    {'/fc discover','Browse quest pickup locations'},
-    {'/fc history','Review your recorded quest turn-ins'},
+    {'/fc setup','Check quest data and missing-marker guidance'},
   }
   for i,entry in ipairs(entries) do
     local y=-46-(i-1)*25

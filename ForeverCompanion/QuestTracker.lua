@@ -97,13 +97,20 @@ local function create()
   row.preview=label(row,7,-26,300,11);row.preview:SetWordWrap(true);row.preview:SetHeight(31)
   row.meta=label(row,7,-61,300,10)
   row.map=U.Button(row);row.map:SetSize(47,22);row.map:SetPoint('TOPRIGHT',-5,-3);row.map:SetText('Map')
-  row.map:SetScript('OnClick',function() if row.item and ForeverCompanionQuestPlanner.IsSupported() then footer:SetText(ForeverCompanionQuestWaypoints.Show(row.item.quest)) end end)
+  row.map:SetScript('OnClick',function()
+   if row.item and ForeverCompanionQuestPlanner.IsSupported() then
+    footer:SetText(ForeverCompanionObjectiveRoute.NavigateNext(row.item.quest))
+   end
+  end)
+  row.map:SetText('Go')
   row:RegisterForClicks('LeftButtonUp','RightButtonUp')
   row:SetScript('OnClick',function(self,button)
    if not self.item then return end
    if button=='RightButton' then
     local item=self.item
     U.Menu(self,'QUEST ACTIONS',{
+     {label='Go to next matched objective',action=function() footer:SetText(ForeverCompanionObjectiveRoute.NavigateNext(item.quest)) end},
+     {label='Show quest on map',action=function() footer:SetText(ForeverCompanionQuestWaypoints.Show(item.quest)) end},
      {label='Open field guide',action=function() open(item) end},
      {label=item.pinned and 'Unpin quest' or 'Pin quest',action=function()
       local planner=ForeverCompanionQuestPlanner
@@ -120,7 +127,7 @@ local function create()
    if GameTooltip and self.item then
     GameTooltip:SetOwner(self,'ANCHOR_LEFT');GameTooltip:SetText(self.item.quest.title)
     for _,line in ipairs(self.item.quest.objectives or {}) do GameTooltip:AddLine(line,.85,.9,.94,true) end
-    GameTooltip:AddLine('Click: field guide. Right-click: pin and actions.',.8,.72,.5,true);GameTooltip:Show()
+    GameTooltip:AddLine('Go: next matched objective on this map. Click row: field guide. Right-click: more actions.',.8,.72,.5,true);GameTooltip:Show()
    end
   end)
   row:SetScript('OnLeave',function(self) ForeverCompanionVisualTheme.SelectRow(self,self.bg,self.selected);if GameTooltip then GameTooltip:Hide() end end)

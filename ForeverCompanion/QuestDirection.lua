@@ -3,6 +3,11 @@ local D={}
 ForeverCompanionQuestDirection=D
 local frame,arrow,title,status,target,elapsed,progressFill
 local atan2=math.atan2
+local function settings()
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ if type(ForeverCompanionDB.questDirection)~='table' then ForeverCompanionDB.questDirection={} end
+ return ForeverCompanionDB.questDirection
+end
 
 local function finite(n)
  if issecretvalue and issecretvalue(n) then return false end
@@ -22,7 +27,7 @@ local function bearing(destination)
  local map=C_Map.GetBestMapForUnit("player")
  if not map then return end
  local continent,north,west=worldPosition(map,C_Map.GetPlayerMapPosition(map,"player"))
- if continent~=destination.continent then return end
+ if not finite(north) or not finite(west) or continent~=destination.continent then return end
  local facing=GetPlayerFacing()
  if not finite(facing) then return end
  local deltaNorth,deltaWest=destination.north-north,destination.west-west
@@ -54,11 +59,32 @@ local function update(_,dt)
 end
 
 local function create()
- frame=CreateFrame("Frame",nil,UIParent)
+ frame=CreateFrame("Frame",'ForeverCompanionDirectionFrame',UIParent)
  frame:SetSize(245,98)
  frame:SetPoint("TOP",UIParent,"TOP",0,-115)
  frame:SetFrameStrata("HIGH")
- frame:EnableMouse(false)
+ frame:EnableMouse(true);frame:SetMovable(true);frame:SetClampedToScreen(true)
+ local cfg=settings()
+ if type(cfg.position)=='table' and finite(cfg.position.x) and finite(cfg.position.y) then
+  frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',cfg.position.x,cfg.position.y)
+ end
+ local drag=CreateFrame('Frame',nil,frame);drag:SetPoint('BOTTOMLEFT',frame,'BOTTOMLEFT',0,24);drag:SetSize(219,24)
+ drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
+ drag:SetScript('OnDragStart',function() if not settings().locked then frame:StartMoving() end end)
+ drag:SetScript('OnDragStop',function()
+  frame:StopMovingOrSizing()
+  local x,y=frame:GetCenter();local px,py=UIParent:GetCenter()
+  local fs=frame.GetEffectiveScale and frame:GetEffectiveScale()
+  local ps=UIParent.GetEffectiveScale and UIParent:GetEffectiveScale()
+  if finite(fs) and fs>0 and finite(ps) and ps>0 and finite(px) and finite(py) then px,py=px*ps/fs,py*ps/fs end
+  if finite(x) and finite(y) and finite(px) and finite(py) then
+   settings().position={x=x-px,y=y-py};frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',x-px,y-py)
+  end
+ end)
+ frame.dragHandle=drag
+ local options=ForeverCompanionInterface.Button(frame);options:SetText('...');options:SetSize(20,20);options:SetPoint('BOTTOMLEFT',3,24)
+ options:SetScript('OnClick',function() D.OpenOptions(options) end)
+ D.ApplyScale()
  local bg=frame:CreateTexture(nil,"BACKGROUND")
  bg:SetPoint("BOTTOMLEFT",0,0)
  bg:SetPoint("BOTTOMRIGHT",0,0)
@@ -87,7 +113,7 @@ local function create()
  arrow:SetPoint("TOP",0,10)
  arrow:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\QuestDirectionArrow")
  title=frame:CreateFontString(nil,"OVERLAY","GameFontNormal")
- title:SetWidth(189)
+ title:SetWidth(183)
  title:SetHeight(17);title:SetWordWrap(false)
  ForeverCompanionVisualTheme.Font(title,12)
  title:SetTextColor(.93,.98,1)
@@ -137,6 +163,23 @@ function D.Start(point,label)
 end
 
 function D.IsActive() return target~=nil end
+function D.ApplyScale()
+ if frame then local size=settings().scale;frame:SetScale((size==.85 or size==1.2) and size or 1) end
+end
+function D.ResetPosition()
+ settings().position=nil
+ if frame then frame:ClearAllPoints();frame:SetPoint('TOP',UIParent,'TOP',0,-115) end
+end
+function D.OpenOptions(anchor)
+ local cfg=settings();local entries={}
+ entries[#entries+1]={label=cfg.locked and 'Unlock arrow position' or 'Lock arrow position',selected=cfg.locked==true,action=function() cfg.locked=not cfg.locked end}
+ for _,preset in ipairs({{'Small',.85},{'Standard',1},{'Large',1.2}}) do
+  local label,size=preset[1],preset[2]
+  entries[#entries+1]={label=label..' arrow',selected=(cfg.scale or 1)==size,action=function() cfg.scale=size;D.ApplyScale() end}
+ end
+ entries[#entries+1]={label='Reset arrow position',action=D.ResetPosition}
+ ForeverCompanionInterface.Menu(anchor or frame,'NAVIGATION ARROW',entries)
+end
 
 function D.Stop()
  if not target then return false end

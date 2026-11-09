@@ -41,6 +41,7 @@ C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={source
 RAID_CLASS_COLORS={MAGE={r=.2,g=.7,b=1}}
 dofile('ForeverCompanion/InterfaceKit.lua')
 dofile('ForeverCompanion/CombatMeter.lua')
+local meterEvents=objects[#objects]
 local m=ForeverCompanionCombatMeter
 assert(rawequal(m.DisplayAmount(secret),secret),'secret identity must pass through untouched')
 assert(m.ExactAmount(secret)==nil,'secret values must never enter tooltip formatting')
@@ -49,6 +50,8 @@ assert(m.DisplayAmount(999950)=='1m' and m.DisplayAmount(999950000)=='1b','compa
 assert(m.DisplayAmount(12.34)=='12.3' and m.DisplayAmount(0)=='0')
 assert(m.ExactAmount(1234567)=='1234567' and m.ExactAmount(12.34)=='12.34')
 assert(m.ExactAmount(0/0)==nil and m.ExactAmount(math.huge)==nil)
+assert(m.SourceKey({sourceGUID=secret,sourceCreatureID=77})=='creature:77')
+assert(m.SourceKey({sourceGUID=secret,sourceCreatureID=secret})==nil,'secret identities never enter stable keys')
 m.Show()
 for _,layout in ipairs({'compact','standard','expanded'}) do
  assert(m.SetLayout(layout))
@@ -171,6 +174,25 @@ for _,o in ipairs(objects) do
 end
 assert(wolf and pet and attack,'pet labels remain distinct from unconfirmed player attacks')
 assert(wolf.spellName=='Attack (Wolf)' and pet.spellName=='Pet Attack','hover preserves pet identity')
+local fixture={{spellID=1,totalAmount=15,creatureName='Wolf'},{spellID=2,totalAmount=50},{spellID=3,totalAmount=secret,combatSpellDetails={isPet=true}}}
+local filtered=m.FilterSpells(fixture,'wolf','all','amount')
+assert(#filtered==1 and filtered[1]==fixture[1],'pet names participate in spell search')
+assert(#m.FilterSpells(fixture,'[','all','amount')==0,'spell search is literal, not a Lua pattern')
+assert(#m.FilterSpells(fixture,'','pets','amount')==2,'pet filter requires creature name or confirmed pet flag')
+local native=m.FilterSpells(fixture,'','all','native');assert(native[1]==fixture[1] and native[3]==fixture[3])
+local protected=m.FilterSpells(fixture,'','all','amount');assert(protected[1]==fixture[1],'secret amount preserves native order without comparisons')
+local public={{spellID=1,totalAmount=10},{spellID=2,totalAmount=30}}
+assert(m.FilterSpells(public,'','all','amount')[1]==public[2],'public contributions sort descending')
+assert(m.FilterSpells(public,'','all','name')[1]==public[1],'alphabetical order is deterministic')
+C_Spell.GetSpellInfo=function() return {name=secret,iconID=6603} end
+local name=m.SpellLabel({spellID=6603,creatureName='Wolf'},1)
+assert(name=='Spell 6603 (Wolf)','secret spell names cannot enter concatenation or search')
+C_Spell.GetSpellInfo=function() return {name='Attack',iconID=6603} end
+assert(m.SetSpellQuery('wolf'))
+assert(not detail.nextSpells.enabled and wolf.spellName=='Attack (Wolf)')
+assert(m.SetSpellQuery('no matching spell'))
+for _,o in ipairs(objects) do if o.kind=='Frame' and rawget(o,'spellName') then assert(not o.shown,'empty spell search cannot retain visible old rows') end end
+assert(m.SetSpellQuery('') and not m.SetSpellQuery(secret))
 C_DamageMeter.GetCombatSessionSourceFromType=originalBreakdown
 C_Spell.GetSpellInfo=originalSpellInfo
 m.Refresh()
@@ -183,6 +205,15 @@ assert(m.SelectedRow()==2,'detail selection follows public source identity when 
 C_DamageMeter.GetCombatSessionFromType=oldSession
 m.Refresh()
 assert(m.SelectedRow()==1)
+-- Native source records can identify creatures without exposing a GUID.
+m.SetMode('Healing');m.SetMode('DPS')
+source.sourceGUID=nil;source.sourceCreatureID=77;m.Refresh()
+playerRow.OnMouseDown(playerRow,'LeftButton');assert(m.SelectedRow()==1)
+C_DamageMeter.GetCombatSessionFromType=function() return {combatSources={{name='Other',sourceGUID='Other'},source},maxAmount=secret} end
+m.Refresh();assert(m.SelectedRow()==2,'public creature identity follows ranking changes')
+C_DamageMeter.GetCombatSessionFromType=oldSession
+source.sourceGUID='Player-Test';source.sourceCreatureID=nil;m.Refresh()
+playerRow.OnMouseDown(playerRow,'LeftButton')
 local before=calls
 InCombatLockdown=function() return true end
 m.Refresh()
@@ -252,5 +283,15 @@ window.OnUpdate(window,.3);window.OnUpdate(window,.3)
 assert(updates==0,'low-frequency mode must avoid early refreshes')
 window.OnUpdate(window,.3);assert(updates==1)
 m.Refresh=originalRefresh;m.SetUpdateInterval(.4)
+local pending={};local eventRefreshes=0
+ForeverCompanionRefreshQueue={Schedule=function(key,fn) pending[key]=fn end}
+m.Refresh=function() eventRefreshes=eventRefreshes+1 end
+meterEvents.OnEvent(meterEvents,'DAMAGE_METER_CURRENT_SESSION_UPDATED')
+meterEvents.OnEvent(meterEvents,'DAMAGE_METER_COMBAT_SESSION_UPDATED')
+assert(eventRefreshes==0 and pending['meter-event'],'native event bursts queue presentation work')
+pending['meter-event']();assert(eventRefreshes==1)
+pending={};m.Hide();meterEvents.OnEvent(meterEvents,'DAMAGE_METER_CURRENT_SESSION_UPDATED')
+assert(next(pending)==nil,'hidden meters do not schedule refresh work')
+ForeverCompanionRefreshQueue=nil;m.Refresh=originalRefresh
 print('PASS: compact meter geometry, secret-safe dual columns, raid scrolling, stable selection, segment menus, reset confirmation and options')
 

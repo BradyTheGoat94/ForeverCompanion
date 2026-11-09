@@ -82,7 +82,13 @@ function G.Create(parent)
  go=U.Button(detail);go:SetPoint('TOPRIGHT',-12,-12);go:SetSize(142,26);go:SetText('Navigate to objective')
  go:SetScript('OnClick',function()
   local step=steps[selectedStep];local t=step and step.targets[choice]
-  if t and ForeverCompanionQuestPlanner.IsSupported() then message:SetText(ForeverCompanionQuestWaypoints.Navigate(t,true,selectedQuest.title)) end
+  local planner=ForeverCompanionQuestPlanner
+  if not t or not planner.IsSupported() then message:SetText('Open the quest log to refresh objective information.');return end
+  local stop={quest=selectedQuest,objectiveIndex=step.index,turnin=step.turnin,target=t}
+  local quest,index,target=ForeverCompanionObjectiveRoute.Resolve(stop,planner.GetLive(),ForeverCompanionQuestWaypoints.Targets)
+  if not target then G.Refresh();message:SetText('This objective or location changed. Choose an unfinished objective again.');return end
+  planner.Select(index)
+  message:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,quest.title))
  end)
  cycle=U.Button(detail);cycle:SetPoint('TOPRIGHT',-12,-49);cycle:SetSize(142,25)
  cycle:SetScript('OnClick',function() local step=steps[selectedStep];if step and #step.targets>1 then choice=choice%#step.targets+1;targetKey=key(step.targets[choice]);message:SetText('');G.Refresh() end end)

@@ -1,4 +1,4 @@
-# Forever Companion beta release notes (draft)
+# Forever Companion 3.41.0-beta release notes (draft)
 
 ## What the beta includes
 
@@ -27,3 +27,7 @@ Include the addon version, Forever client build, class, profession, the tab you 
 ## Release status
 
 **Candidate under development — not approved for public upload.** See `BETA_RELEASE_GATE.md` for the required acceptance checklist.
+
+## 3.41 update
+
+Spell search, pet-only analysis, route filters, direct objective navigation, movable arrow controls, service filters and refresh resilience. See CHANGELOG.md and docs/SPRINT_3_41.md. This candidate has not been uploaded to CurseForge or verified in the game client.

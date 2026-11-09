@@ -1,5 +1,5 @@
 -- Coalesce presentation refreshes over a short frame interval. No gameplay calls.
-local Q={requested=0,batches=0,coalesced=0,measured=0,totalMS=0,maxMS=0}
+local Q={requested=0,batches=0,coalesced=0,measured=0,totalMS=0,maxMS=0,failures=0}
 ForeverCompanionRefreshQueue=Q
 local pending,elapsed={},0
 local frame=CreateFrame('Frame')
@@ -31,7 +31,7 @@ function Q.Profile(scope)
 end
 function Q.Reset()
  Q.Flush()
- Q.requested=0;Q.batches=0;Q.coalesced=0;Q.measured=0;Q.totalMS=0;Q.maxMS=0;profiles={}
+ Q.requested=0;Q.batches=0;Q.coalesced=0;Q.measured=0;Q.totalMS=0;Q.maxMS=0;Q.failures=0;Q.lastFailedKey=nil;profiles={}
 end
 function Q.Flush()
  frame:SetScript('OnUpdate',nil)
@@ -39,7 +39,19 @@ function Q.Flush()
  if not next(work) then return end
  Q.batches=Q.batches+1
  local start=clock()
- for _,fn in pairs(work) do fn() end
+ local keys={};for key in pairs(work) do keys[#keys+1]=key end;table.sort(keys)
+ for _,key in ipairs(keys) do
+  local ok,err=pcall(work[key])
+  if not ok then
+   Q.failures=Q.failures+1;Q.lastFailedKey=key
+   -- Preserve normal client error reporting without allowing an error handler
+   -- to prevent unrelated pending panels from refreshing.
+   if type(geterrorhandler)=='function' then
+    local found,handler=pcall(geterrorhandler)
+    if found and type(handler)=='function' then pcall(handler,err) end
+   end
+  end
+ end
  local finish=clock()
  if start and finish and finish>=start then
   local duration=finish-start
@@ -59,6 +71,7 @@ end
 function Q.Summary()
  local timing=Q.measured>0 and string.format('Measured batches: %d / average %.2f ms / max %.2f ms',Q.measured,Q.totalMS/Q.measured,Q.maxMS) or 'Timing unavailable: client profiling clock not exposed'
  local lines={string.format('Page refresh requests: %d / batches: %d / merged requests: %d',Q.requested,Q.batches,Q.coalesced),timing}
+ lines[#lines+1]='Refresh failures: '..Q.failures..(Q.lastFailedKey and (' / last panel: '..Q.lastFailedKey) or '')
  for _,scope in ipairs({'meter','map','itinerary'}) do
   local p=Q.Profile(scope)
   lines[#lines+1]=scopes[scope]..': '..p.calls..' calls / '..(p.average and string.format('%d timed / avg %.2f ms / max %.2f ms',p.measured,p.average,p.maximum) or 'timing unavailable')

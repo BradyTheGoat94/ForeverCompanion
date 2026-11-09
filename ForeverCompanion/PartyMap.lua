@@ -4,6 +4,9 @@ local P={}
 ForeverCompanionPartyMap=P
 local markers={}
 local provider,map
+local function finite(n)
+ return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
+end
 local function validNumber(n)
  if issecretvalue and issecretvalue(n) then return false end
  return type(n)=="number" and n==n and n>=0 and n<=1
@@ -80,15 +83,17 @@ local function makeMarker(canvas)
  return button
 end
 function P.Refresh()
+ -- Clear old-map blips even when the new map has no usable canvas or scale.
+ for _,marker in ipairs(markers) do marker:Hide() end
  if not map or not map.IsShown or not map:IsShown() then return end
  local canvas=map:GetCanvas()
  local mapID=map:GetMapID()
  if not canvas or not mapID then return end
  local width,height=canvas:GetWidth(),canvas:GetHeight()
- if not width or not height or width<=0 or height<=0 then return end
+ if not finite(width) or not finite(height) or width<=0 or height<=0 then return end
  local scale=canvas.GetScale and canvas:GetScale() or 1
  if issecretvalue and issecretvalue(scale) then return end
- if type(scale)~="number" or scale<=0 then scale=1 end
+ if not finite(scale) or scale<=0 then scale=1 end
  local units=partyUnits()
  for i,unit in ipairs(units) do
   local marker=markers[i]

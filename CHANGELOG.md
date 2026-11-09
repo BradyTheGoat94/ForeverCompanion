@@ -1,3 +1,16 @@
+## 3.41.0-beta — Quest navigation, meter analysis and map controls
+
+- Search spell breakdowns by spell or pet name, switch to Pets only, and choose contribution, alphabetical or native ordering. Shares and coverage continue to use the full reported spell set. Secret names and amounts never enter string search or arithmetic.
+- Preserve selected creature sources across ranking changes using public creature IDs when no public GUID is supplied. Keep pet labels in tooltips and retain the 3.40.2 docking/paging improvements.
+- Filter the live itinerary to all, pinned, ready-to-turn-in or focused quests. Choose approximate distance or quest-log order. Save route preferences per character and optionally open the map on navigation.
+- Navigate to the next matched objective from the tracker Go button, itinerary Next objective or /fc next. Revalidate the live quest and objective before navigating. General quest POIs remain separate from objective-specific targets.
+- Move the navigation arrow by its title area. /fc arrow opens position lock, three size presets and reset; /fc arrow reset restores its initial position. Missing positions report direction unavailable.
+- Filter eight map service categories before clustering. Add Stop navigation to the map toolbar. Retain original provider coordinates and built-in service artwork.
+- Clear party-map markers before handling missing maps, invalid dimensions or unavailable positions. Reject invalid clustering dimensions and radii.
+- Isolate failed queued panel refreshes, preserve other callbacks and error reporting, and expose failure counts in performance samples. Coalesce native meter event bursts; hidden meters do not enqueue updates.
+- Field-guide navigation now revalidates completion and locations at click time.
+- Added navigation-HUD and party-map suites plus route, search, secret-value, callback-failure, stale-navigation and synthetic populated-layout coverage. No test data ships with the addon.
+
 ## 3.40.2-beta — Breakdown navigation and pet clarity
 
 - Added Dock to meter directly beside the Spells tab; disabled while already docked. Dragging still saves independent placement.
