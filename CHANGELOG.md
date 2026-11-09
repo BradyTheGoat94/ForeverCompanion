@@ -1,3 +1,10 @@
+## 3.40.2-beta — Breakdown navigation and pet clarity
+
+- Added Dock to meter directly beside the Spells tab; disabled while already docked. Dragging still saves independent placement.
+- Scroll the breakdown with the mouse wheel to page through spells. Page limits remain bounded as data changes.
+- Spell ranks now continue across pages. Hover text preserves pet creature names and confirmed Pet Attack labels.
+- Regression checks cover docking, wheel page limits, ranks and pet-label distinctions. Offline acceptance does not establish in-game compatibility.
+
 ## 3.40.1-beta — Movable player breakdown
 
 - Drag the player breakdown title bar to position the analysis window independently of the meter. Saves the position per character and suppresses automatic side docking after manual movement.

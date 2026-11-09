@@ -131,7 +131,10 @@ assert(ForeverCompanionDB.combatMeter.detailPosition.x==350 and ForeverCompanion
 assert(detail.point[1]=='CENTER' and detail.point[2]==UIParent and detail.detached)
 m.Refresh();assert(detail.point[1]=='CENTER','automatic docking must not overwrite a user position')
 m.Hide();m.Show();assert(detail.point[1]=='CENTER','reopening meter must retain independent breakdown placement')
-m.ResetDetailPosition();assert(not detail.detached and ForeverCompanionDB.combatMeter.detailPosition==nil)
+assert(detail.dockButton.enabled,'detached breakdown exposes a docking control')
+detail.dockButton.OnClick()
+assert(not detail.detached and ForeverCompanionDB.combatMeter.detailPosition==nil)
+assert(not detail.dockButton.enabled,'already docked breakdown disables docking control')
 
 local nextPage
 for _,o in ipairs(objects) do
@@ -142,6 +145,35 @@ nextPage.OnClick()
 local found=false
 for _,o in ipairs(objects) do if o.text=="Native spell 9" then found=true end end
 assert(found,'spell pagination displays the next native spell entries')
+local ninth
+for _,o in ipairs(objects) do if o.kind=='FontString' and o.text=='Native spell 9' then ninth=o.parent end end
+local correctRank=false
+for _,o in ipairs(objects) do if o.parent==ninth and o.text==9 then correctRank=true end end
+assert(correctRank,'second-page spell ranks continue from the first page')
+detail.OnMouseWheel(detail,1)
+assert(not detail.prevSpells.enabled and detail.nextSpells.enabled,'wheel returns to first spell page')
+detail.OnMouseWheel(detail,-1);detail.OnMouseWheel(detail,-1)
+assert(not detail.nextSpells.enabled,'wheel paging clamps to final page')
+local originalBreakdown=C_DamageMeter.GetCombatSessionSourceFromType
+C_DamageMeter.GetCombatSessionSourceFromType=function()
+ return {combatSpells={{spellID=6603,totalAmount=50,creatureName='Wolf'},
+ {spellID=6603,totalAmount=40,combatSpellDetails={isPet=true}},
+ {spellID=6603,totalAmount=30}}}
+end
+local originalSpellInfo=C_Spell.GetSpellInfo
+C_Spell.GetSpellInfo=function() return {name='Attack',iconID=6603} end
+m.Refresh()
+local wolf,pet,attack
+for _,o in ipairs(objects) do
+ if o.kind=='FontString' and o.text=='Attack (Wolf)' then wolf=o.parent end
+ if o.kind=='FontString' and o.text=='Pet Attack' then pet=o.parent end
+ if o.kind=='FontString' and o.text=='Attack' then attack=o.parent end
+end
+assert(wolf and pet and attack,'pet labels remain distinct from unconfirmed player attacks')
+assert(wolf.spellName=='Attack (Wolf)' and pet.spellName=='Pet Attack','hover preserves pet identity')
+C_DamageMeter.GetCombatSessionSourceFromType=originalBreakdown
+C_Spell.GetSpellInfo=originalSpellInfo
+m.Refresh()
 local oldSession=C_DamageMeter.GetCombatSessionFromType
 C_DamageMeter.GetCombatSessionFromType=function()
  return {combatSources={{name="Other",sourceGUID="Other",totalAmount=20,amountPerSecond=2},source},maxAmount=secret}

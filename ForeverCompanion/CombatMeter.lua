@@ -430,6 +430,10 @@ local function build()
  detailPanel:SetClampedToScreen(true)
  detailPanel:SetMovable(true)
  detailPanel:EnableMouse(true)
+ detailPanel:EnableMouseWheel(true)
+ detailPanel:SetScript('OnMouseWheel',function(_,delta)
+  spellPage=math.max(1,spellPage+(delta>0 and -1 or 1));M.Refresh()
+ end)
  local position=saved().detailPosition
  if type(position)=='table' and safeNumber(position.x) and safeNumber(position.y) then
   detailPanel:ClearAllPoints();detailPanel:SetPoint('CENTER',UIParent,'CENTER',position.x,position.y)
@@ -480,6 +484,11 @@ local function build()
   end)
   detailTabs[i]=tab
  end
+ local dock=flatButton(detailPanel)
+ dock:SetSize(112,24);dock:SetText('Dock to meter')
+ dock:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',94,-32)
+ dock:SetScript('OnClick',function() M.ResetDetailPosition() end)
+ detailPanel.dockButton=dock
  local prevSpells=flatButton(detailPanel)
  prevSpells:SetSize(24,22)
  prevSpells:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-91,-33)
@@ -574,7 +583,7 @@ local function build()
   bar:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",52,4);bar:SetSize(200,3)
   bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
   bar:SetStatusBarColor(unpack(skin().accent));bar:SetMinMaxValues(0,1);bar:SetValue(0)
-  detailRows[i]={frame=row,label=label,value=value,icon=icon,bar=bar,percent=percent}
+  detailRows[i]={frame=row,label=label,value=value,icon=icon,bar=bar,percent=percent,rank=rank}
  end
  detailPanel:Hide()
  frame:Hide()
@@ -777,6 +786,7 @@ function M.Refresh()
  else detailLabel:SetText("Select a player row for details") end
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if detailPanel and detailOpen and selectedRow then
+  detailPanel.dockButton:SetEnabled(detailPanel.detached==true)
   -- Keep the details readable when the meter is docked near the right edge.
   if not detailPanel.detached and not (InCombatLockdown and InCombatLockdown()) and frame.GetRight and UIParent and UIParent.GetRight then
    local right,screenRight=frame:GetRight(),UIParent:GetRight()
@@ -904,6 +914,7 @@ function M.Refresh()
    local spell=detailTab=="Spells" and type(spells)=="table" and spells[(spellPage-1)*8+i]
    item.frame:SetShown(type(spell)=="table")
    if type(spell)=="table" then
+    item.rank:SetText((spellPage-1)*8+i)
     local spellID=spell.spellID
     if issecretvalue and issecretvalue(spellID) then spellID=nil end
     local info
@@ -931,8 +942,7 @@ function M.Refresh()
      spellName="Pet Attack"
     end
     item.label:SetText(spellName)
-    local name=type(info)=='table' and info.name
-    item.frame.spellName=not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name or nil
+    item.frame.spellName=not (issecretvalue and issecretvalue(spellName)) and type(spellName)=='string' and spellName or nil
     item.frame.totalAmount=spell.totalAmount
     local iconID=type(info)=="table" and info.iconID
     if not (issecretvalue and issecretvalue(iconID)) and type(iconID)=="number" and iconID>0 then
