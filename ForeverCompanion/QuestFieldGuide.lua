@@ -88,7 +88,7 @@ function G.Create(parent)
   local quest,index,target=ForeverCompanionObjectiveRoute.Resolve(stop,planner.GetLive(),ForeverCompanionQuestWaypoints.Targets)
   if not target then G.Refresh();message:SetText('This objective or location changed. Choose an unfinished objective again.');return end
   planner.Select(index)
-  message:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,quest.title))
+  message:SetText(ForeverCompanionQuestWaypoints.Navigate(target,true,quest.title,quest.id))
  end)
  cycle=U.Button(detail);cycle:SetPoint('TOPRIGHT',-12,-49);cycle:SetSize(142,25)
  cycle:SetScript('OnClick',function() local step=steps[selectedStep];if step and #step.targets>1 then choice=choice%#step.targets+1;targetKey=key(step.targets[choice]);message:SetText('');G.Refresh() end end)

@@ -2,6 +2,19 @@
 local T={page=1};ForeverCompanionMapTools=T
 local root,entry,summary,notice,rows,counter,previous,nextPage,selected
 local mapPins={}
+local categoryFilter='all'
+local categories={
+ {key='general',name='General',icon='Interface\\Icons\\INV_Misc_Note_01',color={.85,.9,1}},
+ {key='farming',name='Farming',icon='Interface\\Icons\\INV_Misc_Bag_10',color={.4,1,.5}},
+ {key='rare',name='Rare sightings',icon='Interface\\Icons\\INV_Misc_Gem_Variety_02',color={.85,.5,1}},
+ {key='gathering',name='Gathering',icon='Interface\\Icons\\INV_Misc_Herb_01',color={1,.82,.3}},
+ {key='reminder',name='Reminders',icon='Interface\\Icons\\INV_Misc_PocketWatch_01',color={.35,.85,1}},
+}
+T.NoteCategories=categories
+function T.NoteStyle(note)
+ for _,c in ipairs(categories) do if note and note.category==c.key then return c end end
+ return categories[1]
+end
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 local function coord(n) return finite(n) and n>=0 and n<=1 end
 local function read(fn,...)
@@ -31,9 +44,9 @@ function T.Position()
  local x,y=read(pos.GetXY,pos)
  if coord(x) and coord(y) then return map,x,y end
 end
-function T.List(map)
+function T.List(map,category)
  local result={}
- for _,p in ipairs(notes()) do if T.Valid(p) and (not map or p.map==map) then result[#result+1]=p end end
+ for _,p in ipairs(notes()) do if T.Valid(p) and (not map or p.map==map) and (not category or category=='all' or T.NoteStyle(p).key==category) then result[#result+1]=p end end
  table.sort(result,function(a,b) if a.map~=b.map then return a.map<b.map end;if a.label~=b.label then return a.label<b.label end;return a.id<b.id end)
  return result
 end
@@ -44,6 +57,7 @@ local function changed()
  if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
  if ForeverCompanionMapOverlay then ForeverCompanionMapOverlay.Refresh() end
  if T.Refresh then T.Refresh() end
+ if ForeverCompanionMapHub then ForeverCompanionMapHub.Refresh() end
 end
 function T.Add(label,map,x,y)
  label=clean(label)
@@ -59,6 +73,16 @@ function T.SaveHere(label) local map,x,y=T.Position();return T.Add(label,map,x,y
 function T.Rename(id,label)
  local p=T.Find(id);label=clean(label);if not p or label=='' then return false end
  p.label=label;changed();return true
+end
+function T.SetCategory(id,key)
+ local p=T.Find(id);if not p then return false end
+ for _,c in ipairs(categories) do if c.key==key then p.category=key;changed();return true end end
+ return false
+end
+function T.CategoryMenu(anchor,id)
+ local entries={}
+ for _,c in ipairs(categories) do local key=c.key;entries[#entries+1]={label=c.name,action=function() T.SetCategory(id,key) end} end
+ ForeverCompanionInterface.Menu(anchor,'NOTE CATEGORY',entries)
 end
 function T.Remove(id)
  for i,p in ipairs(notes()) do if type(p)=='table' and p.id==id then table.remove(notes(),i);changed();return true end end
@@ -127,13 +151,13 @@ local function text(parent,x,y,w,size,value)
 end
 function T.Refresh()
  if not root or not root:IsShown() then return end
- local list=T.List();local pages=math.max(1,math.ceil(#list/5));T.page=math.max(1,math.min(T.page,pages))
- summary:SetText(#list..' / 100 personal notes · Saved per character\nSave your current position; select a row to rename, or use its Actions button.')
+ local list=T.List(nil,categoryFilter);local pages=math.max(1,math.ceil(#list/5));T.page=math.max(1,math.min(T.page,pages))
+ summary:SetText(#list..' shown · '..#T.List()..' / 100 saved notes\nSelect a row to rename, or use Actions to change its category.')
  for i,row in ipairs(rows) do
   local p=list[(T.page-1)*5+i];row.note=p;row:SetShown(p~=nil)
   if p then
    local info=C_Map and read(C_Map.GetMapInfo,p.map)
-   row.title:SetText(p.label);row.detail:SetText((info and info.name or ('Map '..p.map))..(' · %.1f, %.1f'):format(p.x*100,p.y*100))
+   row.title:SetText(p.label);row.detail:SetText(T.NoteStyle(p).name..' · '..(info and info.name or ('Map '..p.map))..(' · %.1f, %.1f'):format(p.x*100,p.y*100))
    ForeverCompanionInterface.StyleButton(row,nil,selected==p.id)
   end
  end
@@ -145,7 +169,13 @@ function T.Toggle()
   root=CreateFrame('Frame','ForeverCompanionMapToolsPanel',UIParent);root:SetSize(620,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetMovable(true);root:EnableMouse(true);root:SetFrameStrata('DIALOG');U.Surface(root)
   local drag=CreateFrame('Frame',nil,root);drag:SetSize(570,38);drag:SetPoint('TOPLEFT');drag:EnableMouse(true);drag:RegisterForDrag('LeftButton');drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
   text(root,18,-13,520,17,'MAP NOTES & NEARBY SERVICES');U.CloseButton(root,function() root:Hide() end)
-  summary=text(root,18,-49,584,11,'');summary:SetHeight(36)
+  summary=text(root,18,-49,420,11,'');summary:SetHeight(36)
+  local filterButton=U.Button(root);filterButton:SetSize(150,26);filterButton:SetPoint('TOPRIGHT',-18,-54);filterButton:SetText('All note categories')
+  filterButton:SetScript('OnClick',function()
+   local entries={{label='All note categories',action=function() categoryFilter='all';filterButton:SetText('All note categories');T.page=1;T.Refresh() end}}
+   for _,c in ipairs(categories) do local key,name=c.key,c.name;entries[#entries+1]={label=name,action=function() categoryFilter=key;filterButton:SetText(name);T.page=1;T.Refresh() end} end
+   U.Menu(filterButton,'NOTE CATEGORY FILTER',entries)
+  end)
   entry=U.EditBox(root,'Name a farming spot, rare sighting, or place to revisit');entry:SetSize(388,28);entry:SetPoint('TOPLEFT',18,-96);entry:SetMaxLetters(80);entry:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
   local save=U.Button(root);save:SetSize(184,28);save:SetPoint('TOPLEFT',418,-96);save:SetText('Save current position')
   save:SetScript('OnClick',function() local p,msg=T.SaveHere(entry:GetText());notice:SetText(msg);if p then entry:SetText('');selected=nil;T.Refresh() end end)
@@ -163,6 +193,7 @@ function T.Toggle()
     if not row.note then return end;local id=row.note.id
     U.Menu(actions,'PERSONAL NOTE',{
      {label='Navigate to saved position',action=function() notice:SetText(T.Navigate(id)) end},
+     {label='Category, icon & color',action=function() T.CategoryMenu(actions,id) end},
      {label='Rename (select this note)',action=function() local p=T.Find(id);if p then selected=id;entry:SetText(p.label);T.Refresh() end end},
      {label='Delete note...',action=function() U.Menu(actions,'DELETE THIS NOTE?',{{label='Delete personal note',action=function() T.Remove(id);selected=nil;T.Refresh();notice:SetText('Note removed.') end},{label='Cancel',action=function() end}}) end},
     })
@@ -185,7 +216,7 @@ function T.DrawMap(canvas,map,width,height,scale)
   if p and p.canvas~=canvas then p:Hide();p=nil end
   if not p then
    p=CreateFrame('Button',nil,canvas);p:SetSize(18,18);p:SetFrameLevel(canvas:GetFrameLevel()+105)
-   local icon=p:CreateTexture(nil,'ARTWORK');icon:SetAllPoints(p);icon:SetTexture('Interface\\Icons\\INV_Misc_Note_01')
+   p.icon=p:CreateTexture(nil,'ARTWORK');p.icon:SetAllPoints(p)
    p.count=ForeverCompanionInterface.Text(p,10);p.count:SetPoint('CENTER',p,'TOPRIGHT',0,0)
    p:SetScript('OnEnter',function(self) if GameTooltip and self.note then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.note.label);GameTooltip:AddLine(#self.group>1 and (#self.group..' notes nearby · click to choose') or 'Personal note · click to navigate',.5,.85,1,true);GameTooltip:Show() end end)
    p:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
@@ -199,6 +230,7 @@ function T.DrawMap(canvas,map,width,height,scale)
     ForeverCompanionInterface.Menu(self,'NEARBY PERSONAL NOTES',entries,nil,340)
    end);mapPins[i]=p
   end
+  local style=T.NoteStyle(note);p.icon:SetTexture(style.icon);p.icon:SetVertexColor(unpack(style.color))
   p.canvas=canvas;p.note=note;p.group=group;p.count:SetText(#group>1 and tostring(#group) or '');p:ClearAllPoints();p:SetPoint('CENTER',canvas,'TOPLEFT',note.x*width*scale,-note.y*height*scale);p:SetScale(1/scale);p:Show()
  end
 end

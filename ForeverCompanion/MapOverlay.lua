@@ -3,6 +3,7 @@ local M={};ForeverCompanionMapOverlay=M
 local frame,title,message,player,header,legend
 local tiles,pins,badges={},{},{}
 local mapID,artID,layout,editing,elapsed,slow
+local forceVisible=false
 local function finite(n)
  return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
 end
@@ -63,7 +64,7 @@ local function refreshPins()
   for _,p in ipairs(services or {}) do add(p.x,p.y,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01') end
  end
  if d.notes~=false and ForeverCompanionMapTools then
-  for _,p in ipairs(ForeverCompanionMapTools.List(mapID)) do add(p.x,p.y,'N',p.label,'Interface\\Icons\\INV_Misc_Note_01') end
+  for _,p in ipairs(ForeverCompanionMapTools.List(mapID)) do local style=ForeverCompanionMapTools.NoteStyle(p);add(p.x,p.y,'N',p.label,style.icon);points[#points].color=style.color end
  end
  local groups={}
  if ForeverCompanionServiceClusters then groups=ForeverCompanionServiceClusters.Build(points,layout.width,layout.height,22)
@@ -75,7 +76,7 @@ local function refreshPins()
   local group=groups[i];local t=group[1];local p=pins[i]
   for _,candidate in ipairs(group) do if candidate.symbol=='Q' then t=candidate;break end end
   if not p then p=frame:CreateTexture(nil,'OVERLAY');pins[i]=p end
-  p:ClearAllPoints();p:SetSize(18,18);p:SetPoint('CENTER',frame,'TOPLEFT',t.x*layout.width,-t.y*layout.height);p:SetTexture(t.texture);p:Show()
+  p:ClearAllPoints();p:SetSize(18,18);p:SetPoint('CENTER',frame,'TOPLEFT',t.x*layout.width,-t.y*layout.height);p:SetTexture(t.texture);p:SetVertexColor(unpack(t.color or {1,1,1}));p:Show()
   if #group>1 then
    local label=badges[i];if not label then label=ForeverCompanionInterface.Text(frame,11);badges[i]=label end
    label:ClearAllPoints();label:SetPoint('CENTER',p,'TOPRIGHT',2,0);label:SetText(tostring(#group));label:Show()
@@ -91,8 +92,19 @@ local function updatePlayer()
  player:ClearAllPoints();player:SetPoint('CENTER',frame,'TOPLEFT',x*layout.width,-y*layout.height)
  local facing=safe(GetPlayerFacing);player:SetRotation(finite(facing) and -facing or 0);player:Show()
 end
+function M.ContextAlpha(combat,config,override)
+ if issecretvalue and issecretvalue(combat) then combat=nil end
+ return config and config.fadeCombat and combat==true and not override and .3 or 1
+end
+function M.ApplyContext()
+ if not frame then return end
+ local combat=safe(InCombatLockdown)
+ local alpha=M.ContextAlpha(combat,settings(),forceVisible or editing)
+ frame:SetAlpha(alpha)
+end
 function M.Refresh(force)
  if not frame or not frame:IsShown() then return end
+ M.ApplyContext()
  local id=safe(C_Map and C_Map.GetBestMapForUnit,'player')
  if not finite(id) or id<=0 then id=nil end
  local art=id and safe(C_Map and C_Map.GetMapArtID,id)
@@ -119,7 +131,7 @@ function M.Refresh(force)
  refreshPins();updatePlayer()
 end
 function M.Edit(value)
- editing=value==true;settings().controls=true;frame:EnableMouse(editing);header:Show()
+ editing=value==true;settings().controls=true;frame:EnableMouse(editing);header:Show();M.ApplyContext()
  title:SetText(editing and 'Overlay · drag map to move · Options to lock' or 'Overlay · click-through')
 end
 local presets={
@@ -158,9 +170,11 @@ function M.Options()
    {label='Service markers',selected=d.services==true,action=function() d.services=not d.services;d.preset=nil;M.Refresh(true) end},
    {label='Personal notes',selected=d.notes~=false,action=function() d.notes=d.notes==false;d.preset=nil;M.Refresh(true) end},
   }) end},
-  {label='Personal notes & nearby services',action=function() ForeverCompanionMapTools.Toggle() end},
+  {label='Search map companion',action=function() ForeverCompanionMapHub.Open() end},
   {label='Find nearby service...',action=function() ForeverCompanionMapTools.NearestMenu(header) end},
   {label='Hide controls (restore with command)',action=function() editing=false;frame:EnableMouse(false);d.controls=false;header:Hide() end},
+  {label='Fade during combat',selected=d.fadeCombat==true,action=function() d.fadeCombat=not d.fadeCombat;forceVisible=false;M.ApplyContext() end},
+  {label=forceVisible and 'Use automatic fading' or 'Keep full visibility this session',action=function() forceVisible=not forceVisible;M.ApplyContext() end},
   {label='Reset position',action=function() d.x=nil;d.y=nil;position() end},
  })
 end
@@ -202,9 +216,10 @@ function M.Command(command)
  elseif command=='lock' then M.Toggle(true);M.Edit(false)
  elseif command=='controls' then M.Toggle(true);settings().controls=true;header:Show()
  elseif command=='reset' then local d=settings();d.x=nil;d.y=nil;M.Toggle(true);position()
- elseif command=='show' then M.Toggle(true)
+ elseif command=='show' then forceVisible=true;M.Toggle(true)
+ elseif command=='auto' then forceVisible=false;M.ApplyContext()
  elseif command=='hide' then M.Toggle(false)
  else M.Toggle() end
 end
-local events=CreateFrame('Frame');events:RegisterEvent('PLAYER_ENTERING_WORLD')
-events:SetScript('OnEvent',function() if settings().visible then M.Toggle(true) end end)
+local events=CreateFrame('Frame');for _,event in ipairs({'PLAYER_ENTERING_WORLD','PLAYER_REGEN_DISABLED','PLAYER_REGEN_ENABLED'}) do events:RegisterEvent(event) end
+events:SetScript('OnEvent',function(_,event) if event=='PLAYER_ENTERING_WORLD' then if settings().visible then M.Toggle(true) end else M.ApplyContext() end end)

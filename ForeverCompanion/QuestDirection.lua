@@ -2,7 +2,7 @@
 local D={}
 ForeverCompanionQuestDirection=D
 local frame,arrow,title,status,target,elapsed,progressFill
-local currentPoint,arrivalDistance,near
+local currentPoint,arrivalDistance,near,confidence
 local atan2=math.atan2
 local function settings()
  ForeverCompanionDB=ForeverCompanionDB or {}
@@ -55,7 +55,7 @@ local function update(_,dt)
  else
   arrivalDistance=distance;near=false
   arrow:SetRotation(angle)
-  arrow:Show()
+  if settings().compact then arrow:Hide() else arrow:Show() end
   status:SetText(("%d yd  ·  Straight-line direction"):format(math.floor(distance+.5)))
   -- Decorative proximity cue, not quest completion or route progress.
   if progressFill then progressFill:SetWidth(221*math.max(0,math.min(1,1-distance/500))) end
@@ -64,7 +64,7 @@ end
 
 local function create()
  frame=CreateFrame("Frame",'ForeverCompanionDirectionFrame',UIParent)
- frame:SetSize(245,126)
+ frame:SetSize(245,146)
  frame:SetPoint("TOP",UIParent,"TOP",0,-115)
  frame:SetFrameStrata("HIGH")
  frame:EnableMouse(true);frame:SetMovable(true);frame:SetClampedToScreen(true)
@@ -87,12 +87,12 @@ local function create()
  end)
  frame.dragHandle=drag
  local options=ForeverCompanionInterface.Button(frame);options:SetText('...');options:SetSize(20,20);options:SetPoint('BOTTOMLEFT',3,24)
- options:SetScript('OnClick',function() D.OpenOptions(options) end)
+ options:SetScript('OnClick',function() D.OpenOptions(options) end);frame.options=options
  D.ApplyScale()
  local bg=frame:CreateTexture(nil,"BACKGROUND")
  bg:SetPoint("BOTTOMLEFT",0,0)
  bg:SetPoint("BOTTOMRIGHT",0,0)
- bg:SetHeight(48)
+ bg:SetHeight(68);frame.bg=bg
  bg:SetColorTexture(.022,.028,.038,.98)
  local top=frame:CreateTexture(nil,"BORDER")
  top:SetColorTexture(.18,.79,.92,.95)
@@ -131,6 +131,7 @@ local function create()
  close:SetText("x")
  close:SetSize(20,20)
  close:SetPoint("BOTTOMRIGHT",-3,24)
+ frame.close=close
  close:SetScript("OnClick",function()
   if ForeverCompanionQuestWaypoints and ForeverCompanionQuestWaypoints.Clear then
    ForeverCompanionQuestWaypoints.Clear()
@@ -144,6 +145,9 @@ local function create()
   local result=ForeverCompanionObjectiveRoute.NavigateNext(nil,currentPoint)
   if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(result) end
  end)
+ frame.nextObjective=nextObjective
+ confidence=frame:CreateFontString(nil,'OVERLAY','GameFontHighlightSmall');ForeverCompanionVisualTheme.Font(confidence,9);confidence:SetTextColor(.7,.82,.88);confidence:SetHeight(14);confidence:SetWordWrap(false)
+ D.ApplyLayout()
  frame:SetScript("OnUpdate",update)
  frame:Hide()
 end
@@ -166,12 +170,34 @@ function D.Start(point,label)
  currentPoint={map=point.map,x=point.x,y=point.y};arrivalDistance=nil;near=false
  target=destination
  title:SetText(label or point.label or "Quest destination")
+ local source=point.source=='Personal map note' and 'Personal saved position' or (point.observed and 'Visited nearby position' or (point.service and 'Service reference · confirm availability' or (point.objectiveIndex and 'Objective reference · exactness unverified' or 'Reported point · precision unverified')))
+ confidence:SetText(source)
  elapsed=.10
  update(frame,0)
  frame:Show()
  return true
 end
 
+function D.ApplyLayout()
+ if not frame then return end
+ local compact=settings().compact==true
+ frame:SetSize(compact and 420 or 245,compact and 76 or 146);frame.bg:SetHeight(compact and 76 or 68)
+ title:ClearAllPoints();status:ClearAllPoints();confidence:ClearAllPoints()
+ frame.options:ClearAllPoints();frame.close:ClearAllPoints();frame.nextObjective:ClearAllPoints();frame.dragHandle:ClearAllPoints()
+ if compact then
+  title:SetPoint('TOPLEFT',10,-7);title:SetWidth(330);status:SetPoint('TOPLEFT',10,-28);status:SetWidth(360)
+  confidence:SetPoint('TOPLEFT',10,-49);confidence:SetWidth(245)
+  frame.options:SetPoint('TOPRIGHT',-30,-5);frame.close:SetPoint('TOPRIGHT',-4,-5)
+  frame.nextObjective:SetPoint('BOTTOMRIGHT',-8,5);frame.dragHandle:SetPoint('TOPLEFT',0,0);frame.dragHandle:SetSize(360,25)
+  arrow:Hide()
+ else
+  title:SetPoint('BOTTOM',0,46);title:SetWidth(183);status:SetPoint('BOTTOM',0,31);status:SetWidth(221)
+  confidence:SetPoint('BOTTOM',0,14);confidence:SetWidth(221)
+  frame.options:SetPoint('BOTTOMLEFT',3,44);frame.close:SetPoint('BOTTOMRIGHT',-3,44)
+  frame.nextObjective:SetPoint('TOP',0,-54);frame.dragHandle:SetPoint('BOTTOMLEFT',0,44);frame.dragHandle:SetSize(219,24)
+ end
+ elapsed=.1;if target then update(frame,0) end
+end
 function D.Arrival() return near==true,arrivalDistance end
 function D.Current() return currentPoint and {map=currentPoint.map,x=currentPoint.x,y=currentPoint.y} end
 function D.IsActive() return target~=nil end
@@ -189,6 +215,8 @@ function D.OpenOptions(anchor)
   local label,size=preset[1],preset[2]
   entries[#entries+1]={label=label..' arrow',selected=(cfg.scale or 1)==size,action=function() cfg.scale=size;D.ApplyScale() end}
  end
+ entries[#entries+1]={label=cfg.compact and 'Use arrow display' or 'Use compact travel strip',action=function() cfg.compact=not cfg.compact;D.ApplyLayout() end}
+ entries[#entries+1]={label='Recent destinations',action=function() ForeverCompanionMapHub.Open('',true) end}
  entries[#entries+1]={label='Reset arrow position',action=D.ResetPosition}
  ForeverCompanionInterface.Menu(anchor or frame,'NAVIGATION ARROW',entries)
 end

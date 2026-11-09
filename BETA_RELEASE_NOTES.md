@@ -1,4 +1,8 @@
-# Forever Companion 3.45.0-beta release notes (draft)
+# Forever Companion 3.46.0-beta release notes (draft)
+
+## Map companion search and compact travel
+
+Use `/fc map` or the movable Map button to search notes, active quests and current-zone service references. `/fc recent` revisits successful destination choices. Personal notes now have categories, icons and colors; the arrow options offer a compact travel strip. Optional combat fading is available in overlay options, with `/fc overlay auto` returning to automatic fading after a manual visibility override. In-game verification remains pending.
 
 ## Map tools update
 

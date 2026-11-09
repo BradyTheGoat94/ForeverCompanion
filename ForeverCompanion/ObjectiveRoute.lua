@@ -101,7 +101,7 @@ function R.NavigateNext(quest,exclude)
  local q,index,target=R.Resolve(stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets)
  if not target then return 'This objective changed. Choose it again.' end
  p.Select(index)
- return ForeverCompanionQuestWaypoints.Navigate(target,settings().openMap==true,q.title..' · '..stop.text)
+ return ForeverCompanionQuestWaypoints.Navigate(target,settings().openMap==true,q.title..' · '..stop.text,q.id)
 end
 function R.OpenOptions(anchor)
  local cfg=settings()
@@ -167,7 +167,7 @@ function R.Create(parent)
    local q,index,target=R.Resolve(row.stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets)
    if not target then R.Refresh();notice:SetText('This objective or location changed. Refresh the itinerary.');return end
    p.Select(index)
-   notice:SetText(ForeverCompanionQuestWaypoints.Navigate(target,settings().openMap==true,q.title..' · '..row.stop.text))
+   notice:SetText(ForeverCompanionQuestWaypoints.Navigate(target,settings().openMap==true,q.title..' · '..row.stop.text,q.id))
   end)
   rows[i]=row
  end

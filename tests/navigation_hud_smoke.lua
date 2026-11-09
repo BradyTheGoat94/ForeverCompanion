@@ -44,6 +44,8 @@ position={GetXY=function() return 500,200 end};frame.OnUpdate(frame,.2)
 local near,distance=d.Arrival();assert(near and distance==0 and advances==0,'arrival is informational and never advances automatically')
 for _,o in ipairs(objects) do if o.text=='Another objective >' then o.OnClick() end end
 assert(advances==1,'only the manual button requests another objective')
+ForeverCompanionDB.questDirection.compact=true;d.ApplyLayout();assert(d.IsActive(),'compact layout preserves navigation')
+ForeverCompanionDB.questDirection.compact=false;d.ApplyLayout()
 position=nil;frame.OnUpdate(frame,.2)
 local unavailable=false
 for _,o in ipairs(objects) do if o.text=='Direction unavailable here' then unavailable=true end end

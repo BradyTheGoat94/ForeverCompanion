@@ -240,7 +240,7 @@ function W.Clear()
  return stopped
 end
 
-function W.Navigate(target,showMap,label)
+function W.Navigate(target,showMap,label,questID)
  if not target then return "No map location for this quest." end
  local direction=ForeverCompanionQuestDirection
  direction.Stop()
@@ -258,6 +258,7 @@ function W.Navigate(target,showMap,label)
   local opened=type(OpenMapToUserWaypoint)=="function" and pinned and pcall(OpenMapToUserWaypoint)
   if not opened then openMap(target.map) end
  end
+ if (hud or pinned) and ForeverCompanionMapHub then ForeverCompanionMapHub.Record(target,label,questID) end
  if hud then return "On-screen arrow active" end
  if not pinned then return "Navigation unavailable for this map." end
  local track=C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint
@@ -271,7 +272,7 @@ end
 function W.Show(quest)
  local target=W.Location(quest)
  if target then
-  return W.Navigate(target,true,quest.title)
+  return W.Navigate(target,true,quest.title,quest.id)
  end
  local map=referenceMap(quest)
  if map and openMap(map) then return "Click a highlighted marker to start the arrow." end

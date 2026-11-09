@@ -2084,3 +2084,32 @@ do
  assert(ForeverCompanionQuestDirection.Arrival())
  exportNative('ui_navigation_arrival_sample_native.json');ForeverCompanionQuestDirection.Stop()
 end
+
+-- Unified map search, organized notes, quick access and compact travel layout.
+do
+ local h,t=ForeverCompanionMapHub,ForeverCompanionMapTools
+ local notes=t.List();assert(#notes>=3);t.SetCategory(notes[1].id,'farming');t.SetCategory(notes[2].id,'rare');t.SetCategory(notes[3].id,'reminder')
+ local oldServices=ForeverCompanionTownServices.ForMap
+ ForeverCompanionTownServices.ForMap=function() return {{map=1429,x=.42,y=.61,label='SAMPLE repair specialist',service='Repair',symbol='R',source='Sample provider reference'}} end
+ local oldSupported,oldLive,oldTargets=ForeverCompanionQuestPlanner.IsSupported,ForeverCompanionQuestPlanner.GetLive,ForeverCompanionQuestWaypoints.Targets
+ local q={id=987,title='SAMPLE - missing scout',objectives={'Search the clearing'}}
+ ForeverCompanionQuestPlanner.IsSupported=function() return true end;ForeverCompanionQuestPlanner.GetLive=function() return {q} end
+ ForeverCompanionQuestWaypoints.Targets=function() return {{map=1429,x=.6,y=.4,source='WoW quest map'}} end
+ SlashCmdList.FOREVERCOMPANION('map')
+ local panel;for _,f in ipairs(frames) do if f.name=='ForeverCompanionMapHubPanel' then panel=f end end
+ assert(panel and panel.visible);h.Refresh();exportNative('ui_map_hub_sample_native.json')
+ SlashCmdList.FOREVERCOMPANION('search missing scout')
+ local count=0;for _,f in ipairs(frames) do if f.result and f.visible then count=count+1;assert(f.result.kind=='quest') end end;assert(count==1)
+ h.ShowButton(true)
+ h.Record(notes[1],notes[1].label);SlashCmdList.FOREVERCOMPANION('recent');exportNative('ui_travel_recent_sample_native.json')
+ ForeverCompanionDB.questDirection.compact=true
+ assert(ForeverCompanionQuestDirection.Start({map=1429,x=.6,y=.4,source='WoW quest map'},'SAMPLE - missing scout'))
+ ForeverCompanionQuestDirection.ApplyLayout();exportNative('ui_travel_strip_sample_native.json');ForeverCompanionQuestDirection.Stop()
+ ForeverCompanionDB.questDirection.compact=false
+ ForeverCompanionTownServices.ForMap=oldServices
+ ForeverCompanionQuestPlanner.IsSupported,ForeverCompanionQuestPlanner.GetLive,ForeverCompanionQuestWaypoints.Targets=oldSupported,oldLive,oldTargets
+end
+
+do
+ ForeverCompanionMapTools.Toggle();exportNative('ui_organized_notes_sample_native.json');ForeverCompanionMapTools.Toggle()
+end

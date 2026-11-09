@@ -1,3 +1,12 @@
+## 3.46.0-beta — Search, organized notes and compact travel
+
+- Added a unified Map Companion search for all personal notes, live active quests and reported services in the current zone. Supports literal multi-word queries, type filters, bounded results and source-aware navigation checks.
+- Added a movable quick-access Map button, /fc map, /fc search <text>, and /fc recent.
+- Added up to 20 recent successful destination choices per character, with source-specific resume checks, pause and clear controls. No movement trail or automatic travel is recorded.
+- Added General, Farming, Rare sightings, Gathering and Reminders note categories, matching map icons/colors and category filtering. Existing notes default to General.
+- Added a compact travel strip and source label alongside the full arrow display. Switching layouts preserves the chosen destination.
+- Added optional combat fading for the transparent overlay, plus a session override. Fading defaults off and changes no targeting bindings.
+
 ## 3.45.0-beta — Map companion tools
 
 - Cluster crowded overlay quest, service and note markers with count badges. World-map personal-note clusters offer destination choices and separate with zoom.

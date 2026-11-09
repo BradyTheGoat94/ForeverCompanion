@@ -11,7 +11,7 @@ local function widget(name)
  function w:SetTexCoord(...) self.crop={...} end;function w:SetDesaturated(v) self.gray=v end
  function w:SetRotation(v) self.rotation=v end;function w:CreateTexture() return widget() end
  function w:GetCenter() return 100,200 end;function w:GetEffectiveScale() return 1 end
- for _,k in ipairs({'SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
+ for _,k in ipairs({'SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
  return w
 end
 CreateFrame=function(_,name) return widget(name) end
@@ -57,3 +57,7 @@ assert(m.Preset('questing') and ForeverCompanionDB.mapOverlay.quests and not For
 assert(not m.Preset('unknown'))
 C_Map.GetPlayerMapPosition=function() return nil end;m.Refresh()
 for _,o in ipairs(objects) do if o.texture=='Interface\\Minimap\\MinimapArrow' then assert(not o.shown,'lost player coordinates clear the overlay arrow') end end
+
+assert(m.ContextAlpha(true,{fadeCombat=true},false)==.3)
+assert(m.ContextAlpha(false,{fadeCombat=true},false)==1)
+assert(m.ContextAlpha(true,{fadeCombat=true},true)==1,'manual override keeps full visibility')

@@ -163,7 +163,7 @@ local function createPin(canvas)
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,entry.quest.title))
   elseif self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
    if not self.focused then ForeverCompanionQuestPlanner.Select(entry.index) end
-   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title))
+   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title,entry.quest.id))
   else
    ForeverCompanionQuestPlanner.Select(entry.index)
   end
