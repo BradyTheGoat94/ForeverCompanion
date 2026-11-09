@@ -18,7 +18,7 @@ SUITES = (
     'quest_discovery_smoke', 'quest_locations_smoke', 'quest_guide_smoke',
     'quest_sync_metadata_smoke', 'quest_history_smoke', 'material_workspace_smoke',
     'loot_boss_smoke', 'icons_and_gear_smoke', 'study_board_smoke',
-    'research_notebook_smoke', 'refresh_queue_smoke', 'quest_setup_smoke', 'mock_ui',
+    'research_notebook_smoke', 'refresh_queue_smoke', 'quest_setup_smoke', 'objective_route_smoke', 'mock_ui',
 )
 
 def main():

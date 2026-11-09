@@ -6,6 +6,21 @@ Brady's Forever Companion is an independent, free World of Warcraft addon projec
 
 Prelaunch beta. Not yet tested in the target game client. Game-specific claims, Interface version, and CurseForge compatibility require verification.
 
+## Live objective itinerary and performance samples (3.40 beta)
+
+Leveling Route now includes a paged itinerary of individual unfinished objectives
+and known turn-ins on the current map. It uses explicitly matched locations,
+rechecks a stop before navigation and reports gaps in coverage. Pinned quests and
+turn-ins get priority; distance order is approximate and does not account for
+terrain. Missing player position preserves quest-log order within priority groups.
+This is not a playthrough-verified starter-zone walkthrough.
+
+Settings → **Performance sample** (or `/fc performance window`) shows real refresh
+call counts and available timings for the meter, map and itinerary. Use **Start new
+sample** or `/fc performance reset` before comparing the same activity/settings.
+Scopes may overlap; these are not total CPU or FPS measurements. Meter options →
+**Refresh rate** offers 0.2, 0.4 or 0.8 seconds without modifying combat values.
+
 ## Quest setup and validation (3.39 beta)
 
 Click **Quest data: … / Setup** in the journal, use Settings → **Quest data & setup**,

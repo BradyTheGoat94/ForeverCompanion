@@ -219,6 +219,7 @@ function J.Create(parent,navigate)
  end
  zoneNote=label(queue,15,-183,258,10,muted)
  zoneNote:SetHeight(28)
+ ForeverCompanionObjectiveRoute.Create(root)
  root:Hide()
 end
 
@@ -238,6 +239,7 @@ function J.Show(show,level)
  if not root then return end
  if not show then root:Hide();overrideStage=nil;return end
  root:Show()
+ ForeverCompanionObjectiveRoute.Refresh()
  currentStage=J.Stage(level)
  local stage=overrideStage or currentStage
  local band=brackets[stage]
@@ -316,4 +318,4 @@ function J.Show(show,level)
   "Follow the quests near your starting camp. Zone suggestions appear when your race and faction are available.")
 end
 
-function J.GetHeight() return 398 end
+function J.GetHeight() return 416+ForeverCompanionObjectiveRoute.GetHeight() end

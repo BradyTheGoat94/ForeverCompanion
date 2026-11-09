@@ -1857,3 +1857,39 @@ assert(setupPanel and setupPanel.visible)
 exportNative('ui_setup_native.json')
 SlashCmdList.FOREVERCOMPANION('setup')
 assert(not setupPanel.visible)
+
+do
+ local originalTargets=ForeverCompanionQuestWaypoints.Targets
+ local originalNavigate=ForeverCompanionQuestWaypoints.Navigate
+ local originalLive=ForeverCompanionQuestPlanner.GetLive
+ local originalMap=C_Map
+ local q={id=999100,title='Sample: Outpost preparations',objectives={'Sample: Collect supplies','Sample: Speak to scout'},objectiveStates={{known=true,done=false},{known=true,done=false}}}
+ ForeverCompanionQuestPlanner.GetLive=function() return {q} end
+ C_Map={GetBestMapForUnit=function() return 1429 end,GetPlayerMapPosition=function() return {GetXY=function() return .1,.1 end} end,GetMapInfo=function() return {name='Sample forest'} end}
+ ForeverCompanionQuestWaypoints.Targets=function() return {
+  {map=1429,x=.2,y=.3,objectiveIndex=1,source='Fixture reference',reference=true},
+  {map=1429,x=.4,y=.3,objectiveIndex=2,source='Fixture reference',reference=true}} end
+ local navigations=0
+ ForeverCompanionQuestWaypoints.Navigate=function() navigations=navigations+1;return 'Fixture navigation' end
+ SlashCmdList.FOREVERCOMPANION('open journey')
+ ForeverCompanionObjectiveRoute.Refresh()
+ local route,go
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionObjectiveRoutePanel' then route=f end end
+ assert(route and route.visible)
+ for _,f in ipairs(frames) do if f.stop and f.stop.quest==q and f.stop.objectiveIndex==1 then go=f.go end end
+ assert(go,'matched itinerary step must have an action')
+ exportNative('ui_itinerary_native.json')
+ q.objectiveStates[1].done=true
+ go.OnClick()
+ assert(navigations==0,'route action must revalidate completion before navigation')
+ ForeverCompanionQuestPlanner.GetLive=originalLive
+ ForeverCompanionQuestWaypoints.Targets=originalTargets;ForeverCompanionQuestWaypoints.Navigate=originalNavigate;C_Map=originalMap
+ ForeverCompanionRefresh()
+end
+
+SlashCmdList.FOREVERCOMPANION('performance window')
+local performancePanel
+for _,f in ipairs(frames) do if f.name=='ForeverCompanionPerformancePanel' then performancePanel=f end end
+assert(performancePanel and performancePanel.visible)
+exportNative('ui_performance_native.json')
+SlashCmdList.FOREVERCOMPANION('performance window');assert(not performancePanel.visible)

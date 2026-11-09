@@ -596,6 +596,14 @@ function M.Refresh()
  end
 end
 
+local refreshMap=M.Refresh
+function M.Refresh()
+ if not worldMap or not worldMap:IsShown() then return end
+ local profiler=ForeverCompanionRefreshQueue
+ local started=profiler and profiler.Start('map')
+ refreshMap()
+ if profiler then profiler.Finish('map',started) end
+end
 local function attach()
  local map=WorldMapFrame
  if provider or not map or not map.AddDataProvider or not map.GetCanvas

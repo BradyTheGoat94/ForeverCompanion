@@ -73,6 +73,14 @@ local function safeNumber(value)
  if issecretvalue and issecretvalue(value) then return false end
  return type(value)=="number" and value==value and value~=math.huge and value~=-math.huge
 end
+function M.GetUpdateInterval()
+ local value=saved().updateInterval
+ return safeNumber(value) and (value==.2 or value==.4 or value==.8) and value or .4
+end
+function M.SetUpdateInterval(value)
+ if not safeNumber(value) or (value~=.2 and value~=.4 and value~=.8) then return false end
+ saved().updateInterval=value;elapsed=0;M.Refresh();return true
+end
 -- Compact only inspectable numbers. Secret values retain their native identity
 -- and pass directly to FontString:SetText without conversion or arithmetic.
 function M.DisplayAmount(value)
@@ -414,7 +422,7 @@ local function build()
  emptyBody:SetJustifyH("CENTER");emptyBody:SetWordWrap(true);emptyBody:SetHeight(40)
  frame:SetScript("OnUpdate",function(_,dt)
   elapsed=elapsed+dt
-  if elapsed>=.4 then elapsed=0;M.Refresh() end
+  if elapsed>=M.GetUpdateInterval() then elapsed=0;M.Refresh() end
  end)
  detailPanel=CreateFrame("Frame",nil,frame,"BackdropTemplate")
  detailPanel:SetSize(640,390)
@@ -919,6 +927,14 @@ function M.Refresh()
   notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native data  |  Experimental")
  end
 end
+local refreshMeter=M.Refresh
+function M.Refresh()
+ if not frame or not frame:IsShown() then return end
+ local profiler=ForeverCompanionRefreshQueue
+ local started=profiler and profiler.Start('meter')
+ refreshMeter()
+ if profiler then profiler.Finish('meter',started) end
+end
 function M.SelectedRow()
  -- Expose only the selected ranking index, never protected combat data.
  return selectedRow
@@ -1084,11 +1100,19 @@ function M.OpenOptions(anchor)
  entries[#entries+1]={label='Show more players',enabled=rowCount<12,action=function() M.SetRows(rowCount+1) end}
  entries[#entries+1]={label='Total + per second columns',selected=saved().showBoth~=false,action=function() M.SetBothColumns(saved().showBoth==false) end}
  entries[#entries+1]={label='Larger text',selected=saved().textSize==13,action=function() M.SetTextSize(saved().textSize==13 and 11 or 13) end}
+ entries[#entries+1]={label='Refresh rate...',action=function()
+  local choices={}
+  for _,setting in ipairs({{'Fast / 0.2 seconds',.2},{'Standard / 0.4 seconds',.4},{'Low frequency / 0.8 seconds',.8}}) do
+   local value=setting[2]
+   choices[#choices+1]={label=setting[1],selected=M.GetUpdateInterval()==value,action=function() M.SetUpdateInterval(value) end}
+  end
+  ForeverCompanionInterface.Menu(anchor or optionsButton,'METER REFRESH RATE',choices,skin())
+ end}
  entries[#entries+1]={label='Details-inspired skin',selected=skinName=='details',action=function() M.SetSkin('details') end}
  entries[#entries+1]={label='Recount-inspired skin',selected=skinName=='recount',action=function() M.SetSkin('recount') end}
  entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
  entries[#entries+1]={label='Reset window appearance',action=function()
-  saved().locked=false;saved().position=nil;saved().showBoth=true;saved().textSize=11
+  saved().locked=false;saved().position=nil;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
   M.SetSkin('details');M.SetLayout('standard');rowOffset=0
   frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()
  end}

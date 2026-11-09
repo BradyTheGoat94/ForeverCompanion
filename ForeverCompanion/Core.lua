@@ -1347,6 +1347,8 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     for line in ForeverCompanionRefreshQueue.Summary():gmatch('[^\n]+') do say(line) end
     return
   end
+  if msg=='performance reset' then ForeverCompanionRefreshQueue.Reset();say('Performance sample reset.');return end
+  if msg=='performance window' then ForeverCompanionRefreshQueue.ToggleReport();return end
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
   if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
   if msg=='discover' then questExplorerView='discover';openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end

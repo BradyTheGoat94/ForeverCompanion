@@ -193,5 +193,20 @@ for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Lock window' then
 assert(lock);lock.OnClick();assert(ForeverCompanionDB.combatMeter.locked and ForeverCompanionCombatMeterWindow.resizeGrip.shown==false)
 SlashCmdList.FOREVERCOMPANIONMETER('unlock');assert(ForeverCompanionCombatMeterWindow.resizeGrip.shown)
 C_DamageMeter=nil;m.Refresh()
+assert(m.SetUpdateInterval(.2) and m.GetUpdateInterval()==.2)
+assert(m.SetUpdateInterval(.8) and m.GetUpdateInterval()==.8)
+assert(not m.SetUpdateInterval(0) and not m.SetUpdateInterval(secret) and not m.SetUpdateInterval(0/0))
+ForeverCompanionDB.combatMeter.updateInterval=secret
+assert(m.GetUpdateInterval()==.4,'malformed or secret saved update rates use the public default')
+m.SetUpdateInterval(.4)
+assert(m.SetUpdateInterval(.8))
+local originalRefresh=m.Refresh
+local updates=0
+m.Refresh=function() updates=updates+1 end
+local window=ForeverCompanionCombatMeterWindow
+window.OnUpdate(window,.3);window.OnUpdate(window,.3)
+assert(updates==0,'low-frequency mode must avoid early refreshes')
+window.OnUpdate(window,.3);assert(updates==1)
+m.Refresh=originalRefresh;m.SetUpdateInterval(.4)
 print('PASS: compact meter geometry, secret-safe dual columns, raid scrolling, stable selection, segment menus, reset confirmation and options')
 

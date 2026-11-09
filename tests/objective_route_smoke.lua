@@ -1,0 +1,33 @@
+dofile('ForeverCompanion/QuestFieldGuide.lua')
+dofile('ForeverCompanion/ObjectiveRoute.lua')
+local r=ForeverCompanionObjectiveRoute
+local a={id=1,title='Several objectives',objectives={'Finished','Collect supplies','Speak to scout'},objectiveStates={{known=true,done=true},{known=true,done=false},{known=false}}}
+local b={id=2,title='Return',complete=true}
+local c={id=3,title='Other zone',objectives={'Other objective'}}
+local d={id=4,title='Unmatched',objectives={'Unmatched objective'}}
+local e={id=5,title='No objective details'}
+local function point(map,x,index,kind) return {map=map,x=x,y=.1,objectiveIndex=index,kind=kind} end
+local data={
+ [a]={point(1429,.11,1),point(1429,.8,2),point(1429,.2,2),point(1429,.3,3),point(1429,.01,nil)},
+ [b]={point(1429,.6,nil,'turn-in')},[c]={point(1430,.2,1)},[d]={point(1429,.01,nil)},
+}
+local stops,stats=r.Build({a,b,c,d,e},data,1429,.1,.1,function(q) return q==a end)
+assert(#stops==3 and stops[1].quest==a and stops[1].objectiveIndex==2 and stops[1].target.x==.2)
+assert(stops[2].objectiveIndex==3 and stops[3].turnin,'multiple unfinished objectives and separate turn-in stops')
+assert(stats.remaining==5 and stats.matched==3 and stats.unlocated==1 and stats.otherMaps==1 and stats.unknownQuests==1)
+assert(stats.positionKnown)
+local unordered,unknown=r.Build({a,b},data,1429,nil,nil)
+assert(not unknown.positionKnown and unordered[1].quest==b,'unknown position preserves priority, without claiming distance order')
+local q,index,target=r.Resolve(stops[1],{a,b},function(quest) return data[quest] or {} end)
+assert(q==a and index==1 and target.x==.2)
+a.objectiveStates[2].done=true
+assert(r.Resolve(stops[1],{a,b},function(quest) return data[quest] or {} end)==nil,'completed objectives reject old navigation')
+a.objectiveStates[2].done=false
+assert(r.Resolve(stops[1],{a,b},function() return {} end)==nil,'removed targets reject old navigation')
+assert(r.Resolve(stops[3],{a},function() return {} end)==nil,'removed quests reject old navigation')
+local many={id=6,title='Large fixture',objectives={}}
+local targets={}
+for i=1,45 do many.objectives[i]='Objective '..i;targets[i]=point(1429,.2,i) end
+local bounded,coverage=r.Build({many},{[many]=targets},1429,.1,.1)
+assert(#bounded==40 and coverage.matched==45,'bounded route must retain true coverage count')
+print('PASS: objective itinerary matching, completed removal, multiple steps, unknown positions, missing coverage, stale navigation and bounded work')

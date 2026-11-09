@@ -1,3 +1,12 @@
+## 3.40.0-beta — Live objective itinerary and scoped performance sampling
+
+- Added a live objective itinerary under Leveling Route. Plans individual unfinished objectives and known turn-ins from explicitly matched locations, instead of limiting the list to one stop per quest. General quest POIs remain separate.
+- Prioritizes pins and turn-ins with approximate within-map distance when position is available; falls back to log order within priority groups when it is not. Reports unlocated steps, other-map steps and missing objective details. Planning is bounded to 40 displayed stops with the full mapped count retained.
+- Route actions revalidate the current quest/objective/location before starting navigation. Completed steps, removed locations and stale snapshots cannot retain a navigation action. Paging and panel height follow actual visible results.
+- Added meter/map/itinerary sampling scopes to /fc performance, with actual call counts and available clock timings. Reset with /fc performance reset; view the report from Settings or /fc performance window. Missing timings remain unknown, and overlapping scopes are not summed into an overall CPU claim.
+- Added persisted 0.2/0.4/0.8 second native meter refresh settings. Secret/malformed saved rates use the public default; combat data handling and native reset restrictions are preserved.
+- Added objective-route and UI navigation regressions, profiler scope/reset checks and refresh-setting validation. This is a data-grounded live itinerary, not a claimed playthrough-verified starter walkthrough. Populated native meter acceptance still requires the client.
+
 ## 3.39.0-beta — Quest setup and reliable acceptance checks
 
 - Added Quest data & setup from the journal, Settings and /fc setup. Reports native support, compatible provider/contract, indexing, current-character map coverage and unknown completion eligibility without starting background scans.
