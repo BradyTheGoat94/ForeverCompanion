@@ -205,6 +205,14 @@ local function render()
     role:ClearAllPoints()
     role:SetPoint(currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",window,currentTab=="Leveling" and "TOPRIGHT" or "BOTTOMRIGHT",-25,currentTab=="Leveling" and -62 or 45)
   end
+  if ForeverCompanionUIState.meterButton then
+    local meter=ForeverCompanionUIState.meterButton
+    meter:ClearAllPoints()
+    -- Class pages use three distinct header slots: meter, spec, role.
+    -- Other pages retain the original standalone meter position.
+    meter:SetPoint('TOPRIGHT',window,'TOPRIGHT',currentTab=='Leveling' and -385 or -50,currentTab=='Leveling' and -62 or -65)
+    meter:SetHeight(currentTab=='Leveling' and 26 or 24)
+  end
   if resetClassButton then
     resetClassButton:ClearAllPoints()
     if currentTab=="Leveling" then resetClassButton:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",20,16)
@@ -835,6 +843,7 @@ local function createUI()
   ForeverCompanionUIState.questCountText:SetTextColor(0.70,0.85,0.74)
   local close = ForeverCompanionInterface.CloseButton(window,function() window:Hide() end)
   local meterToggle=ForeverCompanionInterface.Button(window)
+  ForeverCompanionUIState.meterButton=meterToggle
   meterToggle:SetSize(116,24)
   meterToggle:SetPoint("TOPRIGHT",window,"TOPRIGHT",-50,-65)
   meterToggle:SetText("Combat Meter")
@@ -1124,7 +1133,7 @@ local function createUI()
   rotationButton:SetScript("OnClick",function() rotationMode=(rotationMode % #rotationModes)+1; render() end)
   rotationButton:Hide()
   specButton=ForeverCompanionInterface.Button(window)
-  specButton:SetSize(195,23)
+  specButton:SetSize(195,26)
   specButton:SetPoint("TOPRIGHT",window,"TOPRIGHT",-180,-62)
   specButton:SetScript("OnClick",function() ForeverCompanionSpecPlanner.Next(classToken()); render() end)
   specButton:Hide()

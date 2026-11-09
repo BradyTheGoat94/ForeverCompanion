@@ -982,6 +982,18 @@ assert(ForeverCompanionDB.tab=="Leveling","visible Class Guides label must work 
 local specControl
 for _,w in ipairs(frames) do if w.OnClick and w.text=="Spec: Arms" then specControl=w end end
 assert(specControl and specControl.parent==mainWindow.id,"header specialization selector must avoid scroll-child clipping")
+do
+ local previousCompact=ForeverCompanionDB.compact
+ for _,compact in ipairs({false,true}) do
+  ForeverCompanionDB.compact=compact;ForeverCompanionRefresh()
+  local meter=ForeverCompanionUIState.meterButton
+  local role=ForeverCompanionUIState.roleButton
+  assert(meter.point[4]<=specControl.point[4]-specControl.width-8,'meter must clear the specialization selector')
+  assert(specControl.point[4]<=role.point[4]-role.width-8,'specialization must clear the role selector')
+  assert(meter.point[5]==role.point[5] and meter.height==role.height and specControl.height==role.height,'header controls must share a baseline and height')
+ end
+ ForeverCompanionDB.compact=previousCompact;ForeverCompanionRefresh()
+end
 assert(#ForeverCompanionClassGuide.topicButtons==8,"class guide requires eight functional topic tabs")
 local classScroll
 for _,w in ipairs(frames) do

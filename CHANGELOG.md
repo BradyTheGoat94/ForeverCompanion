@@ -1,3 +1,8 @@
+## 3.38.1-beta — Header overlap fix
+
+- Fixed the Combat Meter button overlapping the role selector on Class Guides. Meter, specialization and role now occupy three separate header slots with consistent heights and spacing.
+- Other pages retain their existing meter position. Added regression checks for header separation in both compact and expanded modes.
+
 ## 3.38.0-beta — Full interface review and reading layouts
 
 - Replaced class-guide text walls with reusable measured reading cards. Gear references now place ranked stats beside item-comparison advice and reported targets, with source attribution and caveats retained below.
