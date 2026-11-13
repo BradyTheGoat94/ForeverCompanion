@@ -889,15 +889,39 @@ function M.Refresh()
   if safeToInspect and type(selected)=="table" and type(C_DamageMeter)=="table" then
    local guid=selected.sourceGUID
    local creatureID=selected.sourceCreatureID
+   -- A player source must be queried by GUID, not by a creature identifier.
+   -- Some client builds omit sourceGUID on the summary row for the local player.
+   -- Recover that GUID only when Blizzard explicitly marks this row as local.
+   if not (issecretvalue and issecretvalue(selected.isLocalPlayer)) and selected.isLocalPlayer==true
+    and (type(guid)~="string" or guid=="") and type(UnitGUID)=="function" then
+    guid=read(UnitGUID,"player")
+   end
    if not (issecretvalue and issecretvalue(guid)) and not (issecretvalue and issecretvalue(creatureID)) then
-    if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
-     local entry=availableHistory()[pastIndex]
-     local sessionID=historyID(entry)
-     if sessionID~=nil then
-      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,types(),guid,creatureID)
+    -- Spell reports are damage/healing amounts even when the leaderboard is
+    -- displaying the corresponding per-second metric. Prefer the matching
+    -- amount metric and fall back to the displayed metric for client variants.
+    local reportType=types()
+    local e=Enum and Enum.DamageMeterType
+    if e then
+     if reportType==e.Dps and e.DamageDone~=nil then reportType=e.DamageDone
+     elseif reportType==e.Hps and e.HealingDone~=nil then reportType=e.HealingDone end
+    end
+    local function fetchSource(metric)
+     if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
+      local entry=availableHistory()[pastIndex]
+      local sessionID=historyID(entry)
+      if sessionID~=nil then
+       return read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,metric,guid,creatureID)
+      end
      end
-    else
-     breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid,creatureID)
+     return read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),metric,guid,creatureID)
+    end
+    breakdown=fetchSource(reportType)
+    local entries=type(breakdown)=="table" and breakdown.combatSpells
+    if (type(entries)~="table" or #entries==0) and reportType~=types() then
+     local alternative=fetchSource(types())
+     local alternativeSpells=type(alternative)=="table" and alternative.combatSpells
+     if type(alternativeSpells)=="table" and #alternativeSpells>0 then breakdown=alternative end
     end
    end
   end
