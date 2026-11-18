@@ -32,13 +32,14 @@ ctx.skip[94614]=true;assert(G.Build(chapter,ctx)[1].id~=94614)
 ctx.catalogReady=true;ctx.pickups={{quest={id=777,title='Native pickup'},target={map=2548,x=.5,y=.5}}}
 assert(#G.Build(chapter,ctx)==1 and G.Build(chapter,ctx)[1].id==777)
 print('Walkthrough data, 120 level/faction cases, resume, objectives, turn-in, skips and live pickups passed.')
-local buttons={}
+local buttons,labels={},{}
 local noop=function() end
 local function widget()
  local w={shown=true}
  return setmetatable(w,{__index=function(_,key)
   if key=='SetText' then return function(self,v) self.text=v end end
   if key=='SetScript' or key=='HookScript' then return function(self,k,v) self[k]=v end end
+  if key=='SetShown' then return function(self,v) self.shown=v end end
   if key=='IsShown' then return function(self) return self.shown end end
   if key=='Show' then return function(self) self.shown=true end end
   if key=='Hide' then return function(self) self.shown=false end end
@@ -46,7 +47,7 @@ local function widget()
  end})
 end
 CreateFrame=widget;UIParent=widget()
-ForeverCompanionInterface={Text=widget,Button=function() local b=widget();buttons[#buttons+1]=b;return b end,Surface=noop,PreparePanel=noop,CloseButton=noop}
+ForeverCompanionInterface={Text=function() local t=widget();labels[#labels+1]=t;return t end,Button=function() local b=widget();buttons[#buttons+1]=b;return b end,Surface=noop,PreparePanel=noop,CloseButton=noop}
 UnitLevel=function() return 36 end;UnitRace=function() return 'Human','Human',1 end;UnitFactionGroup=function() return 'Alliance' end
 C_Map={GetBestMapForUnit=function() return 2548 end}
 C_QuestLog={IsQuestFlaggedCompleted=function() return false end}
@@ -68,7 +69,13 @@ SlashCmdList.FCWALKTHROUGH()
 local function click(name) for _,b in ipairs(buttons) do if b.text==name then b.OnClick(b);return end end;error(name) end
 assert(G.steps[1].id==94613);click('Directions');click('Skip quest');assert(G.steps[1].id~=94613)
 click('Restore skipped');click('Follow: off');click('Follow: on')
-click('Compact');click('Expand')
+local upcoming
+for _,t in ipairs(labels) do
+ if type(t.text)=='string' and t.text:find('UP NEXT',1,true)==1 then upcoming=t;break end
+end
+assert(upcoming,'the upcoming section is labelled')
+click('Compact');assert(not upcoming.shown,'compact mode hides the upcoming header')
+click('Expand');assert(upcoming.shown,'expanding restores the upcoming header')
 click('Follow: off');assert(active and active.label==G.steps[1].title)
 local manual={label='Manual pin',map=2548,x=.3,y=.5}
 active=manual;G.Refresh()

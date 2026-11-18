@@ -225,6 +225,9 @@ function G.Build(chapter,ctx)
  return result
 end
 local frame,chapterText,chapterTip,currentTitle,currentBody,nextText,status
+local chapterPanel,objectivePanel,actionText,targetText,progressText,progressBar
+local accent={.94,.74,.42};local muted={.68,.76,.80}
+local actionColors={['Pick up']={.94,.74,.42},['Check pickup']={.88,.74,.55},['Objective']={.46,.86,.80},['Turn in']={.68,.88,.49}}
 local chapterButton,followButton,locateButton,skipButton,backButton,pageText,compactButton,detailsButton,prevButton,nextButton
 local rows,current,page={},nil,1
 local following,lastSignature,lastOwner=false,nil,nil
@@ -255,6 +258,7 @@ local function context()
  if not (issecretvalue and issecretvalue(questCount)) and type(questCount)=='number' and type(limit)=='number' and limit>0 then ctx.logFull=questCount>=limit end
  local xp,maxXP=call(UnitXP,'player'),call(UnitXPMax,'player')
  if level<60 and type(xp)=='number' and type(maxXP)=='number' and xp>=0 and maxXP>xp then ctx.remainingXP=maxXP-xp end
+ if level<60 and type(xp)=='number' and type(maxXP)=='number' and maxXP>0 then ctx.progress=math.max(0,math.min(1,xp/maxXP)) end
  ctx.rewardXP=function(id) return call(GetQuestLogRewardXP,id) end
  return ch,ctx
 end
@@ -296,22 +300,36 @@ function G.Refresh()
  local steps=G.Build(ch,ctx);G.steps=steps
  current=steps[1]
  if cfg().manualFocus and (not current or current.id~=cfg().manualFocus) then cfg().manualFocus=nil end
- chapterText:SetText(ch[5]..'  |  Levels '..ch[2]..'–'..ch[3]..'  |  You: '..ctx.level)
- chapterTip:SetText(ctx.logFull and 'Quest log full. Finish or turn in an active quest to make room for the next pickup.' or G.ChapterTip(ch,ctx.side,ctx.level))
- currentTitle:SetText(current and (current.action..'   '..current.title..(current.level and current.level>0 and ('  (Lv. '..current.level..')') or '')) or (ch[1]==2548 and ctx.level<36 and 'Reach level 36' or 'No available step in this chapter'))
+ chapterText:SetText(ch[5])
+ progressText:SetText(('Level %d   |   Chapter %d-%d'):format(ctx.level,ch[2],ch[3]))
+ progressBar:SetValue(ctx.progress or 0)
+ progressBar:SetShown(ctx.progress~=nil)
+ chapterTip:SetText(ctx.logFull and 'Quest log full. Finish or turn in an active quest to free a slot.' or G.ChapterTip(ch,ctx.side,ctx.level))
+ local gated=ch[1]==2548 and ctx.level<36
+ local action=current and current.action
+ local marker=current and current.target
+ actionText:SetText(action and (action:upper()..(current.level>0 and ('   |   Quest level '..current.level) or '')) or 'ROUTE STATUS')
+ actionText:SetTextColor(unpack(actionColors[action] or accent))
+ currentTitle:SetText(current and current.title or (gated and 'Reach level 36' or 'No available step'))
  local detail=current and current.detail
- if current and current.ding then detail=('Turn-ins here offer %d XP. You need %d XP for level %d.'):format(current.hubXP,ctx.remainingXP,ctx.level+1) end
- currentBody:SetText(current and (detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
-  (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or ctx.logFull and 'Check your quest log for a turn-in in another chapter.' or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
- nextText:SetText(current and current.neighbors and current.neighbors>0 and ('Nearby: '..current.neighbors..' other quest step'..(current.neighbors==1 and '' or 's')..' in this area') or 'Upcoming steps')
+ if current and current.ding then detail=('Turn-ins here offer %d XP. You need %d XP for level %d.\n%s'):format(current.hubXP,ctx.remainingXP,ctx.level+1,detail) end
+ currentBody:SetText(detail or (gated and G.ChapterTip(ch,ctx.side,ctx.level) or ctx.logFull and 'Check your quest log for a turn-in in another chapter.' or 'Choose another chapter, restore skipped quests, or check a local quest giver.'))
+ targetText:SetText(marker and place(marker) or (current and 'Destination unavailable. See quest details.' or ''))
+ local neighbors=current and current.neighbors or 0
+ nextText:SetText(neighbors>0 and ('UP NEXT    |    %d nearby'):format(neighbors) or 'UP NEXT')
  local pages=math.max(1,math.ceil((#steps-1)/3));page=math.max(1,math.min(page,pages))
  for i,b in ipairs(rows) do
   local s=steps[(page-1)*3+i+1];b.step=s;b:SetShown(s~=nil and not cfg().compact)
-  if s then b:SetText(s.action..'   '..s.title..(s.target and ('   ·   '..(s.target.label or 'Map marker')) or '')) end
+  if s then
+   b.action:SetText(s.action)
+   b.action:SetTextColor(unpack(actionColors[s.action] or accent))
+   b.title:SetText(s.title)
+  end
  end
  local tracker=ForeverCompanionSessionProgress
  local session=tracker and tracker.Snapshot and tracker.Snapshot()
  local pace=session and not session.paused and session.rate and ('  |  '..math.floor(session.rate)..' XP/hr') or ''
+ prevButton:SetEnabled(page>1);nextButton:SetEnabled(page<pages)
  pageText:SetText(#steps..' steps available  |  Page '..page..' of '..pages..pace)
  locateButton:SetEnabled(current and current.target~=nil or false);skipButton:SetEnabled(current~=nil)
  backButton:SetEnabled(next(cfg().skip)~=nil)
@@ -341,12 +359,17 @@ local function layout()
  local function move(widget,x,y)
   widget:ClearAllPoints();widget:SetPoint('TOPLEFT',x,-y)
  end
- frame:SetHeight(compact and 297 or 520)
- move(currentTitle,18,compact and 77 or 126)
- move(currentBody,18,compact and 115 or 168)
- move(status,18,compact and 239 or 462)
+ local objectiveY=compact and 94 or 166
+ local height=compact and 361 or 602
+ frame:SetHeight(height)
+ if ForeverCompanionInterface.FitPanel then ForeverCompanionInterface.FitPanel(frame,746,height) end
+ move(objectivePanel,18,objectiveY)
+ chapterPanel:SetHeight(compact and 60 or 132)
+ move(progressBar,440,compact and 56 or 64)
+ move(progressText,440,compact and 43 or 46)
+ move(status,24,compact and 320 or 552)
  for i,b in ipairs({locateButton,followButton,skipButton,backButton,detailsButton}) do
-  move(b,({18,157,291,393,545})[i],compact and 204 or 253)
+  move(b,({26,165,299,401,553})[i],objectiveY+182)
  end
  for _,element in ipairs({chapterTip,nextText,prevButton,nextButton,pageText}) do element:SetShown(not compact) end
  compactButton:SetText(compact and 'Expand' or 'Compact')
@@ -373,12 +396,52 @@ function G.Open()
  if not frame then
   local U=ForeverCompanionInterface
   frame=CreateFrame('Frame','ForeverCompanionWalkthroughFrame',UIParent,'BackdropTemplate')
-  frame:SetSize(746,520);frame:SetPoint('CENTER');frame:SetFrameStrata('DIALOG');U.Surface(frame)
-  U.PreparePanel(frame,'ForeverCompanionWalkthroughFrame',746,520);U.CloseButton(frame,function() frame:Hide() end)
-  chapterText=label(frame,18,12,555,28,17);chapterButton=button(566,40,160,'Chapters',menu)
-  compactButton=button(456,40,102,'Compact',function() cfg().compact=not cfg().compact;layout();G.Refresh() end)
-  chapterTip=label(frame,18,48,429,72,13)
-  currentTitle=label(frame,18,126,708,38,19);currentBody=label(frame,18,168,708,84,14)
+  frame:SetSize(746,602);frame:SetPoint('CENTER');frame:SetFrameStrata('DIALOG');U.Surface(frame)
+  U.PreparePanel(frame,'ForeverCompanionWalkthroughFrame',746,602);U.CloseButton(frame,function() frame:Hide() end)
+  frame:SetScript('OnEvent',function() U.FitPanel(frame,746,frame:GetHeight()) end)
+  local function card(x,y,width,height,color)
+   local panel=CreateFrame('Frame',nil,frame,'BackdropTemplate')
+   panel:SetSize(width,height)
+   panel:SetPoint('TOPLEFT',x,-y)
+   if panel.SetBackdrop then
+    panel:SetBackdrop({bgFile='Interface\\Buttons\\WHITE8X8',edgeFile='Interface\\Buttons\\WHITE8X8',edgeSize=1})
+    panel:SetBackdropColor(unpack(color))
+    panel:SetBackdropBorderColor(.23,.33,.35,1)
+   end
+   return panel
+  end
+  local masthead=label(frame,18,6,710,22,12)
+  masthead:SetText('|TInterface\\AddOns\\ForeverCompanion\\Media\\Crest:18:18:0:0|t  AZEROTH FIELD GUIDE')
+  masthead:SetTextColor(unpack(accent))
+  chapterPanel=card(18,29,710,135,{.055,.105,.12,1})
+  local compass=label(chapterPanel,14,11,160,16,10)
+  compass:SetText('CURRENT CHAPTER')
+  compass:SetTextColor(unpack(accent))
+  chapterText=label(chapterPanel,14,28,384,30,23)
+  chapterButton=button(566,45,146,'Chapters',menu)
+  compactButton=button(458,45,100,'Compact',function() cfg().compact=not cfg().compact;layout();G.Refresh() end)
+  progressText=label(chapterPanel,440,45,248,16,11)
+  progressText:SetTextColor(unpack(muted))
+  progressBar=CreateFrame('StatusBar',nil,chapterPanel)
+  progressBar:SetSize(248,4);progressBar:SetPoint('TOPLEFT',440,-59)
+  progressBar:SetStatusBarTexture('Interface\\Buttons\\WHITE8X8');progressBar:SetStatusBarColor(.50,.83,.75)
+  progressBar:SetMinMaxValues(0,1)
+  progressBar:EnableMouse(true)
+  progressBar:SetScript('OnEnter',function(self)
+   if not GameTooltip then return end
+   GameTooltip:SetOwner(self,'ANCHOR_TOP')
+   GameTooltip:SetText(('%d%% toward the next level'):format(math.floor(self:GetValue()*100)))
+   GameTooltip:Show()
+  end)
+  progressBar:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+  chapterTip=label(chapterPanel,14,79,676,51,13)
+  chapterTip:SetTextColor(unpack(muted))
+  objectivePanel=card(18,166,710,221,{.035,.066,.085,1})
+  actionText=label(objectivePanel,16,12,676,18,11)
+  currentTitle=label(objectivePanel,16,32,676,51,21)
+  currentBody=label(objectivePanel,16,84,676,61,14)
+  targetText=label(objectivePanel,16,151,676,26,13)
+  targetText:SetTextColor(.59,.88,.83)
   locateButton=button(18,253,130,'Directions',function() G.Refresh();status:SetText(directions(current) or 'No destination available.') end)
   followButton=button(157,253,124,'Follow: off',function()
    if following then stopFollowing() else following=true;lastSignature=nil end;G.Refresh()
@@ -387,21 +450,33 @@ function G.Open()
    if current then cfg().skip[current.id]=true;cfg().manualFocus=nil;page=1;G.Refresh() end
   end)
   backButton=button(393,253,142,'Restore skipped',function() cfg().skip={};page=1;G.Refresh() end)
-  detailsButton=button(545,253,181,'Quest details',function()
+  detailsButton=button(545,253,165,'Quest details',function()
    if current and (current.action=='Objective' or current.action=='Turn in') and ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(current.id)
    elseif current then status:SetText(current.detail) end
   end)
-  nextText=label(frame,18,296,400,22,14)
-  for i=1,3 do local b=button(18,319+(i-1)*32,708,'',function(self)
+  nextText=label(frame,22,397,700,20,12);nextText:SetTextColor(unpack(accent))
+  for i=1,3 do local b=button(18,421+(i-1)*32,710,'',function(self)
    if self.step then cfg().manualFocus=self.step.id;page=1;G.Refresh() end
-  end);rows[i]=b end
+  end)
+   b.action=label(b,12,6,106,18,11);b.title=label(b,124,5,570,22,13)
+   b:HookScript('OnEnter',function(self)
+    if not GameTooltip or not self.step then return end
+    GameTooltip:SetOwner(self,'ANCHOR_RIGHT')
+    GameTooltip:SetText(self.step.title)
+    GameTooltip:AddLine(self.step.detail,.82,.87,.90,true)
+    if self.step.target then GameTooltip:AddLine(place(self.step.target),.59,.88,.83,true) end
+    GameTooltip:Show()
+   end)
+   b:HookScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+   rows[i]=b
+  end
   local function wheel(_,delta) if not cfg().compact then page=page+(delta<0 and 1 or -1);G.Refresh() end end
   frame:EnableMouseWheel(true);frame:SetScript('OnMouseWheel',wheel)
   for _,b in ipairs(rows) do b:EnableMouseWheel(true);b:SetScript('OnMouseWheel',wheel) end
-  prevButton=button(18,420,92,'Previous',function() page=page-1;G.Refresh() end)
-  pageText=label(frame,124,427,480,21,12)
-  nextButton=button(634,420,92,'Next',function() page=page+1;G.Refresh() end)
-  status=label(frame,18,462,708,48,12);frame:HookScript('OnHide',stopFollowing)
+  prevButton=button(18,518,92,'Previous',function() page=page-1;G.Refresh() end)
+  pageText=label(frame,124,524,480,21,12)
+  nextButton=button(636,518,92,'Next',function() page=page+1;G.Refresh() end)
+  status=label(frame,24,552,698,44,12);status:SetTextColor(unpack(muted));frame:HookScript('OnHide',stopFollowing)
  end
  layout();frame:Show();G.Refresh()
 end
