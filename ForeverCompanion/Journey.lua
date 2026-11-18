@@ -28,6 +28,37 @@ local brackets={
   {{"Un'Goro Crater",1449},{"Western Plaguelands",1422},{"Winterspring",1452,"Later in this bracket"}}},
 }
 
+-- Suggested fast questing bands, based on Forever zone and travel references.
+-- https://bindonforever.com/leveling
+-- https://forevermastery.com/en/guides/wow-forever-leveling
+local optimized={
+ {1,11,'Starter quests'},
+ {12,19,'First hubs',{{'Westfall',1436},{'Loch Modan',1432},{'Darkshore',1439}},{{'The Barrens',1413},{'Silverpine Forest',1421}}},
+ {20,29,'Keep quests close',{{'Redridge Mountains',1433},{'Duskwood',1431},{'Wetlands',1437}},{{'The Barrens',1413},{'Stonetalon Mountains',1442},{'Hillsbrad Foothills',1424}}},
+ {30,34,'Build a quest loop',{{'Stranglethorn Vale',1434},{'Arathi Highlands',1417}},{{'Thousand Needles',1441},{'Desolace',1443},{'Stranglethorn Vale',1434}}},
+ {35,44,'Midlevel hubs',{{'Riverglades',2548},{'Stranglethorn Vale',1434}},{{'Stranglethorn Vale',1434},{'Riverglades',2548}}},
+ {45,49,'Finish local chains',{{'Tanaris',1446},{'Feralas',1444},{'The Hinterlands',1425}}},
+ {50,54,'Batch objectives',{{"Un'Goro Crater",1449},{'Felwood',1448},{'Searing Gorge',1427}}},
+ {55,60,'Finish to 60',{{'Western Plaguelands',1422},{'Eastern Plaguelands',1423},{'Winterspring',1452}}},
+}
+function J.OptimizedStage(level)
+ for i,band in ipairs(optimized) do if level and level<=band[2] then return i end end
+ return level and #optimized or 1
+end
+function J.OptimizedRoute(stage,level,faction,race)
+ local band=optimized[stage]
+ if not band then return {} end
+ local home=starter[race]
+ if stage==1 or (stage==2 and race=='Skyborne' and level==12) then return home and {home} or {} end
+ if band[5] and faction~='Alliance' and faction~='Horde' then return {} end
+ local zones=band[5] and faction=='Horde' and band[5] or band[4]
+ if stage~=2 or not follow[race] then return zones end
+ local ordered={}
+ for _,zone in ipairs(zones) do if zone[2]==follow[race] then ordered[#ordered+1]=zone end end
+ for _,zone in ipairs(zones) do if zone[2]~=follow[race] then ordered[#ordered+1]=zone end end
+ return ordered
+end
+
 function J.Stage(level)
  for i,band in ipairs(brackets) do
   if level and level>=band[1] and level<=band[2] then return i end
@@ -114,7 +145,76 @@ function J.FormatLocalRoute()
 end
 
 local root,kind,title,detail,hint,mapButton,stageText,previous,nextStage,rows
-local overrideStage,actionQuest,actionIndex,zoneNote,actionPickup
+local optimizedMode,routeToggle
+local overrideStage,actionQuest,actionIndex,zoneNote,actionPickup,actionStop,shownLevel
+local guided,followButton,turnedIn,pickupID
+local guideEvents
+local advanceGuide
+local function followStop(stop)
+ local waypoints=ForeverCompanionQuestWaypoints
+ pickupID=nil
+ if stop.pickup then pickupID=stop.quest.id end
+ local questID=not stop.pickup and stop.quest.id or nil
+ local message=waypoints.Navigate(stop.target,false,stop.quest.title,questID)
+ local active=waypoints.Active()
+ guided=active and active.questID==questID and waypoints.SameTarget(active,stop.target) and active or nil
+ guideEvents:SetShown(guided~=nil)
+ hint:SetText(message)
+end
+advanceGuide=function()
+ if not guided then guideEvents:Hide();return end
+ if not ForeverCompanionQuestPlanner.IsSupported() then return end
+ local waypoints=ForeverCompanionQuestWaypoints
+ local active=waypoints.Active()
+ if pickupID then
+  if not active or not waypoints.SameTarget(active,guided) then J.StopFollowing();return end
+  for _,quest in ipairs(ForeverCompanionQuestPlanner.GetLive()) do
+   if quest.id==pickupID then
+    local target=waypoints.Targets(quest)[1]
+    if target then followStop({quest=quest,target=target}) end
+    return
+   end
+  end
+  return
+ end
+ if active and turnedIn~=guided.questID then
+  if active.questID~=guided.questID or not waypoints.SameTarget(active,guided) then guided=nil end
+  return
+ end
+ for _,quest in ipairs(ForeverCompanionQuestPlanner.GetLive()) do
+  if quest.id==guided.questID and turnedIn~=guided.questID then
+   local state=quest.objectiveStates and quest.objectiveStates[guided.objectiveIndex]
+   if (quest.complete and not guided.completeAtStart) or (state and state.known and state.done) then
+    for _,target in ipairs(waypoints.Targets(quest)) do
+     if not waypoints.SameTarget(guided,target) then followStop({quest=quest,target=target});return end
+    end
+   end
+   break
+  end
+ end
+ if turnedIn==guided.questID then
+  local map=C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit('player')
+  local position=map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(map,'player')
+  if position then
+   local quests={}
+   for _,quest in ipairs(ForeverCompanionQuestPlanner.GetLive()) do
+    if quest.id~=turnedIn then quests[#quests+1]=quest end
+   end
+   local x,y=position:GetXY()
+   local stops=J.LocalRoute(quests,waypoints.MapLocations(map,quests),x,y,1)
+   turnedIn=nil
+   if stops[1] then followStop(stops[1]);return end
+  end
+ end
+ J.StopFollowing()
+end
+function J.StopFollowing()
+ if not guided then return false end
+ local active=ForeverCompanionQuestWaypoints.Active()
+ if active and active.questID==guided.questID and ForeverCompanionQuestWaypoints.SameTarget(active,guided) then ForeverCompanionQuestWaypoints.Clear() end
+ guided=nil;turnedIn=nil;pickupID=nil;guideEvents:Hide()
+ return true
+end
 local queueRows,queueEmpty,levelBadge,queueStatus
 function J.PickupStops(entries,x,y,limit)
  local grouped=ForeverCompanionQuestDiscovery.Filter(entries,'',false,{sort='recommended',x=x,y=y})
@@ -153,6 +253,17 @@ local function card(x,y,w,h)
 end
 
 function J.Create(parent,navigate)
+ guideEvents=CreateFrame("Frame")
+ guideEvents:RegisterEvent('QUEST_TURNED_IN')
+ guideEvents:SetScript('OnEvent',function(_,_,id)
+  if guided and guided.questID==id then turnedIn=id end
+ end)
+ local guideElapsed=0
+ guideEvents:SetScript('OnUpdate',function(_,delta)
+  guideElapsed=guideElapsed+delta
+  if guideElapsed>=1 then guideElapsed=0;advanceGuide() end
+ end)
+ guideEvents:Hide()
  root=CreateFrame("Frame",nil,parent)
  root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-6)
  root:SetSize(770,398)
@@ -160,17 +271,29 @@ function J.Create(parent,navigate)
  local task=card(0,0,770,158)
  kind=label(task,15,-12,580,13,{.38,.87,1})
  levelBadge=label(task,641,-12,112,12,gold)
- title=label(task,15,-38,735,21,white)
- detail=label(task,15,-72,735,13,muted)
- hint=label(task,316,-121,437,12,muted)
- mapButton=button(task,15,-117,143,"Find on map",function()
-  if actionPickup then ForeverCompanionQuestWaypoints.Navigate(actionPickup.target,true,actionPickup.quest.title);return end
-  if not actionQuest or not ForeverCompanionQuestPlanner.IsSupported() then return end
-  local quest=actionQuest
-  ForeverCompanionQuestPlanner.Select(actionIndex)
-  hint:SetText(ForeverCompanionQuestWaypoints.Show(quest))
+ title=label(task,15,-35,735,17,white);title:SetHeight(42);title:SetWordWrap(true);title:SetJustifyV("TOP")
+ detail=label(task,15,-79,735,12,muted);detail:SetHeight(34);detail:SetWordWrap(true);detail:SetJustifyV("TOP")
+ hint=label(task,458,-118,295,10,muted);hint:SetHeight(32);hint:SetWordWrap(true)
+ mapButton=button(task,15,-117,143,"Show on map",function()
+  J.Show(true,UnitLevel and UnitLevel('player') or shownLevel)
+  local stop=actionStop or actionPickup
+  if stop then
+   if actionStop then ForeverCompanionQuestPlanner.Select(stop.index) end
+   hint:SetText(ForeverCompanionQuestWaypoints.Navigate(stop.target,false,stop.quest.title,actionStop and stop.quest.id or nil))
+  elseif actionQuest and ForeverCompanionQuestPlanner.IsSupported() then
+   ForeverCompanionQuestPlanner.Select(actionIndex)
+   hint:SetText(ForeverCompanionQuestWaypoints.Show(actionQuest))
+  end
  end)
  button(task,170,-117,129,"Quest journal",function() navigate("Quests") end)
+ followButton=button(task,307,-117,140,"Follow quest",function()
+  if not J.StopFollowing() then
+   local stop=actionStop or actionPickup
+   if stop then followStop(stop) end
+  end
+  J.Show(true,shownLevel)
+ end)
+
  local route=card(0,-171,470,217)
  local queue=card(482,-171,288,217)
  label(queue,15,-12,175,13,gold):SetText("UP NEXT")
@@ -196,7 +319,9 @@ function J.Create(parent,navigate)
   end)
   queueRows[i]=item
  end
- stageText=label(route,15,-12,440,15,gold)
+ stageText=label(route,15,-12,280,13,gold)
+ routeToggle=button(route,295,-7,158,"Optimized 1–60",function() optimizedMode=not optimizedMode;overrideStage=nil;ForeverCompanionRefresh() end)
+ ForeverCompanionInterface.SetHoverHelp(routeToggle,"Optimized 1–60","Suggested fast questing by level. Start with the first zone, use the others as alternatives, and move on when nearby quests run out. Travel and completed quests affect speed.")
  previous=button(route,15,-181,83,"Previous",function() J.ChangeStage(-1) end)
  button(route,106,-181,96,"My level",function() J.ChangeStage(0) end)
  nextStage=button(route,210,-181,83,"Next",function() J.ChangeStage(1) end)
@@ -208,10 +333,10 @@ function J.Create(parent,navigate)
   row:SetSize(444,37)
   local bg=row:CreateTexture(nil,"BACKGROUND")
   bg:SetAllPoints(row);bg:SetColorTexture(.075,.11,.16,1)
-  row.title=label(row,11,-10,221,13,white)
+  row.title=label(row,11,-9,221,12,white)
   row.title:SetWordWrap(false);row.title:SetHeight(18)
   row.detail=label(row,237,-11,122,10,muted)
-  row.detail:SetWordWrap(false);row.detail:SetHeight(15)
+  row.detail:SetWordWrap(true);row.detail:SetHeight(24)
   row.map=button(row,370,-6,65,"Open map",function()
    if row.zone then ForeverCompanionQuestWaypoints.OpenMap(row.zone[2]) end
   end)
@@ -220,6 +345,16 @@ function J.Create(parent,navigate)
  zoneNote=label(queue,15,-183,258,10,muted)
  zoneNote:SetHeight(28)
  ForeverCompanionObjectiveRoute.Create(root)
+ local elapsed=0
+ root:SetScript("OnUpdate",function(_,delta)
+  elapsed=elapsed+delta
+  if elapsed>=2 then
+   elapsed=0
+   local message=hint:GetText()
+   J.Show(true,shownLevel)
+   if message and message~="" then hint:SetText(message) end
+  end
+ end)
  root:Hide()
 end
 
@@ -231,25 +366,37 @@ end
 
 local currentStage=1
 function J.ChangeStage(delta)
- overrideStage=delta~=0 and math.max(1,math.min(#brackets,(overrideStage or currentStage)+delta)) or nil
+ overrideStage=delta~=0 and math.max(1,math.min(optimizedMode and #optimized or #brackets,(overrideStage or currentStage)+delta)) or nil
  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
 
 function J.Show(show,level)
  if not root then return end
  if not show then root:Hide();overrideStage=nil;return end
+ shownLevel=level
  root:Show()
  ForeverCompanionObjectiveRoute.Refresh()
  root:SetHeight(J.GetHeight())
- currentStage=J.Stage(level)
+ currentStage=optimizedMode and J.OptimizedStage(level) or J.Stage(level)
  local stage=overrideStage or currentStage
- local band=brackets[stage]
+ local band=(optimizedMode and optimized or brackets)[stage]
  local faction=read(UnitFactionGroup,"player")
  local _,race=read(UnitRace,"player")
- local zones=J.Route(stage,level,faction,race)
+ local zones=(optimizedMode and J.OptimizedRoute or J.Route)(stage,level,faction,race)
+ routeToggle:SetText(optimizedMode and "Regular route" or "Optimized 1–60")
  local map=C_Map and read(C_Map.GetBestMapForUnit,"player")
+ if optimizedMode and not overrideStage then
+  for i,zone in ipairs(zones) do
+   if i>1 and zone[2]==map then
+    local ordered={zone}
+    for j,other in ipairs(zones) do if i~=j then ordered[#ordered+1]=other end end
+    zones=ordered
+    break
+   end
+  end
+ end
  local planner=ForeverCompanionQuestPlanner
- actionQuest,actionIndex,actionPickup=nil,nil,nil
+ actionQuest,actionIndex,actionPickup,actionStop=nil,nil,nil,nil
  local upcoming={}
  local position=map and C_Map and read(C_Map.GetPlayerMapPosition,map,"player")
  local x,y
@@ -260,17 +407,18 @@ function J.Show(show,level)
   local locations=map and ForeverCompanionQuestWaypoints.MapLocations(map,quests) or {}
   local stops=J.LocalRoute(quests,locations,x,y,3)
   upcoming=stops
+  actionStop=stops[1]
   if stops[1] then actionQuest,actionIndex=stops[1].quest,stops[1].index
   else actionQuest,actionIndex=J.Recommend(quests,locations,planner.GetSelected()) end
  end
- if not actionQuest and map then
+ if not actionStop and map then
   local pickups=ForeverCompanionQuestWaypoints.MapPickups(map,planner.GetLive(),true)
   upcoming=J.PickupStops(pickups,x,y,3)
   actionPickup=upcoming[1]
  end
  queueStatus:SetText(#upcoming>0 and (#upcoming..(actionPickup and " PICKUPS" or " STOPS")) or "NO ROUTE")
  queueEmpty:SetShown(#upcoming==0)
- queueEmpty:SetText("No reported destinations nearby. Open the quest journal to choose a quest or another zone.")
+ queueEmpty:SetText("No nearby stops. Open Quest Journal or choose a zone.")
  for i,item in ipairs(queueRows) do
   local stop=upcoming[i]
   item.stop=stop;item:SetShown(stop~=nil)
@@ -294,23 +442,27 @@ function J.Show(show,level)
    if not state or not state.done then step=line;break end
   end
   detail:SetText(quest.complete and ("Return to the quest giver  ·  "..quest.zone) or (step or ("Check the quest journal for details  ·  "..quest.zone)))
-  hint:SetText("Suggested stop; check terrain. Click map marker for arrow.")
+  hint:SetText("")
  else
   kind:SetText("NEXT STEP   ·   FIND A QUEST")
   title:SetText(planner.IsSupported() and "Visit a nearby quest hub" or "Open your in-game quest log")
-  detail:SetText("Look for a yellow ! near the starter camp or town. Accept a quest to see its next step here.")
+  detail:SetText("Look for a yellow ! near your camp or town.")
   hint:SetText("")
  end
+ mapButton:SetText((actionStop or actionPickup) and "Start arrow" or "Show on map")
  mapButton:SetEnabled(quest~=nil or actionPickup~=nil)
+ followButton:SetText(guided and "Stop following" or "Follow quest")
+ followButton:SetEnabled(guided~=nil or actionStop~=nil or actionPickup~=nil)
  stageText:SetText(("Levels %d–%d  ·  %s"):format(band[1],band[2],band[3]))
- previous:SetEnabled(stage>1);nextStage:SetEnabled(stage<#brackets)
+ previous:SetEnabled(stage>1);nextStage:SetEnabled(stage<(optimizedMode and #optimized or #brackets))
  for i,row in ipairs(rows) do
   local zone=zones[i]
   row.zone=zone
   if zone then
    local info=C_Map and read(C_Map.GetMapInfo,zone[2])
    row.title:SetText(info and info.name or zone[1])
-   row.detail:SetText(map==zone[2] and "You are here" or zone[3] or "Questing zone")
+   if map==zone[2] and not overrideStage then stageText:SetText(("Levels %d–%d · In route zone"):format(band[1],band[2])) end
+   row.detail:SetText(map==zone[2] and "You are here" or optimizedMode and (i==1 and "Start here" or "Alternative") or zone[3] or "Questing zone")
    row.map:SetEnabled(info~=nil)
    row:Show()
   else row:Hide() end

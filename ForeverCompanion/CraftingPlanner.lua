@@ -18,7 +18,7 @@ function P.Add(profession,name,needed,owned)
   name=clean(name)
   needed=math.floor(tonumber(needed) or 0)
   owned=math.floor(tonumber(owned) or 0)
-  if name=="" or needed<1 or needed>999999 or owned<0 or owned>999999 then
+  if name=="" or needed~=needed or owned~=owned or needed<1 or needed>999999 or owned<0 or owned>999999 then
     return false,"Use /fcm add Profession | Material | Needed | Owned"
   end
   items[profession]=items[profession] or {}
@@ -42,6 +42,30 @@ function P.Update(profession,index,name,needed,owned)
  entries[index]={name=name,needed=needed,owned=owned}
  return true,"Updated "..name
 end
+-- Add only previously untracked demand, atomically. Existing goals/owned counts
+-- remain exactly as entered, including independent non-recipe goals.
+function P.AddMissing(profession,demand)
+ if type(demand)~='table' then return false,'Ingredient demand unavailable.' end
+ local items=db();profession=key(profession)
+ local old=type(items[profession])=='table' and items[profession] or {}
+ local nextList,seen={},{}
+ for i,item in ipairs(old) do
+  nextList[i]=item
+  if type(item)=='table' and type(item.name)=='string' then seen[item.name:lower()]=true end
+ end
+ local added=0
+ for _,row in ipairs(demand) do
+  if type(row)~='table' or type(row.name)~='string' then return false,'Invalid ingredient demand; no goals were added.' end
+  local name=clean(row.name);local needed=tonumber(row.required)
+  if not needed or needed~=needed or needed<0 or needed>999999 or needed%1~=0 or name=='' then return false,'Ingredient demand exceeds supported whole quantities; no goals were added.' end
+  if needed>0 and not seen[name:lower()] then
+   nextList[#nextList+1]={name=name,needed=needed,owned=0};seen[name:lower()]=true;added=added+1
+  end
+ end
+ if #nextList>40 then return false,'Material goal limit is 40; no goals were added.' end
+ items[profession]=nextList
+ return true,'Added '..added..' missing material goals. Existing goals and owned counts were kept.'
+end
 function P.GetEntries(profession)
   return db()[key(profession)] or {}
 end
@@ -49,7 +73,7 @@ function P.AdjustOwned(profession,index,delta)
   local entries=P.GetEntries(profession)
   index=tonumber(index)
   delta=tonumber(delta)
-  if not index or not entries[index] or not delta then return false,"Invalid material." end
+  if not index or not entries[index] or not delta or delta~=delta or math.abs(delta)==math.huge then return false,"Invalid material." end
   local amount=math.max(0,math.min(999999,(tonumber(entries[index].owned) or 0)+delta))
   return P.SetOwned(profession,index,amount)
 end
@@ -57,7 +81,7 @@ function P.SetOwned(profession,index,amount)
   local entries=db()[key(profession)]
   index=tonumber(index)
   amount=tonumber(amount)
-  if not entries or not index or not entries[index] or not amount or amount<0 or amount>999999 then return false,"Invalid material or quantity." end
+  if not entries or not index or not entries[index] or not amount or amount~=amount or amount<0 or amount>999999 then return false,"Invalid material or quantity." end
   entries[index].owned=math.floor(amount)
   return true,"Updated "..entries[index].name
 end

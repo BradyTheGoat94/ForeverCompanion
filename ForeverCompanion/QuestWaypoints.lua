@@ -2,6 +2,7 @@
 local W={}
 ForeverCompanionQuestWaypoints=W
 local owned
+local navigation,lastNotice
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 
 local function read(fn,...)
@@ -75,6 +76,14 @@ end
 
 function W.Location(quest)
  if type(quest)~="table" or type(quest.id)~="number" or quest.id<=0 then return end
+ local waypoint=read(nextWaypoint,quest.id)
+ local allowed=ForeverCompanionQuestLocations.AllowsLocation
+ if waypoint and (not allowed or allowed(quest,waypoint)) then return waypoint end
+ for _,candidate in ipairs(W.Targets(quest)) do
+  if quest.complete and candidate.kind=='turn-in' then return candidate end
+  local state=quest.objectiveStates and quest.objectiveStates[candidate.objectiveIndex]
+  if not quest.complete and state and not state.done then return candidate end
+ end
  local native=read(clientLocation,quest.id)
  local allows=ForeverCompanionQuestLocations.AllowsLocation
  if native and (not allows or allows(quest,native)) then return native end
@@ -101,7 +110,10 @@ function W.Targets(quest)
  if map then for _,target in pairs(mapPoints(map)[quest.id] or {}) do add(target,false) end end
  for _,target in ipairs(referenceLocations(quest)) do add(target,true) end
  table.sort(result,function(a,b)
+  if a.source=='WoW quest log' and b.source~=a.source then return true end
+  if b.source=='WoW quest log' and a.source~=b.source then return false end
   if a.reference~=b.reference then return not a.reference end
+  if a.objectiveIndex~=b.objectiveIndex then return (a.objectiveIndex or math.huge)<(b.objectiveIndex or math.huge) end
   if a.map~=b.map then return a.map<b.map end
   if a.x~=b.x then return a.x<b.x end
   if a.y~=b.y then return a.y<b.y end
@@ -141,7 +153,7 @@ function W.MapLocations(map,quests)
   if type(quest.id)=="number" and quest.id>0 then
    local locations=points[quest.id] or {}
    local waypoint=read(nextWaypoint,quest.id)
-   if not next(locations) and waypoint and waypoint.map==map then
+   if waypoint and waypoint.map==map then
     locations[waypoint.x..":"..waypoint.y]=waypoint
    end
    for _,target in ipairs(referenceLocations(quest)) do
@@ -241,18 +253,93 @@ function W.HasNavigation()
 end
 
 function W.Clear()
+ local before=W.HasNavigation()
  local stopped=ForeverCompanionQuestDirection.Stop()
- if W.HasOwnPin() and type(C_Map.ClearUserWaypoint)=="function"
-  and pcall(C_Map.ClearUserWaypoint) and not W.HasOwnPin() then
-  owned=nil
-  return true
+ local locked=read(InCombatLockdown)==true
+ if not locked and W.HasOwnPin() and type(C_Map.ClearUserWaypoint)=='function'
+  and pcall(C_Map.ClearUserWaypoint) and not W.HasOwnPin() then owned=nil end
+ local remains=W.HasNavigation()
+ if not remains then navigation=nil
+ elseif stopped then navigation=nil;lastNotice='On-screen directions stopped. The map pin remains; clear it on the world map when possible.' end
+ return stopped==true or (before and not remains)
+end
+function W.Active()
+ if not navigation or not W.HasNavigation() then return end
+ local copy={};for k,v in pairs(navigation) do copy[k]=v end;return copy
+end
+function W.LastNotice() return lastNotice end
+function W.DismissNotice() lastNotice=nil end
+function W.SameTarget(a,b)
+ if type(a)~='table' or type(b)~='table' then return false end
+ if not point(a.map,a.x,a.y) or not point(b.map,b.x,b.y) then return false end
+ return a.map==b.map and math.abs(a.x-b.x)<.000001 and math.abs(a.y-b.y)<.000001
+  and a.objectiveIndex==b.objectiveIndex and a.kind==b.kind
+  and (not a.entityID or a.entityID==b.entityID)
+  and (not a.source or a.source==b.source)
+end
+-- Re-resolve identity and destination before acting on a marker from an older paint.
+function W.ResolveActiveEntry(entry,quests,targetReader)
+ if type(entry)~='table' or type(entry.quest)~='table' then return end
+ local nativeReader=targetReader==nil
+ targetReader=targetReader or W.Targets
+ for index,q in ipairs(quests or {}) do
+  if q.id and q.id==entry.quest.id then
+   if q.complete~=entry.quest.complete then return end
+   local state=q.objectiveStates and q.objectiveStates[entry.target and entry.target.objectiveIndex]
+   if type(state)=='table' and state.known and state.done then return end
+   for _,target in ipairs(read(targetReader,q) or {}) do
+    if W.SameTarget(entry.target,target) then return q,index,target end
+   end
+   -- A viewed world map may differ from the player's current map.
+   if nativeReader and entry.target and finite(entry.target.map) then
+    for _,target in pairs(mapPoints(entry.target.map)[q.id] or {}) do
+     if W.SameTarget(entry.target,target) then return q,index,target end
+    end
+   end
+   return
+  end
  end
- return stopped
+end
+-- Passive cleanup only: never picks a new objective, quest, waypoint or destination.
+function W.Reconcile(quests,supported)
+ if not navigation or not navigation.questID then return end
+ if not W.HasNavigation() then navigation=nil;return end
+ local reason
+ if supported~=true then reason='Quest data unavailable. Directions paused; reopen the quest log and choose a destination again.'
+ else
+  local quest
+  for _,q in ipairs(quests or {}) do if q.id==navigation.questID then quest=q;break end end
+  if not quest then reason='Quest left your log. Old directions stopped.'
+  elseif navigation.kind~='turn-in' and not navigation.completeAtStart and quest.complete then reason='Quest ready to turn in. Review the giver before starting new directions.'
+  elseif navigation.objectiveIndex then
+   local state=quest.objectiveStates and quest.objectiveStates[navigation.objectiveIndex]
+   if type(state)=='table' and state.known and state.done then reason='Objective complete. Old directions stopped; choose your next objective.' end
+  end
+  if not reason and navigation.questItemID then
+   local supplies=ForeverCompanionQuestSupplies
+   local fresh=supplies and read(supplies.ResolveDestination,navigation,quests,supported)
+   if not fresh or not W.SameTarget(navigation,fresh) then reason='Quest item source changed or was excluded. Review the quest guide before traveling.' end
+  elseif not reason and navigation.reference then
+   local found=false
+   for _,target in ipairs(W.Targets(quest)) do if W.SameTarget(navigation,target) then found=true;break end end
+   if not found then reason='Location reference changed or was excluded. Review the quest guide before traveling.' end
+  end
+ end
+ if reason then
+  W.Clear();navigation=nil;lastNotice=reason
+  if W.HasOwnPin() then lastNotice=lastNotice..' The old map pin remains; clear it on the world map when possible.' end
+ end
 end
 
 function W.Navigate(target,showMap,label,questID)
  if type(target)~='table' or not point(target.map,target.x,target.y) then return "No valid map location for this destination." end
  if questID and ForeverCompanionQuestLocations and ForeverCompanionQuestLocations.AllowsLocation and not ForeverCompanionQuestLocations.AllowsLocation({id=questID},target) then return 'This destination conflicts with the published current event area. Open quest details.' end
+ if target.questItemID then
+  local supplies=ForeverCompanionQuestSupplies;local planner=ForeverCompanionQuestPlanner
+  local fresh=supplies and read(supplies.ResolveDestination,target,planner and read(planner.GetLive) or {},planner and read(planner.IsSupported)==true)
+  if not fresh or fresh.questID~=questID then return 'Quest item source could not be revalidated. Reopen the quest guide.' end
+  target=fresh
+ end
  local direction=ForeverCompanionQuestDirection
  local hud=direction.Start(target,label)
  local pinned=false
@@ -273,6 +360,12 @@ function W.Navigate(target,showMap,label,questID)
  if showMap then
   local opened=type(OpenMapToUserWaypoint)=="function" and pinned and pcall(OpenMapToUserWaypoint)
   if not opened then openMap(target.map) end
+ end
+ if hud or pinned then
+  navigation={map=target.map,x=target.x,y=target.y,questID=questID,objectiveIndex=target.objectiveIndex,kind=target.kind,entityID=target.entityID,source=target.source,reference=target.reference==true or target.kind~=nil,label=label,questItemID=target.questItemID,sourceField=target.sourceField,sourceEntityID=target.sourceEntityID,questTitle=target.questTitle}
+  local planner=ForeverCompanionQuestPlanner
+  for _,q in ipairs(planner and read(planner.GetLive) or {}) do if q.id==questID then navigation.completeAtStart=q.complete==true;break end end
+  lastNotice=nil
  end
  if (hud or pinned) and ForeverCompanionMapHub then ForeverCompanionMapHub.Record(target,label,questID) end
  if hud then return "On-screen arrow active" end

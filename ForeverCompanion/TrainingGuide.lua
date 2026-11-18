@@ -136,6 +136,41 @@ function T.Money(cost)
  if g>0 then parts[#parts+1]=g..'g' end;if s>0 then parts[#parts+1]=s..'s' end;if c>0 then parts[#parts+1]=c..'c' end
  return table.concat(parts,' ')
 end
+-- Keep base references separate from this visit's observed prices.
+-- Totals describe listed candidates, never a required purchase recommendation.
+function T.CostSummary(records)
+ local result={referenceCount=0,referenceTotal=0,referenceUnknown=0,liveCount=0,liveTotal=0,liveUnknown=0}
+ local seen={}
+ for _,r in ipairs(type(records)=='table' and records or {}) do
+  if type(r)=='table' and finite(r.id) and r.id>0 and r.id%1==0 and not seen[r.id] then
+   seen[r.id]=true
+   if not r.quest and r.state~='known' and r.state~='ignored' then
+    local function add(prefix,cost)
+     result[prefix..'Count']=result[prefix..'Count']+1
+     if finite(cost) and cost>=0 and cost%1==0 and cost<=1000000000000 and result[prefix..'Total']+cost<=1000000000000000 then result[prefix..'Total']=result[prefix..'Total']+cost
+     else result[prefix..'Unknown']=result[prefix..'Unknown']+1 end
+    end
+    if r.state=='ready' then add('reference',r.cost) end
+    if r.live==true and type(r.observation)=='table' and r.observation.state=='available' then add('live',r.observation.cost) end
+   end
+  end
+ end
+ return result
+end
+function T.OpenCosts(anchor)
+ local costs=T.CostSummary(T.Current())
+ local entries={
+  {label='All listed candidates / independent of search',enabled=false},
+  {label='At your level: '..costs.referenceCount..' references',enabled=false},
+  {label='Base estimates with known prices: '..(costs.referenceTotal==0 and '0c' or T.Money(costs.referenceTotal)),enabled=false},
+  {label='Reference prices missing: '..costs.referenceUnknown,enabled=false},
+  {label='Available this visit: '..costs.liveCount..' identified offerings',enabled=false},
+  {label='Current known prices: '..(costs.liveTotal==0 and '0c' or T.Money(costs.liveTotal)),enabled=false},
+  {label='Current prices missing: '..costs.liveUnknown,enabled=false},
+  {label='Listed ranks are optional; verify requirements and discounts.',enabled=false},
+ }
+ ForeverCompanionInterface.Menu(anchor,'TRAINING COST REVIEW',entries,nil,470)
+end
 local function text(parent,x,y,w,size,value)
  local f=ForeverCompanionInterface.Text(parent,size);f:SetPoint('TOPLEFT',x,y);f:SetWidth(w);f:SetText(value or '');return f
 end
@@ -195,9 +230,17 @@ function T.Toggle()
   previous=U.Button(root);previous:SetSize(90,26);previous:SetPoint('BOTTOMLEFT',18,16);previous:SetText('Previous');previous:SetScript('OnClick',function() T.page=T.page-1;T.Refresh() end)
   nextPage=U.Button(root);nextPage:SetSize(90,26);nextPage:SetPoint('BOTTOMRIGHT',-18,16);nextPage:SetText('Next');nextPage:SetScript('OnClick',function() T.page=T.page+1;T.Refresh() end)
   local trainers=U.Button(root);trainers:SetSize(174,26);trainers:SetPoint('BOTTOMLEFT',120,16);trainers:SetText('Find reported trainers');trainers:SetScript('OnClick',function() notice:SetText(ForeverCompanionMapTools.Nearest('trainer',trainers)) end)
+  local costs=U.Button(root);costs:SetSize(174,26);costs:SetPoint('BOTTOMLEFT',468,16);costs:SetText('Review training costs');costs:SetScript('OnClick',function() T.OpenCosts(costs) end)
   counter=text(root,320,-650,120,11,'');counter:ClearAllPoints();counter:SetPoint('BOTTOM',0,22);root:Hide()
  end
  if root:IsShown() then root:Hide() else cache=nil;root:Show();T.Refresh() end
+end
+-- Open a spell from the class guide without toggling an already-open panel off.
+function T.Open(query)
+ if not root then T.Toggle() else root:Show() end
+ prefs().filter='all';cache=nil;T.page=1
+ search:SetText(type(query)=='string' and query:sub(1,80) or '')
+ T.Refresh()
 end
 local events=CreateFrame('Frame')
 for _,event in ipairs({'TRAINER_SHOW','TRAINER_UPDATE','TRAINER_CLOSED','SPELLS_CHANGED','PLAYER_LEVEL_UP','PLAYER_ENTERING_WORLD'}) do events:RegisterEvent(event) end

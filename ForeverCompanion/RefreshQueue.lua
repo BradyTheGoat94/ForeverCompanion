@@ -88,7 +88,7 @@ function Q.RefreshReport()
  if UIParent.GetWidth and UIParent.GetHeight then
   local width,availableHeight=UIParent:GetWidth(),UIParent:GetHeight()
   if type(width)=='number' and type(availableHeight)=='number' and width>32 and availableHeight>32 then
-   report:SetScale(math.min(1,(width-32)/620,(availableHeight-32)/(height+100)))
+   report:SetScale(math.min(ForeverCompanionInterface.SizePreference(report),(width-32)/620,(availableHeight-32)/(height+100)))
   end
  end
 end
@@ -96,7 +96,7 @@ function Q.ToggleReport()
  if not report then
   local U=ForeverCompanionInterface
   report=CreateFrame('Frame','ForeverCompanionPerformancePanel',UIParent)
-  report:SetSize(620,360);report:SetPoint('CENTER');report:SetClampedToScreen(true);report:SetFrameStrata('DIALOG');report:EnableMouse(true);U.Surface(report)
+  report:SetSize(620,360);report:SetPoint('CENTER');report:SetClampedToScreen(true);report:SetFrameStrata('DIALOG');report:EnableMouse(true);U.Surface(report);U.WindowControls(report,'ForeverCompanionPerformancePanel',620,360)
   local heading=U.Text(report,18);heading:SetPoint('TOPLEFT',18,-15);heading:SetWidth(550);heading:SetText('PERFORMANCE SAMPLE')
   U.CloseButton(report,function() report:Hide() end)
   reportText=U.Text(report,13);reportText:SetPoint('TOPLEFT',18,-53);reportText:SetWidth(584);reportText:SetWordWrap(true);reportText:SetJustifyV('TOP')

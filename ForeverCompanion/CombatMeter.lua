@@ -5,6 +5,7 @@ ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
 local pastIndex=1
 local rowOffset,sourceCount=0,0
+local lastSources={}
 local optionsButton
 local metricNames={DPS="Damage / DPS",Damage="Damage Done",HPS="Healing / HPS",Healing="Healing Done",Absorbs="Absorbs",Interrupts="Interrupts",Dispels="Dispels",Taken="Damage Taken"}
 local rowCount=8
@@ -67,7 +68,7 @@ end
 local function saved()
  ForeverCompanionDB=ForeverCompanionDB or {}
  local db=ForeverCompanionDB
- db.combatMeter=db.combatMeter or {}
+ if type(db.combatMeter)~='table' then db.combatMeter={} end
  return db.combatMeter
 end
 local function safeNumber(value)
@@ -99,6 +100,56 @@ function M.ExactAmount(value)
  if value==math.floor(value) then return string.format('%.0f',value) end
  return tostring(value)
 end
+function M.FormatAmount(value)
+ if saved().numberFormat=='exact' then return M.ExactAmount(value) or value end
+ return M.DisplayAmount(value)
+end
+function M.SetNumberFormat(mode)
+ if mode~='compact' and mode~='exact' then return false end
+ saved().numberFormat=mode;M.Refresh();return true
+end
+function M.DisplayName(value)
+ if issecretvalue and issecretvalue(value) then return value end
+ if type(value)~='string' or saved().hideRealm~=true then return value end
+ return value:match('^([^%-]+)%-') or value
+end
+function M.SetHideRealm(enabled)
+ if type(enabled)~='boolean' then return false end
+ saved().hideRealm=enabled;M.Refresh();return true
+end
+function M.ValueWidths(width,both,exact)
+ if not safeNumber(width) or width<280 or width>500 then width=320 end
+ local total,rate=both and 64 or 96,both and 58 or 0
+ if exact then
+  if both then total=math.min(112,math.floor((width-110)*.6));rate=math.min(90,math.floor((width-110)*.4))
+  else total=math.min(200,width-112) end
+ end
+ local shade=total+rate+(both and 10 or 12)
+ return total,rate,width-shade-50,shade
+end
+function M.LocalPlayerIndex(sources)
+ if type(sources)~='table' then return end
+ local found
+ for i,source in ipairs(sources) do
+  if type(source)=='table' then
+   local localPlayer=source.isLocalPlayer
+   if not (issecretvalue and issecretvalue(localPlayer)) and localPlayer==true then
+    if found then return end -- ambiguous native data must not select another player
+    found=i
+   end
+  end
+ end
+ return found
+end
+function M.FocusLocalPlayer()
+ if not frame or not frame:IsShown() then return false end
+ M.Refresh()
+ local index=M.LocalPlayerIndex(lastSources)
+ if not index then return false end
+ rowOffset=math.max(0,math.min(math.floor((index-1)/rowCount)*rowCount,math.max(0,#lastSources-rowCount)))
+ selectedRow=index;selectedSourceKey=M.SourceKey(lastSources[index]);detailOpen=false
+ M.Refresh();return true
+end
 function M.SourceKey(source)
  if type(source)~='table' then return end
  local guid=source.sourceGUID
@@ -112,6 +163,7 @@ function M.SpellLabel(spell,index)
  if issecretvalue and issecretvalue(id) then id=nil end
  local info=type(id)=='number' and C_Spell and read(C_Spell.GetSpellInfo,id)
  local name=type(info)=='table' and info.name
+ if (issecretvalue and issecretvalue(name)) or type(name)~='string' or name=='' then name=spell.spellName end
  if (issecretvalue and issecretvalue(name)) or type(name)~='string' or name=='' then name='Spell '..tostring(type(id)=='number' and id or index or '?') end
  local creature=spell.creatureName
  local named=not (issecretvalue and issecretvalue(creature)) and type(creature)=='string' and creature~=''
@@ -190,7 +242,7 @@ local function build()
   savePosition(self)
  end)
  if frame.SetBackdrop then
-  frame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+  frame:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=8,insets={left=2,right=2,top=2,bottom=2}})
   frame:SetBackdropColor(.012,.018,.027,.98)
   frame:SetBackdropBorderColor(.24,.31,.36,1)
  end
@@ -253,10 +305,10 @@ local function build()
  trim:SetPoint("TOPLEFT",0,0);trim:SetPoint("TOPRIGHT",0,0);trim:SetHeight(1)
  trim:SetColorTexture(.25,.25,.27,1);frame.meterTrim=trim
  heading=ForeverCompanionInterface.Text(frame,12)
- heading:SetPoint("TOPLEFT",frame,"TOPLEFT",8,-5);heading:SetWidth(windowWidth-124)
+ heading:SetPoint("TOPLEFT",frame,"TOPLEFT",8,-5);heading:SetWidth(windowWidth-196)
  heading:SetHeight(16);heading:SetText("Damage / DPS")
  dragHandle=CreateFrame("Frame",nil,frame)
- dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",3,-2);dragHandle:SetSize(windowWidth-120,21)
+ dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",3,-2);dragHandle:SetSize(windowWidth-188,21)
  dragHandle:EnableMouse(true);dragHandle:RegisterForDrag("LeftButton")
  dragHandle:SetScript("OnDragStart",function() if not saved().locked then frame:StartMoving() end end)
  dragHandle:SetScript("OnDragStop",function() frame:StopMovingOrSizing();savePosition(frame) end)
@@ -273,13 +325,10 @@ local function build()
   end
  end)
  dragHandle:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- local function tool(offset,texture,title,description,callback)
-  local b=flatButton(frame);b:SetSize(19,19);b:SetPoint("TOPRIGHT",frame,"TOPRIGHT",offset,-3)
-  b:SetFrameLevel(dragHandle:GetFrameLevel()+2)
-  if texture then
-   local icon=b:CreateTexture(nil,"ARTWORK");icon:SetSize(15,15);icon:SetPoint("CENTER",b,"CENTER",0,0)
-   icon:SetTexture(texture);icon:SetTexCoord(.08,.92,.08,.92)
-  else b:SetText("x") end
+ local function tool(offset,width,label,title,description,callback)
+  local b=flatButton(frame);b:SetSize(width,19);b:SetPoint("TOPRIGHT",frame,"TOPRIGHT",offset,-3)
+  b:SetFrameLevel(dragHandle:GetFrameLevel()+2);b:SetText(label)
+  local caption=b:GetFontString();caption:ClearAllPoints();caption:SetPoint('LEFT',b,'LEFT',2,0);caption:SetPoint('RIGHT',b,'RIGHT',-2,0);caption:SetFont('Fonts\\FRIZQT__.TTF',10,'');caption:SetJustifyH('CENTER')
   b:SetScript("OnClick",callback)
   b:SetScript("OnEnter",function(self)
    if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText(title);GameTooltip:AddLine(description,.8,.85,.9,true);GameTooltip:Show() end
@@ -287,12 +336,12 @@ local function build()
   b:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
   return b
  end
- modeButton=tool(-67,"Interface\\Icons\\Ability_Warrior_SavageBlow","Displays","Choose damage, DPS, healing and utility views.",function() M.OpenMetrics(modeButton) end)
- local reset=tool(-88,"Interface\\Icons\\Spell_Holy_Renew","Reset combat data","Opens a confirmation. Clears all sessions in Blizzard's native meter too.",function() M.RequestReset(frame.resetButton) end)
- sessionButton=tool(-46,"Interface\\Icons\\INV_Misc_PocketWatch_01","Combat segments","Choose current, overall or a recorded combat segment.",function() M.OpenSessions(sessionButton) end)
- optionsButton=tool(-25,"Interface\\Icons\\INV_Misc_Gear_01","Meter options","Layouts, text size, columns, skins and position lock.",function() M.OpenOptions(optionsButton) end)
- tool(-4,nil,"Close meter","Reopen with /fcmeter or the dashboard.",function() M.Hide() end)
- frame.metricButton=modeButton;frame.sessionButton=sessionButton;frame.optionsButton=optionsButton;frame.resetButton=reset
+ modeButton=tool(-103,34,"View","Displays","Choose damage, DPS, healing and utility views.",function() M.OpenMetrics(modeButton) end)
+ local reset=tool(-140,40,"Reset","Reset combat data","Opens a confirmation. Clears all sessions in Blizzard's native meter too.",function() M.RequestReset(frame.resetButton) end)
+ sessionButton=tool(-64,36,"Fight","Combat segments","Choose current, overall or a recorded combat segment.",function() M.OpenSessions(sessionButton) end)
+ optionsButton=tool(-27,34,"Opts","Meter options","Layouts, text size, columns, skins and position lock.",function() M.OpenOptions(optionsButton) end)
+ local close=tool(-4,20,"x","Close meter","Reopen with /fcmeter or the dashboard.",function() M.Hide() end)
+ frame.metricButton=modeButton;frame.sessionButton=sessionButton;frame.optionsButton=optionsButton;frame.resetButton=reset;frame.closeButton=close;frame.meterHeading=heading
  frame:EnableMouseWheel(true)
  frame:SetScript("OnMouseWheel",function(_,delta) M.Scroll(-delta) end)
  frame:SetScript("OnMouseUp",function(_,key) if key=="RightButton" then M.OpenQuickMenu(frame) end end)
@@ -448,7 +497,12 @@ local function build()
    if mouseButton=="RightButton" then
     M.OpenQuickMenu(rows[i].frame);return
    else
-    selectedRow=(selectedRow==rows[i].frame.sourceIndex) and nil or rows[i].frame.sourceIndex
+    local sourceIndex=rows[i].frame.sourceIndex
+    if selectedRow~=sourceIndex then
+     spellQuery=''
+     if detailPanel and detailPanel.spellSearch then detailPanel.spellSearch:SetText('') end
+    end
+    selectedRow=sourceIndex
     selectedSourceKey=selectedRow and rows[i].frame.sourceKey or nil
     spellPage=1
     detailOpen=selectedRow~=nil
@@ -470,6 +524,7 @@ local function build()
  end)
  detailPanel=CreateFrame("Frame",'ForeverCompanionBreakdownWindow',frame,"BackdropTemplate")
  detailPanel:SetSize(640,448)
+ if ForeverCompanionInterface and ForeverCompanionInterface.WindowControls then ForeverCompanionInterface.WindowControls(detailPanel,'ForeverCompanionBreakdownWindow',640,448) end
  detailPanel:SetPoint("TOPLEFT",frame,"TOPRIGHT",5,0)
  detailPanel:SetClampedToScreen(true)
  detailPanel:SetMovable(true)
@@ -498,7 +553,7 @@ local function build()
  end)
  detailPanel.dragHandle=detailDrag
  if detailPanel.SetBackdrop then
-  detailPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+  detailPanel:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=16,insets={left=4,right=4,top=4,bottom=4}})
   detailPanel:SetBackdropColor(.035,.055,.085,.96)
   detailPanel:SetBackdropBorderColor(.66,.48,.23,1)
  end
@@ -577,21 +632,26 @@ local function build()
  summaryPanel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-130)
  summaryPanel:SetSize(216,270)
  if summaryPanel.SetBackdrop then
-  summaryPanel:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1})
+  summaryPanel:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=8,insets={left=2,right=2,top=2,bottom=2}})
   summaryPanel:SetBackdropColor(.025,.035,.055,.92)
   summaryPanel:SetBackdropBorderColor(.23,.29,.38,.9)
  end
  local summaryHeading=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  summaryHeading:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-13)
- summaryHeading:SetText("PLAYER SUMMARY")
+ summaryHeading:SetText("Fight summary")
+ ForeverCompanionInterface.HoverNote(summaryPanel,182,-8,"Spell coverage","Coverage compares all reported spell damage with the player total. Row percentages use the sum of reported spells, including rows hidden by filters.")
  for i,key in ipairs({"Total","Per second","Metric","Session","Spell coverage"}) do
   local label=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  label:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-41-(i-1)*42)
+  local icons={"INV_Sword_04","Spell_Nature_Slow","Ability_DualWield","INV_Misc_PocketWatch_01","INV_Misc_Book_09"}
+  local icon=summaryPanel:CreateTexture(nil,"ARTWORK")
+  icon:SetSize(20,20);icon:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-47-(i-1)*42)
+  icon:SetTexture("Interface\\Icons\\"..icons[i])
+  label:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",40,-41-(i-1)*42)
   label:SetText(key)
   label:SetTextColor(.7,.78,.85)
   local value=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  value:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-56-(i-1)*42)
-  value:SetWidth(192)
+  value:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",40,-56-(i-1)*42)
+  value:SetWidth(164)
   value:SetHeight(22)
   value:SetWordWrap(false)
   value:SetJustifyH("LEFT")
@@ -614,15 +674,6 @@ local function build()
  detailMessage:SetWidth(610)
  for i=1,8 do
   local row=CreateFrame("Frame",nil,detailPanel)
-  row:EnableMouse(true)
-  row:SetScript('OnEnter',function(self)
-   if not GameTooltip or not self.spellName then return end
-   GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.spellName)
-   local exact=M.ExactAmount(self.totalAmount)
-   if exact then GameTooltip:AddLine('Amount: '..exact,.94,.96,1) end
-   GameTooltip:Show()
-  end)
-  row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   row:SetSize(388,32)
   row:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-130-(i-1)*34)
   local stripe=row:CreateTexture(nil,"BACKGROUND")
@@ -646,6 +697,23 @@ local function build()
   bar:SetPoint("BOTTOMLEFT",row,"BOTTOMLEFT",52,4);bar:SetSize(200,3)
   bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
   bar:SetStatusBarColor(unpack(skin().accent));bar:SetMinMaxValues(0,1);bar:SetValue(0)
+  row:EnableMouse(true)
+  row:SetScript('OnEnter',function(self)
+   if not GameTooltip or not self.spellName then return end
+   GameTooltip:SetOwner(self,'ANCHOR_RIGHT')
+   if GameTooltip.ClearLines then GameTooltip:ClearLines() end
+   local loaded,result
+   if self.spellID and GameTooltip.SetSpellByID then loaded,result=pcall(GameTooltip.SetSpellByID,GameTooltip,self.spellID) end
+   if not loaded or result==false or (GameTooltip.NumLines and GameTooltip:NumLines()==0) then GameTooltip:SetText(self.spellName) end
+   GameTooltip:AddLine(self.spellName,1,.82,.45)
+   local exact=M.ExactAmount(self.totalAmount)
+   if exact then GameTooltip:AddLine('Amount: '..exact,.94,.96,1) end
+   GameTooltip:Show()
+  end)
+  local function hide(self)
+   if GameTooltip and (not GameTooltip.IsOwned or GameTooltip:IsOwned(self)) then GameTooltip:Hide() end
+  end
+  row:SetScript('OnLeave',hide);row:SetScript('OnHide',hide)
   detailRows[i]={frame=row,label=label,value=value,icon=icon,bar=bar,percent=percent,rank=rank}
  end
  detailPanel:Hide()
@@ -678,8 +746,22 @@ function M.SetSkin(name)
  M.Refresh()
  return true
 end
+-- Larger text also earns more vertical room; geometry and resize bounds agree.
+local function applyReadability()
+ local height,step=20,21
+ if saved().textSize==13 then height,step=23,25 end
+ if ROW_HEIGHT==height and ROW_STEP==step then return end
+ ROW_HEIGHT,ROW_STEP=height,step
+ frame:SetHeight(BASE_HEIGHT+rowCount*ROW_STEP)
+ if frame.SetResizeBounds then frame:SetResizeBounds(280,BASE_HEIGHT+4*ROW_STEP,500,BASE_HEIGHT+12*ROW_STEP) end
+ for i,row in ipairs(rows or {}) do
+  row.frame:SetHeight(ROW_HEIGHT);row.accent:SetHeight(ROW_HEIGHT)
+  row.frame:ClearAllPoints();row.frame:SetPoint('TOPLEFT',frame,'TOPLEFT',4,-ROW_TOP-(i-1)*ROW_STEP)
+ end
+end
 function M.Refresh()
  if not frame or not frame:IsShown() then return end
+ applyReadability()
  heading:SetText(metricNames[metrics[metricIndex][1]])
  frame.resizeGrip:SetShown(not saved().locked)
  emptyTitle:ClearAllPoints();emptyTitle:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-30));emptyTitle:SetWidth(windowWidth-28)
@@ -704,7 +786,7 @@ function M.Refresh()
   detailLabel:Hide()
   notice:SetText("Meter unavailable")
   frame.meterFooter:SetText("Native combat data unavailable")
-  frame.playerRange:Hide();rowOffset=0;sourceCount=0
+  frame.playerRange:Hide();rowOffset=0;sourceCount=0;lastSources={}
   return
  end
  local data
@@ -725,9 +807,10 @@ function M.Refresh()
  end
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
+ lastSources=sources
  emptyTitle:SetShown(#sources==0);emptyBody:SetShown(#sources==0);detailLabel:Hide()
  emptyTitle:SetText("No combat session data")
- emptyBody:SetText("Your combat session will appear here. Choose a metric or another session above.")
+ emptyBody:SetText("Enter combat to record a fight, or choose a previous fight from the session menu.")
  if frame.meterFooter then
   local duration=type(data)=="table" and data.durationSeconds
   local suffix=""
@@ -776,21 +859,23 @@ function M.Refresh()
    row.frame.totalAmount=source.totalAmount;row.frame.amountPerSecond=source.amountPerSecond
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
-   row.name:SetText(source.name)
+   row.name:SetText(M.DisplayName(source.name))
    local metric=metrics[metricIndex][2]
    local rateMetric=metric=="Dps" or metric=="Hps"
    local both=saved().showBoth~=false and (rateMetric or metric=="DamageDone" or metric=="HealingDone")
    row.rate:SetShown(both)
+   local totalWidth,rateWidth,nameWidth,shadeWidth=M.ValueWidths(windowWidth,both,saved().numberFormat=='exact')
+   row.rate:SetWidth(rateWidth)
    row.amount:ClearAllPoints()
-   row.amount:SetPoint("RIGHT",row.frame,"RIGHT",both and -68 or -5,0)
-   row.amount:SetWidth(both and 64 or 96)
-   row.name:SetWidth(windowWidth-(both and 182 or 158))
-   row.valueShade:SetWidth(both and 132 or 108)
+   row.amount:SetPoint("RIGHT",row.frame,"RIGHT",both and -(rateWidth+10) or -5,0)
+   row.amount:SetWidth(totalWidth)
+   row.name:SetWidth(nameWidth)
+   row.valueShade:SetWidth(shadeWidth)
    if both then
-    row.amount:SetText(M.DisplayAmount(source.totalAmount))
-    row.rate:SetText(M.DisplayAmount(source.amountPerSecond))
-   elseif rateMetric then row.amount:SetText(M.DisplayAmount(source.amountPerSecond))
-   else row.amount:SetText(M.DisplayAmount(source.totalAmount)) end
+    row.amount:SetText(M.FormatAmount(source.totalAmount))
+    row.rate:SetText(M.FormatAmount(source.amountPerSecond))
+   elseif rateMetric then row.amount:SetText(M.FormatAmount(source.amountPerSecond))
+   else row.amount:SetText(M.FormatAmount(source.totalAmount)) end
    local fontSize=safeNumber(saved().textSize) and saved().textSize or 11
    if fontSize~=10 and fontSize~=11 and fontSize~=13 then fontSize=11 end
    if row.fontSize~=fontSize then
@@ -889,10 +974,15 @@ function M.Refresh()
   if safeToInspect and type(selected)=="table" and type(C_DamageMeter)=="table" then
    local guid=selected.sourceGUID
    local creatureID=selected.sourceCreatureID
-   if not (issecretvalue and issecretvalue(guid)) and not (issecretvalue and issecretvalue(creatureID)) then
-    if isPast and type(C_DamageMeter.GetCombatSessionSourceFromID)=="function" then
-     local entry=availableHistory()[pastIndex]
-     local sessionID=historyID(entry)
+   if (issecretvalue and issecretvalue(guid)) or type(guid)~='string' or guid=='' then guid=nil end
+   if not safeNumber(creatureID) or creatureID<=0 then creatureID=nil end
+   if not guid and not creatureID and not (issecretvalue and issecretvalue(selected.isLocalPlayer)) and selected.isLocalPlayer==true then
+    local playerGUID=read(UnitGUID,'player')
+    if not (issecretvalue and issecretvalue(playerGUID)) and type(playerGUID)=='string' and playerGUID~='' then guid=playerGUID end
+   end
+   if guid or creatureID then
+    if isPast then
+     local sessionID=historyID(availableHistory()[pastIndex])
      if sessionID~=nil then
       breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,types(),guid,creatureID)
      end
@@ -902,14 +992,10 @@ function M.Refresh()
    end
   end
   local spells=type(breakdown)=="table" and breakdown.combatSpells
-  local sortable=type(spells)=="table" and #spells>0
-  for _,spell in ipairs(type(spells)=="table" and spells or {}) do
-   if type(spell)~="table" or not safeNumber(spell.totalAmount) then sortable=false;break end
-  end
   local hasSpells=type(spells)=="table" and #spells>0
   detailEmpty:SetShown(not hasSpells)
-  detailEmpty:SetText(safeToInspect and "No spell breakdown is available for this player and view yet." or "Spell analysis is available after combat. Your meter continues updating.")
-  detailMessage:SetText(hasSpells and (#spells.." spells  /  "..(sortable and "Highest contribution first" or "Native display order")) or "Choose another player or combat session to inspect.")
+  detailEmpty:SetText(safeToInspect and "No spell data for this fight." or "Spell details available after combat.")
+  detailMessage:SetText("")
   -- Keep the selected player's identity in the title, including when
   -- switching tabs; only inspect names Blizzard marks nonsecret.
   local titleName="PLAYER"
@@ -952,7 +1038,7 @@ function M.Refresh()
   detailPanel.spellFilter:SetText(saved().spellFilter=='pets' and 'Pets only' or 'All spells')
   if nativeCount>0 then
    detailEmpty:SetShown(#spells==0);detailEmpty:SetText('No spells match this search and filter.')
-   detailMessage:SetText(#spells..' / '..nativeCount..' spells · Shares use all reported spells · Search includes pet names')
+   detailMessage:SetText(#spells==nativeCount and (nativeCount..' abilities') or (#spells..' of '..nativeCount..' abilities'))
   end
   local pageCount=math.max(1,math.ceil(#spells/8))
   if spellPage>pageCount then spellPage=pageCount end
@@ -978,6 +1064,7 @@ function M.Refresh()
     item.label:SetText(spellName)
     item.frame.spellName=not (issecretvalue and issecretvalue(spellName)) and type(spellName)=='string' and spellName or nil
     item.frame.totalAmount=spell.totalAmount
+    item.frame.spellID=safeNumber(spell.spellID) and spell.spellID>0 and spell.spellID or nil
     local iconID=type(info)=="table" and info.iconID
     if not (issecretvalue and issecretvalue(iconID)) and type(iconID)=="number" and iconID>0 then
      item.icon:SetTexture(iconID)
@@ -992,6 +1079,7 @@ function M.Refresh()
      item.percent:SetText(allSpellAmountsSafe and spellTotal>0 and string.format("%.1f%%",100*amount/spellTotal) or "")
     else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0);item.percent:SetText("") end
    else
+    item.frame.spellName=nil;item.frame.spellID=nil;item.frame.totalAmount=nil
     item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
     item.value:SetText("")
     item.bar:SetValue(0)
@@ -1033,7 +1121,7 @@ function M.Show()
 end
 function M.Hide()
  if ForeverCompanionInterface then ForeverCompanionInterface.CloseMenu() end
- saved().visible=false
+ saved().visible=false;lastSources={}
  if frame then frame:Hide() end
  if detailPanel then detailPanel:Hide() end
 end
@@ -1048,7 +1136,7 @@ function M.SetWidth(width)
  windowWidth=width
  if frame then
   frame:SetWidth(width)
-  heading:SetWidth(width-124);dragHandle:SetWidth(width-120)
+  heading:SetWidth(width-196);dragHandle:SetWidth(width-188)
   notice:SetWidth(width-68)
   if frame.meterFooter then frame.meterFooter:SetWidth(width-92) end
   for _,row in ipairs(rows) do
@@ -1171,6 +1259,7 @@ function M.OpenQuickMenu(anchor)
   for _,item in ipairs(metrics) do if item[1]==name then enabled=Enum and Enum.DamageMeterType and Enum.DamageMeterType[item[2]]~=nil end end
   entries[#entries+1]={label=metricNames[name],enabled=enabled,selected=metrics[metricIndex][1]==name,action=function() M.SetMode(name) end}
  end
+ entries[#entries+1]={label='Find my row',enabled=M.LocalPlayerIndex(lastSources)~=nil,action=M.FocusLocalPlayer}
  entries[#entries+1]={label='Combat segments...',action=function() M.OpenSessions(anchor) end}
  entries[#entries+1]={label='Meter options...',action=function() M.OpenOptions(anchor) end}
  ForeverCompanionInterface.Menu(anchor or frame,'QUICK DISPLAYS',entries,skin())
@@ -1191,6 +1280,9 @@ function M.OpenOptions(anchor)
  end
  entries[#entries+1]={label='Show fewer players',enabled=rowCount>4,action=function() M.SetRows(rowCount-1) end}
  entries[#entries+1]={label='Show more players',enabled=rowCount<12,action=function() M.SetRows(rowCount+1) end}
+ entries[#entries+1]={label='Find my row',enabled=M.LocalPlayerIndex(lastSources)~=nil,action=M.FocusLocalPlayer}
+ entries[#entries+1]={label='Exact numbers',selected=saved().numberFormat=='exact',action=function() M.SetNumberFormat(saved().numberFormat=='exact' and 'compact' or 'exact') end}
+ entries[#entries+1]={label='Hide realm suffixes',selected=saved().hideRealm==true,action=function() M.SetHideRealm(saved().hideRealm~=true) end}
  entries[#entries+1]={label='Total + per second columns',selected=saved().showBoth~=false,action=function() M.SetBothColumns(saved().showBoth==false) end}
  entries[#entries+1]={label='Larger text',selected=saved().textSize==13,action=function() M.SetTextSize(saved().textSize==13 and 11 or 13) end}
  entries[#entries+1]={label='Refresh rate...',action=function()
@@ -1206,7 +1298,7 @@ function M.OpenOptions(anchor)
  entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
  entries[#entries+1]={label='Reset breakdown position',action=M.ResetDetailPosition}
  entries[#entries+1]={label='Reset window appearance',action=function()
-  saved().locked=false;saved().position=nil;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
+  saved().locked=false;saved().position=nil;saved().numberFormat='compact';saved().hideRealm=false;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
   M.ResetDetailPosition()
   M.SetSkin('details');M.SetLayout('standard');rowOffset=0
   frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()

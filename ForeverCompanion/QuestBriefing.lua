@@ -4,6 +4,7 @@ local B={}
 ForeverCompanionQuestBriefing=B
 local root, values, fill, mapButton, clearPin, autoFocusButton,trackerButton
 local shownQuest, shownComplete, mapMessage
+local nextButton, findQuests
 local BAR_WIDTH=320
 local function paint(t,r,g,b,a)
   if t.SetColorTexture then t:SetColorTexture(r,g,b,a or 1)
@@ -34,12 +35,13 @@ local function shorten(v,n)
   if #v>n then return v:sub(1,n-3).."..." end
   return v
 end
-function B.Create(parent)
+function B.Create(parent,onFindQuests)
+  findQuests=onFindQuests
   root=CreateFrame("Frame",nil,parent)
   root:SetSize(770,151)
   root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
   values={}
-  local summary=card(root,0,376,"JOURNAL AT A GLANCE")
+  local summary=card(root,0,376,"YOUR QUEST LOG")
   values.count=label(summary,16,-49,344,"Waiting for quest scan","GameFontHighlight",{0.93,0.90,0.82})
   values.zone=ForeverCompanionInterface.Button(summary)
   values.zone:SetPoint('TOPLEFT',16,-72);values.zone:SetSize(344,24)
@@ -63,11 +65,14 @@ function B.Create(parent)
   fill:SetPoint("TOPLEFT",summary,"TOPLEFT",16,-103)
   fill:SetSize(1,9)
   paint(fill,0.92,0.68,0.29,1)
-  local focus=card(root,389,381,"FOCUSED OBJECTIVE")
+  local focus=card(root,389,381,"WHAT TO DO NEXT")
   values.title=label(focus,15,-47,351,"No quest selected","GameFontHighlight",{0.93,0.90,0.82})
   values.location=label(focus,15,-74,351,"Choose a quest below","GameFontHighlightSmall",{0.72,0.78,0.84})
-  values.objective=label(focus,15,-101,351,"Objective information will appear here","GameFontHighlightSmall",{0.89,0.74,0.48})
-  values.hint=label(focus,15,-125,282,"","GameFontHighlightSmall",{0.77,0.76,0.66})
+  local questIcon=focus:CreateTexture(nil,"ARTWORK")
+  questIcon:SetSize(16,16);questIcon:SetPoint("TOPLEFT",focus,"TOPLEFT",15,-100)
+  questIcon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
+  values.objective=label(focus,37,-101,329,"Choose a quest","GameFontHighlightSmall",{0.89,0.74,0.48})
+  values.hint=label(focus,15,-123,147,"","GameFontHighlightSmall",{0.77,0.76,0.66})
   mapButton=ForeverCompanionInterface.Button(focus)
   mapButton:SetSize(119,22);mapButton:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-9)
   mapButton:SetText("Quest details")
@@ -82,11 +87,26 @@ function B.Create(parent)
   end)
   clearPin=ForeverCompanionInterface.Button(focus)
   clearPin:SetSize(66,20);clearPin:SetPoint("TOPRIGHT",focus,"TOPRIGHT",-12,-118)
-  clearPin:SetText("Clear pin")
+  clearPin:SetText("Stop arrow")
+  clearPin:SetWidth(76)
   clearPin:SetScript("OnClick",function()
     if ForeverCompanionQuestWaypoints.Clear() then mapMessage="Map pin cleared." end
     B.Render()
   end)
+  nextButton=ForeverCompanionInterface.Button(focus)
+  nextButton:SetSize(110,22);nextButton:SetPoint("TOPLEFT",focus,"TOPLEFT",169,-118)
+  nextButton:SetScript("OnClick",function()
+    local planner=ForeverCompanionQuestPlanner
+    local q=planner.GetSelected()
+    if planner.IsSupported() and q then
+      mapMessage=ForeverCompanionQuestWaypoints.Show(q)
+      shownQuest=q.id or q.title;shownComplete=q.complete
+      B.Render()
+    elseif findQuests then findQuests() end
+  end)
+  ForeverCompanionInterface.SetHoverHelp(nextButton,"Quest location","Open the selected quest’s recorded location. If no quest is selected, browse available quests.")
+  B.nextButton=nextButton
+  ForeverCompanionInterface.SetHoverHelp(clearPin,"Stop directions","Clear the active Companion map pin and arrow.")
   B.mapButton=mapButton;B.clearPin=clearPin;B.autoFocusButton=autoFocusButton
   root:Hide()
   return root
@@ -121,7 +141,7 @@ function B.Render()
     values.status:SetText("Manual quest notes remain available")
   end
   local reference=ForeverCompanionQuestLocations.IsAvailable()
-  values.zone:SetText(reference and "Quest data: Native + references / Setup" or "Quest data: Native only / Setup")
+  values.zone:SetText(reference and "Quest setup (references enabled)" or "Quest setup (optional)")
   fill:SetWidth(valid and count>0 and math.max(1,math.floor(BAR_WIDTH*ready/count)) or 1)
   local selected=planner.GetSelected and planner.GetSelected() or nil
   local questKey=selected and (selected.id or selected.title)
@@ -129,6 +149,8 @@ function B.Render()
   if shownQuest~=questKey or shownComplete~=complete or not valid then mapMessage=nil end
   shownQuest=questKey;shownComplete=complete
   mapButton:SetEnabled(valid and selected~=nil)
+  nextButton:SetText(valid and selected and (selected.complete and 'Find turn-in' or 'Show on map') or 'Find quests')
+  nextButton:SetEnabled((valid and selected~=nil) or findQuests~=nil)
   clearPin:SetEnabled(ForeverCompanionQuestWaypoints.HasNavigation())
   if selected then
     values.title:SetText((planner.IsPinned and planner.IsPinned(selected) and "[PINNED] " or "")..shorten(selected.title,38))
@@ -144,9 +166,9 @@ function B.Render()
     local done,known
     if type(planner.ObjectiveProgress)=="function" then done,known=planner.ObjectiveProgress(selected) end
     if stale then
-      values.hint:SetText("Cached objective. Check your quest log.")
+      values.hint:SetText("Cached quest")
     elseif mapMessage then
-      values.hint:SetText(mapMessage)
+      values.objective:SetText(mapMessage);values.hint:SetText("")
     elseif known then
       values.hint:SetText(done.." / "..known.." objectives complete")
     else
@@ -155,7 +177,7 @@ function B.Render()
   else
     values.title:SetText("No focused quest")
     values.location:SetText("Select an active quest below")
-    values.objective:SetText("Objective details will appear here")
+    values.objective:SetText("Try Find quests.")
     values.hint:SetText("")
   end
 end

@@ -45,18 +45,18 @@ local function update(_,dt)
  if not ok or not distance then
   arrivalDistance=nil;near=false
   arrow:Hide()
-  status:SetText("Direction unavailable here")
+  status:SetText("Direction unavailable on this map")
   if progressFill then progressFill:SetWidth(0.01) end
  elseif distance<=12 then
   arrivalDistance=distance;near=true
   arrow:Hide()
-  status:SetText("Arrived nearby · inspect destination")
+  status:SetText("Near waypoint · verify quest objective")
   if progressFill then progressFill:SetWidth(221) end
  else
   arrivalDistance=distance;near=false
   arrow:SetRotation(angle)
   if settings().compact then arrow:Hide() else arrow:Show() end
-  status:SetText(("%d yd  ·  Straight-line direction"):format(math.floor(distance+.5)))
+  status:SetText(("%d yd  ·  Straight-line only"):format(math.floor(distance+.5)))
   -- Decorative proximity cue, not quest completion or route progress.
   if progressFill then progressFill:SetWidth(221*math.max(0,math.min(1,1-distance/500))) end
  end
@@ -65,6 +65,7 @@ end
 local function create()
  frame=CreateFrame("Frame",'ForeverCompanionDirectionFrame',UIParent)
  frame:SetSize(245,146)
+ if ForeverCompanionInterface.WindowControls then ForeverCompanionInterface.WindowControls(frame,'ForeverCompanionDirectionFrame',245,146) end
  frame:SetPoint("TOP",UIParent,"TOP",0,-115)
  frame:SetFrameStrata("HIGH")
  frame:EnableMouse(true);frame:SetMovable(true);frame:SetClampedToScreen(true)
@@ -202,7 +203,7 @@ function D.Arrival() return near==true,arrivalDistance end
 function D.Current() return currentPoint and {map=currentPoint.map,x=currentPoint.x,y=currentPoint.y} end
 function D.IsActive() return target~=nil end
 function D.ApplyScale()
- if frame then local size=settings().scale;frame:SetScale((size==.85 or size==1.2) and size or 1) end
+ if frame then local size=settings().scale;frame:SetScale(((size==.85 or size==1.2) and size or 1)*(ForeverCompanionInterface.SizePreference and ForeverCompanionInterface.SizePreference(frame) or 1)) end
 end
 function D.ResetPosition()
  settings().position=nil

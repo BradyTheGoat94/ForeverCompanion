@@ -12,6 +12,17 @@ local tabs = {"Overview", "Journey", "Leveling", "Training", "Legacy", "Alts", "
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
 local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"}, HUNTER={"Damage"}, ROGUE={"Damage"}, PRIEST={"Healer","Damage"}, SHAMAN={"Healer","Damage"}, MAGE={"Damage"}, WARLOCK={"Damage"}, DRUID={"Tank","Damage","Healer"}}
 local tabButtons = {}
+local goalButtons={}
+local goalGroups={
+ {name='Questing',sections={'Overview','Quests','Journey','Alts'},items={{'Home','Overview'},{'Plan my leveling session','Plan'},{'My quest log','Quests'},{'Leveling route','Journey'},{'Alt leveling','Alts'},{'World map','Map'}}},
+ {name='Class & Training',sections={'Leveling','Training','PvP'},items={{'Class guide','Leveling'},{'Training guide','Training'},{'Hunter pet field guide','HunterPets'},{'PvP guide','PvP'}}},
+ {name='Dungeons & Gear',sections={'Dungeons','Loot'},items={{'Dungeon Journal','Dungeons'},{'Loot catalog','Loot'},{'Gear upgrade finder','Gear'}}},
+ {name='Professions',sections={'Professions','Bank'},items={{'Profession guide and goals','Professions'},{'Material sources','Materials'},{'Bank, mailbox and alts','Bank'}}},
+ {name='Materials',sections={},items={{'Find material sources','Materials'},{'Recipes by ingredient','IngredientRecipes'}}},
+ {name='Combat Meter',sections={},items={{'Open combat meter','Meter'}}},
+ {name='Settings & Tools',sections={'Settings','Legacy'},items={{'Settings and diagnostics','Settings'},{'Legacy planning','Legacy'}}},
+}
+ForeverCompanionGoalNavigation=goalGroups
 ForeverCompanionClassStripButtons={}
 local checkButtons = {}
 local scrollFrame, scrollChild
@@ -20,12 +31,14 @@ local handbookButtons={}
 local professionChecklistHeading
 local professionIndex=1
 local questRows = {}
+
 local questPage=1
 local pageBack, pageForward, pageLabel, filterButton, sortButton, resetClassButton
 local questSectionLabel,questEmpty,questDiscoveryButton
 local questListBottom=650
 local questSearch,questQuery=nil,''
 local questExplorerView='discover'
+local questExplorerOpen=false
 local questExplorerTabs,questExplorerButtons=nil,{}
 local sectionHeader, sectionTitle, sectionMeta, sectionIcon
 local sectionDescriptions={
@@ -144,6 +157,7 @@ local function render()
     else
       sectionTitle:SetText(currentTab=='Quests' and 'QUEST JOURNAL' or (string.upper(currentTab).." GUIDE"))
       sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
+      sectionMeta:SetWidth(currentTab=="Professions" and 610 or 755)
       sectionIcon:SetTexture(sectionIcons[currentTab] or "Interface\\Icons\\INV_Misc_Book_09")
       sectionHeader:Show()
     end
@@ -152,7 +166,8 @@ local function render()
     if isOverview then scrollFrame:Hide() else scrollFrame:Show() end
     scrollFrame:ClearAllPoints()
     scrollFrame:SetPoint("TOPLEFT",216,(currentTab=="Leveling" or isJournal) and -104 or -163)
-    scrollFrame:SetPoint("BOTTOMRIGHT",-35,(currentTab=="Leveling" or isJournal) and 57 or (currentTab=="Quests" and 116 or 92))
+    -- Keep the viewport above the fixed scroll hint and footer controls.
+    scrollFrame:SetPoint("BOTTOMRIGHT",-35,currentTab=="Quests" and 116 or 92)
   end
   if ForeverCompanionClassGuide then
     ForeverCompanionClassGuide.Show(currentTab=="Leveling")
@@ -228,6 +243,7 @@ local function render()
     else button:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-25,16) end
   end
   for i,b in ipairs(tabButtons) do
+    b:SetShown(DB.beginnerMode==false)
     local selected=b.section==currentTab
     local height,step=DB.compact and 26 or 30,DB.compact and 28 or 33
     b:ClearAllPoints();b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-134-(i-1)*step)
@@ -242,6 +258,12 @@ local function render()
       local tone=selected and 1 or .65
       b.navIcon:SetVertexColor(tone,tone,tone)
     end
+  end
+  for i,b in ipairs(goalButtons) do
+    b:SetShown(DB.beginnerMode~=false)
+    local selected=false
+    for _,section in ipairs(goalGroups[i].sections) do if section==currentTab then selected=true end end
+    ForeverCompanionInterface.StyleButton(b,nil,selected)
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
   if professionChecklistHeading then professionChecklistHeading:Hide() end
@@ -270,7 +292,7 @@ local function render()
   end
   if sortButton then
     if currentTab=="Quests" then
-      sortButton:SetText("Sort: "..ForeverCompanionQuestPlanner.GetSort())
+      sortButton:SetText(ForeverCompanionQuestPlanner.SortLabels[ForeverCompanionQuestPlanner.GetSort()])
       sortButton:Show()
     else sortButton:Hide() end
   end
@@ -521,10 +543,10 @@ local function render()
       table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
     end
     if questSectionLabel then
-      questSectionLabel:SetText("ACTIVE QUESTS · Click a quest to see your next step")
+      questSectionLabel:SetText("ACTIVE QUESTS · Select a quest to update your next step")
       questSectionLabel:Show()
     end
-    if filterButton then filterButton:SetText("Show: "..ForeverCompanionQuestPlanner.GetFilter()) end
+    if filterButton then filterButton:SetText(ForeverCompanionQuestPlanner.FilterLabels[ForeverCompanionQuestPlanner.GetFilter()]) end
     local pages=math.max(1,math.ceil(#visible/#questRows))
     if questPage>pages then questPage=pages end
     for i=1,math.min(#questRows,math.max(0,#visible-(questPage-1)*#questRows)) do
@@ -545,7 +567,12 @@ local function render()
       ForeverCompanionVisualTheme.SelectRow(btn,btn.bg,selected)
       colorTexture(btn.trim,.82,.68,.43,0)
       btn.selected=selected
-      btn:SetScript("OnClick",function() ForeverCompanionQuestPlanner.Select(absoluteIndex);render();scrollFrame:SetVerticalScroll(questListBottom) end)
+      btn:SetScript("OnClick",function()
+        ForeverCompanionQuestPlanner.Select(absoluteIndex)
+        render()
+        if DB.beginnerMode==false then scrollFrame:SetVerticalScroll(questListBottom)
+        else scrollFrame:SetVerticalScroll(0) end
+      end)
       btn:SetScript("OnEnter",function(self)
         colorTexture(self.bg,.11,.14,.19,1)
         if GameTooltip then
@@ -676,16 +703,18 @@ local function render()
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
   ForeverCompanionQuestFieldGuide.Show(currentTab=="Quests",scrollChild,questListBottom)
   local explorerOffset=questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()
-  questExplorerTabs:SetShown(currentTab=='Quests')
+  local showExplorer=currentTab=='Quests' and (questExplorerOpen or DB.beginnerMode==false)
+  questExplorerTabs:SetShown(showExplorer)
+  questExplorerTabs.backToLog:SetShown(DB.beginnerMode~=false)
   questExplorerTabs:ClearAllPoints();questExplorerTabs:SetPoint('TOPLEFT',scrollChild,'TOPLEFT',8,-explorerOffset)
   for view,button in pairs(questExplorerButtons) do ForeverCompanionInterface.StyleButton(button,nil,view==questExplorerView) end
-  ForeverCompanionQuestDiscovery.Show(currentTab=="Quests" and questExplorerView=='discover',scrollChild,explorerOffset+35)
-  ForeverCompanionQuestBook.Show(currentTab=='Quests' and questExplorerView~='discover',scrollChild,explorerOffset+35,questExplorerView)
+  ForeverCompanionQuestDiscovery.Show(showExplorer and questExplorerView=='discover',scrollChild,explorerOffset+35)
+  ForeverCompanionQuestBook.Show(showExplorer and questExplorerView~='discover',scrollChild,explorerOffset+35,questExplorerView)
   if questDiscoveryButton then questDiscoveryButton:SetShown(currentTab=="Quests") end
   if ForeverCompanionUIState.questFieldGuideButton then ForeverCompanionUIState.questFieldGuideButton:SetShown(currentTab=='Quests') end
   content:SetText(table.concat(lines, "\n\n"))
   content:ClearAllPoints()
-  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight()),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=646,Alts=646}
+  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+(showExplorer and (35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight())) or 0),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=646,Alts=646}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -707,6 +736,12 @@ end
 -- Changes only the addon's current guide page, never the game quest log.
 local function openSection(name)
   if type(name)~="string" then return false end
+  -- All callers (Home actions, grouped menus and slash navigation) share
+  -- auxiliary destinations as well as the main-window pages.
+  if name:lower()=="map" then ForeverCompanionMapHub.Open();return true end
+  if name:lower()=="plan" then ForeverCompanionLevelingWorkspace.Open();return true end
+  if name:lower()=="hunterpets" or name:lower()=="pets" then ForeverCompanionHunterWorkspace.Open();return true end
+  if name:lower()=="gear" then ForeverCompanionGearFinderWorkspace.Open();return true end
   local aliases={["home"]="Overview",["leveling route"]="Journey",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
   if name:lower()=="training" or name:lower()=="training guide" then ForeverCompanionTraining.Toggle();return true end
   name=aliases[name:lower()] or name
@@ -726,7 +761,7 @@ local function fitWindow()
   local ok,width,height=pcall(function() return UIParent:GetWidth(),UIParent:GetHeight() end)
   if not ok or type(width)~="number" or type(height)~="number" or width<=0 or height<=0 then return end
   local wantedHeight=DB.compact and 620 or 720
-  local scale=math.min(1,(width-32)/1080,(height-32)/wantedHeight)
+  local scale=math.min(ForeverCompanionInterface.SizePreference(window),(width-32)/1080,(height-32)/wantedHeight)
   if scale>0 then pcall(window.SetScale,window,math.max(0.1,scale)) end
 end
 lootMatches=function()
@@ -776,14 +811,16 @@ local function createUI()
     local ux, uy = UIParent:GetCenter()
     if x and y and ux and uy then DB.position = {x=x-ux, y=y-uy} end
   end)
-  if window.SetFrameStrata then window:SetFrameStrata("DIALOG") end
+  if window.SetFrameStrata then window:SetFrameStrata("HIGH") end
   window:SetClampedToScreen(true)
   fitWindow()
   if window.SetBackdrop then
     window:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8", edgeFile="Interface\\Buttons\\WHITE8X8", edgeSize=1})
   end
   if window.SetBackdropBorderColor then window:SetBackdropBorderColor(.19,.22,.28,1) end
-  -- Flat client-native frame with one perimeter and a restrained title rail.
+  ForeverCompanionInterface.WindowControls(window,'ForeverCompanionMainFrame',1080,720)
+  ForeverCompanionInterface.FrameChrome(window)
+  -- Framed addon window; decoration stays on its owner.
   local frameTopInset=window:CreateTexture(nil,"BORDER")
   frameTopInset:SetPoint("TOPLEFT",window,"TOPLEFT",31,-7)
   frameTopInset:SetPoint("TOPRIGHT",window,"TOPRIGHT",-31,-7)
@@ -802,6 +839,12 @@ local function createUI()
   headerVelvet:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-11)
   headerVelvet:SetHeight(79)
   colorTexture(headerVelvet,.045,.056,.075,1)
+  local nativeTitle=window:CreateTexture(nil,"BORDER",nil,1)
+  nativeTitle:SetPoint("TOPLEFT",window,"TOPLEFT",12,-12)
+  nativeTitle:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-12)
+  nativeTitle:SetHeight(30)
+  nativeTitle:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-TitleBg")
+  nativeTitle:SetAlpha(.75)
   local headerGold=window:CreateTexture(nil,"ARTWORK")
   headerGold:SetPoint("TOPLEFT",window,"TOPLEFT",12,-92)
   headerGold:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-92)
@@ -855,6 +898,7 @@ local function createUI()
   sidebar:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,92)
   sidebar:SetWidth(185)
   colorTexture(sidebar,.022,.027,.036,1)
+  ForeverCompanionInterface.Material(window,sidebar,.40)
   local sidebarTrim=window:CreateTexture(nil,"ARTWORK")
   sidebarTrim:SetPoint("TOPLEFT",sidebar,"TOPRIGHT",-2,0)
   sidebarTrim:SetPoint("BOTTOMLEFT",sidebar,"BOTTOMRIGHT",-2,0)
@@ -862,7 +906,7 @@ local function createUI()
   colorTexture(sidebarTrim,.14,.17,.22,1)
   local navHeading=window:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
   navHeading:SetPoint("TOPLEFT",window,"TOPLEFT",28,-112)
-  navHeading:SetText("NAVIGATION")
+  navHeading:SetText("COMPANION")
   navHeading:SetTextColor(.82,.68,.43)
   local navIcons={
     "Interface\\Icons\\INV_Misc_Map_01",
@@ -928,19 +972,47 @@ local function createUI()
     b:SetScript("OnClick", function() openSection(section) end)
     tabButtons[#tabButtons+1]=b
   end
-  local panel=CreateFrame("Frame",nil,window)
-  panel:SetPoint("TOPLEFT",198,-98)
-  panel:SetPoint("BOTTOMRIGHT",-16,88)
-  local panelTexture=panel:CreateTexture(nil,"BACKGROUND")
-  panelTexture:SetAllPoints(panel)
+  for i,group in ipairs(goalGroups) do
+    local b=ForeverCompanionInterface.Button(window)
+    b:SetSize(164,30);b:SetPoint('TOPLEFT',window,'TOPLEFT',23,-134-(i-1)*35);b:SetText(group.name)
+    local navIcons={'INV_Misc_Map_01','INV_Misc_Book_09','INV_Misc_Key_03','Trade_BlackSmithing','INV_Ingot_Iron','Ability_Warrior_SavageBlow','Trade_Engineering'}
+    local icon=b:CreateTexture(nil,'ARTWORK');icon:SetSize(19,19);icon:SetPoint('LEFT',b,'LEFT',7,0);icon:SetTexture('Interface\\Icons\\'..navIcons[i])
+    b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('LEFT',b,'LEFT',32,0);b:GetFontString():SetPoint('RIGHT',b,'RIGHT',-5,0);b:GetFontString():SetJustifyH('LEFT')
+    b:SetScript('OnClick',function()
+      if #group.items==1 and group.items[1][2]=='Meter' then ForeverCompanionCombatMeter.Toggle();return end
+      local entries={}
+      for _,item in ipairs(group.items) do
+        local label,target=item[1],item[2]
+        entries[#entries+1]={label=label,selected=target==currentTab,action=function()
+          if target=='Meter' then ForeverCompanionCombatMeter.Toggle()
+          elseif target=='IngredientRecipes' then ForeverCompanionProfessionGuideWorkspace.Open(nil,'recipes')
+          elseif target=='Materials' then ForeverCompanionMaterialFinder.Open()
+          else openSection(target) end
+        end}
+      end
+      ForeverCompanionInterface.Menu(b,group.name,entries)
+    end)
+    goalButtons[i]=b
+  end
+  ForeverCompanionUIState.goalButtons=goalButtons
+  -- Decoration must share the window's draw layers, not compete with its
+  -- content as an opaque sibling frame (including after a click raises it).
+  local panelTexture=window:CreateTexture(nil,"BORDER")
+  panelTexture:SetPoint("TOPLEFT",window,"TOPLEFT",198,-98)
+  panelTexture:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-16,88)
   colorTexture(panelTexture,.020,.026,.035,1)
+  ForeverCompanionInterface.Material(window,panelTexture,.35)
+  ForeverCompanionUIState.contentBackground=panelTexture
   -- Only the fixed-size section heading receives ornamental framing;
   -- the reading area remains flexible in compact mode.
   local scroll = CreateFrame("ScrollFrame", nil, window, "UIPanelScrollFrameTemplate")
   scrollFrame = scroll
+  scroll:SetFrameLevel(window:GetFrameLevel()+1)
+  ForeverCompanionUIState.scrollFrame=scroll
   scroll:SetClipsChildren(true)
   scroll:SetPoint("TOPLEFT", 216, -163)
   sectionHeader=CreateFrame("Frame",nil,window)
+  sectionHeader:SetFrameLevel(scroll:GetFrameLevel()+1)
   sectionHeader:SetPoint("TOPLEFT",window,"TOPLEFT",210,-106)
   sectionHeader:SetSize(846,48)
   local sectionBg=sectionHeader:CreateTexture(nil,"BACKGROUND")
@@ -985,9 +1057,11 @@ local function createUI()
   child:SetSize(790, 800)
   scrollChild = child
   scroll:SetScrollChild(child)
+  child:SetFrameLevel(scroll:GetFrameLevel()+1)
   local scrollHint=ForeverCompanionInterface.Text(window,11,ForeverCompanionVisualTheme.colors.muted)
-  scrollHint:SetPoint('BOTTOMLEFT',window,'BOTTOMLEFT',216,62);scrollHint:SetWidth(360)
+  scrollHint:SetPoint('BOTTOMLEFT',window,'BOTTOMLEFT',216,62);scrollHint:SetWidth(360);scrollHint:SetHeight(14)
   local function updateScrollHint()
+    if not scroll:IsShown() then scrollHint:Hide();return end
     local viewport=tonumber(scroll:GetHeight()) or 0
     local range=math.max(0,(tonumber(child:GetHeight()) or 0)-viewport)
     local position=tonumber(scroll.GetVerticalScroll and scroll:GetVerticalScroll()) or 0
@@ -1015,7 +1089,7 @@ local function createUI()
     updateScrollHint()
   end
   ForeverCompanionQuestDiscovery.OnLayout=function(delta)
-    if currentTab=='Quests' and questExplorerView=='discover' then resizeContent(delta) end
+    if currentTab=='Quests' and (questExplorerOpen or DB.beginnerMode==false) and questExplorerView=='discover' then resizeContent(delta) end
   end
   ForeverCompanionBankView.OnLayout=function(delta)
     if currentTab=='Bank' then resizeContent(delta) end
@@ -1029,7 +1103,12 @@ local function createUI()
     b:SetScript('OnClick',function() questExplorerView=view;render();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
     questExplorerButtons[view]=b
   end
+  local done=ForeverCompanionInterface.Button(questExplorerTabs)
+  done:SetPoint('TOPLEFT',604,0);done:SetSize(160,27);done:SetText('Back to quest log')
+  done:SetScript('OnClick',function() questExplorerOpen=false;render();scroll:SetVerticalScroll(0) end)
+  questExplorerTabs.backToLog=done
   ForeverCompanionOpenQuestBook=function(view)
+    questExplorerOpen=true
     questExplorerView=view=='history' and 'history' or 'catalog'
     openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
   end
@@ -1043,6 +1122,7 @@ local function createUI()
   ForeverCompanionQuestTracker.Configure(function(q,index)
     ForeverCompanionQuestPlanner.Select(index);openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom)
   end,function()
+    questExplorerOpen=true
     questExplorerView='discover'
     openSection('Quests');window:Show();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight())
   end)
@@ -1054,9 +1134,9 @@ local function createUI()
   questDiscoveryButton=ForeverCompanionInterface.Button(child)
   questDiscoveryButton:SetSize(172,23);questDiscoveryButton:SetPoint("TOPLEFT",child,"TOPLEFT",606,-181)
   questDiscoveryButton:SetText("Find new quests")
-  questDiscoveryButton:SetScript("OnClick",function() questExplorerView='discover';render();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
+  questDiscoveryButton:SetScript("OnClick",function() questExplorerOpen=true;questExplorerView='discover';render();scroll:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight()) end)
   questDiscoveryButton:Hide()
-  if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child) end
+  if ForeverCompanionQuestBriefing then ForeverCompanionQuestBriefing.Create(child,function() questDiscoveryButton:GetScript("OnClick")() end) end
   if ForeverCompanionProfessionBriefing then ForeverCompanionProfessionBriefing.Create(child) end
   if ForeverCompanionAdventureBriefing then
     ForeverCompanionAdventureBriefing.Create(child,openSection,{
@@ -1089,15 +1169,29 @@ local function createUI()
   filterButton:SetSize(140,23)
   filterButton:SetPoint("TOPLEFT",child,"TOPLEFT",306,-182)
   filterButton:SetText("Show: all")
-  filterButton:SetScript("OnClick",function() questPage=1; ForeverCompanionQuestPlanner.CycleFilter() end)
+  filterButton:SetScript("OnClick",function(self)
+    local planner=ForeverCompanionQuestPlanner
+    local choices={}
+    for _,mode in ipairs({"all","ready","zone"}) do
+      if mode~="zone" or planner.HasZoneMetadata() then
+        local choice=mode
+        choices[#choices+1]={label=ForeverCompanionQuestPlanner.FilterLabels[choice],action=function() questPage=1;planner.SetFilter(choice) end}
+      end
+    end
+    ForeverCompanionInterface.Menu(self,"SHOW QUESTS",choices,nil,210)
+  end)
   filterButton:Hide()
   sortButton=ForeverCompanionInterface.Button(child)
   sortButton:SetSize(140,23)
   sortButton:SetPoint("TOPLEFT",child,"TOPLEFT",157,-182)
   sortButton:SetText("Sort: log")
-  sortButton:SetScript("OnClick",function()
-    questPage=1
-    ForeverCompanionQuestPlanner.CycleSort()
+  sortButton:SetScript("OnClick",function(self)
+    local choices={}
+    for _,mode in ipairs({"log","zone","ready","pinned"}) do
+      local choice=mode
+      choices[#choices+1]={label=ForeverCompanionQuestPlanner.SortLabels[choice],action=function() questPage=1;ForeverCompanionQuestPlanner.SetSort(choice) end}
+    end
+    ForeverCompanionInterface.Menu(self,"SORT QUESTS",choices,nil,210)
   end)
   sortButton:Hide()
   questSearch=ForeverCompanionInterface.EditBox(child,'Search quest, zone, objective or quest ID…')
@@ -1153,23 +1247,23 @@ local function createUI()
   end)
   specButton:Hide()
   -- Two-row profession handbook selector with fantasy-themed icons.
-  for i=1,9 do
+  for i=1,#DATA.professionHandbook do
     local b=CreateFrame("Button",nil,child)
-    b:SetSize(144,24)
-    b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%5)*153,-180-math.floor((i-1)/5)*28)
+    b:SetSize(120,24)
+    b:SetPoint("TOPLEFT",child,"TOPLEFT",8+((i-1)%6)*128,-180-math.floor((i-1)/6)*28)
     b.bg=b:CreateTexture(nil,"BACKGROUND")
     b.bg:SetAllPoints(b)
     colorTexture(b.bg,0.09,0.12,0.16,1)
     b.trim=b:CreateTexture(nil,"ARTWORK")
     b.trim:SetPoint("TOPLEFT",b,"TOPLEFT",0,0)
-    b.trim:SetSize(144,2)
+    b.trim:SetSize(120,2)
     colorTexture(b.trim,0.40,0.32,0.19,1)
     b.icon=b:CreateTexture(nil,"ARTWORK")
     b.icon:SetPoint("LEFT",b,"LEFT",7,0)
     b.icon:SetSize(18,18)
     b.label=b:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     b.label:SetPoint("LEFT",b,"LEFT",30,0)
-    b.label:SetWidth(108)
+    b.label:SetWidth(84)
     b.label:SetJustifyH("LEFT")
     b.label:SetTextColor(0.94,0.87,0.73)
     b:SetScript("OnEnter",function(self) colorTexture(self.bg,.11,.14,.19,1) end)
@@ -1369,6 +1463,10 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if msg == "" then if window:IsShown() then window:Hide() else render(); window:Show() end; return end
   if msg=='tracker' then ForeverCompanionQuestTracker.Toggle();return end
   if msg=='session' then ForeverCompanionSessionProgress.Toggle();return end
+  if msg=='plan' then ForeverCompanionLevelingWorkspace.Open();return end
+  if msg=='pets' then ForeverCompanionHunterWorkspace.Open();return end
+  if msg=='gear' then ForeverCompanionGearFinderWorkspace.Open();return end
+  if msg=='help' then say('Leveling session planner: /fc plan · Gear upgrade finder: /fc gear') end
   if msg=='map' or msg=='search' then ForeverCompanionMapHub.Open();return end
   if msg:match('^search ') then ForeverCompanionMapHub.Open(msg:match('^search%s+(.+)$'));return end
   if msg=='recent' then ForeverCompanionMapHub.Open('',true);return end
@@ -1383,7 +1481,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if msg=='next' then say(ForeverCompanionObjectiveRoute.NavigateNext());return end
   if msg=='arrow' then ForeverCompanionQuestDirection.OpenOptions();return end
   if msg=='arrow reset' then ForeverCompanionQuestDirection.ResetPosition();say('Arrow position reset.');return end
-  if msg=='discover' then questExplorerView='discover';openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end
+  if msg=='discover' then questExplorerOpen=true;questExplorerView='discover';openSection('Quests');window:Show();scrollFrame:SetVerticalScroll(questListBottom+ForeverCompanionQuestFieldGuide.GetHeight());return end
   if msg=='questbook' or msg=='history' then ForeverCompanionOpenQuestBook(msg=='history' and 'history' or 'catalog');return end
   if msg == "meter" or msg == "combat" then
     if ForeverCompanionCombatMeter and ForeverCompanionCombatMeter.Toggle then ForeverCompanionCombatMeter.Toggle()
@@ -1445,6 +1543,8 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
     if not valid then say("Invalid role for displayed class."); return end
     render(); return
   end
+  if msg=='profguide' then local entry=DATA.professionHandbook[professionIndex];ForeverCompanionProfessionGuideWorkspace.Open(entry and entry.name);return end
+  local guideName=msg:match('^profguide%s+(.+)$');if guideName then ForeverCompanionProfessionGuideWorkspace.Open(guideName);return end
   local prof=msg:match("^professions%s+(.+)$")
   if prof then DB.professions=prof:sub(1,100); render(); return end
   local section,index=msg:match("^check%s+(%a+)%s+(%d+)$")
@@ -1462,7 +1562,10 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
 end
 
 ForeverCompanionRefresh = function()
+ if ForeverCompanionMaterialFinder then ForeverCompanionMaterialFinder.Refresh() end
+ if ForeverCompanionQuestMinimap then ForeverCompanionQuestMinimap.Refresh() end
  if ForeverCompanionQuestTracker then ForeverCompanionQuestTracker.Refresh() end
+ if ForeverCompanionLevelingWorkspace then ForeverCompanionLevelingWorkspace.Refresh() end
  if DB and window and window:IsShown() then render() end
 end
 

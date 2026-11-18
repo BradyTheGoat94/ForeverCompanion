@@ -2,6 +2,9 @@
 ForeverCompanionProfessionFieldGuide={}
 local G=ForeverCompanionProfessionFieldGuide
 G.notes={
+ Cooking={"Keep fish, meat and vendor ingredients separate in your shopping plan.","Check whether the recipe needs a fire or another cooking requirement.","Match useful meals to your character before spending rare ingredients."},
+ ["First Aid"]={"Reserve cloth for the selected bandage or medical supply recipe.","Check current training ranks and recipe access before stocking up.","Compare recipe skill-up colors; a material reserve does not guarantee skill points."},
+ Fishing={"Use water where you can reliably catch fish at your current effective skill.","Keep Cooking recipe needs in mind when choosing which catches to save.","Catches per skill point vary; do not treat a stage as a fixed reagent quota."},
  Alchemy={
   "Check whether the recipe consumes a vial as well as herbs.",
   "Reserve scarce herbs for the potion or elixir you actually need.",

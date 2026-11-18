@@ -250,6 +250,7 @@ function Planner.Sync()
   auto.scanned=true
   if not supported then
     -- Preserve last successful snapshot if the client temporarily cannot provide quest data.
+    if ForeverCompanionQuestWaypoints and ForeverCompanionQuestWaypoints.Reconcile then ForeverCompanionQuestWaypoints.Reconcile(auto.entries,false) end
     refresh()
     return false
   end
@@ -266,6 +267,7 @@ function Planner.Sync()
   end
   auto.entries=rows
   auto.lastCount=#rows
+  if ForeverCompanionQuestWaypoints and ForeverCompanionQuestWaypoints.Reconcile then ForeverCompanionQuestWaypoints.Reconcile(rows,true) end
   local followNew=Planner.IsAutoFocus() and not (old and Planner.IsPinned(old) and matched)
   auto.selected=(followNew and firstNew) or matched or 1
   refresh()
@@ -319,12 +321,20 @@ function Planner.GetPinned()
   end
 end
 function Planner.AutoCount() return auto.lastCount end
+Planner.FilterLabels={all="All quests",ready="Ready to turn in",zone="My zone"}
+Planner.SortLabels={log="Quest log order",zone="By zone",ready="Ready first",pinned="Pinned first"}
 function Planner.GetFilter() return auto.filter end
 function Planner.IsSupported() return auto.supported end
 function Planner.IsSnapshotStale() return auto.scanned and not auto.supported and #auto.entries>0 end
 function Planner.HasZoneMetadata()
   for _,q in ipairs(auto.entries) do if q.zoneKnown then return true end end
   return false
+end
+function Planner.SetFilter(mode)
+  if mode~="all" and mode~="ready" and (mode~="zone" or not Planner.HasZoneMetadata()) then return false end
+  auto.filter=mode
+  if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+  return true
 end
 function Planner.CycleFilter()
   if auto.filter=="all" then auto.filter="ready"
@@ -339,6 +349,17 @@ function Planner.GetSort()
     db.questSort="log"
   end
   return db.questSort
+end
+function Planner.SetSort(mode)
+  ensure()
+  for _,name in ipairs(sortModes) do
+    if mode==name then
+      db.questSort=mode
+      if ForeverCompanionRefresh then ForeverCompanionRefresh() end
+      return true
+    end
+  end
+  return false
 end
 function Planner.CycleSort()
   local mode=Planner.GetSort()

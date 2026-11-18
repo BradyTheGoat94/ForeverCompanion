@@ -2,6 +2,7 @@
 local W={page=1,pageSize=5}
 ForeverCompanionMaterialWorkspace=W
 local root,profession,refresh,fields,rows,status,heading,counter,previous,nextPage,save,cancel,empty
+local goalBody,viewButton
 local editIndex,editingRecord
 local function input(parent,x,width,hint,max)
  local box=ForeverCompanionInterface.EditBox(parent,hint)
@@ -50,11 +51,23 @@ function W.Create(parent,onRefresh)
  refresh=onRefresh
  root=CreateFrame('Frame',nil,parent);root:SetPoint('TOPLEFT',parent,'TOPLEFT',8,-240);root:SetSize(770,220)
  ForeverCompanionVisualTheme.Panel(root,770,220)
- heading=label(root,16,-12,570,'MATERIAL GOALS',13)
- label(root,16,-39,300,'Material',10)
- label(root,336,-39,94,'Needed',10)
- label(root,442,-39,94,'Owned',10)
- fields={name=input(root,16,306,'Material name',60),needed=input(root,336,94,'Required',6),owned=input(root,442,94,'On hand',6)}
+ heading=label(root,16,-12,165,'MATERIAL GOALS',13)
+ local guide=ForeverCompanionInterface.Button(root);guide:SetSize(142,26);guide:SetPoint('TOPLEFT',188,-8);guide:SetText('1–300 leveling guide');guide:SetScript('OnClick',function() ForeverCompanionProfessionGuideWorkspace.Open(profession) end)
+ local recipes=ForeverCompanionInterface.Button(root);recipes:SetSize(110,26);recipes:SetPoint('TOPLEFT',340,-8);recipes:SetText('All recipes')
+ recipes:SetScript('OnClick',function() ForeverCompanionProfessionGuideWorkspace.Open(profession,'recipes') end)
+ W.recipesButton=recipes
+ local finder=ForeverCompanionInterface.Button(root);finder:SetSize(155,26);finder:SetPoint('TOPRIGHT',root,'TOPRIGHT',-16,-8);finder:SetText('Find materials');finder:SetScript('OnClick',function() if ForeverCompanionGatheringPlan then ForeverCompanionGatheringPlan.Open(profession) elseif ForeverCompanionMaterialFinder then ForeverCompanionMaterialFinder.Open() end end)
+ viewButton=ForeverCompanionInterface.Button(root);viewButton:SetSize(130,26);viewButton:SetPoint('TOPRIGHT',-180,-8);viewButton:SetText('Recipe plans')
+ viewButton:SetScript('OnClick',function()
+  ForeverCompanionDB.professionWorkspace=ForeverCompanionDB.professionWorkspace=='recipes' and 'materials' or 'recipes'
+  if refresh then refresh() end
+ end)
+ ForeverCompanionRecipeWorkspace.Create(root)
+ goalBody=CreateFrame('Frame',nil,root);goalBody:SetAllPoints(root)
+ label(goalBody,16,-39,300,'Material',10)
+ label(goalBody,336,-39,94,'Needed',10)
+ label(goalBody,442,-39,94,'Owned',10)
+ fields={name=input(goalBody,16,306,'Material name',60),needed=input(goalBody,336,94,'Required',6),owned=input(goalBody,442,94,'On hand',6)}
  W.fields=fields
  local ordered={fields.name,fields.needed,fields.owned}
  for i,box in ipairs(ordered) do
@@ -66,20 +79,25 @@ function W.Create(parent,onRefresh)
    if target.HighlightText then target:HighlightText() end
   end)
  end
- save=ForeverCompanionInterface.Button(root);save:SetPoint('TOPLEFT',root,'TOPLEFT',548,-58);save:SetSize(106,27);save:SetText('Add goal');save:SetScript('OnClick',submit)
- cancel=ForeverCompanionInterface.Button(root);cancel:SetPoint('TOPLEFT',root,'TOPLEFT',664,-58);cancel:SetSize(90,27);cancel:SetText('Cancel');cancel:SetScript('OnClick',function() reset();status:SetText('Edit cancelled. Your saved goal is unchanged.');if refresh then refresh() end end)
- status=label(root,16,-92,738,'Counts are entered manually; these goals do not scan your bags.',10)
+ save=ForeverCompanionInterface.Button(goalBody);save:SetPoint('TOPLEFT',root,'TOPLEFT',548,-58);save:SetSize(106,27);save:SetText('Add goal');save:SetScript('OnClick',submit)
+ cancel=ForeverCompanionInterface.Button(goalBody);cancel:SetPoint('TOPLEFT',root,'TOPLEFT',664,-58);cancel:SetSize(90,27);cancel:SetText('Cancel');cancel:SetScript('OnClick',function() reset();status:SetText('Edit cancelled. Your saved goal is unchanged.');if refresh then refresh() end end)
+ status=label(goalBody,16,-92,738,'Counts are entered manually; these goals do not scan your bags.',10)
  status:SetWordWrap(false)
- label(root,16,-120,300,'MATERIAL',10)
- label(root,336,-120,92,'OWNED / NEEDED',10)
- label(root,452,-120,92,'STILL NEED',10)
+ label(goalBody,16,-120,300,'MATERIAL',10)
+ label(goalBody,336,-120,92,'OWNED / NEEDED',10)
+ label(goalBody,452,-120,92,'STILL NEED',10)
  rows={};W.rows=rows
  for i=1,W.pageSize do
-  local row=CreateFrame('Frame',nil,root);row:SetSize(738,34);row:SetPoint('TOPLEFT',root,'TOPLEFT',16,-141-(i-1)*37)
+  local row=CreateFrame('Frame',nil,goalBody);row:SetSize(738,34);row:SetPoint('TOPLEFT',root,'TOPLEFT',16,-141-(i-1)*37)
   ForeverCompanionInterface.Surface(row)
   row.name=label(row,8,-9,300,'',12)
   row.quantity=label(row,320,-9,105,'',12)
-  row.remaining=label(row,436,-9,90,'',12)
+  row.remaining=label(row,436,-9,68,'',12)
+  row.sources=ForeverCompanionInterface.Button(row);row.sources:SetSize(62,24);row.sources:SetPoint('TOPLEFT',row,'TOPLEFT',506,-5);row.sources:SetText('Sources')
+  row.sources:SetScript('OnClick',function()
+   local entry=ForeverCompanionCraftingPlanner.GetEntries(profession)[row.index]
+   if type(entry)=='table' then ForeverCompanionMaterialFinder.Open(entry.name) end
+  end)
   row.edit=ForeverCompanionInterface.Button(row);row.edit:SetSize(62,24);row.edit:SetPoint('TOPLEFT',row,'TOPLEFT',572,-5);row.edit:SetText('Edit')
   row.edit:SetScript('OnClick',function()
    local entry=ForeverCompanionCraftingPlanner.GetEntries(profession)[row.index]
@@ -96,18 +114,22 @@ function W.Create(parent,onRefresh)
   end)
   rows[i]=row
  end
- empty=label(root,24,-152,722,'No material goals yet. Add a name and quantities above to start planning.',13)
+ empty=label(goalBody,24,-152,722,'No material goals yet. Add a name and quantities above to start planning.',13)
  empty:SetHeight(40);empty:SetWordWrap(true)
- previous=ForeverCompanionInterface.Button(root);previous:SetSize(90,24);previous:SetText('Previous');previous:SetScript('OnClick',function() W.page=math.max(1,W.page-1);if refresh then refresh() end end)
- nextPage=ForeverCompanionInterface.Button(root);nextPage:SetSize(90,24);nextPage:SetText('Next');nextPage:SetScript('OnClick',function() W.page=W.page+1;if refresh then refresh() end end)
- counter=label(root,222,-200,310,'',11);counter:SetJustifyH('CENTER')
+ previous=ForeverCompanionInterface.Button(goalBody);previous:SetSize(90,24);previous:SetText('Previous');previous:SetScript('OnClick',function() W.page=math.max(1,W.page-1);if refresh then refresh() end end)
+ nextPage=ForeverCompanionInterface.Button(goalBody);nextPage:SetSize(90,24);nextPage:SetText('Next');nextPage:SetScript('OnClick',function() W.page=W.page+1;if refresh then refresh() end end)
+ counter=label(goalBody,222,-200,310,'',11);counter:SetJustifyH('CENTER')
  W.save=save;W.cancel=cancel
  root:Hide()
 end
 function W.Render(show,selectedProfession)
  if not root then return end
- if not show or not selectedProfession then root:Hide();return end
+ if not show or not selectedProfession then root:Hide();ForeverCompanionRecipeWorkspace.Render(false);return end
  if profession~=selectedProfession then profession=selectedProfession;W.page=1;reset();status:SetText('Counts are entered manually; these goals do not scan your bags.') end
+ local recipeView=ForeverCompanionDB.professionWorkspace=='recipes'
+ goalBody:SetShown(not recipeView);viewButton:SetText(recipeView and 'Material goals' or 'Recipe plans')
+ ForeverCompanionRecipeWorkspace.Render(recipeView,profession)
+ if recipeView then heading:SetText('CRAFTING PLAN / '..profession);ForeverCompanionVisualTheme.ResizePanel(root,ForeverCompanionRecipeWorkspace.GetHeight());root:Show();return end
  local entries=ForeverCompanionCraftingPlanner.GetEntries(profession)
  local pages=math.max(1,math.ceil(#entries/W.pageSize));W.page=math.max(1,math.min(pages,W.page))
  heading:SetText('MATERIAL GOALS / '..profession)

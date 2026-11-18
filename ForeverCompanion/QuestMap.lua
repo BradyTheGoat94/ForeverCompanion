@@ -84,7 +84,45 @@ local function showTerrain(canvas)
  terrain:Show()
 end
 
+local dungeonPins={}
+local function showDungeons(map,canvas,mapID,width,height)
+ if ForeverCompanionDB and ForeverCompanionDB.hideDungeonPins then return end
+ local catalog=ForeverCompanionDungeonCatalog
+ if not catalog then return end
+ for i,location in ipairs(catalog.MapLocations(mapID)) do
+  local pin=dungeonPins[i]
+  if not pin then
+   pin=CreateFrame('Button',nil,canvas);pin:SetSize(20,20)
+   local icon=pin:CreateTexture(nil,'ARTWORK');icon:SetPoint('CENTER',pin);pin.icon=icon
+   icon:SetTexture('Interface\\Icons\\INV_Misc_Key_03')
+   pin:SetScript('OnEnter',function(self)
+    if not GameTooltip then return end
+    local p=self.location
+    GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(p.approximate and 'Dungeon area' or 'Dungeon approach')
+    for _,name in ipairs(p.names) do GameTooltip:AddLine(name,1,1,1) end
+    GameTooltip:AddLine(string.format('%s %.1f, %.1f',p.zone,p.x*100,p.y*100),.8,.85,.9)
+    GameTooltip:Show()
+   end)
+   pin:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+   pin:SetScript('OnClick',function(self)
+    if self.location.map~=map:GetMapID() and map.SetMapID then
+     if GameTooltip then GameTooltip:Hide() end
+     map:SetMapID(self.location.map)
+    end
+   end)
+   dungeonPins[i]=pin
+  end
+  pin.location=location
+  local zoneView=mapID==location.map
+  local hitSize=zoneView and 20 or 14
+  local iconSize=zoneView and 12 or 8
+  pin:SetSize(hitSize,hitSize);pin.icon:SetSize(iconSize,iconSize)
+  pin:ClearAllPoints();pin:SetPoint('CENTER',canvas,'TOPLEFT',location.displayX*width,-location.displayY*height)
+  pin:Show()
+ end
+end
 local function hidePins()
+ for _,pin in ipairs(dungeonPins) do pin:Hide() end
  if ForeverCompanionMapTools then ForeverCompanionMapTools.HideMap() end
  for _,pin in ipairs(pins) do pin:Hide() end
  for _,pin in ipairs(servicePins) do pin:Hide() end
@@ -145,6 +183,7 @@ local function createPin(canvas)
    ForeverCompanionInterface.Menu(self,'QUEST ACTIONS',{
     {label='Open quest field guide',action=function() if ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(entry.quest.id) end end},
     {label=ForeverCompanionQuestPlanner.IsPinned(entry.quest) and 'Unpin quest' or 'Pin quest',action=function()
+     if not ForeverCompanionQuestPlanner.IsSupported() then return end
      for index,q in ipairs(ForeverCompanionQuestPlanner.GetLive()) do if q.id==entry.quest.id then ForeverCompanionQuestPlanner.TogglePin(index);break end end
     end},
    })
@@ -161,11 +200,15 @@ local function createPin(canvas)
    local target=ForeverCompanionQuestDiscovery.Resolve(ForeverCompanionQuestWaypoints.MapPickups(map,ForeverCompanionQuestPlanner.GetLive()),entry.quest.id,entry.target)
    if not target then M.Refresh();guideHint:SetText('This quest pickup changed. Choose a current marker.');return end
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,entry.quest.title))
-  elseif self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
-   if not self.focused then ForeverCompanionQuestPlanner.Select(entry.index) end
-   guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(entry.target,false,entry.quest.title,entry.quest.id))
   else
-   ForeverCompanionQuestPlanner.Select(entry.index)
+   local planner=ForeverCompanionQuestPlanner
+   if not planner.IsSupported() then M.Refresh();guideHint:SetText('Quest data unavailable. Open your quest log before navigating.');return end
+   local q,index,target=ForeverCompanionQuestWaypoints.ResolveActiveEntry(entry,planner.GetLive())
+   if not target then M.Refresh();guideHint:SetText('This quest or location changed. Choose a current marker.');return end
+   if self.focused or (IsShiftKeyDown and IsShiftKeyDown()) then
+    if not self.focused then planner.Select(index) end
+    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,q.title,q.id))
+   else planner.Select(index) end
   end
  end)
  return pin
@@ -175,42 +218,45 @@ local function townsEnabled()
  return not ForeverCompanionDB or ForeverCompanionDB.questMapHideTowns~=true
 end
 
+local serviceIconSizes={[20]=10,[24]=12,[28]=16}
+local function serviceIconSize(config)
+ return serviceIconSizes[config.mapServiceIconSize] or 12
+end
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  points=ForeverCompanionServiceClusters.Filter(points,ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices)
  local cfg=ForeverCompanionDB or {}
- local iconSize=(cfg.mapServiceIconSize==20 or cfg.mapServiceIconSize==28) and cfg.mapServiceIconSize or 24
+ local iconSize=serviceIconSize(cfg)
+ local hitSize=math.max(20,iconSize+4)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  -- Pixel-distance clustering crosses service categories, so a banker,
  -- repair vendor and trainer at the same building remain accessible.
- local ordered=ForeverCompanionServiceClusters.Build(points,width,height,cfg.mapServiceTight and iconSize or iconSize+6)
+ local ordered=ForeverCompanionServiceClusters.Build(points,width,height,cfg.mapServiceTight and hitSize or hitSize+6)
  for _,oldPin in ipairs(servicePins) do oldPin:Hide();oldPin.locations=nil end
  for i,group in ipairs(ordered) do
   local pin=servicePins[i]
   if not pin then
    pin=CreateFrame("Button",nil,canvas)
    pin:RegisterForClicks("LeftButtonUp","RightButtonUp")
-   pin:SetSize(25,25)
    local bg=pin:CreateTexture(nil,"BACKGROUND")
-   bg:SetPoint('TOPLEFT',1,-1);bg:SetPoint('BOTTOMRIGHT',-1,1)
+   bg:SetPoint('CENTER',pin)
    bg:SetColorTexture(.015,.025,.04,.94)
    pin.background=bg
    sharpenOverlay(bg)
    local icon=pin:CreateTexture(nil,"ARTWORK")
-   icon:SetPoint("TOPLEFT",pin,"TOPLEFT",3,-3)
-   icon:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",-3,3)
+   icon:SetPoint("CENTER",pin)
    icon:SetTexCoord(0,1,0,1)
    pin.icon=icon
    pin.count=pin:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-   pin.count:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",5,-3)
+   pin.count:SetPoint("BOTTOMRIGHT",bg,"BOTTOMRIGHT",5,-3)
    pin.count:SetShadowOffset(1,-1)
    local label=ForeverCompanionInterface.Text(pin,10)
    label:SetPoint('TOP',pin,'BOTTOM',0,-3);label:SetWidth(132);label:SetJustifyH('CENTER');label:SetHeight(15);label:Hide();pin.nameLabel=label
-   local pip=pin:CreateTexture(nil,'OVERLAY');pip:SetSize(4,4);pip:SetPoint('TOPLEFT',-1,1);pip:SetColorTexture(.25,.90,.92,1);pin.visitPip=pip
+   local pip=pin:CreateTexture(nil,'OVERLAY');pip:SetSize(4,4);pip:SetPoint('TOPLEFT',bg,'TOPLEFT',-1,1);pip:SetColorTexture(.25,.90,.92,1);pin.visitPip=pip
    sharpenOverlay(icon)
    local border=pin:CreateTexture(nil,"BACKGROUND",nil,-1)
-   border:SetAllPoints(pin)
+   border:SetPoint("CENTER",pin)
    border:SetColorTexture(1,1,1,1)
    pin.border=border
    sharpenOverlay(border)
@@ -222,7 +268,7 @@ local function showServices(canvas,mapID,scale)
     local active=self.locations[self.locationIndex or 1]
     GameTooltip:SetText(active.service.."  -  "..active.label)
     if active.subtitle then GameTooltip:AddLine(active.subtitle,.85,.9,1,true) end
-    local seen,count,displayed={},0,0
+    local seen,count,displayed={[active.service..":"..active.label]=true},0,0
     for _,entry in ipairs(self.locations) do
      local key=entry.service..":"..entry.label
      if not seen[key] then
@@ -239,8 +285,7 @@ local function showServices(canvas,mapID,scale)
     end
     GameTooltip:AddLine(active.source or 'Forever QuestieDB reference',.65,.78,.85,true)
     if active.observed then GameTooltip:AddLine('Your position during a merchant visit, not an exact NPC location. Vendors may move.',.95,.76,.35,true) end
-    GameTooltip:AddLine('Click: navigate · Right-click: choose service',.65,.78,.85,true)
-    if #self.locations>1 then GameTooltip:AddLine('Shift-click: cycle nearby services',.95,.76,.35,true) end
+    GameTooltip:AddLine(#self.locations>1 and 'Right-click to choose a nearby service.' or 'Click for directions.',.65,.78,.85,true)
     GameTooltip:Show()
    end)
    pin:SetScript("OnLeave",function(self)
@@ -257,10 +302,10 @@ local function showServices(canvas,mapID,scale)
      for _,point in ipairs(self.locations) do
       local target=point
       choices[#choices+1]={label=point.service..': '..point.label,action=function() guideHint:SetText(ForeverCompanionServiceAtlas.Navigate(target)) end}
-      if #choices>=12 then break end
      end
      choices[#choices+1]={label='Open searchable service atlas',action=function() ForeverCompanionServiceAtlas.Toggle(true) end}
-     ForeverCompanionInterface.Menu(self,'NEARBY SERVICES',choices);return
+     if GameTooltip then GameTooltip:Hide() end
+     ForeverCompanionInterface.PagedMenu(self,'Nearby services',choices,nil,300);return
     end
     if IsShiftKeyDown and IsShiftKeyDown() and #self.locations>1 then
      self.locationIndex=(self.locationIndex or 1)%#self.locations+1
@@ -281,7 +326,10 @@ local function showServices(canvas,mapID,scale)
   pin.locationIndex=1
   pin.count:SetText(#group>1 and tostring(#group) or "")
   -- Smaller, less intrusive POI icons at both zoom levels.
-  pin:SetSize(iconSize,iconSize)
+  pin:SetSize(hitSize,hitSize)
+  pin.icon:SetSize(iconSize,iconSize)
+  pin.background:SetSize(iconSize+2,iconSize+2)
+  pin.border:SetSize(iconSize+4,iconSize+4)
   pin.visitPip:SetShown(point.observed==true)
   pin.labelAllowed=i<=12
   pin.nameLabel:SetText(point.label)
@@ -315,8 +363,9 @@ function M.OpenAppearance(anchor)
  local db=ForeverCompanionDB;local entries={}
  for _,preset in ipairs({{'Small service icons',20},{'Standard service icons',24},{'Large service icons',28}}) do
   local name,size=preset[1],preset[2]
-  entries[#entries+1]={label=name,selected=(db.mapServiceIconSize or 24)==size,action=function() db.mapServiceIconSize=size;M.Refresh() end}
+  entries[#entries+1]={label=name,selected=serviceIconSize(db)==serviceIconSizes[size],action=function() db.mapServiceIconSize=size;M.Refresh() end}
  end
+ entries[#entries+1]={label='Show dungeon entrances',selected=not db.hideDungeonPins,action=function() db.hideDungeonPins=not db.hideDungeonPins;M.Refresh() end}
  entries[#entries+1]={label='Show service names',selected=db.mapServiceLabels==true,action=function() db.mapServiceLabels=not db.mapServiceLabels;M.Refresh() end}
  entries[#entries+1]={label='Tighter service clusters',selected=db.mapServiceTight==true,action=function() db.mapServiceTight=not db.mapServiceTight;M.Refresh() end}
  entries[#entries+1]={label='Show player map coordinates',selected=db.mapShowCoordinates~=false,action=function() db.mapShowCoordinates=db.mapShowCoordinates==false;M.Refresh() end}
@@ -347,7 +396,7 @@ local function createGuide(map)
  end)
  local function fitToolbar()
   local width=map.GetWidth and map:GetWidth()
-  if finite(width) and width>24 then bar:SetScale(math.min(1,math.max(.5,(width-24)/520))) end
+  if finite(width) and width>24 then bar:SetScale(math.min(1,math.max(.5,(width-24)/(bar:GetWidth() or 520)))) end
  end
  fitToolbar();bar:SetScript('OnShow',fitToolbar);if map.HookScript then map:HookScript('OnSizeChanged',fitToolbar) end
  local accent=bar:CreateTexture(nil,'ARTWORK');accent:SetColorTexture(.20,.72,.78,1);accent:SetPoint('TOPLEFT',0,0);accent:SetPoint('TOPRIGHT',0,0);accent:SetHeight(2)
@@ -355,8 +404,8 @@ local function createGuide(map)
  local hint=U.Text(bar,10,U.palette.muted);hint:SetPoint('TOPLEFT',12,-33);hint:SetWidth(392);hint:SetHeight(14)
  local coordinates=U.Text(bar,10,{.40,.83,.86,1});coordinates:SetPoint('TOPRIGHT',-12,-33);coordinates:SetWidth(94);coordinates:SetHeight(14);coordinates:SetJustifyH('RIGHT')
  local function updateCoordinates()
-  coordinates:SetShown(db.mapShowCoordinates~=false);hint:SetWidth(db.mapShowCoordinates==false and 496 or 392)
-  if db.mapShowCoordinates==false then return end
+  coordinates:SetShown(not db.mapDockMinimized and db.mapShowCoordinates~=false);hint:SetWidth(db.mapShowCoordinates==false and 496 or 392)
+  if db.mapDockMinimized or db.mapShowCoordinates==false then return end
   local mapID=map:GetMapID()
   local ok,position=pcall(function() return C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(mapID,'player') end)
   local x,y
@@ -366,13 +415,23 @@ local function createGuide(map)
   coordinates:SetText(finite(x) and finite(y) and x>=0 and x<=1 and y>=0 and y<=1 and string.format('%.1f / %.1f',x*100,y*100) or 'No position')
  end
  local elapsed=0;bar:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=.25 then elapsed=0;updateCoordinates() end end);updateCoordinates()
- local find=U.Button(bar);find:SetSize(148,26);find:SetPoint('TOPRIGHT',-45,-6);find:SetText('Find services')
+ local find=U.Button(bar);find:SetSize(148,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
+ local minimize=U.Button(bar);minimize:SetSize(26,26)
  local expand=U.Button(bar);expand:SetSize(26,26);expand:SetPoint('TOPRIGHT',-10,-6)
  local drawer=CreateFrame('Frame',nil,bar);drawer:SetSize(520,86);drawer:SetPoint('TOPLEFT',0,-54)
  local function layout()
-  local expanded=db.mapDockExpanded==true;drawer:SetShown(expanded);bar:SetHeight(expanded and 140 or 54);expand:SetText(expanded and '-' or '+')
+  local minimized=db.mapDockMinimized==true;local expanded=db.mapDockExpanded==true
+  bar:SetSize(minimized and 190 or 520,minimized and 30 or (expanded and 140 or 54))
+  drawer:SetShown(not minimized and expanded);find:SetShown(not minimized);expand:SetShown(not minimized);hint:SetShown(not minimized)
+  title:SetWidth(minimized and 136 or 270);drag:SetSize(minimized and 144 or 282,28)
+  minimize:ClearAllPoints();minimize:SetPoint('TOPRIGHT',minimized and -8 or -45,minimized and -2 or -6);minimize:SetText(minimized and '+' or '-')
+  expand:SetText(expanded and '-' or '+');updateCoordinates();fitToolbar()
  end
+ minimize:SetScript('OnClick',function() db.mapDockMinimized=not db.mapDockMinimized;U.CloseMenu();layout() end)
+ minimize:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(db.mapDockMinimized and 'Restore Companion map panel' or 'Minimize Companion map panel');GameTooltip:Show() end end)
+ minimize:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
+ M.mapDock=bar;M.minimizeMapDock=minimize;M.mapDockFind=find;M.mapDockHint=hint;M.mapDockCoordinates=coordinates
  expand:SetScript('OnClick',function() db.mapDockExpanded=not db.mapDockExpanded;layout() end);layout()
  local function button(x,y,w,value,fn)
   local b=U.Button(drawer);b:SetSize(w,23);b:SetPoint('TOPLEFT',x,y);b:SetText(value);b:SetScript('OnClick',fn);return b
@@ -546,6 +605,7 @@ function M.Refresh()
  townButton:SetText(townsEnabled() and "Services: On" or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  if style=="atlas" then showTerrain(canvas) end
+ showDungeons(worldMap,canvas,mapID,width,height)
  local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
  local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
  guideTitle:SetText(ok and type(info)=='table' and info.name or 'COMPANION MAP')

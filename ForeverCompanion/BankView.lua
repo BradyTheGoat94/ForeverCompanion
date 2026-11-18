@@ -5,6 +5,42 @@ local bankOpen,pending
 local root,header,search,back,nextPage,pageLabel,rows,empty
 local page=1
 local pageSize=16
+local source='bank'
+local owner,ownerButton,sourceButton,sortButton
+local function character()
+ return UnitName('player')..' - '..GetRealmName()
+end
+local function records()
+ ForeverCompanionInventoryDB=ForeverCompanionInventoryDB or {}
+ return ForeverCompanionInventoryDB
+end
+local function ownRecord()
+ local all=records();local key=character();all[key]=all[key] or {}
+ return all[key]
+end
+local function captureMail()
+ if not GetInboxNumItems or not GetInboxItem or not GetInboxItemLink then return end
+ local loaded,total=GetInboxNumItems()
+ if type(loaded)~='number' then return end
+ local items={}
+ for message=1,loaded do
+  local _,_,sender,_,_,_,_,attachments=GetInboxHeaderInfo(message)
+  local found=0
+  for slot=1,ATTACHMENTS_MAX_RECEIVE or 16 do
+   local name,id,icon,count=GetInboxItem(message,slot)
+   if name then
+    local link=GetInboxItemLink(message,slot)
+    id=tonumber(id) or (link and tonumber(link:match('item:(%d+)')))
+    if not id then return end
+    items[#items+1]={name=name,id=id,icon=icon,count=count or 1,link=link,tab=sender or 'Mail'}
+    found=found+1
+   end
+  end
+  if type(attachments)=='number' and found<attachments then return end
+ end
+ ownRecord().mail={items=items,loaded=loaded,total=total or loaded,savedAt=time()}
+ if root and root:IsShown() then B.Render() end
+end
 
 local function capture()
  if not C_Bank or not C_Container or not Enum or not Enum.BankType then return end
@@ -37,14 +73,25 @@ local function updateSnapshot()
  if not ok or not data then return end
  ForeverCompanionDB=ForeverCompanionDB or {}
  ForeverCompanionDB.bankSnapshot=data
+ ownRecord().bank=data
  if root and root:IsShown() then B.Render() end
 end
 
 local events=CreateFrame("Frame")
-for _,event in ipairs({"BANKFRAME_OPENED","BANKFRAME_CLOSED","PLAYERBANKSLOTS_CHANGED","BAG_UPDATE_DELAYED","BANK_TABS_CHANGED"}) do
+for _,event in ipairs({"PLAYER_LOGIN","MAIL_SHOW","MAIL_INBOX_UPDATE","MAIL_CLOSED","BANKFRAME_OPENED","BANKFRAME_CLOSED","PLAYERBANKSLOTS_CHANGED","BAG_UPDATE_DELAYED","BANK_TABS_CHANGED"}) do
  pcall(events.RegisterEvent,events,event)
 end
+local mailOpen
 events:SetScript("OnEvent",function(_,event)
+ if event=='PLAYER_LOGIN' then
+  if ForeverCompanionDB and ForeverCompanionDB.bankSnapshot then ownRecord().bank=ForeverCompanionDB.bankSnapshot end
+  return
+ elseif event=='MAIL_SHOW' then
+  mailOpen=true
+  if GetInboxNumItems and (GetInboxNumItems() or 0)>0 then captureMail() end
+  return
+ elseif event=='MAIL_CLOSED' then mailOpen=false;return
+ elseif event=='MAIL_INBOX_UPDATE' then if mailOpen then captureMail() end;return end
  if event=="BANKFRAME_CLOSED" then bankOpen=false;return end
  if event=="BANKFRAME_OPENED" then
   bankOpen=true
@@ -83,6 +130,24 @@ function B.Create(parent)
  search:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
  local filter=root:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  filter:SetPoint("LEFT",search,"RIGHT",12,0);filter:SetText("Search items")
+ sourceButton=makeButton(root,362,-47,'Mailbox',function()
+  source=source=='bank' and 'mail' or 'bank';page=1;B.Render()
+ end)
+ ownerButton=makeButton(root,452,-47,'Alts',function()
+  local keys={character()};for key in pairs(records()) do if key~=character() then keys[#keys+1]=key end end
+  table.sort(keys);local choices={}
+  for _,key in ipairs(keys) do local who=key
+   choices[#choices+1]={label=who,selected=who==(owner or character()),action=function() owner=who;page=1;B.Render() end}
+  end
+  ForeverCompanionInterface.Menu(ownerButton,'Choose character',choices)
+ end)
+ sortButton=makeButton(root,542,-47,'Sort',function()
+  local db=ForeverCompanionDB
+  db.inventorySort=db.inventorySort=='category' and 'name' or 'category';page=1;B.Render()
+ end)
+ sortButton:SetWidth(130)
+ local function wheel(_,delta) page=page+(delta<0 and 1 or -1);B.Render() end
+ root:EnableMouseWheel(true);root:SetScript('OnMouseWheel',wheel)
  rows={}
  for i=1,pageSize do
   local row=CreateFrame("Frame",nil,root)
@@ -109,6 +174,7 @@ function B.Create(parent)
    end
   end)
   row:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+  row:EnableMouseWheel(true);row:SetScript("OnMouseWheel",wheel)
   rows[i]=row
  end
  back=makeButton(root,17,-381,"Previous",function() page=page-1;B.Render() end)
@@ -122,7 +188,12 @@ end
 
 function B.Render()
  if not root then return end
- local saved=ForeverCompanionDB and ForeverCompanionDB.bankSnapshot
+ local who=owner or character()
+ local saved=(records()[who] or {})[source]
+ if not saved and who==character() and source=='bank' then saved=ForeverCompanionDB and ForeverCompanionDB.bankSnapshot end
+ local byCategory=ForeverCompanionDB and ForeverCompanionDB.inventorySort=='category'
+ sourceButton:SetText(source=='bank' and 'Mailbox' or 'Bank')
+ sortButton:SetText(byCategory and 'Sort: category' or 'Sort: A-Z')
  local items=type(saved)=="table" and saved.items
  local matches={}
  local query=(search:GetText() or ""):lower()
@@ -130,9 +201,20 @@ function B.Render()
   local name=item.name or (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(item.id)) or ("Item "..item.id)
   if name:lower():find(query,1,true) then matches[#matches+1]={item=item,name=name} end
  end
- if type(items)=="table" and type(saved.savedAt)=="number" and type(saved.slots)=="number" then
-  header:SetText(("Personal bank snapshot  ·  %d/%d slots  ·  Saved %s"):format(#items,saved.slots,date("%b %d, %H:%M",saved.savedAt)))
- else header:SetText("Visit a banker once to save a copy of your personal bank.") end
+ for _,entry in ipairs(matches) do
+  local info=C_Item and C_Item.GetItemInfo or GetItemInfo
+  entry.category=byCategory and info and select(6,info(entry.item.id)) or 'Other'
+ end
+ table.sort(matches,function(a,b)
+  if byCategory and a.category~=b.category then return a.category<b.category end
+  if a.name~=b.name then return a.name:lower()<b.name:lower() end
+  return (a.item.count or 1)>(b.item.count or 1)
+ end)
+ if source=='mail' and saved then
+  header:SetText(('%s | Mailbox | %d attachments | %d/%d messages | %s'):format(who,#items,saved.loaded,saved.total,date('%b %d, %H:%M',saved.savedAt)))
+ elseif type(items)=="table" and type(saved.savedAt)=="number" and type(saved.slots)=="number" then
+  header:SetText((who.." | Bank  ·  %d/%d slots  ·  Saved %s"):format(#items,saved.slots,date("%b %d, %H:%M",saved.savedAt)))
+ else header:SetText(who..(source=='mail' and ' | Open this character mailbox to save attachments.' or ' | Visit a banker to save inventory.')) end
  local pages=math.max(1,math.ceil(#matches/pageSize))
  page=math.max(1,math.min(page,pages))
  local visible=math.min(pageSize,math.max(0,#matches-(page-1)*pageSize))
@@ -150,12 +232,12 @@ function B.Render()
    row.icon:SetTexture(item.icon or 134400)
    row.name:SetText(entry.name)
    row.count:SetText("×"..tostring(item.count or 1))
-   row.tab:SetText(item.tab)
+   row.tab:SetText(byCategory and (entry.category..'  /  '..(item.tab or '')) or item.tab)
    row:Show()
   else row:Hide() end
  end
  empty:SetShown(#matches==0)
- empty:SetText(type(items)~="table" and "Your bank snapshot is empty. Visit a banker to save your items here." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this bank snapshot."))
+ empty:SetText(type(items)~="table" and "No snapshot recorded for this character and inventory." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this snapshot."))
  back:SetEnabled(page>1);nextPage:SetEnabled(page<pages)
  pageLabel:SetText(("%d matches  ·  Page %d of %d"):format(#matches,page,pages))
 end

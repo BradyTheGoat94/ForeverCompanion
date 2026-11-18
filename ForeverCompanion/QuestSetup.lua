@@ -35,7 +35,7 @@ function S.Refresh()
  if UIParent.GetWidth and UIParent.GetHeight then
   local width,availableHeight=UIParent:GetWidth(),UIParent:GetHeight()
   if type(width)=='number' and type(availableHeight)=='number' and width>32 and availableHeight>32 then
-   root:SetScale(math.min(1,(width-32)/620,(availableHeight-32)/(height+95)))
+   root:SetScale(math.min(ForeverCompanionInterface.SizePreference(root),(width-32)/620,(availableHeight-32)/(height+95)))
   end
  end
 end
@@ -44,7 +44,7 @@ function S.Toggle()
   local U=ForeverCompanionInterface
   root=CreateFrame('Frame','ForeverCompanionQuestSetupPanel',UIParent)
   root:SetSize(620,460);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetFrameStrata('DIALOG');root:EnableMouse(true)
-  U.Surface(root)
+  U.Surface(root);U.WindowControls(root,'ForeverCompanionQuestSetupPanel',620,460)
   local title=U.Text(root,18);title:SetPoint('TOPLEFT',18,-15);title:SetWidth(550);title:SetText('QUEST DATA & SETUP')
   U.CloseButton(root,function() root:Hide() end)
   body=U.Text(root,13);body:SetPoint('TOPLEFT',18,-52);body:SetWidth(584);body:SetWordWrap(true);body:SetJustifyV('TOP')

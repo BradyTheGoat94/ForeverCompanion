@@ -11,6 +11,8 @@ Loot.sources = {
 local function clean(value)
   return type(value)=="string" and value~="" and value or nil
 end
+local bossIndex, bossNames
+function Loot.InvalidateBossIndex() bossIndex,bossNames=nil,nil end
 function Loot.Add(record)
   if type(record)~="table" then return false,"invalid record" end
   if not clean(record.item) or not clean(record.dungeon) or not clean(record.boss) then
@@ -33,6 +35,7 @@ function Loot.Add(record)
     end
   end
   Loot.records[#Loot.records+1]=record
+  Loot.InvalidateBossIndex()
   return true
 end
 -- Forever item IDs and boss sources checked against Wowhead, 2026-11-05.
@@ -200,12 +203,42 @@ for _,group in ipairs(extraDrops) do
   end
 end
 
-function Loot.ShowItemTooltip(owner,record)
+-- Source references for items acquired outside boss loot. Live client data
+-- supplies the item stats and equip requirements.
+local extraSources={
+ {11287,'Lesser Magic Wand','Ranged','Enchanting','Craft Lesser Magic Wand'},
+ {11288,'Greater Magic Wand','Ranged','Enchanting','Craft Greater Magic Wand'},
+ {249385,'Brilliant Wand','Ranged','Enchanting','Craft Brilliant Wand (binds on pickup)'},
+ {13860,'Runecloth Cloak','Back','Tailoring','Craft Runecloth Cloak'},
+ {9533,'Masons Fraternity Ring','Finger',"Zul'Farrak",'Divino-matic Rod',2768,40},
+ {22149,'Beads of Ogre Mojo','Neck','Dire Maul',"Falrin's Vendetta",8949,58},
+}
+Loot.gearSources={}
+for _,entry in ipairs(extraSources) do
+  Loot.gearSources[#Loot.gearSources+1]={itemID=entry[1],item=entry[2],slot=entry[3],dungeon=entry[4],
+    boss=entry[5],questID=entry[6],sourceMinLevel=entry[7],reference=true,
+    status=entry[6] and 'Quest reward · check chain and reward choices' or 'Crafted item · check recipe and requirements',
+    source='https://www.wowhead.com/forever/item='..entry[1]}
+end
+
+function Loot.ShowItemTooltip(owner,record,info,fallbackStats)
   if not record or not GameTooltip then return end
-  GameTooltip:SetOwner(owner,"ANCHOR_RIGHT")
-  local ok=record.itemID and type(GameTooltip.SetHyperlink)=="function"
-    and pcall(GameTooltip.SetHyperlink,GameTooltip,"item:"..record.itemID)
-  if not ok then GameTooltip:SetText(record.item,1,.8,.4) end
+  local tip=GameTooltip
+  tip:SetOwner(owner,"ANCHOR_RIGHT")
+  if tip.ClearLines then tip:ClearLines() end
+  local function populated(method,value)
+    if type(method)~="function" or not value then return false end
+    local ok=pcall(method,tip,value)
+    return ok and (not tip.NumLines or tip:NumLines()>0)
+  end
+  local link=info and type(info.link)=="string" and info.link
+  if not populated(tip.SetHyperlink,link)
+    and not populated(tip.SetItemByID,record.itemID)
+    and not populated(tip.SetHyperlink,record.itemID and ("item:"..record.itemID)) then
+    tip:SetText(info and info.name or record.item,1,.8,.4)
+    for _,line in ipairs(fallbackStats or {}) do tip:AddLine(line,1,1,1) end
+    if not fallbackStats or #fallbackStats==0 then tip:AddLine("Item stats are not available yet.",.7,.8,.9) end
+  end
   GameTooltip:AddLine(record.boss.." / "..record.dungeon,1,1,1,true)
   GameTooltip:AddLine(record.status,.7,.8,.9,true)
   GameTooltip:Show()
@@ -367,6 +400,7 @@ function Loot.CatalogSummary()
   return table.concat(lines,"\n")
 end
 function Loot.Filter(query, dungeon, savedOnly, db, boss, acquisition, slot)
+  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then boss=ForeverCompanionBossMechanics.Canonical(dungeon,boss) end
   local matches=Loot.Search(query)
   local results={}
   local wishes=savedOnly and Loot.Wishlist(db) or nil
@@ -445,29 +479,36 @@ end
 
 -- Boss-first navigation for players who know the dungeon but not the item name.
 -- This is deliberately a read-only index of attributed records, not a complete loot table.
-function Loot.BossNames(dungeon)
-  local seen, names = {}, {}
-  for _, record in ipairs(Loot.records) do
-    if (not dungeon or dungeon=="" or record.dungeon==dungeon) and not seen[record.boss] then
-      seen[record.boss]=true
-      names[#names+1]=record.boss
-    end
+local function ensureBossIndex()
+  if bossIndex then return end
+  bossIndex,bossNames={},{}
+  for _,record in ipairs(Loot.records) do
+    local dungeon=bossIndex[record.dungeon]
+    if not dungeon then dungeon={};bossIndex[record.dungeon]=dungeon end
+    local drops=dungeon[record.boss]
+    if not drops then drops={};dungeon[record.boss]=drops end
+    drops[#drops+1]=record
+    bossNames[record.boss]=true
   end
+  for _,dungeon in pairs(bossIndex) do
+    for _,drops in pairs(dungeon) do table.sort(drops,function(a,b) return a.item<b.item end) end
+  end
+end
+function Loot.BossNames(dungeon)
+  ensureBossIndex()
+  local names={}
+  for name in pairs((not dungeon or dungeon=="") and bossNames or bossIndex[dungeon] or {}) do names[#names+1]=name end
   table.sort(names)
   return names
 end
 
 function Loot.BossDrops(dungeon,boss)
+  if type(dungeon)~="string" or dungeon=="" or type(boss)~="string" or boss=="" then return {} end
+  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then boss=ForeverCompanionBossMechanics.Canonical(dungeon,boss) end
+  ensureBossIndex()
+  local records=bossIndex[dungeon]
   local matches={}
-  if type(dungeon)~="string" or dungeon=="" or type(boss)~="string" or boss=="" then
-    return matches
-  end
-  for _,record in ipairs(Loot.records) do
-    if record.dungeon==dungeon and record.boss==boss then
-      matches[#matches+1]=record
-    end
-  end
-  table.sort(matches,function(a,b) return a.item<b.item end)
+  for i,record in ipairs(records and records[boss] or {}) do matches[i]=record end
   return matches
 end
 
@@ -493,6 +534,7 @@ end
 -- A compact, evidence-aware collection tracker. Counts unique recorded items only;
 -- it never implies that a dungeon has a complete loot table.
 function Loot.Progress(db,dungeon,boss)
+  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then boss=ForeverCompanionBossMechanics.Canonical(dungeon,boss) end
   local wishes=Loot.Wishlist(db)
   local total,saved=0,0
   for _,record in ipairs(Loot.records) do

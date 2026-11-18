@@ -18,7 +18,7 @@ end
 function P.Get(prof) return list(prof) end
 function P.Add(prof,name,quantity)
   prof=trim(prof); name=trim(name); quantity=tonumber(quantity)
-  if prof=="" or name=="" or not quantity or quantity<1 or quantity>9999 then return false,"Invalid recipe name or quantity." end
+  if prof=="" or name=="" or not quantity or quantity~=quantity or quantity<1 or quantity>9999 then return false,"Invalid recipe name or quantity." end
   local entries=list(prof)
   if #entries>=30 then return false,"Maximum 30 recipe goals per profession." end
   for _,v in ipairs(entries) do if v.name:lower()==name:lower() then return false,"Recipe already tracked." end end
@@ -28,7 +28,7 @@ end
 function P.Ingredient(prof,index,name,perCraft)
   local entry=list(prof)[tonumber(index) or 0]
   name=trim(name); perCraft=tonumber(perCraft)
-  if not entry or name=="" or not perCraft or perCraft<1 or perCraft>99999 then return false,"Invalid recipe, ingredient, or amount." end
+  if not entry or name=="" or not perCraft or perCraft~=perCraft or perCraft<1 or perCraft>99999 then return false,"Invalid recipe, ingredient, or amount." end
   if #entry.ingredients>=15 then return false,"Maximum 15 ingredients per recipe." end
   for _,v in ipairs(entry.ingredients) do if v.name:lower()==name:lower() then return false,"Ingredient already listed." end end
   entry.ingredients[#entry.ingredients+1]={name=name,count=math.floor(perCraft)}
@@ -37,7 +37,7 @@ end
 function P.Done(prof,index,quantity)
   local entry=list(prof)[tonumber(index) or 0]
   quantity=tonumber(quantity)
-  if not entry or not quantity or quantity<0 or quantity>entry.quantity then return false,"Invalid completed craft count." end
+  if not entry or not quantity or quantity~=quantity or quantity<0 or quantity>entry.quantity then return false,"Invalid completed craft count." end
   entry.done=math.floor(quantity)
   return true,"Updated crafted count for "..entry.name
 end
@@ -115,6 +115,11 @@ function P.MaterialForecast(prof)
  return rows
 end
 
+function P.ImportMaterials(prof)
+ local planner=ForeverCompanionCraftingPlanner
+ if not planner or type(planner.AddMissing)~='function' then return false,'Material planner unavailable.' end
+ return planner.AddMissing(prof,P.MaterialForecast(prof))
+end
 function P.FormatForecast(prof)
  local rows=P.MaterialForecast(prof)
  local lines={"CRAFTING MATERIAL FORECAST (MANUAL INVENTORY)"}

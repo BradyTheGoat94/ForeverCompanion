@@ -115,7 +115,7 @@ end
 function S.Toggle()
  if not root then
   local U=ForeverCompanionInterface
-  root=CreateFrame('Frame','ForeverCompanionSessionPanel',UIParent);root:SetSize(660,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetFrameStrata('DIALOG');U.Surface(root)
+  root=CreateFrame('Frame','ForeverCompanionSessionPanel',UIParent);root:SetSize(660,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetFrameStrata('DIALOG');U.Surface(root);U.WindowControls(root,'ForeverCompanionSessionPanel',660,590)
   root:SetMovable(true);root:EnableMouse(true)
   local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(615,40);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
   drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
@@ -151,7 +151,7 @@ function S.Toggle()
  if not state then S.Start() end
  if UIParent.GetWidth and UIParent.GetHeight then
   local w,h=UIParent:GetWidth(),UIParent:GetHeight()
-  if finite(w) and finite(h) and w>32 and h>32 then root:SetScale(math.min(1,(w-32)/660,(h-32)/590)) end
+  if finite(w) and finite(h) and w>32 and h>32 then root:SetScale(math.min(ForeverCompanionInterface.SizePreference(root),(w-32)/660,(h-32)/590)) end
  end
  root:SetShown(not root:IsShown());S.Refresh()
 end

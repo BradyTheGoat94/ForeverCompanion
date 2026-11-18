@@ -138,7 +138,7 @@ local function refreshPins(reuse)
  if reuse then points=pointCache else
   if d.quests~=false and planner and way and planner.IsSupported() then
    local selected=planner.GetSelected()
-   for _,e in ipairs(way.MapLocations(mapID,selected and {selected} or {}) or {}) do
+   for _,e in ipairs(way.MapLocations(mapID,d.preset=='combined' and planner.GetLive() or selected and {selected} or {}) or {}) do
     add(e.target,'Q',e.quest.title,'Interface\\GossipFrame\\AvailableQuestIcon','quest',{questID=e.quest.id,detail=way.Describe(e.target)})
    end
   end
@@ -312,6 +312,7 @@ function M.Edit(value)
  title:SetText(editing and 'Overlay · drag map to move · Options to lock' or 'Overlay · click-through')
 end
 local presets={
+ combined={opacity=.55,width=780,quests=true,services=true,landmarks=true,notes=true,monochrome=false,detail=true},
  detailed={opacity=.55,width=780,quests=true,services=true,notes=true,monochrome=false,detail=true},
  exploring={opacity=.2,width=780,quests=false,services=false,notes=true,monochrome=true},
  questing={opacity=.35,width=600,quests=true,services=false,notes=true,monochrome=true},
@@ -324,7 +325,7 @@ function M.Preset(name)
 end
 function M.PresetMenu(anchor)
  local entries={}
- for _,name in ipairs({'detailed','exploring','questing','town'}) do local key=name
+ for _,name in ipairs({'combined','detailed','exploring','questing','town'}) do local key=name
   entries[#entries+1]={label=name:sub(1,1):upper()..name:sub(2),selected=settings().preset==name,action=function() M.Preset(key) end}
  end
  ForeverCompanionInterface.Menu(anchor or header,'OVERLAY PRESETS',entries)
@@ -342,7 +343,7 @@ function M.Options()
   {label='Inspect location details',action=function() M.Inspect(not inspecting) end},
   {label='Reset zoom / pan',action=function() local d=settings();d.centerX=.5;d.centerY=.5;M.SetZoom(1) end},
   {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
-  {label='Detailed / Exploring / Questing / Town',action=function() M.PresetMenu(header) end},
+  {label='Choose map preset',action=function() M.PresetMenu(header) end},
   {label='Artwork opacity...',action=function() submenu('ARTWORK OPACITY',{.2,.35,.5,.65},'opacity','%') end},
   {label='Overlay size...',action=function() submenu('OVERLAY WIDTH',{420,600,780},'width','') end},
   {label='Map layers...',action=function() U.Menu(header,'OVERLAY LAYERS',{
@@ -380,6 +381,13 @@ local function create()
   end
  end)
  header=CreateFrame('Frame',nil,frame);header:SetPoint('BOTTOMLEFT',frame,'TOPLEFT',0,4);header:SetSize(420,25)
+ header:EnableMouse(true);header:RegisterForDrag('LeftButton')
+ header:SetScript('OnDragStart',function() frame:StartMoving() end)
+ header:SetScript('OnDragStop',function()
+  frame:StopMovingOrSizing()
+  local x,y=frame:GetCenter();local px,py=UIParent:GetCenter()
+  if x and px then local d=settings();d.x=x-px;d.y=y-py end
+ end)
  title=U.Text(header,12,U.palette.muted);title:SetPoint('LEFT',0,0);title:SetWidth(285)
  local options=U.Button(header);options:SetSize(78,24);options:SetPoint('TOPRIGHT',header,'TOPRIGHT',-32,0);options:SetText('Options');options:SetScript('OnClick',M.Options)
  local close=U.Button(header);close:SetSize(26,24);close:SetPoint('TOPRIGHT',header,'TOPRIGHT',0,0);close:SetText('X');close:SetScript('OnClick',function() M.Toggle(false) end)
@@ -389,6 +397,14 @@ local function create()
  local plus=U.Button(tools);plus:SetSize(22,23);plus:SetPoint('LEFT',76,0);plus:SetText('+');plus:SetScript('OnClick',function() M.SetZoom(settings().zoom*1.25) end)
  local center=U.Button(tools);center:SetSize(64,23);center:SetPoint('LEFT',106,0);center:SetText('My pos.');center:SetScript('OnClick',M.CenterPlayer)
  inspectButton=U.Button(tools);inspectButton:SetSize(98,23);inspectButton:SetPoint('LEFT',178,0);inspectButton:SetText('Inspect: Off');inspectButton:SetScript('OnClick',function() M.Inspect(not inspecting) end)
+ local restore=U.Button(UIParent);restore:SetSize(92,24);restore:SetFrameStrata('MEDIUM');restore:Hide()
+ restore:SetText('Show map');restore:SetScript('OnClick',function() restore:Hide();M.Toggle(true) end)
+ frame:SetScript('OnShow',function() restore:Hide() end)
+ local collapse=U.Button(tools);collapse:SetSize(62,23);collapse:SetPoint('LEFT',282,0);collapse:SetText('Hide')
+ collapse:SetScript('OnClick',function()
+  restore:ClearAllPoints();restore:SetPoint('TOPLEFT',UIParent,'BOTTOMLEFT',header:GetLeft(),math.min(UIParent:GetHeight(),header:GetTop()))
+  M.Toggle(false);restore:Show()
+ end)
  frame:SetScript('OnHide',function() frame:StopMovingOrSizing();panStart=nil;inspecting=false;editing=false;hide(hitPins);if GameTooltip then GameTooltip:Hide() end end)
  frame:SetScript('OnMouseWheel',function(_,delta) if inspecting then M.SetZoom(settings().zoom*(delta>0 and 1.25 or .8)) end end)
  message=U.Text(frame,14,U.palette.muted);message:SetPoint('CENTER')

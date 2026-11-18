@@ -9,7 +9,7 @@ T.warrior="Interface\\AddOns\\ForeverCompanion\\Media\\Warrior.tga"
 T.colors={background={.025,.032,.044,1},surface={.038,.048,.064,1},raised={.065,.080,.103,1},border={.23,.28,.35,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
 function T.Font(widget,size,display)
  if widget and type(widget.SetFont)=="function" then
-  pcall(widget.SetFont,widget,display and "Fonts\\FRIZQT__.TTF" or "Fonts\\ARIALN.TTF",size,"")
+  pcall(widget.SetFont,widget,"Fonts\\FRIZQT__.TTF",size,"")
  end
 end
 local function strip(parent,x,y,w,h,r,g,b,a,layer)
@@ -19,7 +19,7 @@ local function strip(parent,x,y,w,h,r,g,b,a,layer)
  return t
 end
 function T.Panel(parent,w,h)
- -- One surface and one perimeter. No stacked bevels or competing corner art.
+ -- Inset journal sections with a raised metal rim.
  local bg=parent:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(parent)
  bg:SetColorTexture(unpack(T.colors.surface))
  local band=strip(parent,1,-1,w-2,34,.065,.080,.103,1,"BORDER")
@@ -29,6 +29,7 @@ function T.Panel(parent,w,h)
  local right=strip(parent,w-1,0,1,h,.14,.17,.22,1)
  strip(parent,12,-36,w-24,1,.14,.17,.22,.8)
  parent.fcPanelEdges={bottom=bottom,left=left,right=right}
+ ForeverCompanionInterface.Bevel(parent,true)
  parent.fcPanelBackground=bg
 end
 function T.ResizePanel(parent,height)
