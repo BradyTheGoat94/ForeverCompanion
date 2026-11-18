@@ -51,7 +51,10 @@ local function marker(parent)
  b:SetScript('OnEnter',function(self)
   if not GameTooltip or not self.entry then return end
   local e=self.entry
-  GameTooltip:SetOwner(self,'ANCHOR_LEFT');GameTooltip:SetText(e.quest.title)
+  GameTooltip:SetOwner(self,'ANCHOR_LEFT');if e.mailbox then
+   GameTooltip:SetText('Mailbox');GameTooltip:AddLine(e.target.source or 'Map reference',.85,.85,.85,true);GameTooltip:Show();return
+  end
+  GameTooltip:SetText(e.quest.title)
   GameTooltip:AddLine(e.target.objective or e.target.label or 'General quest point',.9,.92,.96,true)
   GameTooltip:AddLine(ForeverCompanionQuestWaypoints.Describe(e.target),.85,.74,.5,true)
   GameTooltip:AddLine('Left-click: directions. Right-click: quest guide.',.7,.84,.9,true);GameTooltip:Show()
@@ -59,6 +62,11 @@ local function marker(parent)
  b:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
  b:SetScript('OnClick',function(self,key)
   local e=self.entry;local planner=ForeverCompanionQuestPlanner
+  if e and e.mailbox then
+   local target=ForeverCompanionTownServices.Resolve(e.target)
+   if target and key=='LeftButton' then ForeverCompanionQuestWaypoints.Navigate(target,false,'Mailbox') end
+   return
+  end
   if not e or not planner or not planner.IsSupported() then M.Refresh();return end
   local q,index,target=ForeverCompanionQuestWaypoints.ResolveActiveEntry(e,planner.GetLive())
   if not target then M.Refresh();return end
@@ -97,21 +105,33 @@ function M.UpdatePositions()
     count=count+1
     local b=markers[count];if not b then b=marker(Minimap);markers[count]=b end
     b.entry=entry;b:ClearAllPoints();b:SetPoint('CENTER',Minimap,'CENTER',ox,oy)
+    if entry.mailbox then
+     b.fill:SetTexture(ForeverCompanionServiceAtlas.Icon('M'));b.symbol:SetText('');b:Show()
+    else
     local ready=entry.quest.complete==true
     b.fill:SetColorTexture(ready and .46 or (target.reference and .95 or .25),ready and .88 or (target.reference and .74 or .77),ready and .59 or (target.reference and .35 or .93),1)
     b.symbol:SetText(ready and '?' or (target.objectiveIndex and tostring(target.objectiveIndex) or 'Q'));b:Show()
+    end
    end
   end
  end
- status=count>0 and ('Selected quest: '..count..' nearby points') or 'Selected quest points are outside minimap range; use the world map'
+ status=count>0 and (count..' nearby map pins') or 'Map pins are outside minimap range'
 end
 function M.Refresh()
  entries={};M.Hide()
  if not M.IsEnabled() then status='Off';return end
+ local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
+ local hidden=ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices
+ if map and ForeverCompanionTownServices and not (hidden and hidden.M) then
+  for _,target in ipairs(ForeverCompanionTownServices.ForMap(map)) do
+   if target.symbol=='M' then entries[#entries+1]={mailbox=true,target=target} end
+  end
+ end
+ local mailboxCount=#entries
  local p=ForeverCompanionQuestPlanner
- if not p or read(p.IsSupported)~=true then status='Quest data unavailable; minimap points hidden';return end
+ if not p or read(p.IsSupported)~=true then if mailboxCount>0 then M.UpdatePositions();return end;status='Quest data unavailable; minimap points hidden';return end
  local q=read(p.GetSelected)
- if type(q)~='table' then status='Select a quest to show nearby points';return end
+ if type(q)~='table' then if mailboxCount>0 then M.UpdatePositions();return end;status='Select a quest to show nearby points';return end
  local seen={}
  for _,target in ipairs(ForeverCompanionQuestWaypoints.Targets(q)) do
   local state=q.objectiveStates and q.objectiveStates[target.objectiveIndex]
@@ -119,7 +139,7 @@ function M.Refresh()
    local key=target.map..':'..target.x..':'..target.y
    if not seen[key] then
     seen[key]=true;entries[#entries+1]={quest=q,target=target}
-    if #entries==12 then break end
+    if #entries-mailboxCount==12 then break end
    end
   end
  end

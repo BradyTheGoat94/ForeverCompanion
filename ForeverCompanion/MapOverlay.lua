@@ -142,10 +142,10 @@ local function refreshPins(reuse)
     add(e.target,'Q',e.quest.title,'Interface\\GossipFrame\\AvailableQuestIcon','quest',{questID=e.quest.id,detail=way.Describe(e.target)})
    end
   end
-  if d.services and ForeverCompanionTownServices then
+  if ForeverCompanionTownServices then
    local services=ForeverCompanionTownServices.ForMap(mapID)
    if ForeverCompanionServiceClusters then services=ForeverCompanionServiceClusters.Filter(services,ForeverCompanionDB.questMapHiddenServices or {}) end
-   for _,p in ipairs(services or {}) do add(p,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01','service',{detail=(p.service or 'Service')..' · '..(p.observed and 'Visited nearby player position' or 'Provider reference'),description=p.subtitle}) end
+   for _,p in ipairs(services or {}) do if d.services or p.symbol=='M' then add(p,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01','service',{detail=(p.service or 'Service')..' · '..(p.observed and 'Visited nearby player position' or 'Provider reference'),description=p.subtitle}) end end
   end
   if d.notes~=false and ForeverCompanionMapTools then
    for _,p in ipairs(ForeverCompanionMapTools.List(mapID)) do local style=ForeverCompanionMapTools.NoteStyle(p);add(p,'N',p.label,style.icon,'note',{color=style.color,detail=style.name..' · Personal note'}) end

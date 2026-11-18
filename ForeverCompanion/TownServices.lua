@@ -78,6 +78,20 @@ local function start(db,side)
  end
  local maps=ForeverCompanionQuestLocations.AreaMaps(db)
  local results,index={},1
+ -- Mailboxes are also world objects; NPC flags alone miss these spawns.
+ local object=db.Object
+ local spawns=object and read(object.spawns,32349)
+ for area,points in pairs(type(spawns)=='table' and spawns or {}) do
+  local map=maps[area]
+  if map and type(points)=='table' then
+   for _,xy in ipairs(points) do
+    if type(xy)=='table' and finite(xy[1]) and finite(xy[2]) and (not xy[3] or xy[3]==0) then
+     local pin={map=map,x=xy[1]/100,y=xy[2]/100,label='Mailbox',symbol='M',service='Mailbox',source='Forever QuestieDB mailbox object'}
+     if valid(pin) then results[map]=results[map] or {};table.insert(results[map],pin) end
+    end
+   end
+  end
+ end
  database,faction,byMap,loaded,loadError=db,side,results,false,nil
  local function batch()
   if results~=byMap then return end
@@ -86,6 +100,7 @@ local function start(db,side)
   if index<=#ids then C_Timer.After(.02,batch)
   else
    loaded=true
+   if ForeverCompanionQuestMinimap then ForeverCompanionQuestMinimap.Refresh() end
    if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end
    if ForeverCompanionServiceAtlas then ForeverCompanionServiceAtlas.Refresh() end
    if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
@@ -134,12 +149,29 @@ function S.RecordVisit(record)
  if ForeverCompanionMapHub then ForeverCompanionMapHub.Invalidate() end
  return true
 end
+-- Rounded city coordinates from Forever Guide (Forever Scout / EG Link).
+-- https://guide.wow4ever.se/en/objects/{696278,650666,650577,658926,658920}
+-- EG Link attribution: https://creativecommons.org/licenses/by/4.0/
+local cityMail={
+ ['Stormwind City']={{61,49}},
+ ['Ironforge']={{72,50},{22,52}},
+ ['Orgrimmar']={{52,47},{38,75}},
+}
 function S.ForMap(map)
  local points,notice=providerMap(map)
  local result,seen={},{}
  for _,p in ipairs(points) do
   local key=S.Key(p)
   if key and not seen[key] then result[#result+1]=p;seen[key]=true end
+ end
+ local info=C_Map and read(C_Map.GetMapInfo,map)
+ for _,xy in ipairs(cityMail[info and info.name] or {}) do
+  local x,y=xy[1]/100,xy[2]/100
+  local duplicate=false
+  for _,pin in ipairs(result) do
+   if pin.symbol=='M' and math.abs(pin.x-x)<.006 and math.abs(pin.y-y)<.006 then duplicate=true;break end
+  end
+  if not duplicate then result[#result+1]={map=map,x=x,y=y,label='Mailbox',symbol='M',service='Mailbox',subtitle='Approximate city location',source='Forever Guide city reference'} end
  end
  for _,p in ipairs(visits()) do if valid(p) and p.map==map then
   for _,service in ipairs(p.repair and {{'V','Vendor'},{'R','Repairs'}} or {{'V','Vendor'}}) do
