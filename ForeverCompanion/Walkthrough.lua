@@ -156,8 +156,40 @@ function G.Build(chapter,ctx)
    end
   end
  end
+ -- Rank confirmed steps on the player's map before a long return trip.
+ -- Cells are only a neighborhood lookup; compare the actual coordinates.
+ local cells={}
+ local function key(x,y) return x..':'..y end
+ for _,step in ipairs(result) do
+  local t=step.target
+  step.speedTier=3
+  if t and t.map==ctx.map and type(ctx.x)=='number' and type(ctx.y)=='number' and step.rank<=4 then
+   local dx,dy=t.x-ctx.x,t.y-ctx.y
+   step.travel=math.sqrt(dx*dx+dy*dy)
+   step.speedTier=step.travel<=.035 and 0 or (step.travel<=.12 and 1 or 2)
+   local cell=key(math.floor(t.x/.035),math.floor(t.y/.035))
+   cells[cell]=cells[cell] or {};table.insert(cells[cell],step)
+  end
+ end
+ for _,step in ipairs(result) do
+  if step.travel then
+   local t=step.target;local cx,cy=math.floor(t.x/.035),math.floor(t.y/.035)
+   local count=0
+   for x=cx-1,cx+1 do for y=cy-1,cy+1 do
+    for _,other in ipairs(cells[key(x,y)] or {}) do
+     local dx,dy=other.target.x-t.x,other.target.y-t.y
+     if other~=step and dx*dx+dy*dy<=.035*.035 then count=count+1 end
+    end
+   end end
+   step.neighbors=count
+   step.cost=step.travel/(1+.22*math.min(count,4))
+  end
+ end
  table.sort(result,function(a,b)
   if ctx.focus and (a.id==ctx.focus)~=(b.id==ctx.focus) then return a.id==ctx.focus end
+  if a.speedTier~=b.speedTier then return a.speedTier<b.speedTier end
+  if a.speedTier==0 and a.rank~=b.rank then return a.rank<b.rank end
+  if a.cost and b.cost and a.cost~=b.cost then return a.cost<b.cost end
   if a.rank~=b.rank then return a.rank<b.rank end
   if order[a.id]~=order[b.id] then return (order[a.id] or math.huge)<(order[b.id] or math.huge) end
   local al,bl=math.abs(a.level-ctx.level),math.abs(b.level-ctx.level)
@@ -190,7 +222,7 @@ local function context()
  local w=ForeverCompanionQuestWaypoints
  local pickups=w.MapPickups(ch[1],live,true)
  local indexed=ForeverCompanionAvailableQuests.Status(ch[1])
- local ctx={level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().focus,
+ local ctx={level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
   catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion,
   completed=function(q) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,q) end,location=w.Location}
  return ch,ctx
@@ -213,10 +245,14 @@ local function button(x,y,w,name,fn)
  local b=ForeverCompanionInterface.Button(frame);b:SetPoint('TOPLEFT',x,-y);b:SetSize(w,28)
  b:SetText(name);b:SetScript('OnClick',fn);return b
 end
+local function ownsTarget(active,owner)
+ return active and owner and active.label==owner.title and active.map==owner.map
+  and active.x==owner.x and active.y==owner.y
+end
 local function clearFollowTarget()
  if lastOwner then
   local active=ForeverCompanionQuestWaypoints.Active()
-  if active and active.label==lastOwner.title and active.map==lastOwner.map and active.x==lastOwner.x and active.y==lastOwner.y then ForeverCompanionQuestWaypoints.Clear() end
+  if ownsTarget(active,lastOwner) then ForeverCompanionQuestWaypoints.Clear() end
  end
  lastOwner=nil;lastSignature=nil
 end
@@ -228,32 +264,37 @@ function G.Refresh()
  local ch,ctx=context()
  local steps=G.Build(ch,ctx);G.steps=steps
  current=steps[1]
- if current then cfg().focus=current.id else cfg().focus=nil end
+ if cfg().manualFocus and (not current or current.id~=cfg().manualFocus) then cfg().manualFocus=nil end
  chapterText:SetText(ch[5]..'  |  Levels '..ch[2]..'–'..ch[3]..'  |  You: '..ctx.level)
  chapterTip:SetText(G.ChapterTip(ch,ctx.side,ctx.level))
  currentTitle:SetText(current and (current.action..'   '..current.title..(current.level and current.level>0 and ('  (Lv. '..current.level..')') or '')) or (ch[1]==2548 and ctx.level<36 and 'Reach level 36' or 'No available step in this chapter'))
  currentBody:SetText(current and (current.detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
   (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
- nextText:SetText('Upcoming steps')
+ nextText:SetText(current and current.neighbors and current.neighbors>0 and ('Nearby: '..current.neighbors..' other quest step'..(current.neighbors==1 and '' or 's')..' in this area') or 'Upcoming steps')
  local pages=math.max(1,math.ceil((#steps-1)/3));page=math.max(1,math.min(page,pages))
  for i,b in ipairs(rows) do
   local s=steps[(page-1)*3+i+1];b.step=s;b:SetShown(s~=nil and not cfg().compact)
   if s then b:SetText(s.action..'   '..s.title..(s.target and ('   ·   '..(s.target.label or 'Map marker')) or '')) end
  end
- pageText:SetText(#steps..' steps available  |  Page '..page..' of '..pages)
+ local tracker=ForeverCompanionSessionProgress
+ local session=tracker and tracker.Snapshot and tracker.Snapshot()
+ local pace=session and not session.paused and session.rate and ('  |  '..math.floor(session.rate)..' XP/hr') or ''
+ pageText:SetText(#steps..' steps available  |  Page '..page..' of '..pages..pace)
  locateButton:SetEnabled(current and current.target~=nil or false);skipButton:SetEnabled(current~=nil)
  backButton:SetEnabled(next(cfg().skip)~=nil)
  followButton:SetText(following and 'Follow: on' or 'Follow: off')
  if following then
   local sig=signature(current)
-  if sig~=lastSignature then
-   local w=ForeverCompanionQuestWaypoints
-   local other=w.Active()
-   if lastOwner and other and (other.label~=lastOwner.title or other.map~=lastOwner.map or other.x~=lastOwner.x or other.y~=lastOwner.y) then
-    following=false;lastOwner=nil;followButton:SetText('Follow: off');status:SetText('Following paused because another destination was selected.')
-   elseif current and current.target and not call(InCombatLockdown) then
+  local w=ForeverCompanionQuestWaypoints
+  local active=w.Active()
+  if lastOwner and active and not ownsTarget(active,lastOwner) then
+   stopFollowing();followButton:SetText('Follow: off');status:SetText('Following paused because another destination was selected.')
+  elseif sig~=lastSignature then
+   if current and current.target and not call(InCombatLockdown) then
     local msg=directions(current);status:SetText(msg or '')
-    lastSignature=sig;lastOwner={title=current.title,map=current.target.map,x=current.target.x,y=current.target.y}
+    local owner={title=current.title,map=current.target.map,x=current.target.x,y=current.target.y}
+    if ownsTarget(w.Active(),owner) then lastOwner=owner else clearFollowTarget() end
+    lastSignature=sig
    elseif not current or not current.target then
     clearFollowTarget()
     lastSignature=sig
@@ -278,7 +319,7 @@ local function layout()
  compactButton:SetText(compact and 'Expand' or 'Compact')
 end
 local function choose(map)
- stopFollowing();cfg().chapter=map;cfg().focus=nil;page=1;status:SetText('');G.Refresh()
+ stopFollowing();cfg().chapter=map;cfg().manualFocus=nil;page=1;status:SetText('');G.Refresh()
 end
 local function menu(anchor)
  local U=ForeverCompanionInterface;local side=UnitFactionGroup('player') or ''
@@ -310,7 +351,7 @@ function G.Open()
    if following then stopFollowing() else following=true;lastSignature=nil end;G.Refresh()
   end)
   skipButton=button(291,253,92,'Skip quest',function()
-   if current then cfg().skip[current.id]=true;cfg().focus=nil;page=1;G.Refresh() end
+   if current then cfg().skip[current.id]=true;cfg().manualFocus=nil;page=1;G.Refresh() end
   end)
   backButton=button(393,253,142,'Restore skipped',function() cfg().skip={};page=1;G.Refresh() end)
   detailsButton=button(545,253,181,'Quest details',function()
@@ -319,7 +360,7 @@ function G.Open()
   end)
   nextText=label(frame,18,296,400,22,14)
   for i=1,3 do local b=button(18,319+(i-1)*32,708,'',function(self)
-   if self.step then cfg().focus=self.step.id;page=1;G.Refresh() end
+   if self.step then cfg().manualFocus=self.step.id;page=1;G.Refresh() end
   end);rows[i]=b end
   local function wheel(_,delta) if not cfg().compact then page=page+(delta<0 and 1 or -1);G.Refresh() end end
   frame:EnableMouseWheel(true);frame:SetScript('OnMouseWheel',wheel)

@@ -432,7 +432,7 @@ function J.Show(show,level)
   kind:SetText("NEXT STEP   ·   PICK UP A QUEST")
   title:SetText(actionPickup.quest.title)
   detail:SetText("Visit "..(actionPickup.target.label or "the quest giver").." and inspect the quest in game.")
-  hint:SetText(actionPickup.reference and "Database reference; confirm additional requirements with the giver." or "Quest start reported by your client. Select Find on map to navigate.")
+  hint:SetText(actionPickup.reference and "Database reference. Confirm any additional requirements with the giver." or "Your client reported this quest start. Select Start arrow for directions.")
  elseif quest then
   kind:SetText(quest.complete and "NEXT STEP   ·   TURN IN" or "NEXT STEP   ·   QUEST OBJECTIVE")
   title:SetText(quest.title)

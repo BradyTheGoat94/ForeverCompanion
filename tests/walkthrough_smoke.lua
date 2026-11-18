@@ -52,11 +52,38 @@ C_Map={GetBestMapForUnit=function() return 2548 end}
 C_QuestLog={IsQuestFlaggedCompleted=function() return false end}
 ForeverCompanionQuestLocations={Provider=noop}
 ForeverCompanionQuestPlanner={IsSupported=function() return true end,GetLive=function() return {} end}
-ForeverCompanionQuestWaypoints={MapPickups=function() return {} end,Active=noop,Navigate=function(t) assert(t.map==2548);return 'ok' end}
+local active,navFails
+ForeverCompanionQuestWaypoints={
+ MapPickups=function() return {} end,
+ Active=function() return active end,
+ Clear=function() active=nil end,
+ Navigate=function(t,_,title)
+  assert(t.map==2548)
+  if navFails then return 'Unavailable' end
+  active={label=title,map=t.map,x=t.x,y=t.y};return 'ok'
+ end,
+}
 ForeverCompanionAvailableQuests={Status=function() return {} end}
 SlashCmdList.FCWALKTHROUGH()
 local function click(name) for _,b in ipairs(buttons) do if b.text==name then b.OnClick(b);return end end;error(name) end
 assert(G.steps[1].id==94613);click('Directions');click('Skip quest');assert(G.steps[1].id~=94613)
 click('Restore skipped');click('Follow: off');click('Follow: on')
 click('Compact');click('Expand')
+click('Follow: off');assert(active and active.label==G.steps[1].title)
+local manual={label='Manual pin',map=2548,x=.3,y=.5}
+active=manual;G.Refresh()
+assert(active==manual,'a manual pin pauses Follow even when the guide step stays the same')
+click('Follow: off');assert(active~=manual)
+navFails=true;click('Skip quest')
+assert(active==nil,'unavailable next waypoint clears the previous guide arrow')
 
+
+local context={level=36,map=2548,x=.50,y=.50,side='Alliance',active={{id=94614,title='Freshwater Fiends',complete=true}},
+ location=function() return {map=2548,x=.90,y=.90,label='Distant return'} end,
+ pickups={{quest={id=998,title='At this camp'},target={map=2548,x=.51,y=.50}},
+ {quest={id=999,title='Next to the first giver'},target={map=2548,x=.52,y=.50}}},
+ skip={},completed=function() return false end,catalogReady=true}
+local route=G.Build(chapter,context)
+assert(route[1].id==998 and route[1].neighbors==1,'Collect nearby quests before a long return trip')
+context.focus=94614
+assert(G.Build(chapter,context)[1].id==94614,'Player-selected destination retains priority')

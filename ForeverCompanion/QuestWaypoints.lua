@@ -80,7 +80,6 @@ function W.Location(quest)
  local allowed=ForeverCompanionQuestLocations.AllowsLocation
  if waypoint and (not allowed or allowed(quest,waypoint)) then return waypoint end
  for _,candidate in ipairs(W.Targets(quest)) do
-  if quest.complete and candidate.kind=='turn-in' then return candidate end
   local state=quest.objectiveStates and quest.objectiveStates[candidate.objectiveIndex]
   if not quest.complete and state and not state.done then return candidate end
  end
