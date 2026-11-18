@@ -2,8 +2,8 @@
 ## Title: Brady's Forever Companion
 ## Notes: Class guides, gear, dungeons, loot and progression (Forever client verification pending)
 ## Author: Brady and Forever Companion Contributors
-## Version: 3.91.0-beta
-## SavedVariables: ForeverCompanionInventoryDB, ForeverCompanionTutorialDB
+## Version: 3.92.0-beta
+## SavedVariables: ForeverCompanionInventoryDB, ForeverCompanionTutorialDB, ForeverCompanionFlightDB
 ## SavedVariablesPerCharacter: ForeverCompanionDB
 ## OptionalDeps: QuestieDB
 GuideData.lua
@@ -125,6 +125,7 @@ HunterReference.lua
 HunterGuide.lua
 HunterWorkspace.lua
 MinimapButton.lua
+FlightTimer.lua
 Core.lua
 
 
