@@ -87,3 +87,15 @@ local route=G.Build(chapter,context)
 assert(route[1].id==998 and route[1].neighbors==1,'Collect nearby quests before a long return trip')
 context.focus=94614
 assert(G.Build(chapter,context)[1].id==94614,'Player-selected destination retains priority')
+
+context.focus=nil;context.active={}
+local function pickup(x,ref) return {quest={id=998,title='Multiple givers'},target={map=2548,x=x,y=.5},reference=ref} end
+for _,entries in ipairs({{pickup(.9),pickup(.51)},{pickup(.51),pickup(.9)}}) do
+ context.pickups=entries;local steps=G.Build(chapter,context)
+ assert(#steps==1 and steps[1].target.x==.51,'Nearest native offer wins in either order')
+end
+context.pickups={pickup(.501,true),pickup(.65,false)}
+assert(G.Build(chapter,context)[1].target.x==.65,'Native offer takes precedence over a reference spawn')
+context.pickups={};context.active={{id=94614,title='Freshwater Fiends',complete=true}}
+context.location=function() return {map=2548,x=.9,y=.9,kind='pickup'} end
+assert(G.Build(chapter,context)[1].target.label=='Benjy Wheeler','Completed quest uses the turn-in contact')

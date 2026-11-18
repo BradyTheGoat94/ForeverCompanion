@@ -117,18 +117,27 @@ function G.Build(chapter,ctx)
  end
  for _,r in ipairs(records[chapter[1]] or {}) do reference[r[1]]=r end
  local function add(id,title,action,detail,target,rank,level)
-  if seen[id] or ctx.skip[id] then return end
-  seen[id]=true
-  local distance=1
+  if ctx.skip[id] then return end
+  local distance=math.huge
   if ctx.map==chapter[1] and ctx.x and ctx.y and target and target.map==ctx.map then distance=(target.x-ctx.x)^2+(target.y-ctx.y)^2 end
-  result[#result+1]={id=id,title=title,action=action,detail=detail,target=target,rank=rank,level=level or ctx.level,distance=distance}
+  local index=seen[id]
+  if index then
+   local previous=result[index]
+   -- Preserve live objectives and native offers; among equally reliable pickups choose the nearest.
+   if previous.rank<rank or (previous.rank==rank and (action~='Pick up' or previous.distance<=distance)) then return end
+  else
+   index=#result+1;seen[id]=index
+  end
+  result[index]={id=id,title=title,action=action,detail=detail,target=target,rank=rank,level=level or ctx.level,distance=distance}
  end
  for _,q in ipairs(ctx.active) do
   local r=reference[q.id]
   if r or q.zone==chapter[5] then
    local target=ctx.location(q)
    local detail=ForeverCompanionLevelingPlan.NextStep(q)
-   if q.complete then target=target or (r and point(r[7]))
+   if q.complete then
+    if target and target.kind=='pickup' then target=nil end
+    target=target or (r and point(r[7]))
    elseif r and r[11] then detail=detail..'\n'..r[11] end
    if not q.complete and target and target.kind=='pickup' then target=nil end
    if not q.complete and not target and r and delivery[q.id] then target=point(r[7]) end
