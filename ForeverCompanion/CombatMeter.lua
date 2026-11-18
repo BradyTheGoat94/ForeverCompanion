@@ -1037,9 +1037,10 @@ function M.Refresh()
   spells=M.FilterSpells(type(spells)=='table' and spells or {},spellQuery,saved().spellFilter,saved().spellOrder)
   detailPanel.spellFilter:SetText(saved().spellFilter=='pets' and 'Pets only' or 'All spells')
   if nativeCount>0 then
-   detailEmpty:SetShown(#spells==0);detailEmpty:SetText('No spells match this search and filter.')
+   detailEmpty:SetShown(#spells==0);detailEmpty:SetText(saved().spellFilter=='pets' and 'Pets only is active. Click Pets only to show player spells.' or 'No spells match this search and filter.')
    detailMessage:SetText(#spells==nativeCount and (nativeCount..' abilities') or (#spells..' of '..nativeCount..' abilities'))
   end
+  if nativeCount>0 and saved().spellFilter=='pets' then detailMessage:SetText('Pets only  |  '..#spells..' of '..nativeCount..' abilities') end
   local pageCount=math.max(1,math.ceil(#spells/8))
   if spellPage>pageCount then spellPage=pageCount end
   if detailPanel.prevSpells then

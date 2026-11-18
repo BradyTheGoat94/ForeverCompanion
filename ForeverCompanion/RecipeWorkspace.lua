@@ -42,6 +42,7 @@ function W.Create(parent)
   row.title=text(row,8,-5,288,'',12);row.title:SetWordWrap(true);row.title:SetHeight(18)
   row.meta=text(row,8,-27,288,'',10)
   row:SetScript('OnClick',function() selected=row.record;W.ingredientPage=1;W.Render(true,profession) end);recipeRows[i]=row
+  row:EnableMouseWheel(true);row:SetScript('OnMouseWheel',function(_,delta) W.page=W.page+(delta<0 and 1 or -1);W.Render(true,profession) end)
   row:SetScript('OnEnter',function(self)
    local planner=ForeverCompanionProfessionLeveling
    if not planner or not self.record or not self.record.guideSpellID then return end
@@ -85,6 +86,7 @@ function W.Create(parent)
    if not index or record.ingredients[row.index]~=row.record then refresh('This ingredient changed. Select the recipe again.');return end
    ForeverCompanionRecipePlans.RemoveIngredient(profession,index,row.index);refresh('Ingredient removed from the manual plan.')
   end)
+  row:EnableMouseWheel(true);row:SetScript('OnMouseWheel',function(_,delta) W.ingredientPage=W.ingredientPage+(delta<0 and 1 or -1);W.Render(true,profession) end)
   ingredientRows[i]=row
  end
  button(root,12,-317,70,'Previous',function() W.page=math.max(1,W.page-1);W.Render(true,profession) end)

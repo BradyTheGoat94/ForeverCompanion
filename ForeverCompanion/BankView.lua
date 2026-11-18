@@ -147,11 +147,11 @@ function B.Create(parent)
  end)
  ownerButton=makeButton(root,452,-47,'Alts',function()
   local keys={character()};for key in pairs(records()) do if key~=character() then keys[#keys+1]=key end end
-  table.sort(keys);local choices={}
+  table.sort(keys);local choices={{label='All characters and inventories',selected=owner==false,action=function() owner=false;page=1;B.Render() end}}
   for _,key in ipairs(keys) do local who=key
-   choices[#choices+1]={label=who,selected=who==(owner or character()),action=function() owner=who;page=1;B.Render() end}
+   choices[#choices+1]={label=who,selected=owner~=false and who==(owner or character()),action=function() owner=who;page=1;B.Render() end}
   end
-  ForeverCompanionInterface.Menu(ownerButton,'Choose character',choices)
+  ForeverCompanionInterface.PagedMenu(ownerButton,'Choose character',choices,nil,290)
  end)
  sortButton=makeButton(root,542,-47,'Sort',function()
   local db=ForeverCompanionDB
@@ -209,10 +209,21 @@ function B.Render()
  local items=type(saved)=="table" and saved.items
  local matches={}
  local query=(search:GetText() or ""):lower()
+ local function collect(items,location)
  for _,item in ipairs(type(items)=="table" and items or {}) do
   local name=item.name or (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(item.id)) or ("Item "..item.id)
-  if name:lower():find(query,1,true) then matches[#matches+1]={item=item,name=name} end
+  if name:lower():find(query,1,true) then matches[#matches+1]={item=item,name=name,location=location} end
  end
+ end
+ sourceButton:SetEnabled(owner~=false)
+ if owner==false then
+  for name,record in pairs(records()) do
+   for _,kind in ipairs({'bank','mail'}) do
+    local snapshot=record[kind]
+    if snapshot then collect(snapshot.items,name..' / '..(kind=='bank' and 'Bank' or 'Mailbox')) end
+   end
+  end
+ else collect(items) end
  for _,entry in ipairs(matches) do
   local info=C_Item and C_Item.GetItemInfo or GetItemInfo
   entry.category=byCategory and info and select(6,info(entry.item.id)) or 'Other'
@@ -220,9 +231,11 @@ function B.Render()
  table.sort(matches,function(a,b)
   if byCategory and a.category~=b.category then return a.category<b.category end
   if a.name~=b.name then return a.name:lower()<b.name:lower() end
+  if a.location~=b.location then return (a.location or "")<(b.location or "") end
   return (a.item.count or 1)>(b.item.count or 1)
  end)
- if source=='mail' and saved then
+ if owner==false then header:SetText('All characters | Saved bank items and mailbox attachments')
+ elseif source=='mail' and saved then
   local partial=(records()[who] or {}).partialMail
   local detail=partial and (saved==partial or saved.loaded<saved.total) and ' | Partial inbox' or (partial and (' | Latest read partial: '..partial.loaded..'/'..partial.total) or '')
   header:SetText(('%s | Mailbox | %d attachments | %d/%d messages | %s%s'):format(who,#items,saved.loaded,saved.total,date('%b %d, %H:%M',saved.savedAt),detail))
@@ -246,12 +259,12 @@ function B.Render()
    row.icon:SetTexture(item.icon or 134400)
    row.name:SetText(entry.name)
    row.count:SetText("×"..tostring(item.count or 1))
-   row.tab:SetText(byCategory and (entry.category..'  /  '..(item.tab or '')) or item.tab)
+   row.tab:SetText((entry.location and (entry.location..' / ') or '')..(byCategory and (entry.category..' / ') or '')..(item.tab or ''))
    row:Show()
   else row:Hide() end
  end
  empty:SetShown(#matches==0)
- empty:SetText(type(items)~="table" and "No snapshot recorded for this character and inventory." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this snapshot."))
+ empty:SetText(owner==false and "No matching items in saved banks or mailboxes." or type(items)~="table" and "No snapshot recorded for this character and inventory." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this snapshot."))
  back:SetEnabled(page>1);nextPage:SetEnabled(page<pages)
  pageLabel:SetText(("%d matches  ·  Page %d of %d"):format(#matches,page,pages))
 end

@@ -738,6 +738,11 @@ local function openSection(name)
   if type(name)~="string" then return false end
   -- All callers (Home actions, grouped menus and slash navigation) share
   -- auxiliary destinations as well as the main-window pages.
+  local key=name:lower()
+  if key=="meter" then ForeverCompanionCombatMeter.Toggle();return true end
+  if key=="walkthrough" then ForeverCompanionWalkthrough.Open();return true end
+  if key=="materials" then ForeverCompanionMaterialFinder.Open();return true end
+  if key=="ingredientrecipes" then ForeverCompanionProfessionGuideWorkspace.Open(nil,'recipes',true);return true end
   if name:lower()=="map" then ForeverCompanionMapHub.Open();return true end
   if name:lower()=="plan" then ForeverCompanionLevelingWorkspace.Open();return true end
   if name:lower()=="hunterpets" or name:lower()=="pets" then ForeverCompanionHunterWorkspace.Open();return true end
@@ -875,7 +880,7 @@ local function createUI()
   end
   headerMeta=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   headerMeta:SetPoint("TOPRIGHT",window,"TOPRIGHT",-48,-22)
-  headerMeta:SetTextColor(.75,.79,.84)
+  headerMeta:SetTextColor(.83,.88,.88)
   headerMeta:SetWidth(290);headerMeta:SetHeight(16);headerMeta:SetJustifyH("RIGHT");headerMeta:SetWordWrap(false)
   ForeverCompanionUIState.questCountText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionUIState.questCountText:SetPoint("TOPRIGHT",-48,-43)
@@ -893,6 +898,26 @@ local function createUI()
       say("Combat meter module is unavailable.")
     end
   end)
+  local jump=ForeverCompanionInterface.EditBox(window,'Find a tool, then press Enter')
+  jump:SetSize(245,24);jump:SetPoint('RIGHT',meterToggle,'LEFT',-10,0);jump:SetAutoFocus(false)
+  jump:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
+  jump:SetScript('OnEnterPressed',function(self)
+   local query=(self:GetText() or ''):lower():match('^%s*(.-)%s*$')
+   if query=='' then self:ClearFocus();return end
+   local matches,seen={},{}
+   for _,group in ipairs(goalGroups) do
+    for _,item in ipairs(group.items) do
+     local label,target=item[1],item[2]
+     if not seen[target] and (group.name..' '..label..' '..target):lower():find(query,1,true) then
+      seen[target]=true;matches[#matches+1]={label=label,action=function() self:SetText('');openSection(target) end}
+     end
+    end
+   end
+   self:ClearFocus()
+   if #matches==1 then matches[1].action()
+   elseif #matches>1 then ForeverCompanionInterface.PagedMenu(self,'Choose a destination',matches,nil,285)
+   else say('No matching tool. Try bank, materials, dungeon, or quest.');self:HighlightText();self:SetFocus() end
+  end)
   local sidebar=window:CreateTexture(nil,"BORDER")
   sidebar:SetPoint("TOPLEFT",window,"TOPLEFT",12,-98)
   sidebar:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,92)
@@ -903,7 +928,7 @@ local function createUI()
   sidebarTrim:SetPoint("TOPLEFT",sidebar,"TOPRIGHT",-2,0)
   sidebarTrim:SetPoint("BOTTOMLEFT",sidebar,"BOTTOMRIGHT",-2,0)
   sidebarTrim:SetWidth(2)
-  colorTexture(sidebarTrim,.14,.17,.22,1)
+  colorTexture(sidebarTrim,.25,.36,.38,1)
   local navHeading=window:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
   navHeading:SetPoint("TOPLEFT",window,"TOPLEFT",28,-112)
   navHeading:SetText("COMPANION")
@@ -984,11 +1009,7 @@ local function createUI()
       for _,item in ipairs(group.items) do
         local label,target=item[1],item[2]
         entries[#entries+1]={label=label,selected=target==currentTab,action=function()
-          if target=='Meter' then ForeverCompanionCombatMeter.Toggle()
-          elseif target=='Walkthrough' then ForeverCompanionWalkthrough.Open()
-          elseif target=='IngredientRecipes' then ForeverCompanionProfessionGuideWorkspace.Open(nil,'recipes')
-          elseif target=='Materials' then ForeverCompanionMaterialFinder.Open()
-          else openSection(target) end
+          openSection(target)
         end}
       end
       ForeverCompanionInterface.Menu(b,group.name,entries)

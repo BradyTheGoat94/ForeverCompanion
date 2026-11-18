@@ -42,6 +42,8 @@ function M.Create()
   if key=='RightButton' then
    ForeverCompanionInterface.Menu(button,"FOREVER COMPANION",{
     {label='Open / close addon',action=function() SlashCmdList.FOREVERCOMPANION('') end},
+    {label='Dungeon Journal',action=function() SlashCmdList.FOREVERCOMPANION('open dungeon journal') end},
+    {label='Town services and mailboxes',action=function() ForeverCompanionServiceAtlas.Toggle() end},
     {label='Hunter pet field guide',action=function() ForeverCompanionHunterWorkspace.Open() end},
     {label='Gear upgrade finder',action=function() ForeverCompanionGearFinderWorkspace.Open() end},
     {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},

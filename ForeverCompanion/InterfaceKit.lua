@@ -2,7 +2,7 @@
 -- explicit selection menus. Contains no gameplay or combat-data processing.
 local U={}
 ForeverCompanionInterface=U
-U.palette={background={.025,.032,.044,.99},surface={.065,.080,.103,1},border={.23,.28,.35,1},accent={.82,.68,.43,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
+U.palette={background={.025,.032,.044,.99},surface={.075,.11,.13,1},rail={.13,.21,.23,1},border={.23,.28,.35,1},accent={.94,.74,.42,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -256,7 +256,7 @@ function U.StyleButton(button,palette,active)
  local p=palette or U.palette
  parts.palette=p;parts.active=active and true or false
  paint(parts.marker,p.accent or U.palette.accent)
- paint(parts.background,active and (p.rail or U.palette.surface) or (p.surface or U.palette.surface))
+ paint(parts.background,active and (p.rail or U.palette.rail) or (p.surface or U.palette.surface))
  paint(parts.edge,active and (p.accent or U.palette.accent) or (p.border or U.palette.border))
  local enabled=not button.IsEnabled or button:IsEnabled()
  parts.text:SetTextColor(unpack(enabled and (active and (p.accent or U.palette.accent) or (p.text or U.palette.text)) or {.43,.49,.57,1}))

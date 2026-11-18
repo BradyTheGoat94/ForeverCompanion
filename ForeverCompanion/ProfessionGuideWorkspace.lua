@@ -2,7 +2,18 @@
 local W={profession='Alchemy',view='route',offset=0,query=''};ForeverCompanionProfessionGuideWorkspace=W
 local P=ForeverCompanionProfessionLeveling;local D=ForeverCompanionProfessionReference
 local root,title,summary,notice,current,target,professionButton,reserveButton,search,slider,rows,detailTitle,detailBody,add,source,gather,import,tabs,rangeButton,stockButton
-local selected,selectedKey
+local selected,selectedKey,scopeButton
+local combined,recipeOwner={},{}
+local function allRecipes()
+ if #combined==0 then
+  for _,profession in ipairs(P.names) do
+   for _,recipe in ipairs(P.Catalog(profession)) do
+    combined[#combined+1]=recipe;recipeOwner[recipe]=profession
+   end
+  end
+ end
+ return combined
+end
 local function text(parent,x,y,width,size,height)
  local t=ForeverCompanionInterface.Text(parent,size);t:SetPoint('TOPLEFT',x,y);t:SetWidth(width)
  if height then t:SetHeight(height);t:SetWordWrap(true);t:SetJustifyV('TOP') end;return t
@@ -30,12 +41,12 @@ end
 function W.Refresh()
  if not root or not root:IsShown() or not W.plan then return end
  local plan=W.plan;local cfg=P.Settings(W.profession)
- professionButton:SetText(W.profession);reserveButton:SetText('Extra supply: '..cfg.reserve..'%')
+ professionButton:SetText(W.view=="recipes" and W.allProfessions and "All professions" or W.profession);reserveButton:SetText('Extra supply: '..cfg.reserve..'%')
  local skill,maximum=P.LiveSkill(W.profession)
  title:SetText('PROFESSION LEVELING JOURNAL · '..W.profession)
  summary:SetText((skill and ('Your skill '..skill..' / '..(maximum or '?')..' · ') or 'Profession preview · ')..plan.current..' → '..plan.target..' · '..#plan.steps..' steps · '..#plan.materials..' materials\n'..(plan.gather and 'Field practice guide: catches, skins and node yields have no fixed material quota.' or ('Planned attempts include '..plan.reserve..'% extra supply. Yellow skill-ups and recipe access need in-game checks; this is not a cheapest-price route.')))
  for key,b in pairs(tabs) do ForeverCompanionInterface.StyleButton(b,nil,W.view==key) end
- local list=W.view=='route' and plan.steps or W.view=='shopping' and plan.materials or P.Catalog(W.profession)
+ local list=W.view=='route' and plan.steps or W.view=='shopping' and plan.materials or (W.allProfessions and allRecipes() or P.Catalog(W.profession))
  local results={};local query=W.query:lower()
  for _,r in ipairs(list) do
   local match=query=='' or r.name:lower():find(query,1,true) or tostring(r.id or '')==query
@@ -47,7 +58,7 @@ function W.Refresh()
   if match then results[#results+1]=r end
  end
  if W.view=='recipes' then
-  title:SetText('RECIPE CATALOG · '..W.profession)
+  title:SetText(W.allProfessions and 'RECIPE CATALOG - ALL PROFESSIONS' or 'RECIPE CATALOG · '..W.profession)
   summary:SetText(#results..' of '..#list..' recipes'..(#list==0 and ' · No crafting recipes recorded' or ' · Hover for item and ingredients'))
  end
  W.results=results;W.offset=math.max(0,math.min(W.offset,math.max(0,#results-6)))
@@ -63,7 +74,7 @@ function W.Refresh()
    elseif recipe and recipe.id and C_Spell and C_Spell.GetSpellTexture then ok,icon=pcall(C_Spell.GetSpellTexture,recipe.id) end
    b.icon:SetTexture(ok and not (issecretvalue and issecretvalue(icon)) and icon or 'Interface\\Icons\\INV_Misc_Book_09')
    b.title:SetText(r.from and (r.from..'–'..r.to..' · '..r.name) or r.name)
-   b.meta:SetText(W.view=='shopping' and (r.owned..' owned / '..r.required..' planned · '..r.shortage..' missing') or W.view=='recipes' and (P.RecipeState(r)..' · Yellow '..r.yellow..' · Gray '..r.gray) or r.gather and r.materialsNote or (r.casts..' planned crafts · '..(r.chance and 'chance-based skill-ups' or 'before yellow threshold')))
+   b.meta:SetText(W.view=='shopping' and (r.owned..' owned / '..r.required..' planned · '..r.shortage..' missing') or W.view=='recipes' and ((W.allProfessions and (recipeOwner[r]..' / ') or '')..P.RecipeState(r)..' · Yellow '..r.yellow..' · Gray '..r.gray) or r.gather and r.materialsNote or (r.casts..' planned crafts · '..(r.chance and 'chance-based skill-ups' or 'before yellow threshold')))
    ForeverCompanionInterface.StyleButton(b,nil,r==selected)
   end
  end
@@ -92,20 +103,27 @@ function W.Refresh()
   end;wrapped[#wrapped+1]=part
  end
  detailBody:SetText(table.concat(wrapped,'\n'))
+ scopeButton:SetShown(W.view=='recipes');scopeButton:SetText(W.allProfessions and 'Scope: all professions' or 'Scope: this profession')
  local showRoute=W.view~='recipes'
  for _,control in ipairs(W.routeControls) do control:SetShown(showRoute) end
  W.detailText=detailBody
 end
-function W.Open(profession,view)
+function W.Open(profession,view,all)
+ W.allProfessions=all==true
  if not root then
   local U=ForeverCompanionInterface
   root=CreateFrame('Frame','ForeverCompanionProfessionLevelingJournal',UIParent,'BackdropTemplate');root:SetSize(960,700);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');U.Surface(root);U.PreparePanel(root,'ForeverCompanionProfessionLevelingJournal',960,700);U.CloseButton(root,function() root:Hide() end);W.root=root
   title=text(root,16,-16,890,17)
   professionButton=button(root,16,-63,220,'Profession',function(self)
-   local entries={};for _,name in ipairs(P.names) do local value=name;entries[#entries+1]={label=name,action=function() W.Open(value,W.view) end} end;U.PagedMenu(self,'PROFESSION / 1–300',entries,nil,260)
+   local entries={}
+   if W.view=='recipes' then entries[1]={label='All professions',action=function() W.allProfessions=true;W.offset=0;selectedKey=nil;W.Refresh() end} end
+   for _,name in ipairs(P.names) do local value=name;entries[#entries+1]={label=name,action=function() W.Open(value,W.view) end} end;U.PagedMenu(self,'PROFESSION / 1–300',entries,nil,260)
   end)
   rangeButton=button(root,248,-63,180,'Skill range',function(self)
    local entries={};for _,range in ipairs({{1,300},{1,75},{75,150},{150,225},{225,300}}) do local first,last=range[1],range[2];entries[#entries+1]={label=first..'–'..last,action=function() current:SetText(first);target:SetText(last);W.Rebuild() end} end;U.Menu(self,'QUICK SKILL RANGES',entries)
+  end)
+  scopeButton=button(root,248,-63,220,'Scope',function()
+   W.allProfessions=not W.allProfessions;selectedKey=nil;W.offset=0;W.Refresh()
   end)
   local currentLabel=text(root,440,-47,70,10);currentLabel:SetText('Current')
   local targetLabel=text(root,520,-47,70,10);targetLabel:SetText('Target')
@@ -136,14 +154,14 @@ function W.Open(profession,view)
   local thumb=slider:CreateTexture(nil,'ARTWORK');thumb:SetSize(16,34);thumb:SetTexture('Interface\\Buttons\\UI-ScrollBar-Knob');slider:SetThumbTexture(thumb);slider:SetScript('OnValueChanged',function(_,n) if not W.sync then W.ScrollTo(n) end end);slider:EnableMouseWheel(true);slider:SetScript('OnMouseWheel',wheel)
   local detail=CreateFrame('Frame',nil,root);detail:SetSize(478,414);detail:SetPoint('TOPLEFT',466,-186);U.Surface(detail)
   detailTitle=text(detail,12,-12,454,14,42);detailBody=text(detail,12,-62,454,11,268)
-  add=button(detail,12,-338,218,'Add step to recipe plan',function() local step=selected and (selected.recipe and selected or {recipe=selected,casts=1});local _,msg=P.ImportStep(W.profession,step);tell(msg) end)
+  add=button(detail,12,-338,218,'Add step to recipe plan',function() local step=selected and (selected.recipe and selected or {recipe=selected,casts=1});local _,msg=P.ImportStep(W.view=="recipes" and W.allProfessions and recipeOwner[selected] or W.profession,step);tell(msg) end)
   source=button(detail,244,-338,218,'Material sources',function(self)
    if not selected then return end
    if W.view=='shopping' then openMaterial(selected);return end
    if selected.gather then ForeverCompanionMaterialFinder.Open(selected.materialsNote:match('^[^/]+'):match('^%s*(.-)%s*$'));return end
    local recipe=selected.recipe or selected;local entries={};for _,m in ipairs(recipe.materials) do local item=m;entries[#entries+1]={label=m.name,action=function() openMaterial(item) end} end;U.PagedMenu(self,'CHOOSE MATERIAL',entries,nil,350)
   end)
-  gather=button(detail,12,-376,218,'Gather planned materials',function() ForeverCompanionGatheringPlan.Open(W.profession) end)
+  gather=button(detail,12,-376,218,'Gather planned materials',function() ForeverCompanionGatheringPlan.Open(W.view=='recipes' and W.allProfessions and recipeOwner[selected] or W.profession) end)
   button(detail,244,-376,218,'Use my current skill',function() local n=P.LiveSkill(W.profession);if not n or n>300 then tell('Current profession skill is unavailable or outside this guide.');return end;current:SetText(math.max(1,n));if (tonumber(target:GetText()) or 300)<n then target:SetText(n) end;W.Rebuild() end)
   import=button(root,16,-620,250,'Add missing shopping goals',function() local _,msg=P.ImportMaterials(W.plan);W.Rebuild();tell(msg) end)
   stockButton=button(root,282,-620,180,'Read carried stock',function() local _,msg=P.ReadCarriedStock(W.plan);W.Refresh();tell(msg) end);W.stockButton=stockButton
