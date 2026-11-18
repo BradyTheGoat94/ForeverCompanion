@@ -30,8 +30,8 @@ local ordered=T.Order({q,localQuest,other},'all','Here',function(quest) return q
 assert(ordered[1].quest==q and ordered[2].quest==other and ordered[3].quest==localQuest)
 assert(#T.Order({q,localQuest,other},'ready','Here',function() return false end)==1)
 assert(#T.Order({q,localQuest,other},'pinned','Here',function(quest) return quest==q end)==1)
-assert(T.Preview(localQuest)=='Second\nThird','tracker shows unfinished objectives and retains unknown states')
-assert(T.Preview(other):find('Ready to turn in',1,true))
+assert(T.Preview(localQuest)=='NEXT: Second','tracker leads with the first unfinished objective')
+assert(T.Preview(other):find('Return to the quest giver',1,true))
 dofile('ForeverCompanion/QuestWaypoints.lua')
 local reference={map=100,x=.3,y=.4,objectiveIndex=1,source='QuestieDB npc'}
 ForeverCompanionQuestLocations={ForQuest=function() return {reference,reference} end}

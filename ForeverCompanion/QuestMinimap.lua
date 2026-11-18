@@ -14,7 +14,14 @@ local function settings()
  return ForeverCompanionDB.questMinimap
 end
 function M.IsEnabled() return settings().enabled~=false end
-function M.MailEnabled() return settings().mailboxes~=false end
+function M.MailEnabled()
+ local d=settings()
+ if d.mailboxes==nil then
+  local hidden=ForeverCompanionDB.questMapHiddenServices
+  d.mailboxes=type(hidden)~='table' or hidden.M~=true
+ end
+ return d.mailboxes
+end
 function M.SetMailEnabled(value) settings().mailboxes=value==true;M.Refresh() end
 function M.Status() return status end
 function M.Hide() for _,marker in ipairs(markers) do marker:Hide() end end
@@ -123,8 +130,7 @@ function M.Refresh()
  entries={};M.Hide()
  if not M.IsEnabled() and not M.MailEnabled() then status='Off';return end
  local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
- local hidden=ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices
- if M.MailEnabled() and map and ForeverCompanionTownServices and not (hidden and hidden.M) then
+ if M.MailEnabled() and map and ForeverCompanionTownServices then
   for _,target in ipairs(ForeverCompanionTownServices.ForMap(map)) do
    if target.symbol=='M' then entries[#entries+1]={mailbox=true,target=target} end
   end

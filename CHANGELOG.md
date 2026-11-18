@@ -1,4 +1,12 @@
-## 3.49.1-beta — Visible training guide and viewport fix
+## 3.85.0-beta - Guided leveling and welcome tour
+
+- Open the first-login tour to learn the quest guide, arrow, map layers, saved inventory and combat meter. Replay it with `/fc tutorial`.
+- Use `/fcguide` for the Alliance or Horde 1-60 walkthrough. Compact mode keeps the next action visible while Follow advances the arrow from quest progress.
+- Riverglades gives level-35 players a return point and directs level-36 players to Farholde or Rog'mar. The route checks quest IDs and resumes from active and completed quests.
+- Combined overlay scope survives unrelated changes. Control overlay and minimap mailboxes separately from quest pins. Partial inbox data preserves the last complete attachment snapshot.
+- Riverglades encounter and location references: [Forever XP](https://forever-xp.com/quests/zone/riverglades/), with live quest data supplied by the client and optional QuestieDB.
+
+## 3.49.1-beta - Visible training guide and viewport fix
 
 - Add Training Guide directly below Class Guides in the main navigation. The command `/fc training` remains available.
 - Give training three direct views: At your level, Coming soon and At this trainer. Add larger client spell icons, localized rank text, clear level/cost columns, colored status, concise currency and less technical default labels. Unknown live prices stay unknown.

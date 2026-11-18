@@ -46,7 +46,7 @@ ForeverCompanionServiceAtlas={Icon=function() return 'Mailbox' end}
 ForeverCompanionTownServices={ForMap=function() return {{symbol='M',map=1,x=.51,y=.52,label='Mailbox'}} end}
 supported=false;M.SetEnabled(true);M.Refresh()
 assert(pin.shown and pin.entry.mailbox and pin.entry.target.label=='Mailbox')
-ForeverCompanionDB.questMapHiddenServices={M=true};M.Refresh();assert(not pin.shown)
+ForeverCompanionDB.questMapHiddenServices={M=true};M.Refresh();assert(pin.shown,'world map filter is independent of minimap')
 
 ForeverCompanionDB.questMapHiddenServices={}
 M.SetEnabled(false);assert(pin.shown and pin.entry.mailbox)

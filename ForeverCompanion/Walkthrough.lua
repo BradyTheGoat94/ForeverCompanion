@@ -53,8 +53,32 @@ local function cfg()
 end
 local function allowed(c,side) return c and (c[4]=='B' or c[4]==side:sub(1,1)) end
 local starts={Human=1429,Dwarf=1426,Gnome=1426,NightElf=1438,Orc=1411,Troll=1411,Tauren=1412,Scourge=1420}
+local riverOrder={
+ Alliance={94613,94614,94617,94999,95156,94877,95561,95913,95961,95988,95957,95975},
+ Horde={93787},
+}
+local riverTips={
+ Alliance={
+  {36,"Farholde > Wheeler's Grange. Start with Demar's horse investigation and batch Benjy's river and coyote objectives. Do the Meadowsbrook delivery if you're heading west."},
+  {40,"Farholde > Sunnyglade. Collect the keep's objectives together. When Tessa sends you to Powderfuse Port, do the innkeeper errands on that trip."},
+  {43,"Finish open Farholde, Sunnyglade and port chains. Continue in Tanaris if the remaining work stalls or needs a group."},
+ },
+ Horde={
+  {36,"Rog'mar > river camps. Start with Krom'rosh around 59.4, 45.6. Pick up nearby quests before leaving the hub."},
+  {40,"Finish the nearby river objectives before heading north to Bolder'ok. Keep Powderfuse Port errands together for one eastbound trip."},
+  {43,"Finish open Rog'mar and Bolder'ok chains. Use Powderfuse Port for coastal errands or continue at Gadgetzan if a chain stalls."},
+ },
+}
+local delivery={[94613]=true,[94999]=true,[95059]=true,[95961]=true,[95957]=true}
+function G.ChapterTip(chapter,side,level)
+ if chapter[1]~=2548 then return chapter[6] end
+ local phases=riverTips[side] or riverTips.Alliance
+ for i=#phases,1,-1 do if level>=phases[i][1] then return phases[i][2] end end
+ return 'Return at level 36. Finish nearby quests before travelling to '..(side=='Horde' and "Rog'mar." or 'Farholde Keep.')
+end
 function G.Chapter(level,map,side,race,chosen)
  if allowed(byMap[chosen],side) then return byMap[chosen] end
+ if map==2548 and level<36 then return byMap[2548] end
  if side=='Alliance' and level==36 and map==1417 then return byMap[2548] end
  local here=byMap[map]
  if allowed(here,side) and level>=here[2] and level<=here[3] then return here end
@@ -84,6 +108,9 @@ local function eligible(r,ctx,done)
 end
 function G.Build(chapter,ctx)
  local result,seen,reference,known={},{},{},{}
+ if chapter[1]==2548 and ctx.level<36 then return result end
+ local order={}
+ for i,id in ipairs(chapter[1]==2548 and riverOrder[ctx.side or 'Alliance'] or {}) do order[id]=i end
  local function done(id)
   if known[id]==nil then local v=ctx.completed(id);known[id]=type(v)=='boolean' and (v and 1 or 0) or -1 end
   if known[id]>=0 then return known[id]==1 end
@@ -104,6 +131,7 @@ function G.Build(chapter,ctx)
    if q.complete then target=target or (r and point(r[7]))
    elseif r and r[11] then detail=detail..'\n'..r[11] end
    if not q.complete and target and target.kind=='pickup' then target=nil end
+   if not q.complete and not target and r and delivery[q.id] then target=point(r[7]) end
    if not q.complete and not target and r then
     for _,o in ipairs(r[8]) do
      if detail:lower():find(o[2]:lower(),1,true) then target=point({o[2],o[3],o[4],o[5]});break end
@@ -131,7 +159,7 @@ function G.Build(chapter,ctx)
  table.sort(result,function(a,b)
   if ctx.focus and (a.id==ctx.focus)~=(b.id==ctx.focus) then return a.id==ctx.focus end
   if a.rank~=b.rank then return a.rank<b.rank end
-  if chapter[1]==2548 and (a.id==94613 or b.id==94613) then return a.id==94613 and b.id~=94613 end
+  if order[a.id]~=order[b.id] then return (order[a.id] or math.huge)<(order[b.id] or math.huge) end
   local al,bl=math.abs(a.level-ctx.level),math.abs(b.level-ctx.level)
   if (a.distance<.0025)~=(b.distance<.0025) then return a.distance<.0025 end
   if al~=bl then return al<bl end
@@ -141,7 +169,7 @@ function G.Build(chapter,ctx)
  return result
 end
 local frame,chapterText,chapterTip,currentTitle,currentBody,nextText,status
-local chapterButton,followButton,locateButton,skipButton,backButton,pageText
+local chapterButton,followButton,locateButton,skipButton,backButton,pageText,compactButton,detailsButton,prevButton,nextButton
 local rows,current,page={},nil,1
 local following,lastSignature,lastOwner=false,nil,nil
 local function currentMap() return C_Map and call(C_Map.GetBestMapForUnit,'player') end
@@ -185,30 +213,31 @@ local function button(x,y,w,name,fn)
  local b=ForeverCompanionInterface.Button(frame);b:SetPoint('TOPLEFT',x,-y);b:SetSize(w,28)
  b:SetText(name);b:SetScript('OnClick',fn);return b
 end
-local function stopFollowing()
- following=false;lastSignature=nil
+local function clearFollowTarget()
  if lastOwner then
   local active=ForeverCompanionQuestWaypoints.Active()
   if active and active.label==lastOwner.title and active.map==lastOwner.map and active.x==lastOwner.x and active.y==lastOwner.y then ForeverCompanionQuestWaypoints.Clear() end
  end
- lastOwner=nil
+ lastOwner=nil;lastSignature=nil
+end
+local function stopFollowing()
+ following=false;clearFollowTarget()
 end
 function G.Refresh()
  if not frame or not frame:IsShown() then return end
  local ch,ctx=context()
  local steps=G.Build(ch,ctx);G.steps=steps
- if ch[1]==2548 and ctx.level<36 then steps={} end
  current=steps[1]
  if current then cfg().focus=current.id else cfg().focus=nil end
  chapterText:SetText(ch[5]..'  |  Levels '..ch[2]..'–'..ch[3]..'  |  You: '..ctx.level)
- chapterTip:SetText(ch[6])
+ chapterTip:SetText(G.ChapterTip(ch,ctx.side,ctx.level))
  currentTitle:SetText(current and (current.action..'   '..current.title..(current.level and current.level>0 and ('  (Lv. '..current.level..')') or '')) or (ch[1]==2548 and ctx.level<36 and 'Reach level 36' or 'No available step in this chapter'))
  currentBody:SetText(current and (current.detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
-  (ch[1]==2548 and ctx.level<36 and 'Finish nearby quests until level 36, then travel to Farholde Keep on Alliance or check Rog’mar on Horde.' or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
+  (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
  nextText:SetText('Upcoming steps')
  local pages=math.max(1,math.ceil((#steps-1)/3));page=math.max(1,math.min(page,pages))
  for i,b in ipairs(rows) do
-  local s=steps[(page-1)*3+i+1];b.step=s;b:SetShown(s~=nil)
+  local s=steps[(page-1)*3+i+1];b.step=s;b:SetShown(s~=nil and not cfg().compact)
   if s then b:SetText(s.action..'   '..s.title..(s.target and ('   ·   '..(s.target.label or 'Map marker')) or '')) end
  end
  pageText:SetText(#steps..' steps available  |  Page '..page..' of '..pages)
@@ -225,9 +254,28 @@ function G.Refresh()
    elseif current and current.target and not call(InCombatLockdown) then
     local msg=directions(current);status:SetText(msg or '')
     lastSignature=sig;lastOwner={title=current.title,map=current.target.map,x=current.target.x,y=current.target.y}
-   elseif not current or not current.target then stopFollowing();followButton:SetText('Follow: off');status:SetText('Following paused until a destination is available.') end
+   elseif not current or not current.target then
+    clearFollowTarget()
+    lastSignature=sig
+    status:SetText('Follow is waiting for a reported destination.')
+   end
   end
  end
+end
+local function layout()
+ local compact=cfg().compact==true
+ local function move(widget,x,y)
+  widget:ClearAllPoints();widget:SetPoint('TOPLEFT',x,-y)
+ end
+ frame:SetHeight(compact and 297 or 520)
+ move(currentTitle,18,compact and 77 or 126)
+ move(currentBody,18,compact and 115 or 168)
+ move(status,18,compact and 239 or 462)
+ for i,b in ipairs({locateButton,followButton,skipButton,backButton,detailsButton}) do
+  move(b,({18,157,291,393,545})[i],compact and 204 or 253)
+ end
+ for _,element in ipairs({chapterTip,nextText,prevButton,nextButton,pageText}) do element:SetShown(not compact) end
+ compactButton:SetText(compact and 'Expand' or 'Compact')
 end
 local function choose(map)
  stopFollowing();cfg().chapter=map;cfg().focus=nil;page=1;status:SetText('');G.Refresh()
@@ -254,7 +302,8 @@ function G.Open()
   frame:SetSize(746,520);frame:SetPoint('CENTER');frame:SetFrameStrata('DIALOG');U.Surface(frame)
   U.PreparePanel(frame,'ForeverCompanionWalkthroughFrame',746,520);U.CloseButton(frame,function() frame:Hide() end)
   chapterText=label(frame,18,12,555,28,17);chapterButton=button(566,40,160,'Chapters',menu)
-  chapterTip=label(frame,18,48,535,72,13)
+  compactButton=button(456,40,102,'Compact',function() cfg().compact=not cfg().compact;layout();G.Refresh() end)
+  chapterTip=label(frame,18,48,429,72,13)
   currentTitle=label(frame,18,126,708,38,19);currentBody=label(frame,18,168,708,84,14)
   locateButton=button(18,253,130,'Directions',function() G.Refresh();status:SetText(directions(current) or 'No destination available.') end)
   followButton=button(157,253,124,'Follow: off',function()
@@ -264,7 +313,7 @@ function G.Open()
    if current then cfg().skip[current.id]=true;cfg().focus=nil;page=1;G.Refresh() end
   end)
   backButton=button(393,253,142,'Restore skipped',function() cfg().skip={};page=1;G.Refresh() end)
-  button(545,253,181,'Quest details',function()
+  detailsButton=button(545,253,181,'Quest details',function()
    if current and (current.action=='Objective' or current.action=='Turn in') and ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(current.id)
    elseif current then status:SetText(current.detail) end
   end)
@@ -272,15 +321,15 @@ function G.Open()
   for i=1,3 do local b=button(18,319+(i-1)*32,708,'',function(self)
    if self.step then cfg().focus=self.step.id;page=1;G.Refresh() end
   end);rows[i]=b end
-  local function wheel(_,delta) page=page+(delta<0 and 1 or -1);G.Refresh() end
+  local function wheel(_,delta) if not cfg().compact then page=page+(delta<0 and 1 or -1);G.Refresh() end end
   frame:EnableMouseWheel(true);frame:SetScript('OnMouseWheel',wheel)
   for _,b in ipairs(rows) do b:EnableMouseWheel(true);b:SetScript('OnMouseWheel',wheel) end
-  button(18,420,92,'Previous',function() page=page-1;G.Refresh() end)
+  prevButton=button(18,420,92,'Previous',function() page=page-1;G.Refresh() end)
   pageText=label(frame,124,427,480,21,12)
-  button(634,420,92,'Next',function() page=page+1;G.Refresh() end)
+  nextButton=button(634,420,92,'Next',function() page=page+1;G.Refresh() end)
   status=label(frame,18,462,708,48,12);frame:HookScript('OnHide',stopFollowing)
  end
- frame:Show();G.Refresh()
+ layout();frame:Show();G.Refresh()
 end
 SLASH_FCWALKTHROUGH1='/fcguide'
 SlashCmdList.FCWALKTHROUGH=G.Open

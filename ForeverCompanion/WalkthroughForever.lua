@@ -1,5 +1,6 @@
 -- Additional Forever quest facts from QuestieDB generated Forever corrections.
 local data=ForeverCompanionWalkthroughRecords
+data[#data+1]={94999,"Eyes for the Watchman",36,36,4294967373,{"Eleanor Holmsby",2548,43.4,82.4},{"Watcher Fredericks",2548,36.4,75.8},{},{},{},"Take the care package from Meadowsbrook to Southern Watch as part of your westbound loop."}
 data[#data+1]={92460,"Coming of Age",1,1,4294967296,{"Ailee Farheart",2521,42.8,23.4},{"Rorian the Dayseeker",2521,42,23.4},{},{},{}}
 data[#data+1]={92461,"Harmony in Balance",1,1,4294967296,{"Rorian the Dayseeker",2521,42,23.4},{"Rorian the Dayseeker",2521,42,23.4},{{1,"Juvenile Vuldren",2521,42,28.2}},{},{}}
 data[#data+1]={92462,"Infestation Investigation",2,1,4294967296,{"Elatrell Featherlight",2521,43.4,24.8},{"Elatrell Featherlight",2521,43.4,24.8},{{1,"Pesky Cirrusfly",2521,42.8,26.6}},{},{}}

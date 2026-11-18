@@ -18,6 +18,10 @@ local function settings()
  if type(ForeverCompanionDB.mapOverlay)~='table' then ForeverCompanionDB.mapOverlay={} end
  local d=ForeverCompanionDB.mapOverlay
  if d.allQuests==nil then d.allQuests=d.preset=="combined" end
+ if d.mailboxes==nil then
+  local hidden=ForeverCompanionDB.questMapHiddenServices
+  d.mailboxes=type(hidden)~='table' or hidden.M~=true
+ end
  if not finite(d.opacity) then d.opacity=.35 end;d.opacity=math.max(.15,math.min(.8,d.opacity))
  if not finite(d.width) then d.width=600 end;d.width=math.max(300,math.min(900,d.width))
  if not finite(d.zoom) then d.zoom=1 end;d.zoom=math.max(1,math.min(4,d.zoom))
@@ -145,8 +149,11 @@ local function refreshPins(reuse)
   end
   if ForeverCompanionTownServices then
    local services=ForeverCompanionTownServices.ForMap(mapID)
-   if ForeverCompanionServiceClusters then services=ForeverCompanionServiceClusters.Filter(services,ForeverCompanionDB.questMapHiddenServices or {}) end
-   for _,p in ipairs(services or {}) do if d.services or p.symbol=='M' then add(p,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01','service',{detail=(p.service or 'Service')..' · '..(p.observed and 'Visited nearby player position' or 'Provider reference'),description=p.subtitle}) end end
+   local hidden=ForeverCompanionDB.questMapHiddenServices
+   for _,p in ipairs(services or {}) do
+    local visible=p.symbol=='M' and d.mailboxes or p.symbol~='M' and d.services and not (type(hidden)=='table' and hidden[p.symbol])
+    if visible then add(p,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01','service',{detail=(p.service or 'Service')..' · '..(p.observed and 'Visited nearby player position' or 'Provider reference'),description=p.subtitle}) end
+   end
   end
   if d.notes~=false and ForeverCompanionMapTools then
    for _,p in ipairs(ForeverCompanionMapTools.List(mapID)) do local style=ForeverCompanionMapTools.NoteStyle(p);add(p,'N',p.label,style.icon,'note',{color=style.color,detail=style.name..' · Personal note'}) end
@@ -350,7 +357,9 @@ function M.Options()
   {label='Map layers...',action=function() U.Menu(header,'OVERLAY LAYERS',{
    {label='Explored terrain detail',selected=d.detail~=false,action=function() d.detail=d.detail==false;M.Refresh(true) end},
    {label='Monochrome artwork',selected=d.monochrome~=false,action=function() d.monochrome=d.monochrome==false;d.preset=nil;M.Refresh(true) end},
-   {label='Focused quest markers',selected=d.quests~=false,action=function() d.quests=d.quests==false;d.preset=nil;M.Refresh(true) end},
+   {label='Quest markers',selected=d.quests~=false,action=function() d.quests=d.quests==false;d.preset=nil;M.Refresh(true) end},
+   {label='Show all active quests',selected=d.allQuests==true,action=function() d.allQuests=not d.allQuests;d.preset=nil;M.Refresh(true) end},
+   {label='Mailbox markers',selected=d.mailboxes==true,action=function() d.mailboxes=not d.mailboxes;M.Refresh(true) end},
    {label='Service markers',selected=d.services==true,action=function() d.services=not d.services;d.preset=nil;M.Refresh(true) end},
    {label='Native location landmarks',selected=d.landmarks~=false,action=function() d.landmarks=d.landmarks==false;M.Refresh(true) end},
    {label='Personal notes',selected=d.notes~=false,action=function() d.notes=d.notes==false;d.preset=nil;M.Refresh(true) end},

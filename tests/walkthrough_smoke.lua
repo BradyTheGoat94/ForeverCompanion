@@ -17,6 +17,12 @@ local chapter=G.Chapter(36,2548,'Alliance','Human')
 local completed={}
 local ctx={level=36,bit=1,active={},pickups={},skip={},completed=function(id) return completed[id]==true end}
 local list=G.Build(chapter,ctx);assert(list[1].id==94613)
+ctx.level=35;assert(G.Chapter(35,2548,'Alliance','Human')==chapter and #G.Build(chapter,ctx)==0)
+assert(G.ChapterTip(chapter,'Alliance',35):find('Return at level 36',1,true))
+ctx.level=36
+local horde={level=36,bit=2,side='Horde',active={},pickups={},skip={},completed=function() return false end}
+local steps=G.Build(chapter,horde);assert(steps[1].id==93787 and steps[1].target.label=="Krom'rosh")
+for _,step in ipairs(steps) do assert(step.id~=94613 and step.id~=94999) end
 completed[94613]=true;for _,s in ipairs(G.Build(chapter,ctx)) do assert(s.id~=94613 and s.id~=95913) end
 ForeverCompanionLevelingPlan={NextStep=function() return 'Finish the current objective' end}
 ctx.active={{id=94614,title='Freshwater Fiends',zone='Riverglades'}};ctx.location=function() end
@@ -52,4 +58,5 @@ SlashCmdList.FCWALKTHROUGH()
 local function click(name) for _,b in ipairs(buttons) do if b.text==name then b.OnClick(b);return end end;error(name) end
 assert(G.steps[1].id==94613);click('Directions');click('Skip quest');assert(G.steps[1].id~=94613)
 click('Restore skipped');click('Follow: off');click('Follow: on')
+click('Compact');click('Expand')
 

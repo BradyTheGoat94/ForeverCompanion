@@ -48,7 +48,7 @@ ForeverCompanionDB.questDirection.compact=true;d.ApplyLayout();assert(d.IsActive
 ForeverCompanionDB.questDirection.compact=false;d.ApplyLayout()
 position=nil;frame.OnUpdate(frame,.2)
 local unavailable=false
-for _,o in ipairs(objects) do if o.text=='Direction unavailable here' then unavailable=true end end
+for _,o in ipairs(objects) do if o.text=='Direction unavailable on this map' then unavailable=true end end
 assert(not d.Arrival(),'missing position clears arrival state')
 assert(unavailable,'lost player position reports unavailable direction without stale bearing')
 assert(d.Stop() and not frame.shown and not d.IsActive())

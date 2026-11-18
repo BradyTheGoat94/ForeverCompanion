@@ -1416,7 +1416,7 @@ local function createUI()
   window:Hide()
   render()
 end
-for _,event in ipairs({"ADDON_LOADED","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD","PLAYER_XP_UPDATE","SPELLS_CHANGED","SKILL_LINES_CHANGED","CHAT_MSG_SKILL","UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED"}) do
+for _,event in ipairs({"ADDON_LOADED","PLAYER_LOGIN","PLAYER_LEVEL_UP","PLAYER_ENTERING_WORLD","PLAYER_XP_UPDATE","SPELLS_CHANGED","SKILL_LINES_CHANGED","CHAT_MSG_SKILL","UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED"}) do
   pcall(function() addon:RegisterEvent(event) end)
 end
 addon:SetScript("OnEvent", function(_, event, arg)
@@ -1431,7 +1431,9 @@ addon:SetScript("OnEvent", function(_, event, arg)
     if type(DB.professions)~="string" then DB.professions=nil end
     if type(DB.tab)~="string" then DB.tab="Overview" end
     createUI()
-    if not DB.welcomed then DB.welcomed=true; window:Show() end
+    DB.welcomed=true
+  elseif DB and event == 'PLAYER_LOGIN' and ForeverCompanionWelcomeTour then
+    ForeverCompanionWelcomeTour.FirstLogin()
   elseif DB and (event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED") then
     fitWindow()
     render()
@@ -1451,6 +1453,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   msg=(msg or ""):match("^%s*(.-)%s*$")
   if not DB then return end
   if msg=='training' or msg=='train' then ForeverCompanionTraining.Toggle();return end
+  if msg=='tutorial' then ForeverCompanionWelcomeTour.Open();return end
   if msg=='minimap' or msg=='minimap show' then ForeverCompanionMinimapButton.SetHidden(false);return end
   if msg=='minimap hide' then ForeverCompanionMinimapButton.SetHidden(true);return end
   if msg=='minimap reset' then ForeverCompanionMinimapButton.Reset();return end

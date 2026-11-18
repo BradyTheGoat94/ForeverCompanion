@@ -18,10 +18,13 @@ local function ownRecord()
  local all=records();local key=character();all[key]=all[key] or {}
  return all[key]
 end
+local function inboxCount(n)
+ return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n>=0 and n<math.huge and n%1==0
+end
 local function captureMail()
- if not GetInboxNumItems or not GetInboxItem or not GetInboxItemLink then return end
+ if not GetInboxNumItems or not GetInboxHeaderInfo or not GetInboxItem or not GetInboxItemLink then return end
  local loaded,total=GetInboxNumItems()
- if type(loaded)~='number' then return end
+ if not inboxCount(loaded) or not inboxCount(total) or total<loaded then return end
  local items={}
  for message=1,loaded do
   local _,_,sender,_,_,_,_,attachments=GetInboxHeaderInfo(message)
@@ -36,13 +39,15 @@ local function captureMail()
     found=found+1
    end
   end
-  if type(attachments)=='number' and found<attachments then return end
+  if attachments and (not inboxCount(attachments) or found~=attachments) then return end
  end
+ local latestLoaded,latestTotal=GetInboxNumItems()
+ if latestLoaded~=loaded or latestTotal~=total then return end
  local record=ownRecord()
- local snapshot={items=items,loaded=loaded,total=total or loaded,savedAt=time()}
+ local snapshot={items=items,loaded=loaded,total=total,savedAt=time()}
  if snapshot.loaded<snapshot.total then
   record.partialMail=snapshot
-  if not record.mail or record.mail.loaded<record.mail.total then record.mail=snapshot end
+  if not record.mail or (inboxCount(record.mail.loaded) and inboxCount(record.mail.total) and record.mail.loaded<record.mail.total) then record.mail=snapshot end
  else
   record.mail=snapshot;record.partialMail=nil
  end
