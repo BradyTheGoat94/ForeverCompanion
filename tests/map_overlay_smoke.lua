@@ -92,3 +92,7 @@ m.Preset('detailed');local explored=0
 for _,o in ipairs(objects) do if o.shown and type(o.texture)=='number' and o.texture>=101 then explored=explored+1 end end
 assert(explored==4,'outdoor detail is actually drawn, not merely projected')
 print('PASS: facing, map aspects and outdoor explored-terrain layer')
+
+m.Preset('combined');assert(ForeverCompanionDB.mapOverlay.allQuests)
+ForeverCompanionDB.mapOverlay.preset=nil;m.Refresh(true);assert(ForeverCompanionDB.mapOverlay.allQuests)
+m.Preset('questing');assert(not ForeverCompanionDB.mapOverlay.allQuests)

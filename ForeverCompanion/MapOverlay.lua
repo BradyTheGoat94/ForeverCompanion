@@ -17,6 +17,7 @@ local function settings()
  ForeverCompanionDB=ForeverCompanionDB or {}
  if type(ForeverCompanionDB.mapOverlay)~='table' then ForeverCompanionDB.mapOverlay={} end
  local d=ForeverCompanionDB.mapOverlay
+ if d.allQuests==nil then d.allQuests=d.preset=="combined" end
  if not finite(d.opacity) then d.opacity=.35 end;d.opacity=math.max(.15,math.min(.8,d.opacity))
  if not finite(d.width) then d.width=600 end;d.width=math.max(300,math.min(900,d.width))
  if not finite(d.zoom) then d.zoom=1 end;d.zoom=math.max(1,math.min(4,d.zoom))
@@ -138,7 +139,7 @@ local function refreshPins(reuse)
  if reuse then points=pointCache else
   if d.quests~=false and planner and way and planner.IsSupported() then
    local selected=planner.GetSelected()
-   for _,e in ipairs(way.MapLocations(mapID,d.preset=='combined' and planner.GetLive() or selected and {selected} or {}) or {}) do
+   for _,e in ipairs(way.MapLocations(mapID,d.allQuests and planner.GetLive() or selected and {selected} or {}) or {}) do
     add(e.target,'Q',e.quest.title,'Interface\\GossipFrame\\AvailableQuestIcon','quest',{questID=e.quest.id,detail=way.Describe(e.target)})
    end
   end
@@ -320,7 +321,7 @@ local presets={
 }
 function M.Preset(name)
  local preset=presets[name];if not preset then return false end
- local d=settings();for k,v in pairs(preset) do d[k]=v end;d.preset=name
+ local d=settings();for k,v in pairs(preset) do d[k]=v end;d.preset=name;d.allQuests=name=="combined"
  M.Toggle(true);return true
 end
 function M.PresetMenu(anchor)
@@ -403,7 +404,7 @@ local function create()
  local collapse=U.Button(tools);collapse:SetSize(62,23);collapse:SetPoint('LEFT',282,0);collapse:SetText('Hide')
  collapse:SetScript('OnClick',function()
   restore:ClearAllPoints();restore:SetPoint('TOPLEFT',UIParent,'BOTTOMLEFT',header:GetLeft(),math.min(UIParent:GetHeight(),header:GetTop()))
-  M.Toggle(false);restore:Show()
+  frame:Hide();restore:Show()
  end)
  frame:SetScript('OnHide',function() frame:StopMovingOrSizing();panStart=nil;inspecting=false;editing=false;hide(hitPins);if GameTooltip then GameTooltip:Hide() end end)
  frame:SetScript('OnMouseWheel',function(_,delta) if inspecting then M.SetZoom(settings().zoom*(delta>0 and 1.25 or .8)) end end)

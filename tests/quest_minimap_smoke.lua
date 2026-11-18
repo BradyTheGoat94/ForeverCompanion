@@ -47,3 +47,8 @@ ForeverCompanionTownServices={ForMap=function() return {{symbol='M',map=1,x=.51,
 supported=false;M.SetEnabled(true);M.Refresh()
 assert(pin.shown and pin.entry.mailbox and pin.entry.target.label=='Mailbox')
 ForeverCompanionDB.questMapHiddenServices={M=true};M.Refresh();assert(not pin.shown)
+
+ForeverCompanionDB.questMapHiddenServices={}
+M.SetEnabled(false);assert(pin.shown and pin.entry.mailbox)
+M.SetMailEnabled(false);assert(not pin.shown and M.Status()=='Off')
+M.SetMailEnabled(true);assert(pin.shown and pin.entry.mailbox)

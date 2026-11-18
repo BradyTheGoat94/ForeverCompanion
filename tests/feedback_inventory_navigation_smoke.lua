@@ -1,3 +1,4 @@
+
 local event
 function CreateFrame() return {RegisterEvent=function() end,SetScript=function(_,_,f) event=f end} end
 function UnitName() return 'Brady' end
@@ -15,6 +16,8 @@ assert(r.mail.items[1].id==2840 and r.mail.items[1].count==7)
 event(nil,'MAIL_CLOSED');function GetInboxNumItems() return 0,0 end
 event(nil,'MAIL_INBOX_UPDATE');assert(#r.mail.items==1)
 event(nil,'MAIL_SHOW');event(nil,'MAIL_INBOX_UPDATE');assert(#r.mail.items==0)
+function GetInboxNumItems() return 0,2 end
+event(nil,'MAIL_INBOX_UPDATE');assert(r.mail.loaded==0 and r.mail.total==0 and r.partialMail.total==2,'retain last complete inbox')
 dofile('ForeverCompanion/QuestWaypoints.lua')
 ForeverCompanionQuestLocations={ForQuest=function() return {{map=1,x=.4,y=.2,objectiveIndex=2},{map=1,x=.6,y=.2,objectiveIndex=1}} end}
 C_Map={GetBestMapForUnit=function() return 1 end}

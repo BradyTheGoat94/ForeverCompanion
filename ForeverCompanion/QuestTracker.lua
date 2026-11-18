@@ -194,6 +194,7 @@ local function create()
    {label='Reset tracker position',action=function() cfg.position=nil;root:ClearAllPoints();root:SetPoint('RIGHT',UIParent,'RIGHT',-35,0) end},
    {label='Stop current directions',enabled=ForeverCompanionQuestWaypoints.HasNavigation(),action=function() ForeverCompanionQuestWaypoints.Clear();T.Refresh() end},
    {label='Dismiss navigation message',enabled=ForeverCompanionQuestWaypoints.LastNotice()~=nil,action=function() ForeverCompanionQuestWaypoints.DismissNotice();T.Refresh() end},
+   {label='Minimap mailboxes',selected=ForeverCompanionQuestMinimap.MailEnabled(),action=function() local m=ForeverCompanionQuestMinimap;m.SetMailEnabled(not m.MailEnabled()) end},
    {label='Minimap quest markers',selected=not ForeverCompanionDB.questMinimap or ForeverCompanionDB.questMinimap.enabled~=false,action=function() if ForeverCompanionQuestMinimap then ForeverCompanionQuestMinimap.SetEnabled(not ForeverCompanionQuestMinimap.IsEnabled()) end end},
    {label='Quest history',action=function() if ForeverCompanionOpenQuestBook then ForeverCompanionOpenQuestBook('history') end end},
    {label='Zone quest catalog',action=function() if ForeverCompanionOpenQuestBook then ForeverCompanionOpenQuestBook('catalog') end end},

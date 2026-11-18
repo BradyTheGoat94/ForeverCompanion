@@ -14,6 +14,8 @@ local function settings()
  return ForeverCompanionDB.questMinimap
 end
 function M.IsEnabled() return settings().enabled~=false end
+function M.MailEnabled() return settings().mailboxes~=false end
+function M.SetMailEnabled(value) settings().mailboxes=value==true;M.Refresh() end
 function M.Status() return status end
 function M.Hide() for _,marker in ipairs(markers) do marker:Hide() end end
 function M.SetEnabled(value)
@@ -81,7 +83,7 @@ local function marker(parent)
 end
 function M.UpdatePositions()
  M.Hide()
- if not M.IsEnabled() then status='Off';return end
+ if not M.IsEnabled() and #entries==0 then status='Off';return end
  if #entries==0 then return end
  local radius,width,height=dimensions()
  if not radius then status='Native minimap radius unavailable; use the world map';return end
@@ -119,15 +121,16 @@ function M.UpdatePositions()
 end
 function M.Refresh()
  entries={};M.Hide()
- if not M.IsEnabled() then status='Off';return end
+ if not M.IsEnabled() and not M.MailEnabled() then status='Off';return end
  local map=C_Map and read(C_Map.GetBestMapForUnit,'player')
  local hidden=ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices
- if map and ForeverCompanionTownServices and not (hidden and hidden.M) then
+ if M.MailEnabled() and map and ForeverCompanionTownServices and not (hidden and hidden.M) then
   for _,target in ipairs(ForeverCompanionTownServices.ForMap(map)) do
    if target.symbol=='M' then entries[#entries+1]={mailbox=true,target=target} end
   end
  end
  local mailboxCount=#entries
+ if not M.IsEnabled() then if mailboxCount>0 then M.UpdatePositions() else status='Off' end;return end
  local p=ForeverCompanionQuestPlanner
  if not p or read(p.IsSupported)~=true then if mailboxCount>0 then M.UpdatePositions();return end;status='Quest data unavailable; minimap points hidden';return end
  local q=read(p.GetSelected)
@@ -150,7 +153,7 @@ local watcher=CreateFrame('Frame')
 for _,event in ipairs({'PLAYER_ENTERING_WORLD','ZONE_CHANGED_NEW_AREA','MINIMAP_UPDATE_ZOOM','CVAR_UPDATE'}) do watcher:RegisterEvent(event) end
 watcher:SetScript('OnEvent',M.Refresh)
 watcher:SetScript('OnUpdate',function(self,dt)
- if #entries==0 or not M.IsEnabled() then return end
+ if #entries==0 then return end
  self.elapsed=(self.elapsed or 0)+dt
  if self.elapsed>=.2 then self.elapsed=0;M.UpdatePositions() end
 end)

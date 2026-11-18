@@ -79,6 +79,7 @@ local function build(db,who)
   if cursor<=#ids then C_Timer.After(.01,batch)
   else
    loading=false
+   if ForeverCompanionWalkthrough then ForeverCompanionWalkthrough.Refresh() end
    if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
    if ForeverCompanionQuestBook then ForeverCompanionQuestBook.Refresh() end
    if ForeverCompanionQuestMap then ForeverCompanionQuestMap.Refresh() end

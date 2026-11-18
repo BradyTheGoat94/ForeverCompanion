@@ -81,7 +81,7 @@ function W.Open(view)
   U.Surface(root);U.PreparePanel(root,'ForeverCompanionLevelingPlanner',920,720)
   local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT');drag:SetSize(870,40);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
   drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
-  text(root,18,-14,820,18,'LEVELING SESSION PLANNER');U.CloseButton(root,function() root:Hide() end)
+  text(root,18,-14,570,18,'LEVELING SESSION PLANNER');button(root,640,-8,206,'Open 1-60 walkthrough',function() root:Hide();ForeverCompanionWalkthrough.Open() end);U.CloseButton(root,function() root:Hide() end)
   metrics=text(root,18,-53,884,12,'')
   text(root,18,-76,884,10,'Your plan is saved for this character. Session XP is observed since login/reset; missing samples do not produce an estimated rate.')
   for i,pair in ipairs({{'suggestions','Suggestions'},{'saved','My saved plan'},{'zones','Zone overview'}}) do

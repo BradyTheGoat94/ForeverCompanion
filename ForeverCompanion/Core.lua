@@ -14,7 +14,7 @@ local classRoles = {WARRIOR={"Tank","Damage"}, PALADIN={"Tank","Damage","Healer"
 local tabButtons = {}
 local goalButtons={}
 local goalGroups={
- {name='Questing',sections={'Overview','Quests','Journey','Alts'},items={{'Home','Overview'},{'Plan my leveling session','Plan'},{'My quest log','Quests'},{'Leveling route','Journey'},{'Alt leveling','Alts'},{'World map','Map'}}},
+ {name='Questing',sections={'Overview','Quests','Journey','Alts'},items={{'Home','Overview'},{'Level 1-60 walkthrough','Walkthrough'},{'Plan my leveling session','Plan'},{'My quest log','Quests'},{'Leveling route','Journey'},{'Alt leveling','Alts'},{'World map','Map'}}},
  {name='Class & Training',sections={'Leveling','Training','PvP'},items={{'Class guide','Leveling'},{'Training guide','Training'},{'Hunter pet field guide','HunterPets'},{'PvP guide','PvP'}}},
  {name='Dungeons & Gear',sections={'Dungeons','Loot'},items={{'Dungeon Journal','Dungeons'},{'Loot catalog','Loot'},{'Gear upgrade finder','Gear'}}},
  {name='Professions',sections={'Professions','Bank'},items={{'Profession guide and goals','Professions'},{'Material sources','Materials'},{'Bank, mailbox and alts','Bank'}}},
@@ -985,6 +985,7 @@ local function createUI()
         local label,target=item[1],item[2]
         entries[#entries+1]={label=label,selected=target==currentTab,action=function()
           if target=='Meter' then ForeverCompanionCombatMeter.Toggle()
+          elseif target=='Walkthrough' then ForeverCompanionWalkthrough.Open()
           elseif target=='IngredientRecipes' then ForeverCompanionProfessionGuideWorkspace.Open(nil,'recipes')
           elseif target=='Materials' then ForeverCompanionMaterialFinder.Open()
           else openSection(target) end

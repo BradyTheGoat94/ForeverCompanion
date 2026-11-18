@@ -38,7 +38,14 @@ local function captureMail()
   end
   if type(attachments)=='number' and found<attachments then return end
  end
- ownRecord().mail={items=items,loaded=loaded,total=total or loaded,savedAt=time()}
+ local record=ownRecord()
+ local snapshot={items=items,loaded=loaded,total=total or loaded,savedAt=time()}
+ if snapshot.loaded<snapshot.total then
+  record.partialMail=snapshot
+  if not record.mail or record.mail.loaded<record.mail.total then record.mail=snapshot end
+ else
+  record.mail=snapshot;record.partialMail=nil
+ end
  if root and root:IsShown() then B.Render() end
 end
 
@@ -211,7 +218,9 @@ function B.Render()
   return (a.item.count or 1)>(b.item.count or 1)
  end)
  if source=='mail' and saved then
-  header:SetText(('%s | Mailbox | %d attachments | %d/%d messages | %s'):format(who,#items,saved.loaded,saved.total,date('%b %d, %H:%M',saved.savedAt)))
+  local partial=(records()[who] or {}).partialMail
+  local detail=partial and (saved==partial or saved.loaded<saved.total) and ' | Partial inbox' or (partial and (' | Latest read partial: '..partial.loaded..'/'..partial.total) or '')
+  header:SetText(('%s | Mailbox | %d attachments | %d/%d messages | %s%s'):format(who,#items,saved.loaded,saved.total,date('%b %d, %H:%M',saved.savedAt),detail))
  elseif type(items)=="table" and type(saved.savedAt)=="number" and type(saved.slots)=="number" then
   header:SetText((who.." | Bank  ·  %d/%d slots  ·  Saved %s"):format(#items,saved.slots,date("%b %d, %H:%M",saved.savedAt)))
  else header:SetText(who..(source=='mail' and ' | Open this character mailbox to save attachments.' or ' | Visit a banker to save inventory.')) end
