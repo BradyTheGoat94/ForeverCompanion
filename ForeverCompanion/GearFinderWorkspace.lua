@@ -104,6 +104,7 @@ function W.Refresh()
  if not root or not root:IsShown() then return end
  W.searchPending=false;W.dirty=false
  local cfg=G.Settings();local isWeights=W.view=='weights';weightPanel:SetShown(isWeights)
+ W.listHeading:SetShown(not isWeights);W.listHeading:SetText(W.view=='hunts' and 'SAVED HUNTS' or W.view=='completed' and 'ACQUIRED GEAR' or 'UPGRADE CANDIDATES')
  for view,b in pairs(tabs) do V.Style(b,view,W.view==view) end
  local active,done=G.HuntCounts();tabs.hunts:SetText('My hunts ('..active..')');tabs.completed:SetText('Acquired ('..done..')')
  profileButton:SetShown(isWeights);profileButton:SetText('Weights: '..cfg.profile);V.Style(profileButton,'weights',W.view=='weights')
@@ -135,7 +136,7 @@ function W.Refresh()
  for index,b in pairs(slots) do
   local label=index==0 and 'All equipment' or (G.slots[index][1]..((index==10 or index==12) and ' 1' or (index==11 or index==13) and ' 2' or ''))
   b:SetText(label);V.Style(b,'discover',index==cfg.slot)
-  if index>0 then b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('LEFT',b,'LEFT',33,0);b:GetFontString():SetPoint('RIGHT',b,'RIGHT',-6,0);b:GetFontString():SetJustifyH('LEFT') end
+  if index>0 then b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('BOTTOM',b,'BOTTOM',0,4);b:GetFontString():SetJustifyH('CENTER');b.slotIcon:SetTexture(G.Call(GetInventoryItemTexture,'player',G.slots[index][2]) or ('Interface\\Icons\\'..V.slotIcons[index])) end
  end
  listArea:Show();scrollBar:SetShown(maximum>0);counter:Show();W.syncScroll=true;scrollBar:SetMinMaxValues(0,maximum);scrollBar:SetValue(W.offset);W.syncScroll=false;counter:SetText(#results==0 and 'No results' or ('Items '..(W.offset+1)..'–'..math.min(#results,W.offset+6)..' of '..#results))
  local selected,selectedIndex
@@ -230,8 +231,8 @@ function W.Open(itemID)
   text(root,20,-119,180,12,'EQUIPMENT SLOTS'):SetTextColor(unpack(V.colors.blue))
   slots[0]=button(root,20,-147,180,'All equipment',function() W.view='discover';G.Settings().slot=0;W.offset=0;W.selected=nil;W.Refresh() end)
   for i,slot in ipairs(G.slots) do
-   local index=i;slots[i]=button(root,20,-180-(i-1)*28,180,slot[1],function() W.view='discover';G.Settings().slot=index;W.offset=0;W.selected=nil;W.Refresh() end,25)
-   local icon=slots[i]:CreateTexture(nil,'ARTWORK');icon:SetSize(18,18);icon:SetPoint('LEFT',8,0);icon:SetTexture('Interface\\Icons\\'..V.slotIcons[i])
+   local index=i;slots[i]=button(root,20+((i-1)%2)*92,-180-math.floor((i-1)/2)*54,88,slot[1],function() W.view='discover';G.Settings().slot=index;W.offset=0;W.selected=nil;W.Refresh() end,50)
+   local icon=slots[i]:CreateTexture(nil,'ARTWORK');slots[i].slotIcon=icon;icon:SetSize(25,25);icon:SetPoint('TOP',0,-3);icon:SetTexture('Interface\\Icons\\'..V.slotIcons[i])
    hover(slots[i],slot[1]..' · slot '..slot[2],function() local info=G.Read(G.Call(GetInventoryItemLink,'player',slot[2]));return 'Equipped: '..(info and info.name or 'empty / unavailable') end)
   end
   button(root,20,-678,180,'Reset filters',function() local cfg=G.Settings();cfg.slot=0;cfg.ready=true;cfg.matchArmor=true;cfg.upgrades=false;cfg.bestNow=true;cfg.dungeon='';search:SetText('');W.offset=0;W.selected=nil;W.Refresh();tell('Filters reset. Saved hunts and weights are unchanged.') end)
@@ -260,7 +261,8 @@ function W.Open(itemID)
   end)
   W.filtersButton=filtersButton
   ForeverCompanionInterface.HoverNote(root,1037,-198,'Gear rankings','Best Now ranks estimated gains over equipped gear. Browse ranks within each slot. Hover a selected item’s rank for details on its comparison.')
-  summary=text(root,230,-193,780,11,'',36);summary:SetTextColor(unpack(V.colors.muted))
+  W.listHeading=text(root,220,-218,420,12,'');W.listHeading:SetTextColor(unpack(V.colors.blue))
+  summary=text(root,220,-191,780,11,'',24);summary:SetTextColor(unpack(V.colors.muted))
   listArea=CreateFrame('Frame',nil,root);listArea:SetSize(420,416);listArea:SetPoint('TOPLEFT',220,-240);listArea:EnableMouseWheel(true)
   local function wheel(_,delta) W.ScrollTo((W.offset or 0)-(delta>0 and 1 or delta<0 and -1 or 0)) end
   listArea:SetScript('OnMouseWheel',wheel)

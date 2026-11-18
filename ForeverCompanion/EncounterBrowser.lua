@@ -5,7 +5,7 @@ local root,subtitle,rows,dungeons,lootRows,bossTitle,pageLabel,previous,nextPage
 local dungeonBack,dungeonNext,dropBack,dropNext
 local theme=ForeverCompanionVisualTheme
 local chrome=ForeverCompanionDungeonChrome
-local questViewButton,lootPanels
+local journalTitle,lootTab,questViewButton,lootPanels
 function E.BossNames(dungeon)
  local names,seen={},{}
  for _,name in ipairs(ForeverCompanionLoot.BossNames(dungeon)) do names[#names+1]=name;seen[name]=true end
@@ -39,6 +39,7 @@ function E.SelectDungeon(name)
  if E.searchBox then E.searchBox:SetText("") end
 end
 function E.Focus(dungeon,boss)
+ E.questView=false
  E.SelectDungeon(dungeon)
  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then boss=ForeverCompanionBossMechanics.Canonical(dungeon,boss) end
  E.boss=boss
@@ -86,12 +87,14 @@ function E.Create(parent,navigate,onPrep)
  root:SetSize(770,402);root:SetPoint("TOPLEFT",parent,"TOPLEFT",8,-5)
  chrome.Skin(root,770,402,61,true)
  chrome.Seal(root,15,-9,30)
- label(root,54,-13,392,"Dungeon Journal",18,true)
+ journalTitle=label(root,54,-13,294,"Dungeon Journal",16,true)
+ journalTitle:SetWordWrap(false)
  subtitle=label(root,16,-44,394)
  button(root,614,-10,140,"Prep & notes",onPrep)
  ForeverCompanionInterface.HoverNote(root,422,-38,'Dungeon Journal','Select a dungeon, then a boss to view its loot and encounter guide. Dungeon quests opens the quest list for the selected dungeon.')
- questViewButton=button(root,456,-10,150,'Dungeon quests',function()
-  E.questView=not E.questView
+ lootTab=button(root,350,-10,124,'Bosses & loot',function() E.questView=false;ForeverCompanionRefresh() end)
+ questViewButton=button(root,480,-10,124,'Dungeon quests',function()
+  E.questView=true
   if E.questView then ForeverCompanionDungeonQuests.StartScan() end
   ForeverCompanionRefresh()
  end)
@@ -106,7 +109,7 @@ function E.Create(parent,navigate,onPrep)
  E.searchBox:SetScript("OnEscapePressed",function(self) if self.ClearFocus then self:ClearFocus() end end)
  E.searchBox:SetScript("OnEnterPressed",function(self) if self.ClearFocus then self:ClearFocus() end end)
  button(root,690,-39,64,"Clear",function() E.query="";E.page=1;E.searchBox:SetText("");ForeverCompanionRefresh() end)
- local left,center,right=column(12,194,"Dungeons"),column(214,222,"Bosses"),column(444,314,"Drops")
+ local left,center,right=column(12,194,"Dungeons"),column(214,222,"Bosses"),column(444,314,"Encounter loot")
  lootPanels={center,right}
  ForeverCompanionDungeonQuests.Create(root)
  dungeons={};E.dungeonRows=dungeons
@@ -241,7 +244,8 @@ function E.Render(tab,db)
   else row:Hide() end
  end
  for _,p in ipairs(lootPanels) do p:SetShown(not E.questView) end
- questViewButton:SetText(E.questView and 'Bosses and loot' or 'Dungeon quests')
+ journalTitle:SetText(E.dungeon~='' and E.dungeon or 'Dungeon Journal')
+ lootTab:SetEnabled(E.questView==true);questViewButton:SetEnabled(not E.questView)
  if E.questView then ForeverCompanionDungeonQuests.Render(E.dungeon) else ForeverCompanionDungeonQuests.Hide() end
  if E.routeDungeon~=E.dungeon then
   E.routeDungeon=E.dungeon
