@@ -99,3 +99,14 @@ assert(G.Build(chapter,context)[1].target.x==.65,'Native offer takes precedence 
 context.pickups={};context.active={{id=94614,title='Freshwater Fiends',complete=true}}
 context.location=function() return {map=2548,x=.9,y=.9,kind='pickup'} end
 assert(G.Build(chapter,context)[1].target.label=='Benjy Wheeler','Completed quest uses the turn-in contact')
+
+context.active={{id=94614,title='Freshwater Fiends',complete=true},{id=94613,title='My Kingdom for a Horse',complete=true}}
+context.location=function(q) return {map=2548,x=q.id==94614 and .574 or .575,y=.5} end
+context.pickups={pickup(.50)};context.focus=nil
+context.remainingXP=500;context.rewardXP=function() return 300 end
+local ding=G.Build(chapter,context)[1]
+assert(ding.action=='Turn in' and ding.ding and ding.hubXP==600)
+context.remainingXP=601;assert(G.Build(chapter,context)[1].id==998)
+context.remainingXP=10;context.rewardXP=function() end;assert(G.Build(chapter,context)[1].id==998)
+context.rewardXP=function() return 300 end;context.location=function() return {map=2548,x=.95,y=.95} end
+assert(G.Build(chapter,context)[1].id==998,'No cross-zone detour for a level')

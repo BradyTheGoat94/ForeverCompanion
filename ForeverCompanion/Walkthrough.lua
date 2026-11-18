@@ -172,6 +172,10 @@ function G.Build(chapter,ctx)
  for _,step in ipairs(result) do
   local t=step.target
   step.speedTier=3
+  if step.rank==1 and ctx.rewardXP then
+   local xp=ctx.rewardXP(step.id)
+   if type(xp)=='number' and xp>0 and xp<math.huge then step.rewardXP=xp end
+  end
   if t and t.map==ctx.map and type(ctx.x)=='number' and type(ctx.y)=='number' and step.rank<=4 then
    local dx,dy=t.x-ctx.x,t.y-ctx.y
    step.travel=math.sqrt(dx*dx+dy*dy)
@@ -184,18 +188,27 @@ function G.Build(chapter,ctx)
   if step.travel then
    local t=step.target;local cx,cy=math.floor(t.x/.035),math.floor(t.y/.035)
    local count=0
+   local hubXP=step.rewardXP or 0
    for x=cx-1,cx+1 do for y=cy-1,cy+1 do
     for _,other in ipairs(cells[key(x,y)] or {}) do
      local dx,dy=other.target.x-t.x,other.target.y-t.y
-     if other~=step and dx*dx+dy*dy<=.035*.035 then count=count+1 end
+     if other~=step and dx*dx+dy*dy<=.035*.035 then
+      count=count+1
+      if step.rank==1 and dx*dx+dy*dy<=.01*.01 then hubXP=hubXP+(other.rewardXP or 0) end
+     end
     end
    end end
+   if step.rank==1 and hubXP>0 then
+    step.hubXP=hubXP
+    step.ding=ctx.remainingXP and hubXP>=ctx.remainingXP and step.speedTier<=1 or false
+   end
    step.neighbors=count
    step.cost=step.travel/(1+.22*math.min(count,4))
   end
  end
  table.sort(result,function(a,b)
   if ctx.focus and (a.id==ctx.focus)~=(b.id==ctx.focus) then return a.id==ctx.focus end
+  if (a.ding==true)~=(b.ding==true) then return a.ding==true end
   if a.speedTier~=b.speedTier then return a.speedTier<b.speedTier end
   if a.speedTier==0 and a.rank~=b.rank then return a.rank<b.rank end
   if a.cost and b.cost and a.cost~=b.cost then return a.cost<b.cost end
@@ -234,6 +247,9 @@ local function context()
  local ctx={level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
   catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion,
   completed=function(q) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,q) end,location=w.Location}
+ local xp,maxXP=call(UnitXP,'player'),call(UnitXPMax,'player')
+ if level<60 and type(xp)=='number' and type(maxXP)=='number' and xp>=0 and maxXP>xp then ctx.remainingXP=maxXP-xp end
+ ctx.rewardXP=function(id) return call(GetQuestLogRewardXP,id) end
  return ch,ctx
 end
 local function signature(step)
@@ -277,7 +293,9 @@ function G.Refresh()
  chapterText:SetText(ch[5]..'  |  Levels '..ch[2]..'–'..ch[3]..'  |  You: '..ctx.level)
  chapterTip:SetText(G.ChapterTip(ch,ctx.side,ctx.level))
  currentTitle:SetText(current and (current.action..'   '..current.title..(current.level and current.level>0 and ('  (Lv. '..current.level..')') or '')) or (ch[1]==2548 and ctx.level<36 and 'Reach level 36' or 'No available step in this chapter'))
- currentBody:SetText(current and (current.detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
+ local detail=current and current.detail
+ if current and current.ding then detail=('Turn-ins here offer %d XP. You need %d XP for level %d.'):format(current.hubXP,ctx.remainingXP,ctx.level+1) end
+ currentBody:SetText(current and (detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
   (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
  nextText:SetText(current and current.neighbors and current.neighbors>0 and ('Nearby: '..current.neighbors..' other quest step'..(current.neighbors==1 and '' or 's')..' in this area') or 'Upcoming steps')
  local pages=math.max(1,math.ceil((#steps-1)/3));page=math.max(1,math.min(page,pages))
@@ -384,7 +402,7 @@ end
 SLASH_FCWALKTHROUGH1='/fcguide'
 SlashCmdList.FCWALKTHROUGH=G.Open
 local watcher=CreateFrame('Frame')
-for _,e in ipairs({'QUEST_LOG_UPDATE','QUEST_ACCEPTED','QUEST_TURNED_IN','PLAYER_LEVEL_UP','ZONE_CHANGED_NEW_AREA','PLAYER_REGEN_ENABLED'}) do pcall(watcher.RegisterEvent,watcher,e) end
+for _,e in ipairs({'PLAYER_XP_UPDATE','QUEST_LOG_UPDATE','QUEST_ACCEPTED','QUEST_TURNED_IN','PLAYER_LEVEL_UP','ZONE_CHANGED_NEW_AREA','PLAYER_REGEN_ENABLED'}) do pcall(watcher.RegisterEvent,watcher,e) end
 local queued=false
 watcher:SetScript('OnEvent',function()
  if not frame or not frame:IsShown() or queued then return end
