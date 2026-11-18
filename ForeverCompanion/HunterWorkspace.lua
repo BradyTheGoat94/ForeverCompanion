@@ -206,6 +206,7 @@ function W.Open()
   root=CreateFrame('Frame','ForeverCompanionHunterFieldGuide',UIParent,'BackdropTemplate');W.root=root;root:SetSize(920,680);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');ForeverCompanionDungeonChrome.Skin(root,920,680,40,true);U.PreparePanel(root,'ForeverCompanionHunterFieldGuide',920,680);U.CloseButton(root,function() root:Hide() end)
   text(root,16,-16,850,18,'HUNTER’S FIELD GUIDE')
   tabs={}
+  button(root,724,-8,146,'Toggle pet XP',function() tell(ForeverCompanionPetXPTracker.Toggle()) end)
   for i,v in ipairs({{'beasts','Beasts & locations'},{'families','Families & roles'},{'abilities','Skills & ranks'},{'trainers','Pet trainers'},{'pet','My companion'}}) do local key=v[1];tabs[key]=button(root,16+(i-1)*179,-50,171,v[2],function() W.view=key;W.page=1;W.rank=1;W.detailPage=1;W.sourceNotes=false;selected=nil;W.Refresh() end) end
   search=U.EditBox(root,'Search pet, family, skill, zone or NPC ID');search:SetPoint('TOPLEFT',16,-91);search:SetSize(288,26);search:SetMaxLetters(80);search:SetScript('OnTextChanged',function(self) W.options.query=self:GetText();W.page=1;W.Refresh() end)
   familyButton=button(root,316,-91,184,'All families',function(self) local menu={{label='All families',action=function() W.options.family='';W.page=1;W.Refresh() end}};for _,f in ipairs(H.Build('families',{})) do local name=f.name;menu[#menu+1]={label=name,action=function() W.options.family=name;W.page=1;W.Refresh() end} end;U.PagedMenu(self,'FAMILY',menu,nil,280) end)
