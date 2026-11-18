@@ -117,7 +117,7 @@ function G.Build(chapter,ctx)
  end
  for _,r in ipairs(records[chapter[1]] or {}) do reference[r[1]]=r end
  local function add(id,title,action,detail,target,rank,level)
-  if ctx.skip[id] then return end
+  if ctx.skip[id] or (ctx.logFull and (action=='Pick up' or action=='Check pickup')) then return end
   local distance=math.huge
   if ctx.map==chapter[1] and ctx.x and ctx.y and target and target.map==ctx.map then distance=(target.x-ctx.x)^2+(target.y-ctx.y)^2 end
   local index=seen[id]
@@ -247,6 +247,9 @@ local function context()
  local ctx={level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
   catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion,
   completed=function(q) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,q) end,location=w.Location}
+ local _,questCount=call(C_QuestLog and C_QuestLog.GetNumQuestLogEntries or GetNumQuestLogEntries)
+ local limit=call(C_QuestLog and C_QuestLog.GetMaxNumQuestsCanAccept) or MAX_QUESTLOG_QUESTS
+ if not (issecretvalue and issecretvalue(questCount)) and type(questCount)=='number' and type(limit)=='number' and limit>0 then ctx.logFull=questCount>=limit end
  local xp,maxXP=call(UnitXP,'player'),call(UnitXPMax,'player')
  if level<60 and type(xp)=='number' and type(maxXP)=='number' and xp>=0 and maxXP>xp then ctx.remainingXP=maxXP-xp end
  ctx.rewardXP=function(id) return call(GetQuestLogRewardXP,id) end
@@ -291,12 +294,12 @@ function G.Refresh()
  current=steps[1]
  if cfg().manualFocus and (not current or current.id~=cfg().manualFocus) then cfg().manualFocus=nil end
  chapterText:SetText(ch[5]..'  |  Levels '..ch[2]..'–'..ch[3]..'  |  You: '..ctx.level)
- chapterTip:SetText(G.ChapterTip(ch,ctx.side,ctx.level))
+ chapterTip:SetText(ctx.logFull and 'Quest log full. Finish or turn in an active quest to make room for the next pickup.' or G.ChapterTip(ch,ctx.side,ctx.level))
  currentTitle:SetText(current and (current.action..'   '..current.title..(current.level and current.level>0 and ('  (Lv. '..current.level..')') or '')) or (ch[1]==2548 and ctx.level<36 and 'Reach level 36' or 'No available step in this chapter'))
  local detail=current and current.detail
  if current and current.ding then detail=('Turn-ins here offer %d XP. You need %d XP for level %d.'):format(current.hubXP,ctx.remainingXP,ctx.level+1) end
  currentBody:SetText(current and (detail..'\n'..(current.target and place(current.target) or 'Open quest details for the full objective.')) or
-  (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
+  (ch[1]==2548 and ctx.level<36 and G.ChapterTip(ch,ctx.side,ctx.level) or ctx.logFull and 'Check your quest log for a turn-in in another chapter.' or 'Review another zone under Chapters, restore skipped quests, or check a local quest giver.'))
  nextText:SetText(current and current.neighbors and current.neighbors>0 and ('Nearby: '..current.neighbors..' other quest step'..(current.neighbors==1 and '' or 's')..' in this area') or 'Upcoming steps')
  local pages=math.max(1,math.ceil((#steps-1)/3));page=math.max(1,math.min(page,pages))
  for i,b in ipairs(rows) do

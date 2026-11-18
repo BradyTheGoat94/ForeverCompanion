@@ -110,3 +110,8 @@ context.remainingXP=601;assert(G.Build(chapter,context)[1].id==998)
 context.remainingXP=10;context.rewardXP=function() end;assert(G.Build(chapter,context)[1].id==998)
 context.rewardXP=function() return 300 end;context.location=function() return {map=2548,x=.95,y=.95} end
 assert(G.Build(chapter,context)[1].id==998,'No cross-zone detour for a level')
+
+context.logFull=true
+for _,step in ipairs(G.Build(chapter,context)) do assert(step.rank<=2,'Full quest log only offers active work') end
+assert(G.Build(chapter,context)[1].action=='Turn in')
+context.logFull=false;assert(G.Build(chapter,context)[1].id==998,'Pickup returns when space opens')
