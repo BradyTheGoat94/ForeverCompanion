@@ -2,7 +2,7 @@
 local Guide={}
 ForeverCompanionClassGuide=Guide
 local root,values,topics,topicPanel,topicTitle,topicMeta,topicBody,topicLink,navigate
-local views={"Overview","Talents","Rotations","Leveling","Dungeons","PvP","Gear & Stats","Professions"}
+local views={"Overview","Talents","Rotations","Macros","Leveling","Dungeons","PvP","Gear & Stats","Professions"}
 local readingCards={}
 Guide.readingCards=readingCards
 local function text(parent,x,y,w,value,size,gold)
@@ -118,10 +118,10 @@ function Guide.Create(parent,openPage)
  end)
  hero:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
  for i,name in ipairs(views) do
-  local b=CreateFrame("Button",nil,root);b:SetSize(93,32);b:SetPoint("TOPLEFT",root,"TOPLEFT",(i-1)*98,-129)
-  b.bg=ForeverCompanionVisualTheme.Button(b,93,32)
-  b.label=text(b,3,-10,87,name,11);b.label:SetJustifyH("CENTER");b.view=name
-  b.rail=b:CreateTexture(nil,"OVERLAY");b.rail:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",0,0);b.rail:SetSize(93,2)
+  local b=CreateFrame("Button",nil,root);b:SetSize(81,32);b:SetPoint("TOPLEFT",root,"TOPLEFT",(i-1)*87,-129)
+  b.bg=ForeverCompanionVisualTheme.Button(b,81,32)
+  b.label=text(b,3,-10,75,name,11);b.label:SetJustifyH("CENTER");b.view=name
+  b.rail=b:CreateTexture(nil,"OVERLAY");b.rail:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",0,0);b.rail:SetSize(81,2)
   b:SetScript("OnClick",function() Guide.SelectView(name) end)
   topics[i]=b
  end
@@ -134,6 +134,7 @@ function Guide.Create(parent,openPage)
  topicLink=ForeverCompanionInterface.Button(topicPanel);topicLink:SetSize(240,25);topicLink:SetPoint("TOPLEFT",topicPanel,"TOPLEFT",16,-309)
  topicLink:SetScript("OnClick",function() if topicLink.target and navigate then navigate(topicLink.target) end end)
  ForeverCompanionTalentWorkspace.Create(topicPanel)
+ ForeverCompanionClassMacros.Create(topicPanel)
  Guide.topicPanel=topicPanel;Guide.topicBody=topicBody
  topicPanel:Hide();root:Hide()
 end
@@ -211,6 +212,16 @@ function Guide.Render(class,label,level,role,mode)
   ForeverCompanionVisualTheme.SelectRow(b,b.bg,active)
   b.rail:SetColorTexture(.82,.68,.43,active and 1 or 0)
  end
+ if view=="Macros" then
+  ForeverCompanionTalentWorkspace.Hide()
+  topicTitle:SetText(label.." / Macros");topicTitle:Show()
+  topicMeta:Hide();topicBody:Hide();topicLink:Hide()
+  ForeverCompanionClassMacros.Render(class)
+  ForeverCompanionVisualTheme.ResizePanel(topicPanel,345)
+  topicPanel:Show()
+  return
+ end
+ ForeverCompanionClassMacros.Hide()
  if view=="Talents" then
   topicTitle:Hide();topicMeta:Hide();topicBody:Hide();topicLink:Hide()
   ForeverCompanionTalentWorkspace.Render(class,selected)
