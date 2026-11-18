@@ -22,7 +22,7 @@ local chapters={
  {1434,30,45,'B','Stranglethorn Vale','Start with the northern hunting camp and your faction camp. Combine the hunts by terrain. Save Booty Bay and the southern coast for a later pass.'},
  {1443,30,39,'B','Desolace','Use Nijel’s Point or Shadowprey Village for supplies. Check centaur faction requirements before choosing a camp to fight.'},
  {1417,30,40,'B','Arathi Highlands','Visit Refuge Pointe or Hammerfall. Pair nearby farm objectives and keep Stromgarde group work separate. Alliance can move to Farholde Keep at 36.'},
- {2548,36,46,'B','Riverglades','Alliance: reach level 36, then speak with Demar Brant at Farholde Keep. Wheeler’s Grange is your first western stop. Horde: check the available quests at Rog’mar before circling the river.'},
+ {2548,36,44,'B','Riverglades','Alliance: reach level 36, then speak with Demar Brant at Farholde Keep. Wheeler’s Grange is your first western stop. Horde: check the available quests at Rog’mar before circling the river.'},
  {1445,35,45,'B','Dustwallow Marsh','Start at Theramore or Brackenwall Village. Pick up the local investigations before entering the marsh. Return by the road when your swamp objectives are ready.'},
  {1446,40,51,'B','Tanaris','Take the Gadgetzan flight path and collect the town quests. Combine the Wastewander objectives, then make a separate coastal trip for the pirate camps.'},
  {1444,40,51,'B','Feralas','Start at your faction hub. Finish one side of the zone at a time. Check the coast and island travel before committing to a long return journey.'},
@@ -98,6 +98,7 @@ local function raceMatches(mask,bit)
  return mask==0 or (bit and bit>0 and math.floor(mask/bit)%2==1)
 end
 local function eligible(r,ctx,done)
+ if r[12] and ctx.class~=r[12] then return false end
  if r[4]>ctx.level or r[3]>ctx.level+3 or not raceMatches(r[5],ctx.bit) then return false end
  for _,id in ipairs(r[9]) do if done(id)~=true then return false end end
  if #r[10]>0 then
@@ -151,7 +152,8 @@ function G.Build(chapter,ctx)
  end
  for _,entry in ipairs(ctx.pickups) do
   local q,t=entry.quest,entry.target
-  if t and t.map==chapter[1] and done(q.id)~=true and (not q.level or q.level<=ctx.level+3) then
+  local r=reference[q.id]
+  if (not entry.reference or not r or eligible(r,ctx,done)) and t and t.map==chapter[1] and done(q.id)~=true and (not q.level or q.level<=ctx.level+3) then
    local r=reference[q.id]
    add(q.id,q.title,'Pick up',('Speak with '..(t.label or (r and r[6][1]) or 'the marked quest giver')..'.')..(r and r[11] and ('\n'..r[11]) or ''),t,entry.reference and 4 or 3,q.level or (r and r[3]))
   end
@@ -230,6 +232,7 @@ local function currentMap() return C_Map and call(C_Map.GetBestMapForUnit,'playe
 local function context()
  local level=call(UnitLevel,'player') or 1
  local side=call(UnitFactionGroup,'player') or ''
+ local _,class=call(UnitClass,'player')
  local _,race,id=call(UnitRace,'player')
  local bit=type(id)=='number' and id>=1 and id<=53 and 2^(id-1)
  if race and race:lower():find('skyborne') then bit=side=='Horde' and 8589934592 or 4294967296 end
@@ -244,7 +247,7 @@ local function context()
  local w=ForeverCompanionQuestWaypoints
  local pickups=w.MapPickups(ch[1],live,true)
  local indexed=ForeverCompanionAvailableQuests.Status(ch[1])
- local ctx={level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
+ local ctx={class=class,level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
   catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion,
   completed=function(q) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,q) end,location=w.Location}
  local _,questCount=call(C_QuestLog and C_QuestLog.GetNumQuestLogEntries or GetNumQuestLogEntries)

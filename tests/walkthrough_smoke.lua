@@ -115,3 +115,15 @@ context.logFull=true
 for _,step in ipairs(G.Build(chapter,context)) do assert(step.rank<=2,'Full quest log only offers active work') end
 assert(G.Build(chapter,context)[1].action=='Turn in')
 context.logFull=false;assert(G.Build(chapter,context)[1].id==998,'Pickup returns when space opens')
+
+local isle=G.Chapter(4,2521,'Horde','Skyborne')
+local sky={level=4,bit=8589934592,side='Horde',class='WARRIOR',active={},skip={},pickups={},completed=function() return false end}
+local function offered(id)
+ for _,step in ipairs(G.Build(isle,sky)) do if step.id==id then return true end end
+ return false
+end
+assert(not offered(92466))
+sky.class='SHAMAN';assert(offered(92466) and not offered(92467))
+sky.completed=function(id) return id==92466 end
+assert(offered(92467) and not offered(92468))
+assert(chapter[3]==44)
