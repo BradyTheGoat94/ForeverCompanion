@@ -358,6 +358,55 @@ local function showServices(canvas,mapID,scale)
  return notice,#points
 end
 
+local function readPublic(fn,...)
+ if type(fn)~='function' then return end
+ local ok,a,b=pcall(fn,...)
+ if ok and not (issecretvalue and (issecretvalue(a) or issecretvalue(b))) then return a,b end
+end
+
+local function validCoordinates(x,y)
+ return finite(x) and finite(y) and x>=0 and x<=1 and y>=0 and y<=1
+end
+
+function M.CursorCoordinates(map)
+ local scroll=map and map.ScrollContainer
+ if scroll and readPublic(scroll.IsMouseOver,scroll)==true then
+  local x,y=readPublic(scroll.GetNormalizedCursorPosition,scroll)
+  if validCoordinates(x,y) then return x,y end
+ end
+end
+
+function M.ZoneLevelText(mapID)
+ if not finite(mapID) or not C_Map or not Enum or not Enum.UIMapType then return end
+ local info=readPublic(C_Map.GetMapInfo,mapID)
+ if type(info)~='table' or info.mapType~=Enum.UIMapType.Zone then return end
+ local lo,hi=readPublic(C_Map.GetMapLevels,mapID)
+ if finite(lo) and finite(hi) and lo>0 and hi>=lo then
+  return lo==hi and ('Lv. %d'):format(lo) or ('Lv. %d-%d'):format(lo,hi)
+ end
+end
+
+function M.GoToCoordinates(input)
+ local a,b=input:match('^%s*(%d+%.?%d*)%s*,%s*(%d+%.?%d*)%s*$')
+ if not a then a,b=input:match('^%s*(%d+%.?%d*)%s+(%d+%.?%d*)%s*$') end
+ local x,y=tonumber(a),tonumber(b)
+ if not x or not y or not validCoordinates(x/100,y/100) then
+  return 'Enter two coordinates from 0 to 100, for example /fc coords 42.5 67.1.'
+ end
+ local map=worldMap or WorldMapFrame
+ local id
+ if map and readPublic(map.IsShown,map)==true then id=readPublic(map.GetMapID,map)
+ elseif C_Map then id=readPublic(C_Map.GetBestMapForUnit,'player') end
+ if not finite(id) or id<1 then return 'Open the world map to the destination zone first.' end
+ if not Enum or not Enum.UIMapType then return 'Zone map type unavailable on this client.' end
+ local info=C_Map and readPublic(C_Map.GetMapInfo,id)
+ if type(info)~='table' or info.mapType~=Enum.UIMapType.Zone then
+  return 'Choose a zone map before setting a coordinate waypoint.'
+ end
+ local label=('%s %.1f, %.1f'):format(info.name or 'Map point',x,y)
+ return ForeverCompanionQuestWaypoints.Navigate({map=id,x=x/100,y=y/100,label=label,source='Entered coordinates'},false,label)
+end
+
 function M.OpenAppearance(anchor)
  ForeverCompanionDB=ForeverCompanionDB or {}
  local db=ForeverCompanionDB;local entries={}
@@ -369,6 +418,8 @@ function M.OpenAppearance(anchor)
  entries[#entries+1]={label='Show service names',selected=db.mapServiceLabels==true,action=function() db.mapServiceLabels=not db.mapServiceLabels;M.Refresh() end}
  entries[#entries+1]={label='Tighter service clusters',selected=db.mapServiceTight==true,action=function() db.mapServiceTight=not db.mapServiceTight;M.Refresh() end}
  entries[#entries+1]={label='Show player map coordinates',selected=db.mapShowCoordinates~=false,action=function() db.mapShowCoordinates=db.mapShowCoordinates==false;M.Refresh() end}
+ entries[#entries+1]={label='Show cursor coordinates',selected=db.mapShowCursor~=false,action=function() db.mapShowCursor=db.mapShowCursor==false;M.Refresh() end}
+ entries[#entries+1]={label='Show zone levels',selected=db.mapShowLevels~=false,action=function() db.mapShowLevels=db.mapShowLevels==false;M.Refresh() end}
  entries[#entries+1]={label='Reset map dock position',action=function() db.mapDockPosition=nil;if guide then guide:ClearAllPoints();guide:SetPoint('BOTTOMLEFT',worldMap,'BOTTOMLEFT',12,12) end end}
  ForeverCompanionInterface.Menu(anchor or guide,'MAP APPEARANCE',entries)
 end
@@ -402,17 +453,22 @@ local function createGuide(map)
  local accent=bar:CreateTexture(nil,'ARTWORK');accent:SetColorTexture(.20,.72,.78,1);accent:SetPoint('TOPLEFT',0,0);accent:SetPoint('TOPRIGHT',0,0);accent:SetHeight(2)
  local title=U.Text(bar,13);title:SetPoint('TOPLEFT',12,-9);title:SetWidth(300);title:SetHeight(18)
  local hint=U.Text(bar,10,U.palette.muted);hint:SetPoint('TOPLEFT',12,-33);hint:SetWidth(392);hint:SetHeight(14)
- local coordinates=U.Text(bar,10,{.40,.83,.86,1});coordinates:SetPoint('TOPRIGHT',-12,-33);coordinates:SetWidth(94);coordinates:SetHeight(14);coordinates:SetJustifyH('RIGHT')
+ local coordinates=U.Text(bar,10,{.40,.83,.86,1});coordinates:SetPoint('TOPRIGHT',-12,-33);coordinates:SetWidth(220);coordinates:SetHeight(14);coordinates:SetJustifyH('RIGHT')
  local function updateCoordinates()
-  coordinates:SetShown(not db.mapDockMinimized and db.mapShowCoordinates~=false);hint:SetWidth(db.mapShowCoordinates==false and 496 or 392)
-  if db.mapDockMinimized or db.mapShowCoordinates==false then return end
+  coordinates:SetShown(not db.mapDockMinimized and (db.mapShowCoordinates~=false or db.mapShowCursor~=false));hint:SetWidth(db.mapShowCoordinates==false and db.mapShowCursor==false and 496 or db.mapShowCursor==false and 378 or 265)
+  if db.mapDockMinimized or (db.mapShowCoordinates==false and db.mapShowCursor==false) then return end
   local mapID=map:GetMapID()
   local ok,position=pcall(function() return C_Map and C_Map.GetPlayerMapPosition and C_Map.GetPlayerMapPosition(mapID,'player') end)
   local x,y
   if ok and position and not (issecretvalue and issecretvalue(position)) and type(position.GetXY)=='function' then
    local readable,a,b=pcall(position.GetXY,position);if readable then x,y=a,b end
   end
-  coordinates:SetText(finite(x) and finite(y) and x>=0 and x<=1 and y>=0 and y<=1 and string.format('%.1f / %.1f',x*100,y*100) or 'No position')
+  local playerText=db.mapShowCoordinates~=false and (validCoordinates(x,y) and ('You %.1f, %.1f'):format(x*100,y*100) or 'No position')
+  local cx,cy
+  if db.mapShowCursor~=false and not readPublic(bar.IsMouseOver,bar) then cx,cy=M.CursorCoordinates(map) end
+  local cursorText=cx and ('Cursor %.1f, %.1f'):format(cx*100,cy*100)
+  if playerText and cursorText then coordinates:SetText(playerText..'  |  '..cursorText)
+  else coordinates:SetText(playerText or cursorText or '') end
  end
  local elapsed=0;bar:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=.25 then elapsed=0;updateCoordinates() end end);updateCoordinates()
  local find=U.Button(bar);find:SetSize(148,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
@@ -455,6 +511,14 @@ local function createGuide(map)
  button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
  local appearance;appearance=button(442,-35,66,'Tools...',function() ForeverCompanionInterface.Menu(appearance,'MAP TOOLS',{
   {label='Map appearance',action=function() M.OpenAppearance(appearance) end},
+  {label='Center on player',action=function()
+   local current,x,y=ForeverCompanionMapTools.Position()
+   if current and type(map.SetMapID)=='function' and type(map.PanAndZoomTo)=='function' then
+    if map:GetMapID()~=current then map:SetMapID(current) end
+    if map:GetMapID()==current then map:PanAndZoomTo(x,y) end
+   end
+  end},
+  {label='Reset map zoom',action=function() readPublic(map.ResetZoom,map) end},
   {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(appearance) end},
  }) end)
@@ -608,7 +672,10 @@ function M.Refresh()
  showDungeons(worldMap,canvas,mapID,width,height)
  local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
  local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
- guideTitle:SetText(ok and type(info)=='table' and info.name or 'COMPANION MAP')
+ local name=ok and type(info)=='table' and info.name or 'COMPANION MAP'
+ local levels=not ForeverCompanionDB or ForeverCompanionDB.mapShowLevels~=false
+ local levelText=levels and M.ZoneLevelText(mapID)
+ guideTitle:SetText(levelText and (name..'  |  '..levelText) or name)
  guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)
  guide:Show()

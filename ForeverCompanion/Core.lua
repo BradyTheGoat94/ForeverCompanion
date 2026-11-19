@@ -1492,6 +1492,9 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   if msg=='pets' then ForeverCompanionHunterWorkspace.Open();return end
   if msg=='gear' then ForeverCompanionGearFinderWorkspace.Open();return end
   if msg=='help' then say('Leveling session planner: /fc plan · Gear upgrade finder: /fc gear') end
+  if msg=='coords' or msg:match('^coords%s+') then
+   say(ForeverCompanionQuestMap.GoToCoordinates(msg:match('^coords%s+(.+)$') or ''));return
+  end
   if msg=='map' or msg=='search' then ForeverCompanionMapHub.Open();return end
   if msg:match('^search ') then ForeverCompanionMapHub.Open(msg:match('^search%s+(.+)$'));return end
   if msg=='recent' then ForeverCompanionMapHub.Open('',true);return end
@@ -1515,7 +1518,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   end
   if msg == "petxp" then say(ForeverCompanionPetXPTracker.Toggle());return end
   if msg == "flight" then say(ForeverCompanionFlightTimer.Toggle());return end
-  if msg == "help" then say("/fc training, /fc flight, /fc petxp, /fc overlay inspect, /fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc training, /fc flight, /fc petxp, /fc overlay inspect, /fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc coords <x> <y>, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end

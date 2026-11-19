@@ -1,5 +1,6 @@
 -- Offline mock of the WoW widget API; tests construction and render, not pixels.
 local frames={}
+date=os.date
 local snapshot={}
 local function clean(v) return (tostring(v or ""):gsub("[\r\n|]"," ")) end
 local function exportSnapshot(path)
@@ -81,9 +82,14 @@ local function widget(kind)
  function w:GetWidth() return self.width end
  function w:GetHeight() return self.height end
  function w:SetScale(value) self.scale=value end
+ function w:GetScale() return self.scale or 1 end
  function w:SetFrameStrata(value) self.strata=value end
  function w:GetFrameLevel() return self.frameLevel or (self.parent and frames[self.parent]:GetFrameLevel()+1) or 1 end
  function w:SetFrameLevel(v) self.frameLevel=v end
+ function w:SetOrientation(v) self.orientation=v end
+ function w:SetValueStep(v) self.step=v end
+ function w:SetObeyStepOnDrag(v) self.obeyStep=v end
+ function w:SetThumbTexture(v) self.thumb=v end
  function w:SetMinMaxValues(a,b) self.minimum,self.maximum=a,b end
  function w:SetValue(v) self.value=v end
  function w:SetStatusBarColor(...) self.barColor={...} end
@@ -92,6 +98,7 @@ local function widget(kind)
  function w:SetResizeBounds() end
  function w:SetRotation(value) self.rotation=value end
  function w:SetEnabled(value) self.enabled=value end
+ function w:IsEnabled() return self.enabled~=false end
  function w:LockHighlight() end
  function w:UnlockHighlight() end
  function w:SetScrollChild(child) self.child=child end
@@ -333,8 +340,8 @@ questAction.OnClick(questAction)
 assert(ForeverCompanionDB.tab=="Quests","quest shortcut failed")
 local questHeading,questFocusHeading,questBriefingRoot
 for _,w in ipairs(frames) do
- if w.text=="JOURNAL AT A GLANCE" then questHeading=w end
- if w.text=="FOCUSED OBJECTIVE" then questFocusHeading=w end
+ if w.text=="YOUR QUEST LOG" then questHeading=w end
+ if w.text=="WHAT TO DO NEXT" then questFocusHeading=w end
 end
 assert(questHeading and questFocusHeading,"quest briefing panels missing")
 questBriefingRoot=frames[questHeading.parent].parent
@@ -345,16 +352,27 @@ for _,w in ipairs(frames) do
 end
 assert(questCountCard,"live quest briefing count incorrect")
 local sortControl
-for _,w in ipairs(frames) do if w.OnClick and w.text=="Sort: zone" then sortControl=w end end
+for _,w in ipairs(frames) do if w.OnClick and w.text=="By zone" then sortControl=w end end
 assert(sortControl and sortControl.OnClick,"quest sort selector missing")
-sortControl.OnClick(sortControl) -- ready
-assert(ForeverCompanionQuestPlanner.GetSort()=="ready","quest sort should persist readiness")
-assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.complete,"ready quests must sort first")
-sortControl.OnClick(sortControl) -- pinned
-assert(ForeverCompanionQuestPlanner.GetSort()=="pinned","pinned sort mode should be available")
-sortControl.OnClick(sortControl) -- log
-assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.title=="Sample: Gather supplies","log order must be preserved")
-sortControl.OnClick(sortControl) -- zone
+local function chooseSort(label)
+ local menu=ForeverCompanionInterface.Menu
+ local chosen
+ ForeverCompanionInterface.Menu=function(_,_,entries)
+  for _,entry in ipairs(entries) do if entry.label==label then chosen=entry.action end end
+ end
+ sortControl.OnClick(sortControl)
+ ForeverCompanionInterface.Menu=menu
+ assert(chosen,"missing sort option: "..label)
+ chosen()
+end
+chooseSort("Ready first")
+assert(ForeverCompanionQuestPlanner.GetSort()=="ready")
+assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.complete)
+chooseSort("Pinned first")
+assert(ForeverCompanionQuestPlanner.GetSort()=="pinned")
+chooseSort("Quest log order")
+assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.title=="Sample: Gather supplies")
+chooseSort("By zone")
 assert(ForeverCompanionQuestPlanner.GetVisible()[1].quest.zone=="Frontier","zone sort should group alphabetically")
 -- Styled journal rows expose readable title, zone, and status without touching
 -- the game's selected quest. Clicking only changes the addon's focused entry.
@@ -529,7 +547,7 @@ do
  C_Map.GetPlayerMapPosition=function() return {GetXY=function() return .123,.456 end} end
  dock.OnUpdate(dock,.3)
  local coordinates
- for _,f in ipairs(frames) do if f.parent==dock.id and f.text=='12.3 / 45.6' then coordinates=f end end
+ for _,f in ipairs(frames) do if f.parent==dock.id and f.text=='You 12.3, 45.6' then coordinates=f end end
  assert(coordinates,'map dock coordinates use the viewed map position')
  C_Map.GetPlayerMapPosition=function() return nil end;dock.OnUpdate(dock,.3)
  assert(coordinates.text=='No position','unavailable map position cannot retain old coordinates')
@@ -721,6 +739,13 @@ do
  assert(not pickupPin.visible,"pickup toggle hides unaccepted quests")
  mapModeButton("Pickups: Off"):OnClick()
  C_QuestLog.GetQuestsOnMap,C_QuestLog.GetTitleForQuestID=oldPOIs,oldTitle
+ local dockAPI=ForeverCompanionQuestMap;local beforeMinimize=visiblePins();local expandedBefore=ForeverCompanionDB.mapDockExpanded
+ dockAPI.minimizeMapDock.OnClick();assert(ForeverCompanionDB.mapDockMinimized and dockAPI.mapDock:GetWidth()==190 and dockAPI.mapDock:GetHeight()==30,'map dock minimizes to compact restore strip')
+ assert(not dockAPI.mapDockFind:IsShown() and not dockAPI.mapDockHint:IsShown() and not dockAPI.mapDockCoordinates:IsShown(),'minimized panel hides map-obscuring content')
+ assert(visiblePins()==beforeMinimize,'minimizing does not hide or navigate map pins')
+ provider:OnMapChanged();assert(dockAPI.mapDock:GetWidth()==190 and not dockAPI.mapDockHint:IsShown(),'map refresh preserves minimized preference')
+ exportNative('ui_map_minimized_369_native.json')
+ dockAPI.minimizeMapDock.OnClick();assert(not ForeverCompanionDB.mapDockMinimized and dockAPI.mapDock:GetWidth()==520 and dockAPI.mapDockFind:IsShown() and ForeverCompanionDB.mapDockExpanded==expandedBefore,'restoring preserves drawer preference')
  exportNative('ui_map_toolbar_native.json')
  provider:OnHide()
  assert(visiblePins()==0 and not area.visible)
@@ -807,6 +832,7 @@ do
  ForeverCompanionQuestWaypoints.MapPickups=function() return fixture end
  local navigated
  ForeverCompanionQuestWaypoints.Navigate=function(target,showMap,title) navigated=target;return 'Test waypoint selected' end
+ SlashCmdList.FOREVERCOMPANION('discover')
  ForeverCompanionQuestDiscovery.Refresh()
  local row
  for _,frame in ipairs(frames) do if frame.kind=='Button' and frame.item and frame.item.quest.id==900001 then row=frame;break end end
@@ -849,7 +875,7 @@ assert(metricButtons.Quests.detail=="N/A","stale quest progress must not display
 C_QuestLog.GetNumQuestLogEntries=originalQuestCount
 assert(ForeverCompanionQuestPlanner.Sync(),"quest scanner should recover after transient error")
 local bannerText
-for _,w in ipairs(frames) do if w.text=="WELCOME TO FOREVER COMPANION" then bannerText=w end end
+for _,w in ipairs(frames) do if w.text=="ADVENTURE JOURNAL" then bannerText=w end end
 assert(bannerText and frames[frames[bannerText.parent].parent].visible==false,"dashboard should hide outside Overview")
 local overviewButton
 for _,w in ipairs(frames) do if w.section=="Overview" then overviewButton=w end end
@@ -883,6 +909,14 @@ end
 assert(alchemyTab and alchemyTab.OnClick,"styled profession handbook selector missing")
 alchemyTab.OnClick(alchemyTab)
 assert(alchemyTab.selected,"selected profession handbook tab should highlight")
+for _,name in ipairs({'Cooking','First Aid','Fishing'}) do
+ local found
+ for _,w in ipairs(frames) do if w.label and w.icon and w.bg and w.trim and w.label.text==name then found=w end end
+ assert(found and found:IsShown() and found.width==120,'secondary profession selector must be directly visible')
+ found.OnClick(found);assert(found.selected)
+end
+alchemyTab.OnClick(alchemyTab)
+
 local notesToggle=ForeverCompanionUIState.professionNotesButton
 assert(notesToggle.visible and notesToggle.text=="Show detailed notes","profession details start collapsed")
 notesToggle:OnClick()
@@ -974,7 +1008,7 @@ for _,w in ipairs(frames) do if w.text=="TODAY\'S FOCUS" then focusTitle=w end e
 assert(focusTitle and frames[focusTitle.parent].visible==false,"compact mode should hide lower focus panel")
 compactButton.OnClick(compactButton)
 assert(mainWindow.height==720 and not ForeverCompanionDB.compact,"expand layout failed")
-assert(frames[focusTitle.parent].visible==true,"expanded mode should restore lower focus panel")
+assert(frames[focusTitle.parent].visible==(ForeverCompanionDB.beginnerMode==false),"expanded mode respects beginner view")
 local savedXP=UnitXP
 UnitXP=function() error("simulated restricted XP API") end
 assert(pcall(ForeverCompanionDashboard.Render),"dashboard should tolerate restricted XP reads")
@@ -991,7 +1025,7 @@ for _,f in ipairs(frames) do
 end
 assert(foundTitle,"main window title not rendered")
 local foundBanner=false
-for _,f in ipairs(frames) do if f.text=="WELCOME TO FOREVER COMPANION" then foundBanner=true end end
+for _,f in ipairs(frames) do if f.text=="ADVENTURE JOURNAL" then foundBanner=true end end
 assert(foundBanner,"premium dashboard welcome banner missing")
 local heraldicMarks=0
 for _,w in ipairs(frames) do
@@ -1635,9 +1669,9 @@ local function pickDungeon(name)
  error("Missing dungeon choice: "..name)
 end
 pickDungeon("Wailing Caverns")
-assert(browser.dungeon=="Wailing Caverns" and browser.boss=="Kresh" and browser.page==1)
+assert(browser.dungeon=="Wailing Caverns" and browser.boss==ForeverCompanionLoot.BossNames("Wailing Caverns")[1] and browser.page==1)
 pickDungeon("Blackfathom Deeps")
-assert(browser.dungeon=="Blackfathom Deeps" and browser.boss=="Aku'mai" and #ForeverCompanionLoot.BossDrops(browser.dungeon,browser.boss)==3)
+assert(browser.dungeon=="Blackfathom Deeps" and browser.boss=="Aku'mai" and #ForeverCompanionLoot.BossDrops(browser.dungeon,browser.boss)>=3)
 assert(#browser.dungeonRows==9 and browser.dungeonRows[9]:IsShown(),"directory pages remain populated")
 exportSnapshot("ui_encounter_snapshot.txt")
 exportNative("ui_encounter_native.json")
@@ -1646,7 +1680,7 @@ browser.lootRows[2]:OnClick()
 assert(ForeverCompanionDB.tab=="Loot" and lootUI.itemTitle.text==secondDrop.item,"drop clicks focus that exact item")
 SlashCmdList.FOREVERCOMPANION("open dungeon journal")
 assert(ForeverCompanionDB.tab=="Dungeons" and browser.boss=="Aku'mai","journal navigation preserves the selected boss")
-local openLoot=buttonWithText("Open boss loot")
+local openLoot=buttonWithText("Boss loot")
 assert(openLoot and openLoot.OnClick,"boss loot shortcut missing")
 openLoot.OnClick()
 assert(ForeverCompanionDB.tab=="Loot")
@@ -1799,7 +1833,7 @@ do
  assert(guide)
  for _,f in ipairs(frames) do
   if f.kind=='Button' and f.parent and frames[f.parent].parent==guide.id then
-   if f.text=='Go to search area' then go=f elseif f.text=='Choose area' then cycle=f end
+   if f.text=='Show direction' then go=f elseif f.text=='Choose area' then cycle=f end
   end
  end
  assert(go and not go.enabled and cycle and cycle.enabled,'conflicting areas cannot start navigation before a choice')
@@ -1828,13 +1862,13 @@ do
  first.OnClick(first,'LeftButton')
  assert(planner.GetSelected()==first.item.quest and ForeverCompanionDB.tab=='Quests','tracker opens the actual quest field guide')
  ForeverCompanionDB.questTracker.collapsed=true;ForeverCompanionQuestTracker.Refresh()
- assert(tracker.height==28 and not first.visible)
+ assert(tracker.height==30 and not first.visible)
  ForeverCompanionDB.questTracker.collapsed=false
  local main
  for _,f in ipairs(frames) do if f.name=='ForeverCompanionMainFrame' then main=f end end
  assert(main);main:Hide()
  local supported=planner.IsSupported;planner.IsSupported=function() return false end
- ForeverCompanionRefresh();assert(first.map.enabled==false,'tracker must keep updating and reject cached navigation while the main window is hidden')
+ ForeverCompanionRefresh();assert(first.map.text=='Guide' and not first.actionable and not first.pin.enabled,'cached tracker offers review but no directions or pin mutation')
  planner.IsSupported=supported
  main:Show();ForeverCompanionRefresh()
  ForeverCompanionQuestTracker.Hide();assert(not tracker.visible and not ForeverCompanionQuestTracker.IsShown())
@@ -2206,4 +2240,873 @@ do
  local viewport=ForeverCompanionUIState.scrollFrame
  local clipped=false;for _,f in ipairs(frames) do if f.kind=='ScrollFrame' and f.clipsChildren then clipped=true end end
  assert(clipped,'main scroll viewport explicitly clips child panels above the footer')
+end
+
+-- Milestone integration: menus, tracker visibility, stale routing and guide transitions.
+do
+ local state=ForeverCompanionUIState
+ ForeverCompanionDB.beginnerMode=true;ForeverCompanionRefresh()
+ assert(#state.goalButtons==6)
+ for _,b in ipairs(state.goalButtons) do assert(b.visible) end
+ for _,f in ipairs(frames) do if f.section then assert(not f.visible,'advanced navigation is preserved but hidden in Beginner Mode') end end
+ state.goalButtons[2].OnClick()
+ local classChoice
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Class guide' and f.visible then classChoice=f end end
+ assert(classChoice);classChoice.OnClick();assert(ForeverCompanionDB.tab=='Leveling')
+ ForeverCompanionDB.beginnerMode=false;ForeverCompanionRefresh()
+ for _,b in ipairs(state.goalButtons) do assert(not b.visible) end
+ ForeverCompanionDB.beginnerMode=true;ForeverCompanionRefresh()
+ local p=ForeverCompanionQuestPlanner
+ local oldLive,oldSelected,oldSupported=p.GetLive,p.GetSelected,p.IsSupported
+ local oldTargets=ForeverCompanionQuestWaypoints.Targets
+ local oldRoute=ForeverCompanionObjectiveRoute.NavigateNext
+ local oldMap=C_Map.GetBestMapForUnit
+ local q={id=980001,title='SAMPLE: A long quest title that should wrap naturally across two lines',zone='Sample camp',zoneKnown=true,level=18,objectives={'Sample: Collect supplies: 2/5','Sample: Visit the scout'},objectiveStates={{known=true,current=2,required=5,kind='item'},{known=true,done=false}}}
+ p.GetLive=function() return {q} end;p.GetSelected=function() return q,1 end;p.IsSupported=function() return true end
+ C_Map.GetBestMapForUnit=function() return 1429 end
+ local locations={{map=9999,x=.2,y=.3,reference=true,objectiveIndex=1,label='SAMPLE: remote camp'}}
+ ForeverCompanionQuestWaypoints.Targets=function() return locations end
+ local routes=0;ForeverCompanionObjectiveRoute.NavigateNext=function() routes=routes+1;return 'Synthetic route' end
+ ForeverCompanionQuestTracker.Show()
+ local tracker,row
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestTrackerFrame' then tracker=f end end
+ for _,f in ipairs(frames) do if f.parent==tracker.id and f.item then row=f;break end end
+ assert(row and row.map.text=='Guide' and not row.actionable,'other-map destinations cannot promise a local route')
+ locations[1].map=1429;ForeverCompanionQuestTracker.Refresh()
+ assert(row.actionable and row.map.text=='Directions');row.map.OnClick();assert(routes==1)
+ local pinCalls=0;local oldPin=p.TogglePin;p.TogglePin=function() pinCalls=pinCalls+1 end
+ row.pin.OnClick();assert(pinCalls==1)
+ local search
+ for _,f in ipairs(frames) do if f.kind=='EditBox' and f.parent==tracker.id then search=f end end
+ search:SetText('no-match');search.OnTextChanged(search,true);assert(not row.visible)
+ search:SetText('');search.OnTextChanged(search,true);assert(row.visible)
+ p.IsSupported=function() return false end;ForeverCompanionQuestTracker.Refresh()
+ row.map.OnClick();row.pin.OnClick();assert(routes==1 and pinCalls==1,'cached data never triggers route or pin mutation')
+ p.IsSupported=function() return true end
+ ForeverCompanionDB.questTracker.scale=1.3;ForeverCompanionQuestTracker.Refresh()
+ assert(tracker.scale<=1.3 and tracker.scale>0)
+ UIParent:SetSize(380,260);tracker.OnEvent();assert(tracker.scale<1,'large tracker fits a small display')
+ UIParent:SetSize(1000,700);ForeverCompanionDB.questTracker.scale=1;ForeverCompanionQuestTracker.Refresh()
+ exportNative('ui_questing_milestone_tracker_native.json')
+ ForeverCompanionQuestTracker.Hide()
+ SlashCmdList.FOREVERCOMPANION('open quests')
+ local guidePanel
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestFieldGuidePanel' then guidePanel=f end end
+ ForeverCompanionQuestFieldGuide.Refresh()
+ q.objectiveStates[1].done=true;ForeverCompanionQuestFieldGuide.Refresh()
+ local selectedStep
+ for _,f in ipairs(frames) do if f.parent==guidePanel.id and f.step and f.selected then selectedStep=f.step end end
+ assert(selectedStep and selectedStep.index==2,'completion advances the visible guide to the next unfinished objective')
+ local context
+ for _,f in ipairs(frames) do if f.parent==guidePanel.id and f.text=='Giver and chain' then context=f end end
+ assert(context);context.OnClick();exportNative('ui_questing_milestone_guide_native.json');context.OnClick()
+ p.GetLive,p.GetSelected,p.IsSupported,p.TogglePin=oldLive,oldSelected,oldSupported,oldPin
+ C_Map.GetBestMapForUnit=oldMap;ForeverCompanionQuestWaypoints.Targets=oldTargets;ForeverCompanionObjectiveRoute.NavigateNext=oldRoute
+ ForeverCompanionRefresh()
+ SlashCmdList.FOREVERCOMPANION('open dungeon journal')
+ local journal=ForeverCompanionEncounterBrowser
+ journal.SelectDungeon('The Deadmines')
+ p.GetLive=function() return {{id=980002,title='SAMPLE: Supplies for Deadmines',zone='The Deadmines',zoneKnown=true,objectives={'SAMPLE: Inspect supplies'},objectiveStates={{known=true,done=false}}}} end
+ local questsButton
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Dungeon quests' then questsButton=f end end
+ assert(questsButton);questsButton.OnClick()
+ local questPanel,questRow
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionDungeonQuestsPanel' then questPanel=f end end
+ assert(questPanel and questPanel.visible)
+ for _,f in ipairs(frames) do if f.parent==questPanel.id and f.entry then questRow=f;break end end
+ assert(questRow and questRow.entry.id==980002,'journal contains a live zone-matched dungeon quest')
+ local journalSearch,planControl
+ for _,f in ipairs(frames) do if f.parent==questPanel.id and f.kind=='EditBox' then journalSearch=f end end
+ assert(journalSearch);journalSearch:SetText('no such synthetic quest');journalSearch.OnTextChanged(journalSearch);assert(not questRow.visible,'journal search hides non-matching quests')
+ journalSearch:SetText('Supplies');journalSearch.OnTextChanged(journalSearch);assert(questRow.visible,'journal search returns literal matching quests')
+ exportNative('ui_dungeon_quests_milestone_native.json');questRow.OnClick()
+ for _,f in ipairs(frames) do if f.parent==questPanel.id and f.text=='Plan this run' then planControl=f end end
+ assert(planControl);planControl.OnClick();assert(ForeverCompanionDungeonQuests.IsPlanned(980002),'journal plan button saves checklist state')
+ exportNative('ui_dungeon_quest_detail_milestone_native.json')
+ planControl.OnClick();assert(not ForeverCompanionDungeonQuests.IsPlanned(980002))
+ journalSearch:SetText('');journalSearch.OnTextChanged(journalSearch)
+ questsButton.OnClick();assert(not questPanel.visible,'boss and loot view remains available')
+ p.GetLive=oldLive
+ ForeverCompanionTraining.Open('Charge');ForeverCompanionTraining.Open('Rend')
+ local training;for _,f in ipairs(frames) do if f.name=='ForeverCompanionTrainingPanel' then training=f end end
+ assert(training.visible,'opening a second spell must keep training open')
+ local trainingSearch;for _,f in ipairs(frames) do if f.parent==training.id and f.kind=='EditBox' then trainingSearch=f end end
+ assert(trainingSearch:GetText()=='Rend')
+ ForeverCompanionTraining.Toggle()
+ local oldMeter,oldMeterEnums=C_DamageMeter,Enum
+ Enum={DamageMeterType={Dps=1,DamageDone=0,HealingDone=2,Hps=3},DamageMeterSessionType={Current=1,Expired=2,Overall=0}}
+ local sampleSources={
+  {name='SAMPLE: Warrior',classFilename='WARRIOR',totalAmount=125000,amountPerSecond=1389,sourceGUID='sample-warrior'},
+  {name='SAMPLE: Mage',classFilename='MAGE',totalAmount=106000,amountPerSecond=1178,sourceGUID='sample-mage'},
+  {name='SAMPLE: Hunter',classFilename='HUNTER',totalAmount=92000,amountPerSecond=1022,sourceGUID='sample-hunter'},
+ }
+ C_DamageMeter={GetCombatSessionFromType=function() return {combatSources=sampleSources,maxAmount=125000,durationSeconds=90} end}
+ ForeverCompanionCombatMeter.Show();ForeverCompanionCombatMeter.SetMode('DPS');ForeverCompanionCombatMeter.SetSession('Current');ForeverCompanionCombatMeter.SetTextSize(13)
+ exportNative('ui_readable_meter_milestone_native.json');ForeverCompanionCombatMeter.SetTextSize(11);ForeverCompanionCombatMeter.Hide();C_DamageMeter=oldMeter;Enum=oldMeterEnums
+ SlashCmdList.FOREVERCOMPANION('open home');exportNative('ui_home_milestone_native.json')
+ io.write('PASS: beginner goal navigation, tracker filters/scaling/cache guards, objective advancement, inline dungeon quests and spell training handoff\n')
+end
+
+-- 3.54 workflow fixtures are synthetic and remain outside the shipped addon.
+do
+ SlashCmdList.FOREVERCOMPANION('open professions')
+ local profession='Alchemy'
+ for _,f in ipairs(frames) do if f.label and f.label.text=='Alchemy' and f.OnClick then f.OnClick();break end end
+ local recipes=ForeverCompanionRecipePlans
+ recipes.Add(profession,'SAMPLE: Travel supply kit',3)
+ recipes.Ingredient(profession,#recipes.Get(profession),'SAMPLE: Frost Cloth',2)
+ recipes.Ingredient(profession,#recipes.Get(profession),'SAMPLE: Binding Thread',1)
+ local toggle
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text=='Recipe plans' then toggle=f end end
+ assert(toggle);toggle.OnClick()
+ local editor=ForeverCompanionRecipeWorkspace
+ assert(editor.root.visible and ForeverCompanionDB.professionWorkspace=='recipes')
+ editor.nameInput:SetText('SAMPLE: Second supply kit');editor.amountInput:SetText('2')
+ local add,import
+ for _,f in ipairs(frames) do
+  if f.parent==editor.root.id and f.text=='Add recipe' then add=f end
+  if f.parent==editor.root.id and f.text=='Add missing material goals' then import=f end
+ end
+ assert(add and import);local before=#recipes.Get(profession);add.OnClick();assert(#recipes.Get(profession)==before+1)
+ local selectedRow
+ for _,row in ipairs(editor.recipeRows) do if row.record and row.record.name=='SAMPLE: Second supply kit' then selectedRow=row end end
+ assert(selectedRow);selectedRow.OnClick()
+ editor.ingredientInput:SetText('SAMPLE: Frost Cloth');editor.countInput:SetText('4')
+ local addIngredient;for _,f in ipairs(frames) do if f.parent==editor.root.id and f.text=='Add' then addIngredient=f end end
+ assert(addIngredient);addIngredient.OnClick();assert(#selectedRow.record.ingredients==1)
+ import.OnClick()
+ local cloth
+ for _,goal in ipairs(ForeverCompanionCraftingPlanner.GetEntries(profession)) do if goal.name=='SAMPLE: Frost Cloth' then cloth=goal end end
+ assert(cloth and cloth.needed==14 and cloth.owned==0,'UI import aggregates both manual recipes')
+ exportNative('ui_recipe_workflow_354_native.json')
+ toggle.OnClick();assert(not editor.root.visible,'material goals remain one click away')
+ ForeverCompanionDB.professionWorkspace='materials'
+ local oldProvider,oldTimer,oldMapInfo=LibQuestieDB,C_Timer,C_Map.GetMapInfo
+ local queue={};C_Timer={After=function(_,fn) queue[#queue+1]=fn end}
+ LibQuestieDB={RequireContract=function(v) return v==1 end,ModeIndicator={GetStatus=function() return {expansion='Forever'} end},Quest={},
+  Item={GetAllIds=function() return {990001} end,name=function(id) if id==990001 then return 'SAMPLE: Frost Cloth' end end,npcDrops=function() return {990002} end,vendors=function() return {990003} end},
+  Npc={name=function(id) return id==990002 and 'SAMPLE: Frostweaver' or 'SAMPLE: Supply vendor' end,spawns=function() return {[12]={{42,51},{45,54}}} end},
+  Support={Get=function() return {private={areaIdToUiMapId='{[12]=1429,}'}} end}}
+ C_Map.GetMapInfo=function(map) if map==1429 then return {name='SAMPLE: Research zone',mapType=3} end;return oldMapInfo and oldMapInfo(map) end
+ ForeverCompanionMaterialFinder.Open('SAMPLE: Frost Cloth')
+ local finder,searchButton
+ for _,f in ipairs(frames) do if f.name=='ForeverCompanionMaterialFinderPanel' then finder=f end end
+ for _,f in ipairs(frames) do if f.parent==finder.id and f.text=='Search database' then searchButton=f end end
+ assert(searchButton);searchButton.OnClick();while #queue>0 do table.remove(queue,1)() end
+ local sourceButton
+ for _,f in ipairs(frames) do if f.parent==finder.id and f.record and f.record.id==990001 then
+  for _,child in ipairs(frames) do if child.parent==f.id and child.text=='Sources' then sourceButton=child end end
+ end end
+ assert(sourceButton);sourceButton.OnClick()
+ exportNative('ui_material_sources_354_native.json')
+ local choose
+ for _,f in ipairs(frames) do if f.parent==finder.id and f.record and f.record.id==990002 then
+  for _,child in ipairs(frames) do if child.parent==f.id and child.text=='Choose area' then choose=child end end
+ end end
+ assert(choose and choose.enabled)
+ choose.OnClick(choose)
+ local location
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text and f.text:find('42.0, 51.0',1,true) then location=f end end
+ assert(location)
+ local navigate=ForeverCompanionQuestWaypoints.Navigate;local selected
+ ForeverCompanionQuestWaypoints.Navigate=function(p) selected=p;return 'Synthetic source selected' end
+ location.OnClick();assert(selected and selected.reference and selected.x==.42)
+ ForeverCompanionQuestWaypoints.Navigate=navigate;ForeverCompanionInterface.CloseMenu();finder:Hide()
+ LibQuestieDB,C_Timer,C_Map.GetMapInfo=oldProvider,oldTimer,oldMapInfo
+ local oldMinimap=Minimap
+ local oldVector,oldFacing,oldBest,oldPos,oldWorld=CreateVector2D,GetPlayerFacing,C_Map.GetBestMapForUnit,C_Map.GetPlayerMapPosition,C_Map.GetWorldPosFromMapPos
+ local p=ForeverCompanionQuestPlanner;local oldLive,oldSelected,oldSupported,oldTargets=p.GetLive,p.GetSelected,p.IsSupported,ForeverCompanionQuestWaypoints.Targets
+ local q={id=990009,title='SAMPLE: Nearby quest',complete=false,objectiveStates={{known=true,done=false}}}
+ p.GetLive=function() return {q} end;p.GetSelected=function() return q end;p.IsSupported=function() return true end
+ ForeverCompanionQuestWaypoints.Targets=function() return {{map=1429,x=.51,y=.52,source='Synthetic fixture',objectiveIndex=1,reference=true}} end
+ Minimap=CreateFrame('Frame','ForeverCompanionQuestMinimapSample',UIParent);Minimap:SetSize(180,180);Minimap:SetPoint('CENTER')
+ Minimap.GetViewRadius=function() return 100 end
+ CreateVector2D=function(x,y) return {GetXY=function() return x,y end} end
+ C_Map.GetBestMapForUnit=function() return 1429 end;C_Map.GetPlayerMapPosition=function() return CreateVector2D(.5,.5) end
+ C_Map.GetWorldPosFromMapPos=function(map,v) local x,y=v:GetXY();return 1,CreateVector2D(y*1000,x*1000) end
+ GetPlayerFacing=function() return 0 end
+ ForeverCompanionQuestMinimap.Refresh();assert(ForeverCompanionQuestMinimap.Status():find('1 nearby',1,true))
+ exportNative('ui_quest_minimap_354_native.json');ForeverCompanionQuestMinimap.Hide()
+ Minimap=oldMinimap;CreateVector2D,GetPlayerFacing=oldVector,oldFacing;C_Map.GetBestMapForUnit,C_Map.GetPlayerMapPosition,C_Map.GetWorldPosFromMapPos=oldBest,oldPos,oldWorld
+ p.GetLive,p.GetSelected,p.IsSupported=oldLive,oldSelected,oldSupported;ForeverCompanionQuestWaypoints.Targets=oldTargets
+ ForeverCompanionRefresh()
+ io.write('PASS: recipe editor/import, database item search, source area selection and selected-quest minimap integration\n')
+end
+
+-- 3.56 actual UI exercises: static guide filtering and native roster navigation.
+do
+ local W=ForeverCompanionRotationWorkspace
+ local oldPriority,oldKnown,oldSpell,oldScan=ForeverCompanionVisiblePriority,ForeverCompanionKnownSpell,C_Spell,ForeverCompanionSpellbook.Scan
+ local oldRefresh=ForeverCompanionRefresh
+ ForeverCompanionVisiblePriority=function() return {'1. SAMPLE: Learned ability — Practice safely before larger pulls.','2. SAMPLE: Training check — Confirm availability at a class trainer.','3. SAMPLE: Positioning — Stay aware of the group.'},'SAMPLE: Beginner priorities','Reference advice; not combat recommendations.','Synthetic UI fixture',{'Sample learned','Sample missing'}, {spellIDs={996001,996002},keepOrder=true,opener='Review your spellbook and recovery options.'} end
+ ForeverCompanionKnownSpell=function(id) return id==996001 end
+ C_Spell={GetSpellInfo=function(query)
+  if query=='Sample learned' or query==996001 then return {name='Sample learned',spellID=996001,iconID=123} end
+  if query=='Sample missing' or query==996002 then return {name='Sample missing',spellID=996002,iconID=124} end
+ end}
+ ForeverCompanionSpellbook.Scan=function() return {supported=true,complete=true,inspected=2,englishNames=true,known={}} end
+ ForeverCompanionRefresh=function() W.Render('Leveling','WARRIOR','leveling',20,'Damage',{},'WARRIOR') end
+ W.SetFilter('all');ForeverCompanionRefresh()
+ assert(W.rows[1].status.text=='In your spellbook' and W.rows[2].status.text:find('not found',1,true))
+ exportNative('ui_rotation_readiness_356_native.json')
+ W.filters.learned.OnClick();assert(W.rows[1].number.text=='1')
+ assert(W.rows[1].spellID==996001 and not W.rows[2].visible,'learned tab filters the actual guide')
+ W.search:SetText('no synthetic match');W.search.OnTextChanged();ForeverCompanionRefreshQueue.Flush();assert(not W.rows[1].visible,'literal search shows the empty view')
+ exportNative('ui_rotation_empty_356_native.json')
+ W.search:SetText('');W.SetFilter('training');assert(W.rows[1].spellID==996002 and W.rows[1].number.text=='2','training tab keeps original priority')
+ W.SetFilter('all');ForeverCompanionRefresh=oldRefresh
+ ForeverCompanionVisiblePriority,ForeverCompanionKnownSpell,C_Spell,ForeverCompanionSpellbook.Scan=oldPriority,oldKnown,oldSpell,oldScan
+ local oldAPI,oldEnum=C_DamageMeter,Enum
+ local roster={}
+ for i=1,18 do roster[i]={name='SAMPLE: Player '..i..'-Realm',sourceGUID='sample-'..i,isLocalPlayer=i==15,totalAmount=12345678-i*12345,amountPerSecond=12345-i*123,classFilename=i%2==0 and 'MAGE' or 'WARRIOR'} end
+ C_DamageMeter={GetCombatSessionFromType=function() return {combatSources=roster,maxAmount=12345678,durationSeconds=123} end}
+ Enum={DamageMeterType={Dps=1,DamageDone=0},DamageMeterSessionType={Current=1,Overall=0,Expired=2}}
+ local meter=ForeverCompanionCombatMeter
+ meter.Show();meter.SetMode('DPS');meter.SetSession('Current');meter.SetLayout('expanded');meter.SetRows(6);meter.SetNumberFormat('exact');meter.SetHideRealm(true)
+ assert(meter.FocusLocalPlayer() and meter.SelectedRow()==15,'native local-player identity drives find me')
+ exportNative('ui_meter_personal_356_native.json')
+ meter.SetNumberFormat('compact');meter.SetHideRealm(false);meter.SetLayout('standard');meter.Hide();C_DamageMeter,Enum=oldAPI,oldEnum
+ ForeverCompanionRefresh()
+ ForeverCompanionTraining.Open('')
+ local costButton
+ for _,f in ipairs(frames) do if f.text=='Review training costs' and f.OnClick then costButton=f end end
+ assert(costButton);costButton.OnClick();exportNative('ui_training_costs_356_native.json');ForeverCompanionInterface.CloseMenu();ForeverCompanionTraining.Toggle()
+ io.write('PASS: rotation search/readiness tabs, original priority labels and meter personal navigation UI\n')
+end
+
+-- 3.57 actual quest -> item -> source -> quest integration (synthetic records).
+do
+ local p=ForeverCompanionQuestPlanner
+ local oldLive,oldSelected,oldSupported=p.GetLive,p.GetSelected,p.IsSupported
+ local oldProvider,oldNavigate,oldOpen=LibQuestieDB,ForeverCompanionQuestWaypoints.Navigate,ForeverCompanionOpenQuestGuide
+ local oldMapInfo=C_Map.GetMapInfo
+ local q={id=997001,title='SAMPLE: Camp supplies',zone='Synthetic camp',objectives={'SAMPLE: Camp Supply: 1/5'},objectiveStates={{known=true,kind='item',done=false,current=1,required=5}}}
+ p.GetLive=function() return {q} end;p.GetSelected=function() return q end;p.IsSupported=function() return true end
+ LibQuestieDB={RequireContract=function() return true end,ModeIndicator={GetStatus=function() return {expansion='Forever'} end},Quest={name=function() return q.title end,objectives=function() return {[3]={{997002,nil,5}}} end},Item={name=function() return 'SAMPLE: Camp Supply' end,npcDrops=function() return {997003} end},Npc={name=function() return 'SAMPLE: Supply carrier' end,spawns=function() return {[12]={{42,51}}} end},Support={Get=function() return {private={areaIdToUiMapId='{[12]=1429,}'}} end}}
+ C_Map.GetMapInfo=function() return {name='SAMPLE: Camp area',mapType=3} end
+ SlashCmdList.FOREVERCOMPANION('open quests');ForeverCompanionRefresh()
+ local itemButton
+ for _,f in ipairs(frames) do if f.text=='Item sources' and f.OnClick and f.visible then itemButton=f end end
+ assert(itemButton and itemButton.enabled,'matched item objective exposes source handoff')
+ exportNative('ui_quest_item_357_native.json');itemButton.OnClick()
+ local finder,returnButton,sourceButton
+ for _,f in ipairs(frames) do
+  if f.name=='ForeverCompanionMaterialFinderPanel' then finder=f end
+  if f.text=='Back to quest' and f.OnClick then returnButton=f end
+ end
+ assert(finder.visible and returnButton.visible)
+ for _,f in ipairs(frames) do if f.parent==finder.id and f.record and f.record.id==997003 then for _,child in ipairs(frames) do if child.parent==f.id and child.text=='Choose area' then sourceButton=child end end end end
+ assert(sourceButton and sourceButton.enabled)
+ exportNative('ui_quest_item_sources_357_native.json');sourceButton.OnClick()
+ local area
+ for _,f in ipairs(frames) do if f.kind=='Button' and f.text and f.text:find('42.0, 51.0',1,true) and f.visible and f.OnClick then area=f end end
+ assert(area)
+ local navigated
+ ForeverCompanionQuestWaypoints.Navigate=function(t,show,title,id) navigated={target=t,id=id};return 'Synthetic item source selected.' end
+ area.OnClick();assert(navigated and navigated.id==q.id and navigated.target.questItemID==997002)
+ q.objectiveStates[1].done=true;ForeverCompanionRefresh();assert(not sourceButton.enabled,'source browser disables old directions after item completion')
+ navigated=nil;area.OnClick();assert(not navigated,'old area menu cannot bypass objective completion')
+ local returned;ForeverCompanionOpenQuestGuide=function(id) returned=id end
+ returnButton.OnClick();assert(returned==q.id and not finder.visible,'return path remains available after completion')
+ ForeverCompanionQuestWaypoints.Navigate,ForeverCompanionOpenQuestGuide=oldNavigate,oldOpen
+ p.GetLive,p.GetSelected,p.IsSupported=oldLive,oldSelected,oldSupported;LibQuestieDB=oldProvider;C_Map.GetMapInfo=oldMapInfo
+ ForeverCompanionRefresh()
+ io.write('PASS: quest item source button, direct ID lookup, context navigation, completion guards and return-to-quest UI\n')
+end
+
+do
+ local entries,selected={},nil
+ for i=1,25 do local index=i;entries[i]={label='SAMPLE location '..i,action=function() selected=index end} end
+ ForeverCompanionInterface.PagedMenu(UIParent,'SAMPLE PAGED REFERENCES',entries,nil,360)
+ local function menuButton(caption)
+  local latest
+  for _,f in ipairs(frames) do if f.text==caption and f.OnClick then latest=f end end
+  return assert(latest)
+ end
+ local disabled=menuButton('Previous locations');assert(not disabled.enabled);disabled.OnClick();assert(selected==nil)
+ for i=1,3 do menuButton('More locations').OnClick() end
+ local final=menuButton('SAMPLE location 25');assert(final.visible);final.OnClick();assert(selected==25)
+ io.write('PASS: actual paged reference menu reaches the final location and blocks disabled actions\n')
+end
+
+-- 3.58: exercise every entry in all six navigation groups at both heights.
+do
+ local state=ForeverCompanionUIState
+ local main=frames[state.scrollFrame.parent]
+ local bg=assert(state.contentBackground)
+ assert(bg.kind=='Texture' and bg.parent==main.id and bg.layer=='BORDER',
+  'opaque content decoration must not be an independently raised sibling frame')
+ assert(state.scrollFrame:GetFrameLevel()>main:GetFrameLevel())
+ assert(state.scrollFrame.child:GetFrameLevel()>state.scrollFrame:GetFrameLevel())
+ local function visible(f)
+  return f.visible and (not f.parent or visible(frames[f.parent]))
+ end
+ local function bounds(f)
+  local p=f.point
+  if not p or not f.width or not f.height then return end
+  local x,y
+  if type(p[2])=='table' then
+   if p[2]~=main or p[1]~=p[3] then return end
+   x,y=p[4] or 0,p[5] or 0
+  else x,y=p[2] or 0,p[3] or 0 end
+  if p[1]:find('RIGHT') then x=main.width+x-f.width end
+  if p[1]:find('BOTTOM') then y=main.height-y-f.height else y=-y end
+  return {x,y,x+f.width,y+f.height}
+ end
+ local function checkControls()
+  local controls={}
+  for _,f in ipairs(frames) do
+   if f.kind=='Button' and f.parent==main.id and visible(f) then
+    local r=bounds(f)
+    if r then
+     assert(r[1]>=0 and r[2]>=0 and r[3]<=main.width and r[4]<=main.height,'control outside main window: '..f.text)
+     for _,other in ipairs(controls) do
+      local s=other.rect
+      assert(r[3]<=s[1] or r[1]>=s[3] or r[4]<=s[2] or r[2]>=s[4],
+       'overlapping controls on '..ForeverCompanionDB.tab..': '..f.text..' / '..other.frame.text)
+     end
+     controls[#controls+1]={frame=f,rect=r}
+    end
+   end
+  end
+  local bottom=state.scrollFrame.points[2]
+  assert(bottom[1]=='BOTTOMRIGHT' and bottom[3]>=92,'viewport overlaps fixed footer/hint')
+ end
+ local calls={}
+ local originals={}
+ local endpoints={HunterPets={ForeverCompanionHunterWorkspace,'Open'},Gear={ForeverCompanionGearFinderWorkspace,'Open'},Plan={ForeverCompanionLevelingWorkspace,'Open'},Map={ForeverCompanionMapHub,'Open'},Meter={ForeverCompanionCombatMeter,'Toggle'},
+  Materials={ForeverCompanionMaterialFinder,'Open'},Training={ForeverCompanionTraining,'Toggle'}}
+ for target,endpoint in pairs(endpoints) do
+  local key,object,method=target,endpoint[1],endpoint[2]
+  originals[key]=object[method]
+  object[method]=function(...) calls[key]=(calls[key] or 0)+1;return originals[key](...) end
+ end
+ for _,compact in ipairs({false,true}) do
+  if (ForeverCompanionDB.compact==true)~=compact then state.compactButton.OnClick() end
+  ForeverCompanionDB.beginnerMode=true;ForeverCompanionRefresh()
+  for i,group in ipairs(ForeverCompanionGoalNavigation) do
+   for j,entry in ipairs(group.items) do
+    if entry[2]=='Meter' then ForeverCompanionCombatMeter.Hide() end
+    local before=calls[entry[2]] or 0
+    if entry[2]=='Meter' then
+     state.goalButtons[i].OnClick();assert(calls.Meter==before+1,'combat meter opens directly')
+    else
+    state.goalButtons[i].OnClick()
+    local choice
+    for _,f in ipairs(frames) do if f.kind=='Button' and f.text==entry[1] and visible(f) then choice=f end end
+    assert(choice,'missing menu item '..entry[1])
+    choice.OnClick()
+    if endpoints[entry[2]] then assert(calls[entry[2]]==before+1,'dead navigation action: '..entry[1])
+    else assert(ForeverCompanionDB.tab==entry[2],'wrong page: '..entry[1]) end
+    end
+    checkControls()
+    if entry[2]=='Overview' then
+     for _,f in ipairs(frames) do
+      if f.text=='JOURNAL SHORTCUTS' then
+       assert(visible(f)==not compact,'duplicate Home steps must clear compact data status')
+      end
+     end
+    elseif entry[2]=='Meter' then
+     for _,f in ipairs(frames) do
+      if f.name=='ForeverCompanionCombatMeterWindow' then assert(visible(f),'meter action must open the window') end
+     end
+    end
+    if j==1 then exportNative('ui_group_'..i..'_'..(compact and 'compact' or 'expanded')..'_native.json') end
+   end
+  end
+  ForeverCompanionDB.beginnerMode=false;ForeverCompanionRefresh()
+  for _,f in ipairs(frames) do
+   if f.section and f.section~='Training' then f.OnClick();checkControls() end
+  end
+ end
+ for target,endpoint in pairs(endpoints) do endpoint[1][endpoint[2]]=originals[target] end
+ ForeverCompanionDB.beginnerMode=true;ForeverCompanionRefresh()
+ io.write('PASS: all six navigation groups, every menu action, advanced tabs, stacking and non-overlapping main controls at both heights\n')
+end
+
+-- 3.59: Home controls and visibility survive both layout and mode changes.
+do
+ local state=ForeverCompanionUIState
+ local function visible(f)
+  return f.visible and (not f.parent or visible(frames[f.parent]))
+ end
+ local function label(value)
+  for _,f in ipairs(frames) do if f.kind=='FontString' and f.text==value then return f end end
+  error('missing Home label: '..value)
+ end
+ local function action(value)
+  for _,f in ipairs(frames) do
+   if f.OnClick and f.caption and f.caption.text==value and visible(f) then return f end
+  end
+  error('missing visible Home action: '..value)
+ end
+ local calls=0
+ local originalOpen=ForeverCompanionMapHub.Open
+ ForeverCompanionMapHub.Open=function(...) calls=calls+1;return originalOpen(...) end
+ SlashCmdList.FOREVERCOMPANION('overview')
+ ForeverCompanionDB.beginnerMode=true;ForeverCompanionRefresh()
+ for _,compact in ipairs({false,true,false}) do
+  if (ForeverCompanionDB.compact==true)~=compact then state.compactButton.OnClick() end
+  local beforeHero=calls
+  action('VIEW WORLD MAP').OnClick()
+  assert(calls==beforeHero+1 and ForeverCompanionDB.tab=='Overview','hero map action opens the hub and preserves Home')
+  if not compact then
+   local before=calls
+   action('SEE WHERE TO GO ON THE MAP').OnClick()
+   assert(calls==before+1,'beginner step map action opens the map hub')
+  end
+  local before=calls
+  SlashCmdList.FOREVERCOMPANION('open map')
+  assert(calls==before+1 and ForeverCompanionDB.tab=='Overview','slash map destination shares Home dispatch')
+  action('Show advanced view').OnClick()
+  for i=1,2 do
+   ForeverCompanionRefresh()
+   assert(visible(label('RECOMMENDED NEXT STEPS'))==not compact,'refresh must preserve compact recommendations visibility')
+   assert(visible(label("TODAY'S FOCUS"))==not compact,'refresh must preserve compact focus visibility')
+   assert(visible(label('CHARACTER OVERVIEW')) and visible(label('DATA STATUS')),'compact advanced Home retains main cards and status')
+  end
+  exportNative('ui_home_advanced_'..(compact and 'compact' or 'expanded')..'_359_native.json')
+  action('Show beginner view').OnClick()
+  assert(not visible(label('RECOMMENDED NEXT STEPS')) and not visible(label("TODAY'S FOCUS")))
+  assert(visible(label('JOURNAL SHORTCUTS'))==not compact)
+  exportNative('ui_home_beginner_'..(compact and 'compact' or 'expanded')..'_359_native.json')
+ end
+ ForeverCompanionMapHub.Open=originalOpen
+ local scroll=state.scrollFrame
+ local originalHeight=scroll.GetHeight
+ scroll.GetHeight=function() return 200 end
+ SlashCmdList.FOREVERCOMPANION('quests')
+ scroll.child:SetHeight(800);scroll:SetVerticalScroll(0);state.updateScrollHint()
+ local hint=label('More below  ·  Scroll to continue')
+ assert(visible(hint),'long visible page offers scrolling guidance')
+ SlashCmdList.FOREVERCOMPANION('overview')
+ scroll.child:SetHeight(800);state.updateScrollHint()
+ assert(not visible(hint),'Home cannot show a hint for a hidden viewport')
+ SlashCmdList.FOREVERCOMPANION('quests')
+ scroll.child:SetHeight(800);state.updateScrollHint()
+ assert(visible(hint),'returning to a long page restores its hint')
+ scroll.GetHeight=originalHeight
+ SlashCmdList.FOREVERCOMPANION('overview')
+ io.write('PASS: Home map actions, compact/expanded mode transitions, repeated refresh and visible-page scroll hints\n')
+end
+
+-- 3.60: actual planner controls with synthetic live quests, including stale clicks.
+do
+ local p,P,W=ForeverCompanionQuestPlanner,ForeverCompanionLevelingPlan,ForeverCompanionLevelingWorkspace
+ local oldLive,oldSupported,oldPin,oldSelect=p.GetLive,p.IsSupported,p.IsPinned,p.Select
+ local oldLocations,oldShow=ForeverCompanionQuestWaypoints.MapLocations,ForeverCompanionQuestWaypoints.Show
+ local oldGuide,oldMap,oldSaved=ForeverCompanionOpenQuestGuide,C_Map,ForeverCompanionDB.levelingPlan
+ local live={};for i=1,9 do live[i]={id=996000+i,title='SAMPLE: Leveling quest '..i,zone=i<=5 and 'Sample camp' or 'Sample forest',complete=i==7,objectives={'Collect sample supplies: 1/5'},objectiveStates={{known=true,current=1,required=5}}} end
+ local supported,scans,maps,guides=true,0,0,0
+ p.GetLive=function() return live end;p.IsSupported=function() return supported end;p.IsPinned=function(q) return q.id==996009 end;p.Select=function() end
+ C_Map={GetBestMapForUnit=function() return 10 end,GetPlayerMapPosition=function() return {GetXY=function() return .1,.1 end} end}
+ ForeverCompanionQuestWaypoints.MapLocations=function()
+  scans=scans+1;local list={};for i=1,3 do if live[i] then list[#list+1]={quest=live[i],target={map=10,x=.1+i*.1,y=.2}} end end;return list
+ end
+ ForeverCompanionQuestWaypoints.Show=function() maps=maps+1;return 'Synthetic map action' end
+ ForeverCompanionOpenQuestGuide=function() guides=guides+1;return true end
+ ForeverCompanionDB.levelingPlan={}
+ SlashCmdList.FOREVERCOMPANION('plan')
+ local panel;for _,f in ipairs(frames) do if f.name=='ForeverCompanionLevelingPlanner' then panel=f end end
+ assert(panel and panel.visible and panel.scale<=1,'planner fits the screen')
+ panel:Hide()
+ local homeAction
+ for _,f in ipairs(frames) do if f.OnClick and f.caption and f.caption.text=='PLAN MY SESSION' then homeAction=f end end
+ assert(homeAction);homeAction.OnClick();assert(panel.visible,'Home opens the real planner')
+ local function visible(f) return f.visible and (not f.parent or visible(frames[f.parent])) end
+ local function control(caption,parent)
+  local found;for _,f in ipairs(frames) do if f.OnClick and f.text==caption and visible(f) and (not parent or f.parent==parent.id) then found=f end end
+  return assert(found,'missing control '..caption)
+ end
+ local function row(id)
+  for _,f in ipairs(frames) do if f.parent==panel.id and f.record and f.record.id==id and visible(f) then return f end end
+  error('missing planner row '..id)
+ end
+ local function geometry(parent)
+  local bounds={}
+  for _,f in ipairs(frames) do
+   if f.kind=='Button' and f.parent==parent.id and visible(f) then
+    local p=f.point;local x,y
+    if type(p[2])=='table' then assert(p[2]==parent);x,y=p[4] or 0,p[5] or 0 else x,y=p[2] or 0,p[3] or 0 end
+    if p[1]:find('RIGHT') then x=parent.width+x-f.width end
+    if p[1]:find('BOTTOM') then y=parent.height-y-f.height else y=-y end
+    local r={x,y,x+f.width,y+f.height}
+    assert(x>=0 and y>=0 and r[3]<=parent.width and r[4]<=parent.height,'planner control must fit its parent: '..f.text)
+    for _,b in ipairs(bounds) do assert(r[3]<=b[1] or r[1]>=b[3] or r[4]<=b[2] or r[2]>=b[4],'planner controls overlap: '..f.text) end
+    bounds[#bounds+1]=r
+   end
+  end
+ end
+ geometry(panel);geometry(row(996001))
+ row(996001).add.OnClick();row(996002).add.OnClick()
+ assert(#P.Settings().quests==2 and not row(996001).add.enabled)
+ control('My saved plan',panel).OnClick();row(996002).up.OnClick()
+ geometry(panel);geometry(row(996002))
+ assert(P.Settings().quests[1].id==996002)
+ exportNative('ui_leveling_plan_saved_360_native.json')
+ row(996002).down.OnClick();assert(P.Settings().quests[1].id==996001)
+ -- The tracker menu also adds exact live identities and rejects stale menu actions.
+ local oldTracker=ForeverCompanionDB.questTracker
+ ForeverCompanionDB.questTracker={mode='all'}
+ ForeverCompanionQuestTracker.Show();ForeverCompanionQuestTracker.page=1
+ for _,f in ipairs(frames) do
+  if f.kind=='EditBox' and frames[f.parent] and frames[f.parent].name=='ForeverCompanionQuestTrackerFrame' then f:SetText('') end
+ end
+ ForeverCompanionQuestTracker.Refresh()
+ local trackerRow
+ for _,f in ipairs(frames) do if f.item and f.item.quest and f.item.quest.title:find('SAMPLE: Leveling quest',1,true) and f.OnClick and visible(f) and not P.Contains(f.item.quest) then trackerRow=f end end
+ assert(trackerRow,'tracker displays the synthetic quest')
+ trackerRow.OnClick(trackerRow,'RightButton')
+ local trackerIdentity=trackerRow.item.quest
+ control('Add to leveling plan').OnClick();assert(P.Contains(trackerIdentity))
+ P.Remove(trackerIdentity)
+ trackerRow.OnClick(trackerRow,'RightButton')
+ local staleAdd=control('Add to leveling plan')
+ local replacedIndex;for i,q in ipairs(live) do if q==trackerIdentity then replacedIndex=i end end
+ live[replacedIndex]={id=trackerIdentity.id,title='SAMPLE: Changed identity'}
+ staleAdd.OnClick();assert(not P.Contains(trackerIdentity),'old tracker menu cannot save a changed quest identity')
+ live[replacedIndex]=trackerIdentity;ForeverCompanionInterface.CloseMenu()
+ ForeverCompanionDB.questTracker=oldTracker
+ control('Suggestions',panel).OnClick()
+ control('Next',panel).OnClick();assert(W.page==2)
+ control('Previous',panel).OnClick();assert(W.page==1)
+ local mode=control('Nearby first',panel);mode.OnClick(mode)
+ control('Turn-ins first').OnClick();assert(P.Settings().mode=='turnins' and row(996007))
+ local filter=control('All quest locations',panel);filter.OnClick();assert(P.Settings().localOnly)
+ local search;for _,f in ipairs(frames) do if f.parent==panel.id and f.kind=='EditBox' then search=f end end
+ search:SetText('[');assert(not control('Next',panel).enabled)
+ control('Clear filters',panel).OnClick();assert(search:GetText()=='' and not P.Settings().localOnly)
+ control('Zone overview',panel).OnClick()
+ local camp;for _,f in ipairs(frames) do if f.parent==panel.id and f.record and f.record.name=='Sample camp' then camp=f end end
+ assert(camp and camp.record.total==5);exportNative('ui_leveling_plan_zones_360_native.json')
+ camp.add.OnClick();assert(W.view=='suggestions')
+ for _,f in ipairs(frames) do if f.parent==panel.id and f.record and visible(f) then assert(f.record.zone=='Sample camp') end end
+ control('Clear filters',panel).OnClick();exportNative('ui_leveling_plan_suggestions_360_native.json')
+ row(996001).map.OnClick();assert(maps==1)
+ local stale=row(996001);table.remove(live,1);stale.guide.OnClick();assert(guides==0,'stale row must not open another quest')
+ control('My saved plan',panel).OnClick();assert(not row(996001).guide.enabled and not row(996001).map.enabled)
+ assert(#P.Settings().quests==2,'removed quests stay in the saved plan until explicitly removed')
+ supported=false;W.Refresh();assert(not row(996002).guide.enabled)
+ row(996002).map.OnClick();assert(maps==1,'unavailable scan cannot start directions')
+ exportNative('ui_leveling_plan_unavailable_360_native.json')
+ row(996001).add.OnClick();assert(#P.Settings().quests==1,'unavailable entries can still be removed manually')
+ supported=true;W.Refresh();row(996002).guide.OnClick();assert(guides==1 and not panel.visible,'details opens without planner covering it')
+ local before=scans;W.Refresh();assert(scans==before,'hidden planner does not rescan quest locations')
+ p.GetLive,p.IsSupported,p.IsPinned,p.Select=oldLive,oldSupported,oldPin,oldSelect
+ ForeverCompanionQuestWaypoints.MapLocations,ForeverCompanionQuestWaypoints.Show=oldLocations,oldShow
+ ForeverCompanionOpenQuestGuide,C_Map,ForeverCompanionDB.levelingPlan=oldGuide,oldMap,oldSaved
+ io.write('PASS: planner UI paging, filters, saved order, zone handoff, stale actions, unavailable data and hidden-window idle behavior\n')
+end
+
+-- Gear research end-to-end controls, async loading, acquisition and layout.
+;(function()
+ local G,W,H=ForeverCompanionGearFinder,ForeverCompanionGearFinderWorkspace,ForeverCompanionGearHunts
+ local oldAPI,oldInventory,oldRecords,oldSaved,oldPlayerInfo=C_Item,GetInventoryItemLink,ForeverCompanionLoot.records,ForeverCompanionDB.gearFinder,C_PlayerInfo
+ ForeverCompanionLoot.testGearSources=ForeverCompanionLoot.gearSources;ForeverCompanionLoot.gearSources=nil
+ local records={};local owned={};local scanCount,loadCount=0,0
+ local function pump(dt) if W.root and W.root.OnUpdate then W.root.OnUpdate(W.root,dt or .2) end end
+ for i=1,14 do records[#records+1]={itemID=997000+i,item=string.format('SAMPLE: Research item %02d',i),slot='Head',dungeon='Sample dungeon',boss='Sample boss',status='Synthetic UI fixture',source='https://example.test/'..i} end
+ records[#records+1]={itemID=997001,item=records[1].item,slot='Head',dungeon='Alternative dungeon',boss='Alternative boss',status='Synthetic source',source='https://example.test/alternative'}
+ ForeverCompanionLoot.records=records;ForeverCompanionDB.gearFinder={bestNow=false};G.RetryData()
+ C_Item={GetItemInfo=function(id) scanCount=scanCount+1;if id==997014 then return end;return type(id)=='number' and records[id-997000].item or 'SAMPLE: Equipped',id,type(id)=='number' and (1+id%4) or 2,20,1,'Armor','Cloth',1,'INVTYPE_HEAD',nil,nil,4,1 end,
+ GetItemStats=function(link) return {ITEM_MOD_STRENGTH_SHORT=link=='equipped' and 5 or 15,ITEM_MOD_STAMINA_SHORT=4} end,
+ GetItemCount=function(id) return owned[id] or 0 end,GetItemUniquenessByID=function() return false end,RequestLoadItemDataByID=function() loadCount=loadCount+1 end}
+ C_PlayerInfo={CanUseItem=function() return true end}
+ GetInventoryItemLink=function() return 'equipped' end
+ H.events.OnEvent(H.events,'PLAYER_ENTERING_WORLD');H.events.OnUpdate(H.events,.2);assert(not H.events.OnUpdate)
+ SlashCmdList.FOREVERCOMPANION('gear');assert(W.root:IsShown() and #W.results==13 and W.root.scale<=1)
+ W.root.OnEvent(W.root,'UI_SCALE_CHANGED');assert(W.root.scale<=1,'scaling handler preserved')
+ local readsBefore=scanCount;local buildsBefore=G.metrics.builds
+ local chosen=W.current.record.itemID
+ W.rows[1].OnMouseWheel(W.rows[1],-1);assert(W.offset==1 and W.rows[1].record==W.results[2])
+ assert(W.current.record.itemID==chosen,'scrolling preserves detail selection')
+ W.scrollBar.OnValueChanged(W.scrollBar,999);assert(W.offset==7 and W.rows[6].record==W.results[13],'scrollbar reaches last result and clamps')
+ assert(W.revealButton:IsEnabled() and W.revealButton:GetText()=='Find selected','off-screen selection has a return action')
+ W.revealButton.OnClick();assert(W.offset==0 and W.current.record.itemID==chosen and not W.revealButton:IsEnabled(),'return action restores visible selection without changing it')
+ W.scrollBar.OnValueChanged(W.scrollBar,0);assert(W.offset==0)
+ W.rows[1].OnMouseWheel(W.rows[1],1);assert(W.offset==0,'wheel clamps at start')
+ assert(scanCount==readsBefore and G.metrics.builds==buildsBefore,'scrolling reuses the current data snapshot')
+ W.Select(997001);assert(W.current.record.itemID==997001 and #W.current.sources==2)
+ assert(scanCount==readsBefore and G.metrics.builds==buildsBefore,'selection does not rescan item metadata')
+ local function fake(ids) local t={};for _,id in ipairs(ids) do t[#t+1]={record={itemID=id}} end;return t end
+ local before=fake({1,2,3,4,5,6,7,8,9,10})
+ assert(W.AnchorOffset(before,fake({11,1,2,3,4,5,6,7,8,9,10}),2)==3,'new higher rows preserve the existing first visible identity')
+ assert(W.AnchorOffset(before,fake({1,2,4,5,6,7,8,9,10}),2)==2,'removed anchor uses next surviving result')
+ assert(W.AnchorOffset(before,{},7)==0,'empty refreshed list resets safely')
+ W.ScrollTo(3);local anchor=W.rows[1].record.record.itemID
+ local reorderStats=C_Item.GetItemStats
+ C_Item.GetItemStats=function(link) if link==997013 then return {ITEM_MOD_STRENGTH_SHORT=100} end;return reorderStats(link) end
+ G.Invalidate();W.Refresh();assert(W.offset==4 and W.rows[1].record.record.itemID==anchor,'background re-ranking retains scroll anchor')
+ C_Item.GetItemStats=reorderStats;G.Invalidate();W.Refresh();assert(W.offset==3 and W.rows[1].record.record.itemID==anchor)
+ W.ScrollTo(0)
+
+ W.sourceButton.OnClick();assert(W.current.record.itemID==997001)
+ W.saveButton.OnClick();assert(W.current.saved);assert(G.SavedSource(997001).dungeon=='Alternative dungeon','selected hunt source is retained');W.trackButton.OnClick();assert(G.Settings().tracked=='997001' and H.tracker:IsShown())
+ G.Settings().trackerHidden=true;H.Refresh();W.Refresh();assert(not H.tracker:IsShown() and W.trackButton:GetText()=='Show tracker')
+ W.trackButton.OnClick();assert(H.tracker:IsShown() and G.Settings().tracked=='997001','restore hidden tracker without unpinning')
+ W.tabs.hunts.OnClick();assert(#W.results==1 and W.current.tracked)
+ exportNative('ui_gear_hunts_364_native.json')
+ W.tabs.discover.OnClick();local searchBuilds=G.metrics.builds
+ for _,query in ipairs({'R','Research','Research 02'}) do W.search:SetText(query);W.search.OnTextChanged(W.search,true) end
+ assert(G.metrics.builds==searchBuilds and W.searchPending and W.rows[1].enabled==false,'typing queues work and blocks stale row actions');W.ScrollTo(4);assert(W.offset==0,'pending search blocks stale scrolling')
+ pump(.03);assert(G.metrics.builds==searchBuilds);pump(.06)
+ assert(G.metrics.builds==searchBuilds+1 and #W.results==1 and W.offset==0 and not W.scrollBar:IsShown() and W.current.record.itemID==997002,'typing burst becomes one scan after the debounce')
+ pump(.02);assert(not W.root.OnUpdate,'worker detaches after queued loads and searches complete')
+ -- Even a callback captured before the search must not save the newly selected result.
+ W.search:SetText('Research 03');W.search.OnTextChanged(W.search,true);W.saveButton.OnClick()
+ assert(not G.Settings().hunts['997003'],'stale action cannot save a different filtered item')
+ W.search:SetText('Research 02');W.search.OnTextChanged(W.search,true);pump(.1)
+ W.search:SetText('[');W.search.OnTextChanged(W.search,true);pump(.1);assert(#W.results==0)
+ W.search:SetText('');W.search.OnTextChanged(W.search,true);pump(.1)
+ W.slots[2].OnClick();assert(#W.results==0 and G.Settings().slot==2)
+ W.slots[0].OnClick();W.readyButton.OnClick();assert(#W.results==14,'including unknown requirements reveals loading row')
+ pump(.2);assert(loadCount==1);W.Refresh();pump(.2);assert(loadCount==1,'failed load not retried every frame')
+ W.upgradeButton.OnClick();assert(#W.results==13 and W.results[1].recommended and W.results[1].rank==1)
+ W.Select(997002);exportNative('ui_gear_discover_364_native.json')
+ do
+ local savedTooltip=GameTooltip
+ local itemTip={lines={}}
+ function itemTip:SetOwner(owner) self.owner=owner end
+ function itemTip:IsOwned(owner) return self.owner==owner end
+ function itemTip:ClearLines() self.lines={} end
+ function itemTip:NumLines() return #self.lines end
+ function itemTip:SetHyperlink() end
+ function itemTip:SetText(value) self:AddLine(value) end
+ function itemTip:AddLine(value) self.lines[#self.lines+1]=value end
+ function itemTip:Show() self.visible=true end
+ function itemTip:Hide() self.visible=false end
+ GameTooltip=itemTip
+ W.itemHover.OnEnter(W.itemHover)
+ assert(itemTip.visible and itemTip.lines[1]==W.current.record.item and itemTip.lines[2]=='+15 Strength')
+ W.itemHover.OnLeave(W.itemHover);assert(not itemTip.visible)
+ function itemTip:SetItemByID(id) self:AddLine('Client item '..id) end
+ W.rows[1].OnEnter(W.rows[1])
+ assert(itemTip.visible and itemTip.lines[1]=='Client item '..W.rows[1].record.record.itemID)
+ W.rows[1].OnLeave(W.rows[1]);assert(not itemTip.visible)
+ GameTooltip=savedTooltip
+ end
+ W.bossButton.OnClick()
+ assert(W.root:IsShown() and ForeverCompanionBossGuideWorkspace.root:IsShown() and ForeverCompanionBossGuideWorkspace.boss==W.current.record.boss,'gear source opens the selected boss guide and keeps Gear Finder open')
+ ForeverCompanionBossGuideWorkspace.root:Hide()
+
+ local before=W.current.delta
+ W.tabs.weights.OnClick();W.weightBoxes[1]:SetText('3');W.weightBoxes[1].OnEnterPressed(W.weightBoxes[1]);assert(G.Settings().weights[1]==3)
+ W.weightBoxes[1]:SetText('nan');W.weightBoxes[1].OnEnterPressed(W.weightBoxes[1]);assert(G.Settings().weights[1]==3,'invalid input preserves prior weight')
+ W.weightName:SetText('Sample melee');G.SaveProfile(1,W.weightName:GetText());G.Preset('Caster');assert(G.LoadProfile(1))
+ W.Refresh();exportNative('ui_gear_weights_364_native.json')
+ W.tabs.discover.OnClick();W.Select(997002);assert(W.current.delta>before,'stat edit changes real comparison')
+ owned[997001]=1;H.events.OnEvent(H.events,'BAG_UPDATE_DELAYED');H.events.OnUpdate(H.events,.2);assert(G.Settings().completed['997001'].observed and H.toast:IsShown() and not H.tracker:IsShown())
+ pump(.2);W.tabs.completed.OnClick();assert(#W.results==1 and W.current.record.itemID==997001)
+ exportNative('ui_gear_acquired_364_native.json');exportNative('ui_gear_toast_364_native.json')
+ H.toast.OnUpdate(H.toast,7.75);assert(H.toast.alpha and H.toast.alpha>0 and H.toast.alpha<1,'acquisition notice fades near dismissal')
+ H.toast.OnUpdate(H.toast,9);assert(not H.toast:IsShown() and H.toast.alpha==1,'notice alpha reset for reuse');assert(#G.ObserveHunts()==0)
+ local oldHead,oldAlt=CharacterHeadSlot,IsAltKeyDown
+ CharacterHeadSlot=widget('Button');IsAltKeyDown=function() return true end;H.InstallHooks();H.InstallHooks()
+ assert(#CharacterHeadSlot.hooks.OnMouseUp==1,'character shortcut hooks installed once')
+ CharacterHeadSlot.hooks.OnMouseUp[1](CharacterHeadSlot,'RightButton');assert(G.Settings().slot==1 and W.view=='discover')
+ CharacterHeadSlot,IsAltKeyDown=oldHead,oldAlt
+ -- Every direct child button and row stays inside the window; sibling controls do not overlap.
+ local function visible(f) if not f.visible then return false end;return not f.parent or visible(frames[f.parent]) end
+ local function bounds(f)
+  local p=f.point;if not p or p[1]~='TOPLEFT' or type(p[2])~='number' then return end
+  return {x=p[2],y=-p[3],w=f.width,h=f.height}
+ end
+ for _,view in ipairs({'discover','hunts','completed','weights'}) do
+  W.view=view;W.Refresh();local controls={}
+  for _,f in ipairs(frames) do if f.parent==W.root.id and f.kind=='Button' and visible(f) then local r=bounds(f);if r then assert(r.x>=0 and r.y>=0 and r.x+r.w<=1080 and r.y+r.h<=760,'gear control outside root');controls[#controls+1]=r end end end
+  for i,a in ipairs(controls) do for j=i+1,#controls do local b=controls[j];assert(not(a.x<b.x+b.w and b.x<a.x+a.w and a.y<b.y+b.h and b.y<a.y+a.h),'overlapping root controls') end end
+ end
+ local originalStats=C_Item.GetItemStats
+ local subset={};for i=1,6 do subset[i]=records[i] end;ForeverCompanionLoot.records=subset
+ C_Item.GetItemStats=function(link)
+  if link==997006 then return {} end
+  return {ITEM_MOD_STRENGTH_SHORT=link=='equipped' and 5 or link==997004 and 5 or link==997005 and 2 or 15}
+ end
+ G.Settings().slot=0;G.Settings().bestNow=false;G.Settings().ready=false;G.Settings().dungeon=''
+ owned[997003]=1;W.view='discover';W.search:SetText('');W.offset=0;W.selected=997005;W.Refresh()
+ local states={};for _,r in ipairs(W.rows) do if r.record then states[r.state:GetText():match(' · (.+)$') or r.state:GetText()]=true end end
+ assert(states.ACQUIRED and states.OWNED and states.HIGHER and states.LOWER and states.EQUAL and states['MANUAL REVIEW'],'color states retain explicit readable labels')
+ exportNative('ui_gear_states_364_native.json')
+ W.tabs.weights.OnClick();W.root:Hide();W.Open();W.view='discover';W.Refresh()
+ C_Item.GetItemStats=originalStats;ForeverCompanionLoot.records=records
+ local beforeEvents=G.metrics.builds
+ for i=1,10 do H.events.OnEvent(H.events,'PLAYER_EQUIPMENT_CHANGED') end
+ H.events.OnUpdate(H.events,.05);pump(.02);assert(G.metrics.builds==beforeEvents+1,'equipment burst coalesces to one scan')
+ pump(.1);assert(not H.events.OnUpdate and not W.root.OnUpdate,'no idle worker after an event burst and queued loads finish')
+ W.root:Hide();local calls=scanCount;W.Refresh();assert(scanCount==calls,'hidden gear window does not scan items')
+ C_Item=nil;H.events.OnEvent(H.events,'BAG_UPDATE_DELAYED');H.events.OnUpdate(H.events,.2);assert(#G.ObserveHunts()==0)
+ C_Item,GetInventoryItemLink,ForeverCompanionLoot.records,ForeverCompanionDB.gearFinder,C_PlayerInfo=oldAPI,oldInventory,oldRecords,oldSaved,oldPlayerInfo
+ ForeverCompanionLoot.gearSources=ForeverCompanionLoot.testGearSources;ForeverCompanionLoot.testGearSources=nil
+ io.write('PASS: gear UI all-slot browsing, sources, filters, profiles, batched loads, acquisition toast, shortcuts, preserved scaling, bounds and hidden idle behavior\n')
+end)()
+
+-- Native face state transitions use the client's known panel-button sheets.
+do
+ local button=ForeverCompanionInterface.Button(UIParent)
+ local function fire(event) for _,hook in ipairs(button.hooks[event] or {}) do hook(button) end end
+ local face
+ for _,widget in ipairs(frames) do
+  if widget.parent==button.id and widget.texture=='Interface\\Buttons\\UI-Panel-Button-Up' then face=widget end
+ end
+ assert(face,'native button face missing')
+ fire('OnMouseDown');assert(face.texture:find('Button-Down',1,true),'pressed face missing')
+ fire('OnMouseUp');assert(face.texture:find('Button-Up',1,true),'released face missing')
+ button:SetEnabled(false);fire('OnDisable')
+ assert(face.texture:find('Button-Disabled',1,true),'disabled face missing')
+ fire('OnMouseDown');assert(face.texture:find('Button-Disabled',1,true),'disabled press changed face')
+ button:SetEnabled(true);fire('OnEnable')
+ assert(face.texture:find('Button-Up',1,true),'reenabled face missing')
+ button:Hide()
+ print('PASS: Blizzard panel-button pressed, released, disabled and reenabled artwork states')
+end
+
+-- Quest, Hunter, gathering and common pop-out controls use the actual manifest UI.
+do
+ local W,H=ForeverCompanionHunterWorkspace,ForeverCompanionHunterGuide
+ local oldArea=C_Map.GetAreaInfo;C_Map.GetAreaInfo=function(id) return ({[215]='Mulgore',[12]='Elwynn Forest',[3]='Badlands'})[id] or ('Area '..id) end
+ W.view='beasts';W.options={query='The Rake',family='',role=''};W.Open()
+ assert(#W.results==1 and W.selected.id==5807 and W.root.fcResizeGrip and W.root.fcTitleDrag)
+ assert(W.detailTitle.parent==W.detail.id and W.detailBody.parent==W.detail.id,'Hunter detail text must belong to its backing frame, never sit behind an opaque child')
+ exportNative('ui_hunter_beast_367_native.json')
+ W.actions[2].OnClick(W.actions[2]);assert(H.Settings().favorites['5807'])
+ W.tabs.families.OnClick();W.options.query='Cat';W.Refresh();assert(#W.results==1 and not W.familyButton:IsEnabled() and not W.roleButton:IsEnabled() and not W.nextPage:IsEnabled(),'irrelevant filters and exhausted pagination are disabled')
+ exportNative('ui_hunter_family_367_native.json')
+ W.actions[1].OnClick(W.actions[1]);assert(W.view=='beasts' and W.options.family=='Cat')
+ W.options={query='Bite',family='',role=''};W.tabs.abilities.OnClick();assert(#W.results==1)
+ W.actions[3].OnClick(W.actions[3]);assert(W.rank==2)
+ exportNative('ui_hunter_skill_367_native.json')
+ W.actions[1].OnClick(W.actions[1]);assert(W.view=='beasts' and W.options.ability=='bite' and W.options.rank==2)
+ for _,entry in ipairs(W.results) do local found=false;for _,a in ipairs(H.Abilities(entry.id)) do if a.key=='bite' and a.rank.rank==2 then found=true end end;assert(found) end
+ local oldPetRead=H.LivePet;H.LivePet=function() return {name='SAMPLE: My companion',family='Cat',level=20,health=400,maximum=500,armor=800,low=30,high=50,speed=1.2,dps=33.33,actions={'Bite','Growl'}} end
+ W.tabs.pet.OnClick();W.actions[1].OnClick(W.actions[1]);W.actions[2].OnClick(W.actions[2]);assert(W.showSnapshot and H.Settings().snapshots[1].name=='SAMPLE: My companion')
+ assert(#W.results==2 and W.rows[1]:IsShown() and W.rows[2]:IsShown(),'companion journal shows live and saved entries')
+ W.rows[1].OnClick(W.rows[1]);assert(not W.showSnapshot,'live companion selected from list')
+ W.rows[2].OnClick(W.rows[2]);assert(W.showSnapshot and W.snapshotIndex==1,'saved companion selected from list')
+ exportNative('ui_hunter_pet_367_native.json')
+ local snapshot=H.Settings().snapshots[1]
+ for i=2,10 do local copy={};for k,v in pairs(snapshot) do copy[k]=v end;copy.name='SAMPLE: Snapshot '..i;H.Settings().snapshots[i]=copy end
+ W.Refresh();assert(W.nextPage:IsEnabled());W.nextPage.OnClick();assert(W.page==2 and not W.nextPage:IsEnabled() and W.previous:IsEnabled())
+ W.rows[1].OnClick(W.rows[1]);assert(W.showSnapshot and W.snapshotIndex==8,'later snapshots can be selected without cycling every pet')
+ H.Settings().snapshots={};W.Refresh();assert(W.detailInfo:GetText():find('No saved pet snapshot',1,true),'an empty snapshot view must not show live stats as saved');W.showSnapshot=false;H.LivePet=oldPetRead
+ local oldCursor,oldWidth,oldHeight=GetCursorPosition,UIParent:GetWidth(),UIParent:GetHeight();local cx,cy=100,100
+ GetCursorPosition=function() return cx,cy end;UIParent:SetSize(1600,1000)
+ W.root.fcResizeGrip.OnMouseDown(W.root.fcResizeGrip,'LeftButton');assert(W.root.fcResizeGrip.OnUpdate)
+ cx,cy=220,40;W.root.fcResizeGrip.OnUpdate();assert(W.root.scale>1 and ForeverCompanionDB.windowLayouts.ForeverCompanionHunterFieldGuide.scale>1)
+ W.root.fcResizeGrip.OnMouseUp();assert(not W.root.fcResizeGrip.OnUpdate)
+ W.root.fcResizeGrip.OnClick(W.root.fcResizeGrip,'RightButton');assert(W.root.scale==1)
+ W.root:Hide();UIParent:SetSize(oldWidth,oldHeight);GetCursorPosition=oldCursor;C_Map.GetAreaInfo=oldArea
+ local p=ForeverCompanionQuestPlanner;local oldLive,oldSelected,oldSupported=p.GetLive,p.GetSelected,p.IsSupported
+ local a={id=998501,title='SAMPLE: Gather the supplies',zone='Sample valley',zoneKnown=true,level=15,objectives={'Gather supplies: 2/5'},objectiveStates={{known=true,current=2,required=5}}}
+ local b={id=998502,title='SAMPLE: Return to camp',zone='Sample camp',zoneKnown=true,level=15,complete=true,objectives={}}
+ p.GetLive=function() return {a,b} end;p.GetSelected=function() return a,1 end;p.IsSupported=function() return true end
+ local oldTracker=ForeverCompanionDB.questTracker;ForeverCompanionDB.questTracker={grouped=true,mode='all'}
+ ForeverCompanionQuestJourney.Settings().collapsedZones={};ForeverCompanionQuestTracker.Show()
+ local tracker;for _,f in ipairs(frames) do if f.name=='ForeverCompanionQuestTrackerFrame' then tracker=f end end
+ local header;for _,f in ipairs(frames) do if f.parent==tracker.id and f.zoneGroup and f.zoneGroup.zone=='Sample valley' then header=f end end
+ assert(header and header.height==30 and not header.map.visible)
+ exportNative('ui_quest_zones_367_native.json')
+ header.OnClick(header,'LeftButton');assert(ForeverCompanionQuestJourney.Settings().collapsedZones['Sample valley'])
+ ForeverCompanionQuestJourney.Show(a);exportNative('ui_quest_intelligence_367_native.json')
+ local trackerConfig=ForeverCompanionDB.questTracker
+ ForeverCompanionQuestJourney.Settings().focus={id=a.id,title=a.title};trackerConfig.focusOnly=true;ForeverCompanionQuestTracker.Refresh();assert(trackerConfig.focusOnly)
+ p.GetLive=function() return {b} end;ForeverCompanionQuestTracker.Refresh();assert(not trackerConfig.focusOnly,'stale focus no longer hides the entire quest log')
+ trackerConfig.focusOnly=true;p.IsSupported=function() return false end;ForeverCompanionQuestTracker.Refresh();assert(trackerConfig.focusOnly,'cached scans cannot clear focus')
+ ForeverCompanionQuestTracker.Hide();ForeverCompanionDB.questTracker=oldTracker;p.GetLive,p.GetSelected,p.IsSupported=oldLive,oldSelected,oldSupported
+ local prof='Synthetic craft';local oldMaterials=ForeverCompanionDB.materials;local oldRecipes=ForeverCompanionDB.recipePlans
+ ForeverCompanionCraftingPlanner.Add(prof,'SAMPLE: Ore',8,2);ForeverCompanionGatheringPlan.Open(prof)
+ local A,S,L=ForeverCompanionGatheringPlan,ForeverCompanionMaterialSources,ForeverCompanionQuestLocations
+ local oldProvider,oldForItem=L.Provider,S.ForItem;local syntheticProvider={Item={name=function(id) if id==998600 then return 'SAMPLE: Ore' end end}};L.Provider=function() return syntheticProvider end
+ A.provider=syntheticProvider;A.signature=A.Signature(A.items);A.items[1].itemID=998600;A.message='SAMPLE: source references for layout verification'
+ S.ForItem=function() return {{field='objectDrops',id=1,name='SAMPLE: Ore vein',kind='Gather / open object',points={{map=1429,x=.4,y=.5,zone='SAMPLE: Valley'}}},{field='vendors',id=2,name='SAMPLE: Trade supplier',kind='Vendor reference',points={{map=1453,x=.3,y=.7,zone='SAMPLE: Town'}}}} end
+ A.Refresh();assert(not A.notice:GetText():find('Goals or provider changed',1,true),'successful reference refresh clears stale warnings')
+ assert(A.OpenSelected(),'exact material handoff succeeds')
+ local finder=ForeverCompanionMaterialFinder
+ assert(not finder.OpenItem(998600,'Different ore') and not finder.OpenItem(998601,'SAMPLE: Ore'),'changed and missing identities cannot open sources')
+ local sourceID;local existingForItem=S.ForItem;S.ForItem=function(id) sourceID=id;return existingForItem(id) end
+ finder.Refresh();assert(sourceID==998600,'Material Finder preserves exact selected item ID')
+ S.ForItem=existingForItem
+ A.provider={};assert(not A.OpenSelected(),'stale gathering provider blocks exact source handoff');A.Refresh();assert(A.notice:GetText():find('Goals or provider changed',1,true))
+ A.provider=syntheticProvider;A.Refresh();assert(not A.notice:GetText():find('Goals or provider changed',1,true))
+ exportNative('ui_gathering_journal_367_native.json');L.Provider,S.ForItem=oldProvider,oldForItem
+
+ ForeverCompanionDB.materials=oldMaterials;ForeverCompanionDB.recipePlans=oldRecipes
+ local gear=ForeverCompanionGearFinderWorkspace;gear.Open();assert(gear.root.scale<=.84 and gear.root.fcResizeGrip)
+ for _,r in ipairs(gear.results or {}) do if r.rank then assert(r.rank>=1 and r.rankCount>=r.rank) end end
+ exportNative('ui_gear_ranked_367_native.json');gear.root:Hide()
+ print('PASS: Hunter browsing/ability-source filters, favorites, native model fallback, persisted resize grip, quest zone collapse, intelligence and gathering UI')
+end
+
+-- Every profession guide is an actual native window over the extracted facts.
+do
+ local W,P=ForeverCompanionProfessionGuideWorkspace,ForeverCompanionProfessionLeveling
+ local oldPlans,oldMaterials=ForeverCompanionDB.recipes,ForeverCompanionDB.materials
+ ForeverCompanionDB.recipes={};ForeverCompanionDB.materials={}
+ W.Open('Alchemy');assert(W.root:IsShown() and #W.plan.steps>0 and W.root.fcResizeGrip and W.root.fcTitleDrag)
+ local selected=W.selected;W.ScrollTo(99999);assert(W.offset==#W.results-6 and W.selected==selected,'guide scrolling retains selected details')
+ W.ScrollTo(0);W.addButton.OnClick();assert(#ForeverCompanionRecipePlans.Get('Alchemy')==1)
+ W.tabs.shopping.OnClick();assert(#W.results==#W.plan.materials)
+ local priorItemAPI=C_Item;C_Item={GetItemCount=function() return 5 end};W.stockButton.OnClick();assert(W.plan.stockBasis=='carried bags' and W.detailText:GetText():find('carried in bags',1,true),'bag snapshot basis is visible')
+ exportNative('ui_profession_carried_371_native.json')
+ C_Item=priorItemAPI;assert(W.Rebuild() and W.plan.stockBasis==nil,'guide rebuild deliberately restores manual stock')
+exportNative('ui_profession_shopping_370_native.json')
+ W.importButton.OnClick();assert(#ForeverCompanionCraftingPlanner.GetEntries('Alchemy')==#W.plan.materials)
+ W.Open('Alchemy','recipes')
+ assert(W.view=='recipes' and #W.results==#P.Catalog('Alchemy'),'recipe entry point opens the full catalog without a learned-recipe filter')
+ W.search:SetText('Minor');W.search.OnTextChanged(W.search);assert(#W.results>0 and #W.results<#P.Catalog('Alchemy'))
+ W.search:SetText('');W.search.OnTextChanged(W.search);W.tabs.route.OnClick()
+ W.currentInput:SetText('150');W.targetInput:SetText('75');local previous=W.plan;assert(not W.Rebuild() and W.plan==previous,'invalid ranges preserve the current applied guide')
+ W.currentInput:SetText('75');W.targetInput:SetText('150');assert(W.Rebuild() and W.plan.steps[1].from==75)
+ exportNative('ui_profession_route_370_native.json')
+ for _,name in ipairs(P.names) do W.Open(name);assert(W.profession==name and #W.plan.gaps==0 and W.plan.target==300 or name=='Alchemy' and W.plan.target==150) end
+ W.Open('Fishing');assert(W.plan.gather and #W.plan.materials==0 and not W.importButton:IsEnabled());exportNative('ui_profession_fishing_370_native.json')
+ W.root:Hide();ForeverCompanionDB.recipes=oldPlans;ForeverCompanionDB.materials=oldMaterials
+ io.write('PASS: all twelve native profession guides, scrolling, recipe/shopping imports, recipe search, invalid-range retention and gathering quota disclosure\n')
+end
+
+-- Boss-specific notes precede the exact quoted Easter egg in the native guide.
+do
+ local B,W,M=ForeverCompanionEncounterBrowser,ForeverCompanionBossGuideWorkspace,ForeverCompanionBossMechanics
+ B.Focus('The Deadmines','Captain Greenskin');SlashCmdList.FOREVERCOMPANION('open dungeon journal');ForeverCompanionRefresh()
+ B.guideButton.OnClick();assert(W.root:IsShown() and W.root.fcResizeGrip and W.root.fcTitleDrag)
+ assert(W.boss=='Captain Greenskin' and W.body:GetText()==M.Format(B.dungeon,B.boss))
+ exportNative('ui_boss_guide_372_native.json')
+ W.Open('Wailing Caverns','Kresh');assert(not W.body:GetText():find(M.quote,1,true))
+ W.Open('The Deadmines','Unknown');assert(W.body:GetText():find('research pending',1,true) and not W.body:GetText():find(M.quote,1,true))
+ W.Open('Scarlet Monastery: Armory','Herod');assert(W.body:GetText():find('Whirlwind',1,true) and W.source:GetText():find('azeroth.wiki',1,true))
+ local seen=false;for _,entry in ipairs(B.Results('The Deadmines','Shredder')) do if entry.boss=="Sneed's Shredder" then seen=true end end
+ assert(seen,'mechanics-only bosses are searchable independently of imported loot')
+ W.root:Hide();io.write('PASS: native boss guide, exact selected encounter, source changes, move/resize controls and no stale Easter eggs\n')
+end
+
+-- Every listed dungeon can render both its roster and its selected encounter.
+do
+ local E,W,M,R=ForeverCompanionEncounterBrowser,ForeverCompanionBossGuideWorkspace,ForeverCompanionBossMechanics,ForeverCompanionDungeonReference
+ SlashCmdList.FOREVERCOMPANION('open dungeon journal');E.query='';E.questView=false
+ local count=0
+ for _,d in ipairs(ForeverCompanionDungeonCatalog.Names()) do
+  E.SelectDungeon(d);ForeverCompanionRefresh();assert(#E.Results(d,'')>0 and E.guideButton:IsEnabled())
+  E.guideButton.OnClick();assert(W.root:IsShown() and W.dungeon==d and W.body:GetText()==M.Format(d,E.boss))
+  count=count+1
+ end
+ assert(count==34)
+ W.Open('Shaper’s Terrace','Titanosaur');assert(W.body:GetText():find('not yet documented',1,true) and not W.body:GetText():find(M.quote,1,true))
+ exportNative('ui_dungeon_pending_373_native.json')
+ W.Open('Upper Blackrock Spire','Solakar Flamewreath');assert(W.notice:GetText():find('Classic',1,true))
+ W.Open('The Drowned City','Captain Dreadrise');assert(W.body:GetText():find('Embrine',1,true));exportNative('ui_dungeon_mechanics_373_native.json');W.root:Hide()
+ E.Focus('Blackrock Depths','Emperor Dagran Thaurissan');ForeverCompanionRefresh();exportNative('ui_dungeon_catalog_373_native.json')
+ io.write('PASS: all 34 native dungeon rosters, guide handoffs, pending-mechanics and legacy labels\n')
+end
+
+-- Dungeon materials stay on their owning panels; reference drawer is explicit.
+do
+ local W,E=ForeverCompanionBossGuideWorkspace,ForeverCompanionEncounterBrowser
+ W.Open('The Deadmines','Captain Greenskin')
+ assert(W.root.fcDungeonMaterial and W.root:GetHeight()==448 and W.root.fcResizeGrip)
+ assert(not W.source:IsShown() and W.notice:IsShown())
+ W.referenceButton.OnClick();assert(W.source:IsShown() and not W.notice:IsShown())
+ W.Open('Upper Blackrock Spire','Solakar Flamewreath');assert(W.source:GetText():find('wowhead.com/classic',1,true),'open drawer follows selected encounter')
+ W.referenceButton.OnClick();assert(not W.source:IsShown() and W.notice:IsShown())
+ W.Open('The Deadmines','Captain Greenskin');exportNative('ui_boss_guide_374_native.json');W.root:Hide()
+ E.Focus('Blackrock Depths','Emperor Dagran Thaurissan');SlashCmdList.FOREVERCOMPANION('open dungeon journal');ForeverCompanionRefresh();exportNative('ui_dungeon_journal_374_native.json')
+ io.write('PASS: textured dungeon chrome, compact boss frame, source drawer and selected-encounter metadata\n')
 end
