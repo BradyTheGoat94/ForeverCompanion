@@ -15,18 +15,18 @@ for _,r in ipairs({
 }) do add(r[1],r[2],r[3],r[4],official) end
 local directory='https://www.wowhead.com/forever/guide/dungeons-overview-locations-details'
 for _,r in ipairs({
- {'Ragefire Chasm','Orgrimmar'},{'The Deadmines','Westfall'},{'Wailing Caverns','The Barrens'},
- {'Shadowfang Keep','Silverpine Forest'},{'Blackfathom Deeps','Ashenvale'},
- {'The Stockade','Stormwind City'},{'Gnomeregan','Dun Morogh'},{'Razorfen Kraul','The Barrens'},
- {'Scarlet Monastery: Graveyard','Tirisfal Glades'},{'Scarlet Monastery: Library','Tirisfal Glades'},
- {'Scarlet Monastery: Armory','Tirisfal Glades'},{'Scarlet Monastery: Cathedral','Tirisfal Glades'},
- {'Razorfen Downs','The Barrens'},{'Uldaman','Badlands'},{"Zul'Farrak",'Tanaris'},
- {'Maraudon','Desolace'},{"Temple of Atal'Hakkar",'Swamp of Sorrows'},
- {'Blackrock Depths','Blackrock Mountain'},{'Lower Blackrock Spire','Blackrock Mountain'},
- {'Upper Blackrock Spire','Blackrock Mountain'},{'Dire Maul: East','Feralas'},
- {'Dire Maul: West','Feralas'},{'Dire Maul: North','Feralas'},{'Scholomance','Western Plaguelands'},
- {'Stratholme','Eastern Plaguelands'},
-}) do add(r[1],r[2],nil,nil,directory) end
+ {'Ragefire Chasm','Orgrimmar',13,18},{'The Deadmines','Westfall',18,23},{'Wailing Caverns','The Barrens',15,25},
+ {'Shadowfang Keep','Silverpine Forest',22,30},{'Blackfathom Deeps','Ashenvale',24,32},
+ {'The Stockade','Stormwind City',22,30},{'Gnomeregan','Dun Morogh',29,38},{'Razorfen Kraul','The Barrens',30,40},
+ {'Scarlet Monastery: Graveyard','Tirisfal Glades',28,38},{'Scarlet Monastery: Library','Tirisfal Glades',29,39},
+ {'Scarlet Monastery: Armory','Tirisfal Glades',32,42},{'Scarlet Monastery: Cathedral','Tirisfal Glades',35,45},
+ {'Razorfen Downs','The Barrens',40,50},{'Uldaman','Badlands',42,52},{"Zul'Farrak",'Tanaris',44,54},
+ {'Maraudon','Desolace',45,57},{"Temple of Atal'Hakkar",'Swamp of Sorrows',50,60},
+ {'Blackrock Depths','Blackrock Mountain',52,60},{'Lower Blackrock Spire','Blackrock Mountain',55,60},
+ {'Upper Blackrock Spire','Blackrock Mountain',58,60},{'Dire Maul: East','Feralas',58,60},
+ {'Dire Maul: West','Feralas',58,60},{'Dire Maul: North','Feralas',58,60},{'Scholomance','Western Plaguelands',58,60},
+ {'Stratholme','Eastern Plaguelands',58,60},
+}) do add(r[1],r[2],r[3],r[4],directory) end
 D.entries["Temple of Atal'Hakkar"].aliases='sunken temple'
 D.entries['Maraudon'].aliases='wicked grotto foulspore cavern earth song falls'
 D.entries['Krol’dok Stronghold'].aliases="krol'dok stronghold kroldok"
@@ -44,10 +44,16 @@ function D.Names(query)
  end
  table.sort(names);return names
 end
+function D.LevelRange(name)
+ -- Both Stratholme approaches lead to the same instance.
+ local e=D.entries[name=='Stratholme: Service Gate' and 'Stratholme' or name]
+ if e and e.low and e.high then return ('%d-%d'):format(e.low,e.high) end
+end
 function D.Summary(name)
  local e=D.entries[name]
  if not e then return 'Dungeon reference · confirm access in game' end
- return e.zone..(e.low and (' · suggested '..e.low..'–'..e.high) or '')
+ local range=D.LevelRange(name)
+ return e.zone..(range and (' · suggested '..e.low..'–'..e.high) or '')
 end
 
 -- Outdoor approach references, not interior portal or boss coordinates.

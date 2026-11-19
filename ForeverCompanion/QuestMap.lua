@@ -95,11 +95,17 @@ local function showDungeons(map,canvas,mapID,width,height)
    pin=CreateFrame('Button',nil,canvas);pin:SetSize(20,20)
    local icon=pin:CreateTexture(nil,'ARTWORK');icon:SetPoint('CENTER',pin);pin.icon=icon
    icon:SetTexture('Interface\\Icons\\INV_Misc_Key_03')
+   pin.level=ForeverCompanionInterface.Text(pin,10,{.98,.80,.47,1})
+   pin.level:SetPoint('TOP',pin,'BOTTOM',0,0)
+   pin.level:SetJustifyH('CENTER')
    pin:SetScript('OnEnter',function(self)
     if not GameTooltip then return end
     local p=self.location
     GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(p.approximate and 'Dungeon area' or 'Dungeon approach')
-    for _,name in ipairs(p.names) do GameTooltip:AddLine(name,1,1,1) end
+    for _,name in ipairs(p.names) do
+     local range=catalog.LevelRange(name)
+     GameTooltip:AddLine(range and (name..'  |  Suggested levels '..range) or name,1,1,1,true)
+    end
     GameTooltip:AddLine(string.format('%s %.1f, %.1f',p.zone,p.x*100,p.y*100),.8,.85,.9)
     GameTooltip:Show()
    end)
@@ -114,6 +120,9 @@ local function showDungeons(map,canvas,mapID,width,height)
   end
   pin.location=location
   local zoneView=mapID==location.map
+  local range=zoneView and #location.names==1 and catalog.LevelRange(location.names[1])
+  pin.level:SetText(range or '')
+  pin.level:SetShown(not not range and (not ForeverCompanionDB or ForeverCompanionDB.mapShowDungeonLevels~=false))
   local hitSize=zoneView and 20 or 14
   local iconSize=zoneView and 12 or 8
   pin:SetSize(hitSize,hitSize);pin.icon:SetSize(iconSize,iconSize)
@@ -419,6 +428,7 @@ function M.OpenAppearance(anchor)
  entries[#entries+1]={label='Tighter service clusters',selected=db.mapServiceTight==true,action=function() db.mapServiceTight=not db.mapServiceTight;M.Refresh() end}
  entries[#entries+1]={label='Show player map coordinates',selected=db.mapShowCoordinates~=false,action=function() db.mapShowCoordinates=db.mapShowCoordinates==false;M.Refresh() end}
  entries[#entries+1]={label='Show cursor coordinates',selected=db.mapShowCursor~=false,action=function() db.mapShowCursor=db.mapShowCursor==false;M.Refresh() end}
+ entries[#entries+1]={label='Show dungeon level labels',selected=db.mapShowDungeonLevels~=false,action=function() db.mapShowDungeonLevels=db.mapShowDungeonLevels==false;M.Refresh() end}
  entries[#entries+1]={label='Show zone levels',selected=db.mapShowLevels~=false,action=function() db.mapShowLevels=db.mapShowLevels==false;M.Refresh() end}
  entries[#entries+1]={label='Reset map dock position',action=function() db.mapDockPosition=nil;if guide then guide:ClearAllPoints();guide:SetPoint('BOTTOMLEFT',worldMap,'BOTTOMLEFT',12,12) end end}
  ForeverCompanionInterface.Menu(anchor or guide,'MAP APPEARANCE',entries)
