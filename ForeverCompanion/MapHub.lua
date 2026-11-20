@@ -178,6 +178,10 @@ function H.Menu(anchor)
   {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
   {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(anchor or quick or root) end},
+  {label='Party distance',selected=ForeverCompanionPartyDistance.Enabled(),action=function()
+   local party=ForeverCompanionPartyDistance
+   party.SetEnabled(not party.Enabled())
+  end},
   {label='Toggle transparent map',action=function() ForeverCompanionMapOverlay.Toggle() end},
   {label='Overlay presets',action=function() ForeverCompanionMapOverlay.PresetMenu(anchor or quick or root) end},
   {label='Travel display options',action=function() ForeverCompanionQuestDirection.OpenOptions(anchor or quick or root) end},
