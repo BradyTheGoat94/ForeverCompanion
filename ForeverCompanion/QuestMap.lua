@@ -84,7 +84,7 @@ local function showTerrain(canvas)
  terrain:Show()
 end
 
-local dungeonPins={}
+local dungeonPins,zoneLevelLabels={},{}
 local function showDungeons(map,canvas,mapID,width,height)
  if ForeverCompanionDB and ForeverCompanionDB.hideDungeonPins then return end
  local catalog=ForeverCompanionDungeonCatalog
@@ -131,6 +131,7 @@ local function showDungeons(map,canvas,mapID,width,height)
  end
 end
 local function hidePins()
+ for _,label in ipairs(zoneLevelLabels) do label:Hide() end
  for _,pin in ipairs(dungeonPins) do pin:Hide() end
  if ForeverCompanionMapTools then ForeverCompanionMapTools.HideMap() end
  for _,pin in ipairs(pins) do pin:Hide() end
@@ -385,13 +386,60 @@ function M.CursorCoordinates(map)
  end
 end
 
-function M.ZoneLevelText(mapID)
- if not finite(mapID) or not C_Map or not Enum or not Enum.UIMapType then return end
- local info=readPublic(C_Map.GetMapInfo,mapID)
- if type(info)~='table' or info.mapType~=Enum.UIMapType.Zone then return end
+local function zoneRange(mapID)
  local lo,hi=readPublic(C_Map.GetMapLevels,mapID)
  if finite(lo) and finite(hi) and lo>0 and hi>=lo then
   return lo==hi and ('Lv. %d'):format(lo) or ('Lv. %d-%d'):format(lo,hi)
+ end
+ local walkthrough=ForeverCompanionWalkthrough
+ for _,chapter in ipairs(walkthrough and walkthrough.chapters or {}) do
+  if chapter[1]==mapID then return ('Lv. %d-%d'):format(chapter[2],chapter[3]) end
+ end
+end
+
+function M.ZoneLevelText(mapID)
+ if not finite(mapID) or not C_Map or not Enum or not Enum.UIMapType then return end
+ local info=readPublic(C_Map.GetMapInfo,mapID)
+ if type(info)=='table' and info.mapType==Enum.UIMapType.Zone then return zoneRange(mapID) end
+end
+
+function M.ContinentZoneLevels(mapID,info)
+ local result={}
+ local types=Enum and Enum.UIMapType
+ if not types or not types.Continent or not C_Map or not info or info.mapType~=types.Continent then return result end
+ local zones=readPublic(C_Map.GetMapChildrenInfo,mapID,types.Zone,false)
+ if type(zones)~='table' or type(C_Map.GetMapRectOnMap)~='function' then return result end
+ local seen={}
+ for _,zone in ipairs(zones) do
+  local id=zone.mapID
+  if finite(id) and id>0 and not seen[id] then
+   seen[id]=true
+   local range=zoneRange(id)
+   if range then
+    local ok,left,right,top,bottom=pcall(C_Map.GetMapRectOnMap,id,mapID)
+    if ok and validCoordinates(left,top) and validCoordinates(right,bottom) and left<right and top<bottom then
+     result[#result+1]={text=range,x=(left+right)/2,y=(top+bottom)/2}
+    end
+   end
+  end
+ end
+ return result
+end
+
+local function showZoneLevels(canvas,mapID,info,width,height)
+ for i,zone in ipairs(M.ContinentZoneLevels(mapID,info)) do
+  local label=zoneLevelLabels[i]
+  if not label then
+   label=canvas:CreateFontString(nil,'OVERLAY','GameFontNormalSmall')
+   label:SetTextColor(.98,.86,.58)
+   label:SetShadowColor(0,0,0,1)
+   label:SetShadowOffset(1,-1)
+   zoneLevelLabels[i]=label
+  end
+  label:SetText(zone.text)
+  label:ClearAllPoints()
+  label:SetPoint('CENTER',canvas,'TOPLEFT',zone.x*width,-zone.y*height-10)
+  label:Show()
  end
 end
 
@@ -685,6 +733,7 @@ function M.Refresh()
  local name=ok and type(info)=='table' and info.name or 'COMPANION MAP'
  local levels=not ForeverCompanionDB or ForeverCompanionDB.mapShowLevels~=false
  local levelText=levels and M.ZoneLevelText(mapID)
+ if levels and ok and type(info)=='table' then showZoneLevels(canvas,mapID,info,width,height) end
  guideTitle:SetText(levelText and (name..'  |  '..levelText) or name)
  guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)

@@ -32,3 +32,17 @@ target=nil;assert(m.GoToCoordinates('100.1 10'):find('Enter',1,true) and target=
 shown=true;id=11
 assert(m.GoToCoordinates('10 10'):find('Choose a zone',1,true) and target==nil)
 print('PASS: map coordinates, unavailable cursor, level labels and validated coordinate destinations')
+
+C_Map.GetMapChildrenInfo=function(id,kind,recursive)
+ assert(id==11 and kind==3 and recursive==false)
+ return {{mapID=10},{mapID=10},{mapID=12},{mapID=13}}
+end
+ForeverCompanionWalkthrough={chapters={{12,40,49}}}
+C_Map.GetMapRectOnMap=function(id,parent)
+ if id==13 then return 0,0,0,0 end
+ return .25,.75,.125,.375
+end
+local labels=m.ContinentZoneLevels(11,C_Map.GetMapInfo(11))
+assert(#labels==2 and labels[1].text=='Lv. 36-44' and labels[2].text=='Lv. 40-49')
+assert(labels[1].x==.5 and labels[1].y==.25)
+assert(#m.ContinentZoneLevels(10,C_Map.GetMapInfo(10))==0)
