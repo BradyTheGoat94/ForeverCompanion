@@ -11,7 +11,7 @@ local function widget(name)
  function w:SetTexCoord(...) self.crop={...} end;function w:SetDesaturated(v) self.gray=v end
  function w:SetRotation(v) self.rotation=v end;function w:CreateTexture() return widget() end
  function w:GetCenter() return 100,200 end;function w:GetEffectiveScale() return 1 end
- for _,k in ipairs({'EnableMouseWheel','SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
+ for _,k in ipairs({'EnableMouseWheel','SetColorTexture','SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
  return w
 end
 CreateFrame=function(_,name) return widget(name) end
@@ -96,3 +96,25 @@ print('PASS: facing, map aspects and outdoor explored-terrain layer')
 m.Preset('combined');assert(ForeverCompanionDB.mapOverlay.allQuests)
 ForeverCompanionDB.mapOverlay.preset=nil;m.Refresh(true);assert(ForeverCompanionDB.mapOverlay.allQuests)
 m.Preset('questing');assert(not ForeverCompanionDB.mapOverlay.allQuests)
+
+UIParent:SetSize(1920,1080);m.SetZoom(1)
+C_Map.GetPlayerMapPosition=function() return {GetXY=function() return .25,.75 end} end
+m.Preset('combined')
+local flatHeight=f.height
+local arrow,mapTile,detailTile
+for _,o in ipairs(objects) do
+ if o.texture=='Interface\\Minimap\\MinimapArrow' then arrow=o end
+ if o.texture==5 then mapTile=o end
+ if o.texture==101 then detailTile=o end
+end
+assert(arrow and mapTile and detailTile)
+local function y(o) return o.point[#o.point] end
+local arrowY,tileY,detailY=y(arrow),y(mapTile),y(detailTile)
+local ratio=math.cos(math.rad(38))
+m.Command('tilt')
+assert(math.abs(f.height-flatHeight*ratio)<.001)
+assert(math.abs(y(arrow)-arrowY*ratio)<.001,'player marker shares the map projection')
+assert(math.abs(y(mapTile)-tileY*ratio)<.001,'base art shares the map projection')
+assert(math.abs(y(detailTile)-detailY*ratio)<.001,'exploration art shares the map projection')
+m.Command('flat');assert(f.height==flatHeight and y(arrow)==arrowY)
+print('PASS: tilted atlas preserves map, exploration and player alignment')

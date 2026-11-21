@@ -9,6 +9,8 @@ local inspecting,panStart,zoomLabel,inspectButton
 local hitPins,pointCache={},{}
 local explorationTiles,explorationLayout={},{}
 local mapWorldWidth,mapWorldHeight
+local terrainEdge={}
+local edgeHeight=12
 local function finite(n)
  return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
 end
@@ -283,6 +285,23 @@ function M.ApplyContext()
  local alpha=M.ContextAlpha(combat,settings(),forceVisible or editing)
  frame:SetAlpha(alpha)
 end
+-- An orthographic tilt of the map plane. Transform the artwork first so
+-- every marker, exploration tile, and pan operation shares its coordinates.
+local function tiltArt(base,explored,ratio)
+ base.height=base.height*ratio
+ for _,tileset in ipairs({base,explored}) do
+  for _,tile in ipairs(tileset) do
+   tile.y=tile.y*ratio
+   tile.h=tile.h*ratio
+  end
+ end
+end
+
+function M.SetTilt(enabled)
+ settings().tilted=enabled==true
+ M.Toggle(true)
+end
+
 function M.Refresh(force)
  if not frame or not frame:IsShown() then return end
  M.ApplyContext()
@@ -303,15 +322,28 @@ function M.Refresh(force)
   local d=settings();local width=d.width
   if finite(sw) and sw>100 then width=math.min(width,sw*.9) end
   layout=M.Layout(type(layers)=='table' and layers[1],files,width)
-  if layout and finite(sh) and layout.height>sh*.8 then layout=M.Layout(layers[1],files,width*sh*.8/layout.height) end
+  local ratio=d.tilted and math.cos(math.rad(38)) or 1
+  local heightBudget=finite(sh) and sh*.8-(d.tilted and edgeHeight or 0)
+  if layout and heightBudget and heightBudget>0 and layout.height*ratio>heightBudget then
+   layout=M.Layout(layers[1],files,width*heightBudget/(layout.height*ratio))
+  end
   if layout then explorationLayout=M.ExplorationLayout(layers[1],safe(C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures,id),layout.width) end
+  if layout and d.tilted then tiltArt(layout,explorationLayout,ratio) end
+  for i,edge in ipairs(terrainEdge) do
+   edge:SetShown(layout~=nil and d.tilted==true)
+   if layout and d.tilted then edge:SetSize(layout.width,3) end
+  end
   frame:SetSize(layout and layout.width or width,layout and layout.height or 100)
   header:SetWidth(layout and layout.width or width);title:SetWidth(math.max(60,(layout and layout.width or width)-116))
   drawArt()
   local info=id and safe(C_Map and C_Map.GetMapInfo,id)
-  title:SetText('Overlay · '..(type(info)=='table' and info.name or 'Current zone'))
+  title:SetText((d.tilted and 'Tilted atlas' or 'Overlay')..' · '..(type(info)=='table' and info.name or 'Current zone'))
   message:SetText(layout and '' or 'Map artwork unavailable here.');message:SetShown(not layout)
-  if legend then legend:SetShown(layout~=nil) end
+  if legend then
+   legend:ClearAllPoints()
+   legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,d.tilted and -18 or -6)
+   legend:SetShown(layout~=nil)
+  end
  end
  refreshPins();updatePlayer()
 end
@@ -352,6 +384,7 @@ function M.Options()
   {label='Reset zoom / pan',action=function() local d=settings();d.centerX=.5;d.centerY=.5;M.SetZoom(1) end},
   {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
   {label='Choose map preset',action=function() M.PresetMenu(header) end},
+  {label='Tilted atlas view',selected=d.tilted==true,action=function() M.SetTilt(not d.tilted) end},
   {label='Artwork opacity...',action=function() submenu('ARTWORK OPACITY',{.2,.35,.5,.65},'opacity','%') end},
   {label='Overlay size...',action=function() submenu('OVERLAY WIDTH',{420,600,780},'width','') end},
   {label='Map layers...',action=function() U.Menu(header,'OVERLAY LAYERS',{
@@ -417,8 +450,15 @@ local function create()
  end)
  frame:SetScript('OnHide',function() frame:StopMovingOrSizing();panStart=nil;inspecting=false;editing=false;hide(hitPins);if GameTooltip then GameTooltip:Hide() end end)
  frame:SetScript('OnMouseWheel',function(_,delta) if inspecting then M.SetZoom(settings().zoom*(delta>0 and 1.25 or .8)) end end)
+ for i=1,4 do
+  local edge=frame:CreateTexture(nil,'BACKGROUND')
+  edge:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-(i-1)*3)
+  edge:SetColorTexture(.28-i*.045,.22-i*.038,.15-i*.026,.62-i*.075)
+  edge:Hide()
+  terrainEdge[i]=edge
+ end
  message=U.Text(frame,14,U.palette.muted);message:SetPoint('CENTER')
- legend=U.Text(frame,10,U.palette.muted);legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-6);legend:SetHeight(30);legend:SetWordWrap(true)
+ legend=U.Text(frame,10,U.palette.muted);legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-18);legend:SetHeight(30);legend:SetWordWrap(true)
  player=frame:CreateTexture(nil,'OVERLAY',nil,7);player:SetSize(26,26);player:SetTexture('Interface\\Minimap\\MinimapArrow')
  frame:SetScript('OnUpdate',function(_,dt)
   if panStart and layout and GetCursorPosition then
@@ -437,6 +477,8 @@ function M.Toggle(value)
 end
 function M.Command(command)
  if presets[command] then M.Preset(command)
+ elseif command=='tilt' then M.SetTilt(not settings().tilted)
+ elseif command=='flat' then M.SetTilt(false)
  elseif command=='inspect' then M.Toggle(true);M.Inspect(true)
  elseif command=='zoom in' then M.Toggle(true);M.SetZoom(settings().zoom*1.25)
  elseif command=='zoom out' then M.Toggle(true);M.SetZoom(settings().zoom*.8)
