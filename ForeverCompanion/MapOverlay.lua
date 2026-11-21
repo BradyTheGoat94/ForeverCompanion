@@ -9,7 +9,9 @@ local inspecting,panStart,zoomLabel,inspectButton
 local hitPins,pointCache={},{}
 local explorationTiles,explorationLayout={},{}
 local mapWorldWidth,mapWorldHeight
-local terrainEdge={}
+local terrainEdge,atlasTrim={},{}
+local courseDots,courseBeacon,courseCaption={}
+local lastCourseCaption
 local edgeHeight=12
 local function finite(n)
  return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
@@ -50,6 +52,30 @@ function M.Layout(layer,files,width)
   result[i]={file=file,x=(col-1)*layer.tileWidth*scale,y=(row-1)*layer.tileHeight*scale,w=w*scale,h=h*scale,u=w/layer.tileWidth,v=h/layer.tileHeight}
  end end
  return result
+end
+-- Higher-resolution layers must cover the same map extent as layer one.
+-- Keep exploration offsets in the base layer's coordinate space.
+function M.BestArtwork(layers,loadTiles,width)
+ if (issecretvalue and issecretvalue(layers)) or type(layers)~='table' or type(layers[1])~='table' then return end
+ local first=layers[1]
+ if not finite(first.layerWidth) or not finite(first.layerHeight) or first.layerWidth<=0 or first.layerHeight<=0 then return end
+ local aspect=first.layerHeight/first.layerWidth
+ local candidates={}
+ for index,layer in ipairs(layers) do
+  if type(layer)=='table' and finite(layer.layerWidth) and finite(layer.layerHeight) and layer.layerWidth>0
+   and math.abs(layer.layerHeight/layer.layerWidth-aspect)<=.001 then
+   candidates[#candidates+1]={index=index,layer=layer}
+  end
+ end
+ table.sort(candidates,function(a,b)
+  if a.layer.layerWidth==b.layer.layerWidth then return a.index<b.index end
+  return a.layer.layerWidth>b.layer.layerWidth
+ end)
+ for _,candidate in ipairs(candidates) do
+  local files=loadTiles(candidate.index)
+  local result=not (issecretvalue and issecretvalue(files)) and M.Layout(candidate.layer,files,width)
+  if result then return result,candidate.layer,files end
+ end
 end
 -- Outdoor map detail is a separate native exploration layer. Cities often
 -- have complete base artwork, which masked this missing layer in earlier builds.
@@ -216,18 +242,83 @@ local function refreshPins(reuse)
  end
  for i=math.min(80,#groups)+1,#hitPins do hitPins[i]:Hide() end
 end
+-- Clip the straight-line bearing to the viewport before placing any dots.
+function M.ClipCourse(x1,y1,x2,y2,width,height)
+ local dx,dy=x2-x1,y2-y1
+ local first,last=0,1
+ for _,axis in ipairs({{x1,dx,width},{y1,dy,height}}) do
+  local from,delta,limit=unpack(axis)
+  if delta==0 then
+   if from<4 or from>limit-4 then return end
+  else
+   local near,far=(4-from)/delta,(limit-4-from)/delta
+   first=math.max(first,math.min(near,far))
+   last=math.min(last,math.max(near,far))
+  end
+ end
+ if first>=last then return end
+ return first,last,math.sqrt(dx*dx+dy*dy)
+end
+local function updateCourse(view,px,py)
+ local way=ForeverCompanionQuestWaypoints
+ local target=view and view.tilted and view.course~=false and way and way.Active and way.Active()
+ local text=''
+ local count=0
+ if target and target.map==mapID and coord(target.x) and coord(target.y) then
+  local x,y,visible=M.Project(target.x,target.y,layout.width,layout.height,view)
+  local left,right,distance=M.ClipCourse(px,py,x,y,layout.width,layout.height)
+  local label=publicText(target.label) or 'Destination'
+  text=('Bearing to %s  |  %.1f, %.1f'):format(label,target.x*100,target.y*100)
+  local time=safe(GetTime)
+  local phase=finite(time) and (time*22)%15 or 0
+  if left and distance>=15 then
+   local start=math.max(10,math.ceil((distance*left-phase)/15)*15+phase)
+   local finish=math.min(distance*right,distance-12)
+   for step=start,finish,15 do
+    count=count+1
+    if count>90 then count=90;break end
+    local dot=courseDots[count]
+    if not dot then
+     dot=frame:CreateTexture(nil,'ARTWORK',nil,4)
+     dot:SetSize(7,7)
+     dot:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\AtlasBearingDot')
+     courseDots[count]=dot
+    end
+    local t=step/distance
+    dot:ClearAllPoints()
+    dot:SetPoint('CENTER',frame,'TOPLEFT',px+(x-px)*t,-(py+(y-py)*t))
+    dot:Show()
+   end
+  end
+  if visible and x>=14 and y>=14 and x<=layout.width-14 and y<=layout.height-14 then
+   courseBeacon:ClearAllPoints()
+   courseBeacon:SetPoint('CENTER',frame,'TOPLEFT',x,-y)
+   courseBeacon:Show()
+  else courseBeacon:Hide() end
+ else courseBeacon:Hide() end
+ for i=count+1,#courseDots do courseDots[i]:Hide() end
+ if text~=lastCourseCaption then
+  lastCourseCaption=text
+  courseCaption:SetText(text)
+  courseCaption:SetShown(text~='')
+ end
+end
 local function updatePlayer()
- player:Hide();if not layout then return end
+ player:Hide();if not layout then updateCourse();return end
  local current=safe(C_Map and C_Map.GetBestMapForUnit,'player')
  if not finite(current) or current~=mapID then
   hide(tiles);hide(explorationTiles);hide(pins);hide(badges);hide(hitPins);if legend then legend:Hide() end
+  updateCourse();hide(atlasTrim);hide(terrainEdge)
   message:SetText('Updating current zone...');message:Show();return
  end
  local pos=safe(C_Map and C_Map.GetPlayerMapPosition,mapID,'player')
- if not pos or (issecretvalue and issecretvalue(pos)) or type(pos.GetXY)~='function' then return end
+ if not pos or (issecretvalue and issecretvalue(pos)) or type(pos.GetXY)~='function' then updateCourse();return end
  local ok,x,y=pcall(pos.GetXY,pos)
- if not ok or not coord(x) or not coord(y) then return end
- local px,py,visible=M.Project(x,y,layout.width,layout.height,settings());if not visible then return end
+ if not ok or not coord(x) or not coord(y) then updateCourse();return end
+ local view=settings()
+ local px,py,visible=M.Project(x,y,layout.width,layout.height,view)
+ updateCourse(view,px,py)
+ if not visible then return end
  player:ClearAllPoints();player:SetPoint('CENTER',frame,'TOPLEFT',px,-py)
  local facing=safe(GetPlayerFacing)
  local angle=M.FacingAngle(facing,layout.width,layout.height,mapWorldWidth,mapWorldHeight)
@@ -318,17 +409,20 @@ function M.Refresh(force)
   mapWorldWidth,mapWorldHeight=nil,nil
   if id and C_Map and type(C_Map.GetMapWorldSize)=='function' then local ok,w,h=pcall(C_Map.GetMapWorldSize,id);if ok then mapWorldWidth,mapWorldHeight=w,h end end
   local layers=id and safe(C_Map and C_Map.GetMapArtLayers,id)
-  local files=id and safe(C_Map and C_Map.GetMapArtLayerTextures,id,1)
   local d=settings();local width=d.width
   if finite(sw) and sw>100 then width=math.min(width,sw*.9) end
-  layout=M.Layout(type(layers)=='table' and layers[1],files,width)
+  local layer,files
+  layout,layer,files=M.BestArtwork(layers,function(index)
+   return safe(C_Map and C_Map.GetMapArtLayerTextures,id,index)
+  end,width)
   local ratio=d.tilted and math.cos(math.rad(38)) or 1
   local heightBudget=finite(sh) and sh*.8-(d.tilted and edgeHeight or 0)
   if layout and heightBudget and heightBudget>0 and layout.height*ratio>heightBudget then
-   layout=M.Layout(layers[1],files,width*heightBudget/(layout.height*ratio))
+   layout=M.Layout(layer,files,width*heightBudget/(layout.height*ratio))
   end
   if layout then explorationLayout=M.ExplorationLayout(layers[1],safe(C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures,id),layout.width) end
   if layout and d.tilted then tiltArt(layout,explorationLayout,ratio) end
+  for _,trim in ipairs(atlasTrim) do trim:SetShown(layout~=nil and d.tilted==true) end
   for i,edge in ipairs(terrainEdge) do
    edge:SetShown(layout~=nil and d.tilted==true)
    if layout and d.tilted then edge:SetSize(layout.width,3) end
@@ -339,9 +433,10 @@ function M.Refresh(force)
   local info=id and safe(C_Map and C_Map.GetMapInfo,id)
   title:SetText((d.tilted and 'Tilted atlas' or 'Overlay')..' · '..(type(info)=='table' and info.name or 'Current zone'))
   message:SetText(layout and '' or 'Map artwork unavailable here.');message:SetShown(not layout)
+  courseCaption:SetWidth(layout and layout.width or width)
   if legend then
    legend:ClearAllPoints()
-   legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,d.tilted and -18 or -6)
+   legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,d.tilted and -37 or -6)
    legend:SetShown(layout~=nil)
   end
  end
@@ -385,6 +480,7 @@ function M.Options()
   {label='Training Guide',action=function() ForeverCompanionTraining.Toggle() end},
   {label='Choose map preset',action=function() M.PresetMenu(header) end},
   {label='Tilted atlas view',selected=d.tilted==true,action=function() M.SetTilt(not d.tilted) end},
+  {label='Show animated bearing in Tilted Atlas',selected=d.course~=false,action=function() d.course=d.course==false;updatePlayer() end},
   {label='Artwork opacity...',action=function() submenu('ARTWORK OPACITY',{.2,.35,.5,.65},'opacity','%') end},
   {label='Overlay size...',action=function() submenu('OVERLAY WIDTH',{420,600,780},'width','') end},
   {label='Map layers...',action=function() U.Menu(header,'OVERLAY LAYERS',{
@@ -457,6 +553,28 @@ local function create()
   edge:Hide()
   terrainEdge[i]=edge
  end
+ for i,side in ipairs({'TOP','BOTTOM','LEFT','RIGHT'}) do
+  local trim=frame:CreateTexture(nil,'ARTWORK',nil,3)
+  trim:SetColorTexture(.86,.61,.28,i==1 and .92 or .66)
+  if i<=2 then
+   trim:SetPoint(side..'LEFT',frame,side..'LEFT',0,0)
+   trim:SetPoint(side..'RIGHT',frame,side..'RIGHT',0,0)
+   trim:SetHeight(1)
+  else
+   trim:SetPoint('TOP'..side,frame,'TOP'..side,0,0)
+   trim:SetPoint('BOTTOM'..side,frame,'BOTTOM'..side,0,0)
+   trim:SetWidth(1)
+  end
+  trim:Hide()
+  atlasTrim[i]=trim
+ end
+ courseBeacon=frame:CreateTexture(nil,'OVERLAY',nil,6)
+ courseBeacon:SetSize(28,28)
+ courseBeacon:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\AtlasBearingBeacon')
+ courseBeacon:Hide()
+ courseCaption=U.Text(frame,11,{1,.82,.45})
+ courseCaption:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-18)
+ courseCaption:Hide()
  message=U.Text(frame,14,U.palette.muted);message:SetPoint('CENTER')
  legend=U.Text(frame,10,U.palette.muted);legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-18);legend:SetHeight(30);legend:SetWordWrap(true)
  player=frame:CreateTexture(nil,'OVERLAY',nil,7);player:SetSize(26,26);player:SetTexture('Interface\\Minimap\\MinimapArrow')

@@ -11,7 +11,7 @@ local function widget(name)
  function w:SetTexCoord(...) self.crop={...} end;function w:SetDesaturated(v) self.gray=v end
  function w:SetRotation(v) self.rotation=v end;function w:CreateTexture() return widget() end
  function w:GetCenter() return 100,200 end;function w:GetEffectiveScale() return 1 end
- for _,k in ipairs({'EnableMouseWheel','SetColorTexture','SetVertexColor','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
+ for _,k in ipairs({'EnableMouseWheel','SetColorTexture','SetVertexColor','SetWidth','SetHeight','SetWordWrap','SetFrameStrata','SetMovable','SetClampedToScreen','RegisterForDrag','RegisterEvent','SetWidth','StartMoving','StopMovingOrSizing'}) do w[k]=function() end end
  return w
 end
 CreateFrame=function(_,name) return widget(name) end
@@ -118,3 +118,33 @@ assert(math.abs(y(mapTile)-tileY*ratio)<.001,'base art shares the map projection
 assert(math.abs(y(detailTile)-detailY*ratio)<.001,'exploration art shares the map projection')
 m.Command('flat');assert(f.height==flatHeight and y(arrow)==arrowY)
 print('PASS: tilted atlas preserves map, exploration and player alignment')
+
+local first,last,length=m.ClipCourse(-20,40,120,40,100,80)
+assert(math.abs(first*length-24)<.001 and math.abs(last*length-116)<.001)
+assert(not m.ClipCourse(-20,-10,120,-10,100,80))
+local destination={map=id,x=.75,y=.25,label='Town'}
+ForeverCompanionQuestWaypoints={Active=function() return destination end}
+m.SetTilt(true)
+local beacon,dots
+for _,o in ipairs(objects) do
+ if type(o.texture)=='string' and o.texture:find('AtlasBearingBeacon',1,true) then beacon=o end
+ if o.shown and type(o.texture)=='string' and o.texture:find('AtlasBearingDot',1,true) then dots=(dots or 0)+1 end
+end
+assert(beacon and beacon.shown and dots and dots>0)
+assert(math.abs(beacon.point[#beacon.point]+f.height*.25)<.001)
+m.SetTilt(false);assert(not beacon.shown)
+m.SetTilt(true);destination.map=id+1;m.Refresh();assert(not beacon.shown,'a cross-zone waypoint never produces a local bearing')
+destination.map=id;m.Refresh();assert(beacon.shown)
+destination=nil;m.Refresh();assert(not beacon.shown,'clearing the waypoint hides the bearing')
+
+local low={layerWidth=512,layerHeight=256,tileWidth=256,tileHeight=256}
+local high={layerWidth=1024,layerHeight=512,tileWidth=256,tileHeight=256}
+local wrong={layerWidth=2048,layerHeight=512,tileWidth=256,tileHeight=256}
+local best,chosen=m.BestArtwork({low,high,wrong},function(index)
+ assert(index~=3,'unrelated extent must not be read')
+ if index==2 then return {10,11,12,13,14,15,16,17} end
+ return {1,2}
+end,400)
+assert(chosen==high and #best==8 and best.height==200)
+best,chosen=m.BestArtwork({low,high},function(index) return index==1 and {1,2} or {10} end,400)
+assert(chosen==low and #best==2)
