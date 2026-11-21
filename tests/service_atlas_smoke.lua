@@ -56,3 +56,44 @@ while #queue>0 do table.remove(queue,1)() end
 local fresh=s.Resolve(old);assert(fresh and fresh~=old and fresh.label=='Renamed current smith','revalidation returns the current record rather than an old label/source')
 local observed={};for k,v in pairs(fresh) do observed[k]=v end;observed.observed=true
 assert(not s.Resolve(observed),'a cleared observed visit cannot impersonate an identical provider reference')
+
+local weapons=s.VendorProfile('Weapons and armor')
+local provisions=s.VendorProfile('Food & Drink')
+local formulas=s.VendorProfile('Enchanting Formulas')
+assert(weapons.label=='Weapons & armor' and provisions.label=='Food & drink')
+assert(formulas.label=='Patterns & recipes, Enchanting supplies')
+assert(not s.VendorProfile('Waterworks Supervisor'),'match whole words in the reported specialty')
+assert(a.Icon('V',provisions)~=a.Icon('V',weapons) and a.Icon('V')~=a.Icon('V',provisions))
+assert(a.Icon('R')~=a.Icon('V',weapons))
+assert(s.ServiceDetails({symbol='V'}):find('No item examples recorded',1,true))
+
+ForeverCompanionDB.recordMerchantVisits=true
+local vendorGUID='Creature-0-1-2-3-1-00001'
+UnitGUID=function() return vendorGUID end
+UnitName=function() return 'Renamed current smith' end
+local stockReady=false
+local stockNames={'Heavy Stock','Heavy Stock','Forge Hammer','Basic Shield','Practice Sword','Coarse Stone','Seventh item'}
+GetMerchantNumItems=function() return stockReady and #stockNames or 0 end
+C_MerchantFrame={GetItemInfo=function(i) return {name=stockNames[i]} end}
+events[1].OnEvent(nil,'MERCHANT_SHOW')
+assert(not ForeverCompanionDB.visitedMerchants[1].stock)
+stockReady=true
+events[1].OnEvent(nil,'MERCHANT_UPDATE')
+local matches=a.Query(s.ForMap(1429),'Forge Hammer',{source='reference',category='V'})
+assert(#matches==1 and matches[1].vendor.npcID==1,'actual visit stock enriches matching reference NPCs')
+local vendor=matches[1].vendor
+assert(#vendor.stock==5 and vendor.stock[1]=='Heavy Stock' and vendor.stock[2]=='Forge Hammer')
+assert(s.ServiceDetails(vendor):find('Also repairs equipment',1,true))
+assert(s.ServiceDetails(vendor):find('Previously seen stock: Heavy Stock',1,true))
+stockReady=false
+events[1].OnEvent(nil,'MERCHANT_SHOW')
+events[1].OnEvent(nil,'MERCHANT_CLOSED')
+assert(#ForeverCompanionDB.visitedMerchants[1].stock==5,'an unloaded merchant window must not erase recorded examples')
+vendorGUID='Creature-0-1-2-3-88-00001'
+stockReady=true
+events[1].OnEvent(nil,'MERCHANT_UPDATE')
+assert(ForeverCompanionDB.visitedMerchants[1].npcID==1,'unmatched updates cannot attach another merchant stock')
+C_MerchantFrame=nil
+GetMerchantItemInfo=function(i) return stockNames[i] end
+assert(s.ReadMerchantStock()[2]=='Forge Hammer','fall back to the legacy merchant API when available')
+print('PASS: vendor specialties, distinct icons, repair detail, bounded, searchable and correctly attributed stock samples')

@@ -47,10 +47,19 @@ m.Command('hide');assert(not f.shown and not ForeverCompanionDB.mapOverlay.visib
 print('PASS: transparent overlay geometry, caching, stale clearing, bounded textures and interaction')
 
 dofile('ForeverCompanion/ServiceClusters.lua')
-ForeverCompanionTownServices={ForMap=function() return {{x=.2,y=.2,label='Repair',symbol='R'},{x=.201,y=.201,label='Vendor',symbol='V'}} end}
+dofile('ForeverCompanion/TownServices.lua')
+dofile('ForeverCompanion/ServiceAtlas.lua')
+local profile=ForeverCompanionTownServices.VendorProfile('Weapons and armor')
+ForeverCompanionTownServices.ForMap=function()
+ return {{x=.2,y=.2,label='Repair',symbol='R',npcID=21},
+  {x=.2,y=.2,label='Vendor',symbol='V',npcID=21,vendorProfile=profile}}
+end
 assert(m.Preset('town') and ForeverCompanionDB.mapOverlay.services and not ForeverCompanionDB.mapOverlay.quests and f.width==420)
 local count=0;for _,o in ipairs(objects) do if o.shown and o.text=='2' then count=count+1 end end
 assert(count==1,'nearby mixed service types receive a shared cluster count')
+local specialty=false
+for _,o in ipairs(objects) do if o.shown and o.texture==profile.texture then specialty=true end end
+assert(specialty,'overlay uses the specialty icon even when the merchant also repairs')
 local before=#objects;for i=1,50 do m.Refresh() end;assert(#objects==before,'cluster badges and icons are reused')
 assert(m.Preset('exploring') and f.width==780 and not ForeverCompanionDB.mapOverlay.services)
 assert(m.Preset('questing') and ForeverCompanionDB.mapOverlay.quests and not ForeverCompanionDB.mapOverlay.services)

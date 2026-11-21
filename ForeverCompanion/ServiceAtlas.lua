@@ -18,9 +18,12 @@ local function preferences()
  if type(ForeverCompanionDB.serviceFavorites)~='table' then ForeverCompanionDB.serviceFavorites={} end
  return ForeverCompanionDB.serviceAtlas,ForeverCompanionDB.serviceFavorites
 end
-function A.Icon(symbol) return 'Interface\\Minimap\\Tracking\\'..(artwork[symbol] or artwork.V) end
-function A.SetIcon(texture,symbol)
- if texture:SetTexture(A.Icon(symbol))==false then texture:SetTexture('Interface\\Icons\\INV_Misc_Map_01') end
+function A.Icon(symbol,profile)
+ if symbol=='V' then return profile and profile.texture or 'Interface\\Icons\\INV_Misc_Bag_08' end
+ return 'Interface\\Minimap\\Tracking\\'..(artwork[symbol] or artwork.V)
+end
+function A.SetIcon(texture,symbol,profile)
+ if texture:SetTexture(A.Icon(symbol,profile))==false then texture:SetTexture('Interface\\Icons\\INV_Misc_Map_01') end
 end
 function A.Key(p) return p.map..':'..tostring(p.npcID or p.label)..':'..p.x..':'..p.y end
 function A.Query(points,query,options)
@@ -30,13 +33,15 @@ function A.Query(points,query,options)
   (options.source~='visited' or p.observed) and (options.source~='reference' or not p.observed) then
   local key=A.Key(p);local g=groups[key]
   if not g then g={key=key,target=p,label=p.label,subtitle=p.subtitle,services={},seen={},favorite=options.favorites and options.favorites[key]==true};groups[key]=g;result[#result+1]=g end
-  local service=type(p.service)=='string' and p.service or 'Service'
+  if p.symbol=='V' then g.vendor=p end
+  local service=ForeverCompanionTownServices.ServiceLabel(p)
   if not g.seen[service] then g.seen[service]=true;g.services[#g.services+1]=service end
  end end
  local filtered={}
  for _,g in ipairs(result) do
   table.sort(g.services);g.roles=table.concat(g.services,' · ')
-  local haystack=(g.label..' '..(g.subtitle or '')..' '..g.roles..' '..tostring(g.target.npcID or '')):lower()
+  local stock=g.vendor and g.vendor.stock and table.concat(g.vendor.stock,' ') or ''
+  local haystack=(g.label..' '..(g.subtitle or '')..' '..g.roles..' '..stock..' '..tostring(g.target.npcID or '')):lower()
   if haystack:find(query,1,true) and (not options.favoritesOnly or g.favorite) then
    g.distance=positionKnown(options.x,options.y) and ((g.target.x-options.x)^2+(g.target.y-options.y)^2) or nil
    filtered[#filtered+1]=g
@@ -90,7 +95,8 @@ function A.Refresh()
    row.title:SetText(g.label);row.subtitle:SetText((g.subtitle and (g.subtitle..' · ') or '')..g.roles)
    row.source:SetText((g.target.observed and 'VISITED NEARBY' or 'DATABASE REFERENCE')..(' · %.1f, %.1f'):format(g.target.x*100,g.target.y*100))
    row.source:SetTextColor(g.target.observed and .30 or .85,g.target.observed and .84 or .73,g.target.observed and .86 or .50)
-   A.SetIcon(row.icon,g.target.symbol);row.favorite:SetText(g.favorite and '*' or '+')
+   local iconPoint=g.vendor or g.target
+   A.SetIcon(row.icon,iconPoint.symbol,iconPoint.vendorProfile);row.favorite:SetText(g.favorite and '*' or '+')
    ForeverCompanionInterface.StyleButton(row.favorite,nil,g.favorite)
   end
  end
@@ -130,7 +136,7 @@ function A.Toggle(viewed)
    row.go=U.Button(row);row.go:SetSize(80,28);row.go:SetPoint('TOPRIGHT',-8,-17);row.go:SetText('Navigate')
    row.go:SetScript('OnClick',function() if row.item then message:SetText(A.Navigate(row.item.target)) end end)
    row:EnableMouse(true);row:SetScript('OnEnter',function(self)
-    if GameTooltip and self.item then local p=self.item.target;GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(p.label);GameTooltip:AddLine(p.source or 'Provider reference',.8,.85,.9,true);GameTooltip:AddLine(p.observed and 'Coordinates are your position during a merchant visit, not an exact NPC position. Vendors may move.' or 'Provider spawn reference. Availability, phase and stock can change.',.95,.78,.4,true);GameTooltip:Show() end
+    if GameTooltip and self.item then local p=self.item.target;GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(p.label);GameTooltip:AddLine(self.item.roles,.95,.82,.52,true);local detail=ForeverCompanionTownServices.ServiceDetails(self.item.vendor or p);if detail~='' then GameTooltip:AddLine(detail,.85,.9,1,true) end;GameTooltip:AddLine(p.source or 'Provider reference',.8,.85,.9,true);GameTooltip:AddLine(p.observed and 'Coordinates are your position during a merchant visit, not an exact NPC position. Vendors may move.' or 'Provider spawn reference. Availability, phase and stock can change.',.95,.78,.4,true);GameTooltip:Show() end
    end)
    row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
    rows[i]=row

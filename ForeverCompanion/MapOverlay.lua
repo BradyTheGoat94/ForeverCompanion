@@ -180,7 +180,14 @@ local function refreshPins(reuse)
    local hidden=ForeverCompanionDB.questMapHiddenServices
    for _,p in ipairs(services or {}) do
     local visible=p.symbol=='M' and d.mailboxes or p.symbol~='M' and d.services and not (type(hidden)=='table' and hidden[p.symbol])
-    if visible then add(p,p.symbol,p.label,ForeverCompanionServiceAtlas and ForeverCompanionServiceAtlas.Icon(p.symbol) or 'Interface\\Icons\\INV_Misc_Map_01','service',{detail=(p.service or 'Service')..' · '..(p.observed and 'Visited nearby player position' or 'Provider reference'),description=p.subtitle}) end
+    if visible then
+     local services=ForeverCompanionTownServices
+     local atlas=ForeverCompanionServiceAtlas
+     add(p,p.symbol,p.label,atlas and atlas.Icon(p.symbol,p.vendorProfile) or 'Interface\\Icons\\INV_Misc_Map_01','service',{
+      detail=services.ServiceLabel(p)..' | '..(p.observed and 'Visited nearby player position' or 'Provider reference'),
+      description=services.ServiceDetails(p),
+     })
+    end
    end
   end
   if d.notes~=false and ForeverCompanionMapTools then
@@ -208,7 +215,13 @@ local function refreshPins(reuse)
  if legend then legend:SetWidth(layout.width);legend:SetText((#groups>80 and ('80 / '..#groups..' clusters shown · ') or '')..(inspecting and 'Inspect: wheel to zoom · drag map to pan · hover/click markers for details' or 'Click-through · use Inspect for location details and wheel zoom')) end
  for i=1,math.min(80,#groups) do
   local group=groups[i];local t=group[1];local p=pins[i]
-  for _,candidate in ipairs(group) do if candidate.symbol=='Q' then t=candidate;break end end
+  local preferred=1
+  for n,candidate in ipairs(group) do
+   if candidate.symbol=='Q' then preferred=n;break end
+   if t.symbol=='R' and ForeverCompanionTownServices.MatchesRepairVendor(t.target,candidate.target) then preferred=n end
+  end
+  t=group[preferred]
+  group[1],group[preferred]=t,group[1]
   if not p then p=frame:CreateTexture(nil,'OVERLAY');pins[i]=p end
   p:ClearAllPoints();p:SetSize(18,18);p:SetPoint('CENTER',frame,'TOPLEFT',t.x*layout.width,-t.y*layout.height);p:SetTexture(t.texture);p:SetVertexColor(unpack(t.color or {1,1,1}));p:Show()
   if #group>1 then
@@ -224,7 +237,7 @@ local function refreshPins(reuse)
      GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.group[1].label)
      for j=1,math.min(8,#self.group) do local v=self.group[j];if j>1 then GameTooltip:AddLine(v.label,1,.85,.5,true) end
       GameTooltip:AddLine((v.detail or 'Reported position')..(' · %.1f, %.1f'):format(v.target.x*100,v.target.y*100),.75,.85,1,true)
-      if v.description then GameTooltip:AddLine(v.description,.8,.85,.9,true) end
+      if v.description and v.description~='' then GameTooltip:AddLine(v.description,.8,.85,.9,true) end
      end
      GameTooltip:AddLine('Click to inspect actions / choose a nearby location',.9,.8,.5,true);GameTooltip:Show()
     end)

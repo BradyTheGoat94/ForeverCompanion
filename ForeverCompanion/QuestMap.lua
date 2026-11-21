@@ -335,8 +335,9 @@ local serviceIconSizes={[20]=10,[24]=12,[28]=16}
 local function serviceIconSize(config)
  return serviceIconSizes[config.mapServiceIconSize] or 12
 end
-local function serviceArtwork(pin,symbol)
- local sprite=symbol=='V' and 4 or (symbol=='R' and 5)
+local function serviceArtwork(pin,point)
+ local symbol=point.symbol
+ local sprite=symbol=='R' and 5 or (symbol=='V' and not point.vendorProfile and 4)
  local diorama=mapStyle()=='diorama' and sprite
  local size=diorama and 32 or pin.nativeIconSize or 12
  pin.icon:SetSize(size,size)
@@ -345,7 +346,7 @@ local function serviceArtwork(pin,symbol)
  if diorama then dioramaMarker(pin.icon,sprite)
  else
   pin.icon:SetTexCoord(0,1,0,1)
-  ForeverCompanionServiceAtlas.SetIcon(pin.icon,symbol)
+  ForeverCompanionServiceAtlas.SetIcon(pin.icon,symbol,point.vendorProfile)
  end
 end
 local function showServices(canvas,mapID,scale,tier)
@@ -396,13 +397,17 @@ local function showServices(canvas,mapID,scale,tier)
    pin.border=border
    sharpenOverlay(border)
    pin:SetScript("OnEnter",function(self)
+    if not self.locations then return end
     if self.border then self.border:SetVertexColor(1,1,1,1) end
     if self.nameLabel and self.locations then self.nameLabel:SetText(self.locations[self.locationIndex or 1].label);self.nameLabel:Show() end
     if not GameTooltip then return end
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
     local active=self.locations[self.locationIndex or 1]
-    GameTooltip:SetText(active.service.."  -  "..active.label)
-    if active.subtitle then GameTooltip:AddLine(active.subtitle,.85,.9,1,true) end
+    local services=ForeverCompanionTownServices
+    GameTooltip:SetText(active.label)
+    GameTooltip:AddLine(services.ServiceLabel(active)..("  |  %.1f, %.1f"):format(active.x*100,active.y*100),.95,.82,.52,true)
+    local detail=services.ServiceDetails(active)
+    if detail~='' then GameTooltip:AddLine(detail,.85,.9,1,true) end
     local seen,count,displayed={[active.service..":"..active.label]=true},0,0
     for _,entry in ipairs(self.locations) do
      local key=entry.service..":"..entry.label
@@ -410,7 +415,7 @@ local function showServices(canvas,mapID,scale,tier)
       seen[key]=true
       count=count+1
       if displayed<6 then
-       GameTooltip:AddLine(entry.service..": "..entry.label,.8,.9,1,true)
+       GameTooltip:AddLine(services.ServiceLabel(entry)..": "..entry.label,.8,.9,1,true)
        displayed=displayed+1
       end
      end
@@ -420,7 +425,7 @@ local function showServices(canvas,mapID,scale,tier)
     end
     GameTooltip:AddLine(active.source or 'Forever QuestieDB reference',.65,.78,.85,true)
     if active.observed then GameTooltip:AddLine('Your position during a merchant visit, not an exact NPC location. Vendors may move.',.95,.76,.35,true) end
-    GameTooltip:AddLine(#self.locations>1 and 'Right-click to choose a nearby service.' or 'Click for directions.',.65,.78,.85,true)
+    GameTooltip:AddLine(#self.locations>1 and 'Shift-click to switch pins. Right-click to choose a nearby service.' or 'Click for directions.',.65,.78,.85,true)
     GameTooltip:Show()
    end)
    pin:SetScript("OnLeave",function(self)
@@ -436,7 +441,7 @@ local function showServices(canvas,mapID,scale,tier)
      local choices={}
      for _,point in ipairs(self.locations) do
       local target=point
-      choices[#choices+1]={label=point.service..': '..point.label,action=function() guideHint:SetText(ForeverCompanionServiceAtlas.Navigate(target)) end}
+      choices[#choices+1]={label=ForeverCompanionTownServices.ServiceLabel(point)..': '..point.label,action=function() guideHint:SetText(ForeverCompanionServiceAtlas.Navigate(target)) end}
      end
      choices[#choices+1]={label='Open searchable service atlas',action=function() ForeverCompanionServiceAtlas.Toggle(true) end}
      if GameTooltip then GameTooltip:Hide() end
@@ -445,7 +450,7 @@ local function showServices(canvas,mapID,scale,tier)
     if IsShiftKeyDown and IsShiftKeyDown() and #self.locations>1 then
      self.locationIndex=(self.locationIndex or 1)%#self.locations+1
      local active=self.locations[self.locationIndex]
-     serviceArtwork(self,active.symbol)
+     serviceArtwork(self,active)
      self.visitPip:SetShown(active.observed==true)
      self:GetScript("OnEnter")(self)
      return
@@ -456,9 +461,16 @@ local function showServices(canvas,mapID,scale,tier)
    end)
    servicePins[i]=pin
   end
-  local point=group[1]
+  local anchor=group[1]
+  local point,index=anchor,1
+  -- A repair-capable shop should still show its specialty icon.
+  if anchor.symbol=='R' then
+   for n,entry in ipairs(group) do
+    if ForeverCompanionTownServices.MatchesRepairVendor(anchor,entry) then point,index=entry,n;break end
+   end
+  end
   pin.locations=group
-  pin.locationIndex=1
+  pin.locationIndex=index
   pin.count:SetText(#group>1 and tostring(#group) or "")
   -- Smaller, less intrusive POI icons at both zoom levels.
   pin:SetSize(hitSize,hitSize)
@@ -469,7 +481,7 @@ local function showServices(canvas,mapID,scale,tier)
   pin.labelAllowed=i<=12
   pin.nameLabel:SetText(point.label)
   pin.nameLabel:SetShown(cfg.mapServiceLabels==true and pin.labelAllowed)
-  serviceArtwork(pin,point.symbol)
+  serviceArtwork(pin,point)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
    pin.markerColor={1,.8,.35}
@@ -487,7 +499,7 @@ local function showServices(canvas,mapID,scale,tier)
   pin:SetFrameLevel(canvasLevel(canvas)+priority)
   pin:SetScale(1/scale)
   pin:ClearAllPoints()
-  local cx,cy=M.CanvasPoint(mapID,point.x,point.y)
+  local cx,cy=M.CanvasPoint(mapID,anchor.x,anchor.y)
   pin:SetPoint("CENTER",canvas,"TOPLEFT",cx*width,-cy*height)
   pin:Show()
  end
