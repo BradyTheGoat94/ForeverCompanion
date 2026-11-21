@@ -3,7 +3,7 @@
 local M={}
 ForeverCompanionCombatMeter=M
 local frame,rows,heading,notice,modeButton,sessionButton,previousButton,nextButton,dragHandle
-local pastIndex=1
+local pastID
 local rowOffset,sourceCount=0,0
 local lastSources={}
 local optionsButton
@@ -42,24 +42,6 @@ local function flatButton(parent)
  controls[#controls+1]=b
  return b
 end
-local function availableHistory()
- local api=C_DamageMeter
- if not api or type(api.GetAvailableCombatSessions)~="function" then return {} end
- local ok,result=pcall(api.GetAvailableCombatSessions)
- if ok and type(result)=="table" then return result end
- return {}
-end
-local function historyCount()
- return #availableHistory()
-end
-local function historyID(entry)
- if issecretvalue and issecretvalue(entry) then return nil end
- if type(entry)=="number" or type(entry)=="string" then return entry end
- if type(entry)~="table" then return nil end
- local id=entry.sessionID
- if issecretvalue and issecretvalue(id) then return nil end
- return id
-end
 local function read(fn,...)
  if type(fn)~="function" then return end
  local ok,value=pcall(fn,...)
@@ -74,6 +56,43 @@ end
 local function safeNumber(value)
  if issecretvalue and issecretvalue(value) then return false end
  return type(value)=="number" and value==value and value~=math.huge and value~=-math.huge
+end
+local function publicString(value)
+ return not (issecretvalue and issecretvalue(value)) and type(value)=='string' and value~='' and value or nil
+end
+local function availableHistory()
+ local api=C_DamageMeter
+ local history={}
+ if not api or type(api.GetCombatSessionFromID)~='function' then return history end
+ local list=read(api.GetAvailableCombatSessions)
+ if (issecretvalue and issecretvalue(list)) or type(list)~='table' then return history end
+ local seen={}
+ for _,entry in ipairs(list) do
+  if not (issecretvalue and issecretvalue(entry)) then
+   local record=type(entry)=='table' and entry or nil
+   local id=record and record.sessionID or entry
+   if safeNumber(id) and id>=0 and id%1==0 and not seen[id] then
+    seen[id]=true
+    history[#history+1]={id=id,name=record and publicString(record.name),duration=record and record.durationSeconds}
+   end
+  end
+ end
+ -- Native session IDs are used as the recency key. Never use list positions as identity.
+ table.sort(history,function(a,b) return a.id>b.id end)
+ return history
+end
+local function historyPosition(history,id)
+ for i,entry in ipairs(history) do
+  if entry.id==id then return i end
+ end
+end
+local function durationText(duration)
+ if safeNumber(duration) and duration>=0 then
+  return ('%d:%02d'):format(math.floor(duration/60),math.floor(duration%60))
+ end
+end
+local function fightTitle(entry)
+ return entry.name or ('Fight #'..entry.id)
 end
 function M.GetUpdateInterval()
  local value=saved().updateInterval
@@ -347,10 +366,10 @@ local function build()
  frame:SetScript("OnMouseUp",function(_,key) if key=="RightButton" then M.OpenQuickMenu(frame) end end)
  previousButton=flatButton(frame);previousButton:SetSize(16,17);previousButton:SetText("<")
  previousButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-36,3)
- previousButton:SetScript("OnClick",function() M.SelectPast(pastIndex+1) end)
+ previousButton:SetScript("OnClick",function() M.StepHistory(1) end)
  nextButton=flatButton(frame);nextButton:SetSize(16,17);nextButton:SetText(">")
  nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-19,3)
- nextButton:SetScript("OnClick",function() M.SelectPast(pastIndex-1) end)
+ nextButton:SetScript("OnClick",function() M.StepHistory(-1) end)
  local footer=ForeverCompanionInterface.Text(frame,10)
  footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",6,5);footer:SetWidth(windowWidth-68)
  footer:SetTextColor(.7,.72,.76);frame.meterFooter=footer
@@ -772,8 +791,12 @@ function M.Refresh()
  local isPast=sessionIndex==2
  previousButton:SetShown(isPast)
  nextButton:SetShown(isPast)
- previousButton:SetEnabled(isPast and type(C_DamageMeter)=="table" and type(C_DamageMeter.GetAvailableCombatSessions)=="function" and pastIndex<historyCount())
- nextButton:SetEnabled(isPast and pastIndex>1)
+ local history=isPast and availableHistory() or {}
+ local historyIndex=isPast and (pastID and historyPosition(history,pastID) or not pastID and history[1] and 1)
+ local entry=historyIndex and history[historyIndex]
+ if entry then pastID=entry.id end
+ previousButton:SetEnabled(not not (historyIndex and historyIndex<#history))
+ nextButton:SetEnabled(not not (historyIndex and historyIndex>1))
  if detailPanel then detailPanel:SetShown(detailOpen and selectedRow~=nil) end
  if not M.Available() then
   if detailPanel then detailPanel:Hide() end
@@ -790,40 +813,26 @@ function M.Refresh()
   return
  end
  local data
- if isPast then
-  local canReadHistory=type(C_DamageMeter.GetCombatSessionFromID)=="function" and type(C_DamageMeter.GetAvailableCombatSessions)=="function"
-  if canReadHistory then
-   local history=availableHistory()
-   if pastIndex>#history then pastIndex=math.max(1,#history);selectedRow=nil;selectedSourceKey=nil;detailOpen=false end
-   local id=historyID(history[pastIndex])
-   if id~=nil then data=read(C_DamageMeter.GetCombatSessionFromID,id,types()) end
-   if #history==0 then data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types()) end
-  else
-   -- The native Expired session is the only supported history fallback.
-   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
-  end
- else
+ if entry then
+  data=read(C_DamageMeter.GetCombatSessionFromID,entry.id,types())
+ elseif not isPast or not pastID then
   data=read(C_DamageMeter.GetCombatSessionFromType,sessionType(),types())
  end
+ if issecretvalue and issecretvalue(data) then data=nil end
+ local expired=isPast and pastID and not entry
  local sources=type(data)=="table" and data.combatSources
  if type(sources)~="table" then sources={} end
  lastSources=sources
  emptyTitle:SetShown(#sources==0);emptyBody:SetShown(#sources==0);detailLabel:Hide()
- emptyTitle:SetText("No combat session data")
- emptyBody:SetText("Enter combat to record a fight, or choose a previous fight from the session menu.")
+ emptyTitle:SetText(expired and 'Fight no longer available' or (entry and 'No data for this metric' or 'No combat session data'))
+ emptyBody:SetText(expired and 'Open Fight to choose another recorded fight.' or
+  (entry and 'Try a different metric for this recorded fight.' or 'Enter combat to record a fight, or choose a previous fight from the session menu.'))
+ local title=entry and fightTitle(entry)
  if frame.meterFooter then
-  local duration=type(data)=="table" and data.durationSeconds
-  local suffix=""
-  if safeNumber(duration) and duration>=0 then
-   suffix=string.format("  /  %d:%02d",math.floor(duration/60),math.floor(duration%60))
-  end
-  frame.meterFooter:SetText(sessions[sessionIndex][1].."  /  "..#sources.." players"..suffix)
+  local duration=durationText(type(data)=='table' and data.durationSeconds) or (entry and durationText(entry.duration))
+  local suffix=duration and ('  /  '..duration) or ''
+  frame.meterFooter:SetText((title or (sessions[sessionIndex][1].."  /  "..#sources.." players"))..suffix)
   frame.meterFooter:SetWidth(windowWidth-(isPast and 70 or (#sources>rowCount and 94 or 25)))
-  if isPast then
-   local entry=availableHistory()[pastIndex]
-   local name=type(entry)=='table' and entry.name
-   if not (issecretvalue and issecretvalue(name)) and type(name)=='string' and name~='' then frame.meterFooter:SetText(name..suffix) end
-  end
  end
  if selectedSourceKey then
   local match
@@ -981,12 +990,9 @@ function M.Refresh()
     if not (issecretvalue and issecretvalue(playerGUID)) and type(playerGUID)=='string' and playerGUID~='' then guid=playerGUID end
    end
    if guid or creatureID then
-    if isPast then
-     local sessionID=historyID(availableHistory()[pastIndex])
-     if sessionID~=nil then
-      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,sessionID,types(),guid,creatureID)
-     end
-    else
+    if entry then
+     breakdown=read(C_DamageMeter.GetCombatSessionSourceFromID,entry.id,types(),guid,creatureID)
+    elseif not isPast or not pastID then
      breakdown=read(C_DamageMeter.GetCombatSessionSourceFromType,sessionType(),types(),guid,creatureID)
     end
    end
@@ -1090,13 +1096,8 @@ function M.Refresh()
   end
  end
  if isPast then
-  local entry=availableHistory()[pastIndex]
-  local title=type(entry)=="table" and entry.name
-  if not (issecretvalue and issecretvalue(title)) and type(title)=="string" and title~="" then
-   notice:SetText(title:sub(1,36))
-  else
-   notice:SetText("Past fight "..pastIndex.." | Native history")
-  end
+  local status=historyIndex and ('Fight %d of %d  |  Newest first'):format(historyIndex,#history)
+  notice:SetText(status or (expired and 'Fight expired from native history' or 'Latest completed fight'))
  else
   notice:SetText(#sources==0 and "Waiting for Blizzard combat data" or "Native data  |  Experimental")
  end
@@ -1179,7 +1180,7 @@ function M.SetSession(mode)
  for i,item in ipairs(sessions) do
   if item[1]:lower()==tostring(mode):lower() then
    if type(enums)~="table" or enums[item[2]]==nil then return false end
-   sessionIndex=i;pastIndex=1;rowOffset=0;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;saved().session=item[1];M.Refresh()
+   sessionIndex=i;pastID=nil;rowOffset=0;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;saved().session=item[1];M.Refresh()
    return true
   end
  end
@@ -1211,11 +1212,27 @@ function M.CycleMetric(delta)
  end
  return false
 end
+local function selectFight(id)
+ local enums=Enum and Enum.DamageMeterSessionType
+ if not enums or enums.Expired==nil then return false end
+ sessionIndex=2
+ pastID=id
+ rowOffset=0
+ selectedRow,selectedSourceKey,detailOpen=nil,nil,false
+ saved().session='Past'
+ M.Refresh()
+ return true
+end
 function M.SelectPast(index)
- if not safeNumber(index) or index~=math.floor(index) or index<1 or index>historyCount() then return false end
- if not C_DamageMeter or type(C_DamageMeter.GetCombatSessionFromID)~='function' then return false end
- if not M.SetSession('Past') then return false end
- pastIndex=index;rowOffset=0;M.Refresh();return true
+ if not safeNumber(index) or index~=math.floor(index) or index<1 then return false end
+ local entry=availableHistory()[index]
+ return entry and selectFight(entry.id) or false
+end
+function M.StepHistory(delta)
+ local history=availableHistory()
+ local index=historyPosition(history,pastID)
+ local entry=index and history[index+delta]
+ return entry and selectFight(entry.id) or false
 end
 function M.OpenMetrics(anchor)
  local entries={}
@@ -1226,23 +1243,40 @@ function M.OpenMetrics(anchor)
  end
  ForeverCompanionInterface.Menu(anchor or modeButton,'SELECT DISPLAY',entries,skin())
 end
-function M.OpenSessions(anchor)
+function M.OpenSessions(anchor,page)
+ local U=ForeverCompanionInterface
  local entries={}
  local enums=Enum and Enum.DamageMeterSessionType or {}
- for i,item in ipairs(sessions) do
-  local index=i
-  entries[#entries+1]={label=item[1]..' combat',selected=i==sessionIndex,enabled=enums[item[2]]~=nil,action=function() M.SetSession(sessions[index][1]) end}
+ for _,item in ipairs({sessions[1],sessions[3]}) do
+  local mode=item[1]
+  entries[#entries+1]={label=mode..' combat',selected=sessions[sessionIndex][1]==mode,enabled=enums[item[2]]~=nil,action=function() M.SetSession(mode) end}
  end
  local history=availableHistory()
- local first=math.max(1,math.min(pastIndex-4,#history-9))
- for i=first,math.min(#history,first+9) do
-  local index=i
-  local entry=history[i]
-  local name=type(entry)=='table' and entry.name
-  if (issecretvalue and issecretvalue(name)) or type(name)~='string' or name=='' then name='Fight '..i end
-  entries[#entries+1]={label=i..'. '..name,selected=sessionIndex==2 and pastIndex==i,enabled=enums.Expired~=nil and historyID(entry)~=nil and C_DamageMeter and type(C_DamageMeter.GetCombatSessionFromID)=='function',action=function() M.SelectPast(index) end}
+ local index=historyPosition(history,pastID) or 1
+ local current,pages
+ if #history==0 then
+  entries[#entries+1]={label='Latest completed fight',selected=sessionIndex==2,enabled=enums.Expired~=nil,action=function() M.SetSession('Past') end}
+ else
+  local fights={}
+  for i,entry in ipairs(history) do
+   local id=entry.id
+   local duration=durationText(entry.duration)
+   local label=i..'. '..fightTitle(entry)..(duration and ('  |  '..duration) or '')
+   fights[i]={label=label,selected=sessionIndex==2 and pastID==id,enabled=enums.Expired~=nil,action=function()
+    if historyPosition(availableHistory(),id) then selectFight(id)
+    else M.OpenSessions(anchor,page) end
+   end}
+  end
+  local visible
+  local pageSize=7
+  visible,current,pages=U.MenuPage(fights,page or math.ceil(index/pageSize),pageSize)
+  for _,fight in ipairs(visible) do entries[#entries+1]=fight end
+  if pages>1 then
+   entries[#entries+1]={label='Newer fights',enabled=current>1,action=function() M.OpenSessions(anchor,current-1) end}
+   entries[#entries+1]={label='Older fights',enabled=current<pages,action=function() M.OpenSessions(anchor,current+1) end}
+  end
  end
- ForeverCompanionInterface.Menu(anchor or sessionButton,'COMBAT SEGMENTS',entries,skin())
+ U.Menu(anchor or sessionButton,pages and ('FIGHT HISTORY  |  %d / %d'):format(current,pages) or 'FIGHT HISTORY',entries,skin(),320)
 end
 function M.SetTextSize(size)
  if not safeNumber(size) or (size~=10 and size~=11 and size~=13) then return false end
@@ -1317,7 +1351,7 @@ function M.RequestReset(anchor)
    local current=C_DamageMeter
    if not current or type(current.ResetAllCombatSessions)~='function' then return end
    local ok=pcall(current.ResetAllCombatSessions)
-   if ok then rowOffset=0;pastIndex=1;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;M.Refresh()
+   if ok then rowOffset=0;pastID=nil;selectedRow=nil;selectedSourceKey=nil;detailOpen=false;M.Refresh()
    elseif frame then frame.meterFooter:SetText('Native meter could not reset data') end
   end},
   {label='Cancel',action=function() end}
@@ -1360,6 +1394,7 @@ for _,event in ipairs({"DAMAGE_METER_COMBAT_SESSION_UPDATED","DAMAGE_METER_CURRE
  pcall(events.RegisterEvent,events,event)
 end
 events:SetScript("OnEvent",function(_,event,name)
+ if event=="DAMAGE_METER_RESET" then pastID=nil;rowOffset=0;selectedRow,selectedSourceKey,detailOpen=nil,nil,false end
  if event=="ADDON_LOADED" and name=="ForeverCompanion" and saved().visible then M.Show()
  elseif event~="ADDON_LOADED" and frame and frame:IsShown() then
   if ForeverCompanionRefreshQueue then ForeverCompanionRefreshQueue.Schedule('meter-event',function() M.Refresh() end)

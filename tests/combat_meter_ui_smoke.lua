@@ -241,14 +241,35 @@ assert(not m.Scroll(secret) and not m.Scroll(math.huge))
 assert(m.SetBothColumns(false) and ForeverCompanionDB.combatMeter.showBoth==false)
 assert(m.SetBothColumns(true));assert(m.SetTextSize(13));assert(not m.SetTextSize(99))
 local sessionID
-C_DamageMeter.GetAvailableCombatSessions=function() return {{sessionID=77,name='Native encounter'}} end
+local history={{sessionID=77,name='Native encounter',durationSeconds=90}}
+C_DamageMeter.GetAvailableCombatSessions=function() return history end
 C_DamageMeter.GetCombatSessionFromID=function(id) sessionID=id;return {combatSources=raid,maxAmount=40000,durationSeconds=90} end
 ForeverCompanionCombatMeterWindow.sessionButton.OnClick()
 local recorded
-for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='1. Native encounter' then recorded=o end end
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='1. Native encounter  |  1:30' then recorded=o end end
 assert(recorded and recorded.enabled)
 recorded.OnClick();assert(sessionID==77 and ForeverCompanionDB.combatMeter.session=='Past')
 assert(not m.SelectPast(2),'nonexistent session cannot be selected')
+history={{sessionID=76,name='Older'},{sessionID=78,name='Newer'},history[1],{sessionID=78,name='Duplicate'},secret}
+m.Refresh();assert(sessionID==77,'new fights do not replace the selected fight')
+assert(m.StepHistory(1) and sessionID==76)
+assert(m.StepHistory(-1) and sessionID==77)
+assert(m.SelectPast(1) and sessionID==78,'native list is normalized to newest first')
+history={{sessionID=77,name='Native encounter'}}
+sessionID=nil;m.Refresh();assert(sessionID==nil,'expired selection does not switch to another fight')
+assert(m.SelectPast(1) and sessionID==77)
+for id=1,16 do history[#history+1]={sessionID=id,name='Test '..id} end
+m.OpenSessions(ForeverCompanionCombatMeterWindow.sessionButton)
+local more
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Older fights' and o.enabled then more=o end end
+assert(more,'history exposes older pages')
+more.OnClick()
+local older
+for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='8. Test 10' then older=o end end
+assert(older,'second page exposes previously unreachable fights')
+history[#history+1]={sessionID=99,name='Newest'}
+older.OnClick();assert(sessionID==10,'a menu entry retains its fight ID after a new fight arrives')
+
 local resetCount=0
 C_DamageMeter.ResetAllCombatSessions=function() resetCount=resetCount+1;raid={} end
 m.RequestReset(ForeverCompanionCombatMeterWindow.resetButton)
