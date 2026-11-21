@@ -179,6 +179,7 @@ local function showDungeons(map,canvas,mapID,width,height)
  end
 end
 local function hidePins()
+ if ForeverCompanionWorldMapDetail then ForeverCompanionWorldMapDetail.Hide() end
  if bearingLayer then bearingLayer:Hide() end
  for _,label in ipairs(zoneLevelLabels) do label:Hide() end
  for _,pin in ipairs(dungeonPins) do pin:Hide() end
@@ -686,7 +687,7 @@ local function createGuide(map)
  end)
  updateCoordinates()
  local atlas=U.Button(bar);atlas:SetSize(74,26);atlas:SetPoint('TOPRIGHT',-225,-6);atlas:SetText('Atlas')
- U.SetHoverHelp(atlas,'Atlas style','Toggle parchment styling and the coordinate grid on this world map.')
+ U.SetHoverHelp(atlas,'Atlas style','Toggle Atlas styling. Zoom into a supported zone to bring in the more detailed terrain.')
  atlas:SetScript('OnClick',function() M.SetMapStyle(mapStyle()=='atlas' and 'clear' or 'atlas') end)
  local find=U.Button(bar);find:SetSize(136,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
@@ -795,7 +796,7 @@ local function drawArea(canvas,mapID,quest,width,height)
  end
  if not area then return end
  area:SetSize(width,height)
- area:SetFrameLevel(canvas:GetFrameLevel()+10)
+ area:SetFrameLevel(canvas:GetFrameLevel()+30)
  area:Show()
  area:SetMapID(mapID)
  area:DrawNone()
@@ -914,6 +915,9 @@ function M.Refresh()
  townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  if style=="atlas" and not openMap then showTerrain(canvas) end
+ if ForeverCompanionWorldMapDetail then
+  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,style=="atlas" and not openMap)
+ end
  showDungeons(worldMap,canvas,mapID,width,height)
  local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
  local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
