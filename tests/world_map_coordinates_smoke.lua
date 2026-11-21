@@ -56,3 +56,22 @@ assert(a==200 and b==100 and c==600 and d==250)
 assert(m.Bearing(canvas,11)==nil,'no false bearing on another map')
 C_Map.GetPlayerMapPosition=function() return nil end
 assert(m.Bearing(canvas,10)==nil,'no bearing from an unknown position')
+
+local stitched=true
+OpenMapAPI={major=1,version=2,IsStitched=function() return stitched end,
+ CanvasFromWorldPos=function(continent,wx,wy)
+  assert(continent==1)
+  return wx/1000+.5,wy/1000-.5
+ end}
+CreateVector2D=function(x,y) return {x=x,y=y} end
+C_Map.GetWorldPosFromMapPos=function(id,point)
+ assert(id==10)
+ return 1,{GetXY=function() return point.x*1000,point.y*1000 end}
+end
+local ox,oy=m.CanvasPoint(10,.75,.25)
+assert(ox==1.25 and oy==-.25,'stitched coordinates may lie outside the native map')
+stitched=false
+ox,oy=m.CanvasPoint(10,.75,.25)
+assert(ox==.75 and oy==.25,'native world map uses unmodified coordinates')
+ox,oy=m.CanvasPoint(10,.75,.25,.2,.4)
+assert(ox==.2 and oy==.4,'parent-map dungeon positioning remains usable')

@@ -5,11 +5,46 @@ ForeverCompanionQuestMap=M
 
 local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton,styleButton,terrain,townButton,pickupButton
 local pins,servicePins,zoomPoint={},{},nil
-local bearingLayer,bearingBeacon
+local bearingLayer,bearingBeacon,zoneLabelLayer
+local stitchedArtLevel
+local openMapCallbacks
 local bearingDots={}
 local modeNames={focus="Focus",all="All",off="Off"}
 local nextMode={all="focus",focus="off",off="all"}
 local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
+
+local function readPublic(fn,...)
+ if type(fn)~='function' then return end
+ local ok,a,b=pcall(fn,...)
+ if ok and not (issecretvalue and (issecretvalue(a) or issecretvalue(b))) then return a,b end
+end
+local function stitchedMap()
+ local api=OpenMapAPI
+ if type(api)=='table' and api.major==1 and finite(api.version) and api.version>=2 and readPublic(api.IsStitched)==true then
+  return api
+ end
+end
+local function canvasLevel(canvas)
+ local native=canvas:GetFrameLevel()
+ return finite(stitchedArtLevel) and math.max(native,stitchedArtLevel) or native
+end
+
+-- Resolve original normalized positions through OpenMap when it owns the canvas.
+-- Keep the original coordinates on the entry for waypoints and tooltips.
+function M.CanvasPoint(mapID,x,y,fallbackX,fallbackY)
+ fallbackX,fallbackY=fallbackX or x,fallbackY or y
+ local api=stitchedMap()
+ if not api or not C_Map then return fallbackX,fallbackY end
+ local point=readPublic(CreateVector2D,x,y)
+ if not point then return fallbackX,fallbackY end
+ local continent,world=readPublic(C_Map.GetWorldPosFromMapPos,mapID,point)
+ if not finite(continent) or not world then return fallbackX,fallbackY end
+ local wx,wy=readPublic(world.GetXY,world)
+ if not finite(wx) or not finite(wy) then return fallbackX,fallbackY end
+ local cx,cy=readPublic(api.CanvasFromWorldPos,continent,wx,wy)
+ if finite(cx) and finite(cy) then return cx,cy end
+ return fallbackX,fallbackY
+end
 
 local function mode()
  local saved=ForeverCompanionDB and ForeverCompanionDB.questMapMode
@@ -137,7 +172,9 @@ local function showDungeons(map,canvas,mapID,width,height)
   local hitSize=zoneView and 20 or 14
   local iconSize=zoneView and 12 or 8
   pin:SetSize(hitSize,hitSize);pin.icon:SetSize(iconSize,iconSize)
-  pin:ClearAllPoints();pin:SetPoint('CENTER',canvas,'TOPLEFT',location.displayX*width,-location.displayY*height)
+  local cx,cy=M.CanvasPoint(location.map,location.x,location.y,location.displayX,location.displayY)
+  pin:SetFrameLevel(canvasLevel(canvas)+85)
+  pin:ClearAllPoints();pin:SetPoint('CENTER',canvas,'TOPLEFT',cx*width,-cy*height)
   pin:Show()
  end
 end
@@ -394,19 +431,14 @@ local function showServices(canvas,mapID,scale)
    pin.border:SetVertexColor(.7,.82,.94,1)
   end
   local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
-  pin:SetFrameLevel(canvas:GetFrameLevel()+priority)
+  pin:SetFrameLevel(canvasLevel(canvas)+priority)
   pin:SetScale(1/scale)
   pin:ClearAllPoints()
-  pin:SetPoint("CENTER",canvas,"TOPLEFT",point.x*width,-point.y*height)
+  local cx,cy=M.CanvasPoint(mapID,point.x,point.y)
+  pin:SetPoint("CENTER",canvas,"TOPLEFT",cx*width,-cy*height)
   pin:Show()
  end
  return notice,#points
-end
-
-local function readPublic(fn,...)
- if type(fn)~='function' then return end
- local ok,a,b=pcall(fn,...)
- if ok and not (issecretvalue and (issecretvalue(a) or issecretvalue(b))) then return a,b end
 end
 
 local function validCoordinates(x,y)
@@ -424,7 +456,9 @@ function M.Bearing(canvas,mapID)
  if not pos then return end
  local fromX,fromY=readPublic(pos.GetXY,pos)
  if validCoordinates(fromX,fromY) then
-  return fromX*width,fromY*height,target.x*width,target.y*height
+  local cx,cy=M.CanvasPoint(mapID,fromX,fromY)
+  local tx,ty=M.CanvasPoint(mapID,target.x,target.y)
+  return cx*width,cy*height,tx*width,ty*height
  end
 end
 
@@ -444,12 +478,12 @@ local function drawBearing(map)
   bearingLayer=CreateFrame('Frame',nil,canvas)
   bearingLayer:SetAllPoints(canvas)
   bearingLayer:EnableMouse(false)
-  bearingLayer:SetFrameLevel(canvas:GetFrameLevel()+95)
   bearingDots={}
   bearingBeacon=bearingLayer:CreateTexture(nil,'OVERLAY')
   bearingBeacon:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\AtlasBearingBeacon')
   bearingBeacon:SetSize(34,34)
  end
+ bearingLayer:SetFrameLevel(canvasLevel(canvas)+95)
  local dx,dy=toX-fromX,toY-fromY
  local span=math.sqrt(dx*dx+dy*dy)
  local count=math.min(56,math.max(0,math.floor((span-34)/17)))
@@ -521,11 +555,20 @@ function M.ContinentZoneLevels(mapID,info)
 end
 
 local function showZoneLevels(canvas,mapID,info,width,height)
+ local zones=M.ContinentZoneLevels(mapID,info)
+ if #zones==0 then return end
+ if not zoneLabelLayer or zoneLabelLayer:GetParent()~=canvas then
+  zoneLabelLayer=CreateFrame('Frame',nil,canvas)
+  zoneLabelLayer:SetAllPoints(canvas)
+  zoneLabelLayer:EnableMouse(false)
+  zoneLevelLabels={}
+ end
+ zoneLabelLayer:SetFrameLevel(canvasLevel(canvas)+79)
  local level=readPublic(UnitLevel,'player')
- for i,zone in ipairs(M.ContinentZoneLevels(mapID,info)) do
+ for i,zone in ipairs(zones) do
   local label=zoneLevelLabels[i]
   if not label then
-   label=canvas:CreateFontString(nil,'OVERLAY','GameFontNormalSmall')
+   label=zoneLabelLayer:CreateFontString(nil,'OVERLAY','GameFontNormalSmall')
    label:SetTextColor(.98,.86,.58)
    label:SetShadowColor(0,0,0,1)
    label:SetShadowOffset(1,-1)
@@ -538,7 +581,8 @@ local function showZoneLevels(canvas,mapID,info,width,height)
    label:SetTextColor(.98,.86,.58)
   end
   label:ClearAllPoints()
-  label:SetPoint('CENTER',canvas,'TOPLEFT',zone.x*width,-zone.y*height-10)
+  local cx,cy=M.CanvasPoint(mapID,zone.x,zone.y)
+  label:SetPoint('CENTER',canvas,'TOPLEFT',cx*width,-cy*height-10)
   label:Show()
  end
 end
@@ -861,13 +905,15 @@ function M.Refresh()
  if type(scale)~="number" or scale<=0 then scale=1 end
  local focus=planner.IsSupported() and planner.GetSelected()
  local view=mode()
+ local openMap=stitchedMap()
+ stitchedArtLevel=openMap and readPublic(openMap.ArtTopLevel) or nil
  if not guide then guide,guideTitle,guideHint=createGuide(worldMap) end
  modeButton:SetText("Map: "..modeNames[view])
  local style=mapStyle()
  styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
  townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
- if style=="atlas" then showTerrain(canvas) end
+ if style=="atlas" and not openMap then showTerrain(canvas) end
  showDungeons(worldMap,canvas,mapID,width,height)
  local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
  local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
@@ -931,13 +977,14 @@ function M.Refresh()
   end
   pin:SetSize(size,size)
   pin:SetScale(1/scale)
-  pin:SetFrameLevel(canvas:GetFrameLevel()+(group.focused and 102 or 101))
+  pin:SetFrameLevel(canvasLevel(canvas)+(group.focused and 102 or 101))
   local sprite=entry.zoneStart and 0 or (entry.pickup and 1 or (entry.quest.complete and 3 or 2))
   -- Sample each glyph independently so filtering never bleeds into its neighbor.
   pin.badge:SetTexCoord((32*sprite+.5)/128,(32*sprite+31.5)/128,.5/32,31.5/32)
   pin.symbol:SetText(shared and (group.pickups and tostring(#group.pickups) or "+") or "")
   pin:ClearAllPoints()
-  pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
+  local cx,cy=M.CanvasPoint(mapID,target.x,target.y)
+  pin:SetPoint("CENTER",canvas,"TOPLEFT",cx*width*scale+(group.offsetX or 0),-cy*height*scale)
   pin:Show()
  end
 end
@@ -949,6 +996,17 @@ function M.Refresh()
  local started=profiler and profiler.Start('map')
  refreshMap()
  if profiler then profiler.Finish('map',started) end
+end
+local function attachOpenMap()
+ local api=OpenMapAPI
+ if openMapCallbacks or type(api)~='table' or api.major~=1 or type(api.RegisterCallback)~='function' then return end
+ openMapCallbacks={}
+ local function redraw()
+  local queue=ForeverCompanionRefreshQueue
+  if queue then queue.Schedule('openmap-companion',M.Refresh) else M.Refresh() end
+ end
+ api.RegisterCallback(openMapCallbacks,'OpenMap_ViewChanged',redraw)
+ api.RegisterCallback(openMapCallbacks,'OpenMap_StitchedChanged',redraw)
 end
 local function attach()
  local map=WorldMapFrame
@@ -983,6 +1041,8 @@ pcall(events.RegisterEvent,events,"QUEST_POI_UPDATE")
 pcall(events.RegisterEvent,events,"PLAYER_LEVEL_UP")
 pcall(events.RegisterEvent,events,"QUEST_TURNED_IN")
 events:SetScript("OnEvent",function(_,event,name)
- if event=="ADDON_LOADED" and name~="Blizzard_WorldMap" then return end
+ if event=="ADDON_LOADED" and name=="OpenMap" then attachOpenMap();return end
+ if event=="ADDON_LOADED" and name~="Blizzard_WorldMap" and name~="ForeverCompanion" then return end
+ attachOpenMap()
  if event=="QUEST_POI_UPDATE" or event=="PLAYER_LEVEL_UP" or event=="QUEST_TURNED_IN" then M.Refresh() else attach() end
 end)
