@@ -54,7 +54,7 @@ end
 local function mapStyle()
  local db=ForeverCompanionDB
  if db and db.questMapStyle=="clear" then return "clear" end
- if db and db.questMapStyle=='atlas' then return 'atlas' end
+ if db and (db.questMapStyle=='atlas' or db.questMapStyle=='diorama') then return db.questMapStyle end
  if db and db.questMapOriginalTerrain==true then return "original" end
  return "clear"
 end
@@ -62,7 +62,7 @@ end
 local function cycleMapStyle()
  ForeverCompanionDB=ForeverCompanionDB or {}
  local current=mapStyle()
- local nextStyle=current=="atlas" and "clear" or (current=="clear" and "original" or "atlas")
+ local nextStyle=({original='clear',clear='atlas',atlas='diorama',diorama='original'})[current]
  ForeverCompanionDB.questMapStyle=nextStyle
  ForeverCompanionDB.questMapOriginalTerrain=(nextStyle=="original")
  return nextStyle
@@ -72,7 +72,7 @@ end
 -- source. Clear mode displays them without tint/grid; no external map addon.
 M.MapStyle=mapStyle
 M.SetMapStyle=function(value)
- if value~="atlas" and value~="clear" and value~="original" then return false end
+ if value~="diorama" and value~="atlas" and value~="clear" and value~="original" then return false end
  ForeverCompanionDB=ForeverCompanionDB or {}
  ForeverCompanionDB.questMapStyle=value
  ForeverCompanionDB.questMapOriginalTerrain=(value=="original")
@@ -86,11 +86,16 @@ local function sharpenOverlay(texture)
  if texture and texture.SetTexelSnappingBias then texture:SetTexelSnappingBias(0) end
 end
 
-local function showTerrain(canvas)
+local markerArt='Interface\\AddOns\\ForeverCompanion\\Media\\AtlasDiorama'
+local function dioramaMarker(texture,sprite)
+ texture:SetTexture(markerArt)
+ texture:SetTexCoord((64*sprite+.5)/512,(64*sprite+63.5)/512,.5/64,63.5/64)
+end
+
+local function showTerrain(canvas,diorama)
  if not terrain then
   terrain=CreateFrame("Frame",nil,canvas)
   terrain:SetAllPoints(canvas)
-  terrain:SetFrameLevel(canvas:GetFrameLevel()+1)
   terrain:EnableMouse(false)
   local tint=terrain:CreateTexture(nil,"BACKGROUND")
   tint:SetAllPoints(terrain)
@@ -98,6 +103,7 @@ local function showTerrain(canvas)
   local shade=terrain:CreateTexture(nil,'BACKGROUND',nil,1)
   shade:SetAllPoints(terrain)
   shade:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\WorldMapShade')
+  terrain.tint,terrain.shade=tint,shade
   sharpenOverlay(tint)
   for i=1,9 do
    local vertical=terrain:CreateTexture(nil,"ARTWORK")
@@ -121,6 +127,9 @@ local function showTerrain(canvas)
   lines[2]:SetPoint("LEFT",terrain,"TOPLEFT",0,y)
   lines[2]:SetPoint("RIGHT",terrain,"TOPRIGHT",0,y)
  end
+ terrain:SetFrameLevel(canvas:GetFrameLevel()+(diorama and 21 or 1))
+ terrain.tint:SetColorTexture(.37,.24,.10,diorama and .065 or .038)
+ terrain.shade:SetAlpha(diorama and .65 or 1)
  terrain:Show()
 end
 
@@ -170,8 +179,14 @@ local function showDungeons(map,canvas,mapID,width,height)
   pin.level:SetText(range or '')
   pin.level:SetShown(not not range and (not ForeverCompanionDB or ForeverCompanionDB.mapShowDungeonLevels~=false))
   local hitSize=zoneView and 20 or 14
-  local iconSize=zoneView and 12 or 8
-  pin:SetSize(hitSize,hitSize);pin.icon:SetSize(iconSize,iconSize)
+  local diorama=mapStyle()=='diorama'
+  pin:SetSize(hitSize,hitSize)
+  local iconSize=diorama and (zoneView and 32 or 22) or (zoneView and 12 or 8)
+  pin.icon:SetSize(iconSize,iconSize)
+  pin.icon:ClearAllPoints()
+  pin.icon:SetPoint("CENTER",pin,"CENTER",0,diorama and iconSize*.21 or 0)
+  if diorama then dioramaMarker(pin.icon,6)
+  else pin.icon:SetTexture('Interface\\Icons\\INV_Misc_Key_03');pin.icon:SetTexCoord(.08,.92,.08,.92) end
   local cx,cy=M.CanvasPoint(location.map,location.x,location.y,location.displayX,location.displayY)
   pin:SetFrameLevel(canvasLevel(canvas)+85)
   pin:ClearAllPoints();pin:SetPoint('CENTER',canvas,'TOPLEFT',cx*width,-cy*height)
@@ -299,6 +314,19 @@ local serviceIconSizes={[20]=10,[24]=12,[28]=16}
 local function serviceIconSize(config)
  return serviceIconSizes[config.mapServiceIconSize] or 12
 end
+local function serviceArtwork(pin,symbol)
+ local sprite=symbol=='V' and 4 or (symbol=='R' and 5)
+ local diorama=mapStyle()=='diorama' and sprite
+ local size=diorama and 32 or pin.nativeIconSize or 12
+ pin.icon:SetSize(size,size)
+ pin.icon:ClearAllPoints()
+ pin.icon:SetPoint('CENTER',pin,'CENTER',0,diorama and size*.21 or 0)
+ if diorama then dioramaMarker(pin.icon,sprite)
+ else
+  pin.icon:SetTexCoord(0,1,0,1)
+  ForeverCompanionServiceAtlas.SetIcon(pin.icon,symbol)
+ end
+end
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
@@ -311,7 +339,8 @@ local function showServices(canvas,mapID,scale)
   points=ForeverCompanionServiceClusters.Filter(points,cfg.questMapHiddenServices)
  end
  local iconSize=serviceIconSize(cfg)
- local hitSize=math.max(20,iconSize+4)
+ local diorama=mapStyle()=="diorama"
+ local hitSize=math.max(diorama and 25 or 20,iconSize+4)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  -- Pixel-distance clustering crosses service categories, so a banker,
  -- repair vendor and trainer at the same building remain accessible.
@@ -393,7 +422,7 @@ local function showServices(canvas,mapID,scale)
     if IsShiftKeyDown and IsShiftKeyDown() and #self.locations>1 then
      self.locationIndex=(self.locationIndex or 1)%#self.locations+1
      local active=self.locations[self.locationIndex]
-     ForeverCompanionServiceAtlas.SetIcon(self.icon,active.symbol)
+     serviceArtwork(self,active.symbol)
      self.visitPip:SetShown(active.observed==true)
      self:GetScript("OnEnter")(self)
      return
@@ -410,14 +439,14 @@ local function showServices(canvas,mapID,scale)
   pin.count:SetText(#group>1 and tostring(#group) or "")
   -- Smaller, less intrusive POI icons at both zoom levels.
   pin:SetSize(hitSize,hitSize)
-  pin.icon:SetSize(iconSize,iconSize)
+  pin.nativeIconSize=iconSize
   pin.background:SetSize(iconSize+2,iconSize+2)
   pin.border:SetSize(iconSize+4,iconSize+4)
   pin.visitPip:SetShown(point.observed==true)
   pin.labelAllowed=i<=12
   pin.nameLabel:SetText(point.label)
   pin.nameLabel:SetShown(cfg.mapServiceLabels==true and pin.labelAllowed)
-  ForeverCompanionServiceAtlas.SetIcon(pin.icon,point.symbol)
+  serviceArtwork(pin,point.symbol)
   if point.symbol=="B" or point.symbol=="AH" then
    pin.background:SetColorTexture(.16,.11,.035,.96)
    pin.markerColor={1,.8,.35}
@@ -686,9 +715,9 @@ local function createGuide(map)
   end
  end)
  updateCoordinates()
- local atlas=U.Button(bar);atlas:SetSize(74,26);atlas:SetPoint('TOPRIGHT',-225,-6);atlas:SetText('Atlas')
- U.SetHoverHelp(atlas,'Atlas style','Toggle Atlas styling. Zoom into a supported zone to bring in the more detailed terrain.')
- atlas:SetScript('OnClick',function() M.SetMapStyle(mapStyle()=='atlas' and 'clear' or 'atlas') end)
+ local atlas=U.Button(bar);atlas:SetSize(74,26);atlas:SetPoint('TOPRIGHT',-225,-6);atlas:SetText('Diorama')
+ U.SetHoverHelp(atlas,'Atlas Diorama','Toggle original 3D map markers and detailed close-up terrain.')
+ atlas:SetScript('OnClick',function() M.SetMapStyle(mapStyle()=='diorama' and 'clear' or 'diorama') end)
  local find=U.Button(bar);find:SetSize(136,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
  local minimize=U.Button(bar);minimize:SetSize(26,26)
@@ -911,12 +940,13 @@ function M.Refresh()
  if not guide then guide,guideTitle,guideHint=createGuide(worldMap) end
  modeButton:SetText("Map: "..modeNames[view])
  local style=mapStyle()
- styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
+ styleButton:SetText("Style: "..style:sub(1,1):upper()..style:sub(2))
  townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
- if style=="atlas" and not openMap then showTerrain(canvas) end
+ local diorama=style=="diorama"
+ if (style=="atlas" or diorama) and not openMap then showTerrain(canvas,diorama) end
  if ForeverCompanionWorldMapDetail then
-  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,style=="atlas" and not openMap)
+  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,(style=="atlas" or diorama) and not openMap)
  end
  showDungeons(worldMap,canvas,mapID,width,height)
  local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
@@ -972,7 +1002,7 @@ function M.Refresh()
   pin.entry,pin.focused,pin.samples,pin.nearby=entry,group.focused,group.samples,group.nearby
   pin.pickups,pin.pickupIndex=group.pickups,1
   local shared=group.nearby and #group.nearby>0
-  local size=group.focused and 28 or (entry.zoneStart and 26 or 22)
+  local size=diorama and (group.focused and 42 or (entry.zoneStart and 40 or 34)) or (group.focused and 28 or (entry.zoneStart and 26 or 22))
   if group.focused and not focus.complete then
    pin.ring:SetSize(group.radius*2,group.radius*2)
    pin.ring:Show()
@@ -984,7 +1014,14 @@ function M.Refresh()
   pin:SetFrameLevel(canvasLevel(canvas)+(group.focused and 102 or 101))
   local sprite=entry.zoneStart and 0 or (entry.pickup and 1 or (entry.quest.complete and 3 or 2))
   -- Sample each glyph independently so filtering never bleeds into its neighbor.
-  pin.badge:SetTexCoord((32*sprite+.5)/128,(32*sprite+31.5)/128,.5/32,31.5/32)
+  pin.badge:ClearAllPoints()
+  pin.badge:SetSize(size,size)
+  pin.badge:SetPoint("CENTER",pin,"CENTER",0,diorama and size*.21 or 0)
+  if diorama then dioramaMarker(pin.badge,sprite)
+  else
+   pin.badge:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\WorldMapMarkers")
+   pin.badge:SetTexCoord((32*sprite+.5)/128,(32*sprite+31.5)/128,.5/32,31.5/32)
+  end
   pin.symbol:SetText(shared and (group.pickups and tostring(#group.pickups) or "+") or "")
   pin:ClearAllPoints()
   local cx,cy=M.CanvasPoint(mapID,target.x,target.y)
