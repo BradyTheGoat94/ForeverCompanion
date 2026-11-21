@@ -57,16 +57,19 @@ local function showTerrain(canvas)
   terrain:EnableMouse(false)
   local tint=terrain:CreateTexture(nil,"BACKGROUND")
   tint:SetAllPoints(terrain)
-  tint:SetColorTexture(.08,.15,.22,.025)
+  tint:SetColorTexture(.37,.24,.10,.038)
+  local shade=terrain:CreateTexture(nil,'BACKGROUND',nil,1)
+  shade:SetAllPoints(terrain)
+  shade:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\WorldMapShade')
   sharpenOverlay(tint)
   for i=1,9 do
    local vertical=terrain:CreateTexture(nil,"ARTWORK")
    vertical:SetWidth(1)
-   vertical:SetColorTexture(.25,.56,.69,i==5 and .075 or .025)
+   vertical:SetColorTexture(.88,.76,.52,i==5 and .095 or .04)
    sharpenOverlay(vertical)
    local horizontal=terrain:CreateTexture(nil,"ARTWORK")
    horizontal:SetHeight(1)
-   horizontal:SetColorTexture(.25,.56,.69,i==5 and .075 or .025)
+   horizontal:SetColorTexture(.88,.76,.52,i==5 and .095 or .04)
    sharpenOverlay(horizontal)
    terrain[i]={vertical,horizontal}
   end
@@ -95,6 +98,12 @@ local function showDungeons(map,canvas,mapID,width,height)
    pin=CreateFrame('Button',nil,canvas);pin:SetSize(20,20)
    local icon=pin:CreateTexture(nil,'ARTWORK');icon:SetPoint('CENTER',pin);pin.icon=icon
    icon:SetTexture('Interface\\Icons\\INV_Misc_Key_03')
+   icon:SetTexCoord(.08,.92,.08,.92)
+   local border=pin:CreateTexture(nil,'BACKGROUND')
+   border:SetAllPoints(pin)
+   border:SetColorTexture(.10,.06,.17,.95)
+   sharpenOverlay(border)
+   pin:SetHighlightTexture('Interface\\Buttons\\ButtonHilight-Square','ADD')
    pin.level=ForeverCompanionInterface.Text(pin,10,{.98,.80,.47,1})
    pin.level:SetPoint('TOP',pin,'BOTTOM',0,0)
    pin.level:SetJustifyH('CENTER')
@@ -170,18 +179,14 @@ local function createPin(canvas)
  pin.ring:SetPoint("CENTER")
  pin.ring:SetVertexColor(.22,.91,1,.95)
  sharpenOverlay(pin.ring)
- local outline=pin:CreateTexture(nil,"BACKGROUND")
- pin.outline=outline
- outline:SetAllPoints(pin)
- outline:SetColorTexture(.03,.08,.11,1)
- sharpenOverlay(outline)
  pin.badge=pin:CreateTexture(nil,"ARTWORK")
+ pin.badge:SetAllPoints(pin)
+ pin.badge:SetTexture("Interface\\AddOns\\ForeverCompanion\\Media\\WorldMapMarkers")
  sharpenOverlay(pin.badge)
- pin.badge:SetPoint("TOPLEFT",2,-2)
- pin.badge:SetPoint("BOTTOMRIGHT",-2,2)
- pin.symbol=pin:CreateFontString(nil,"OVERLAY","GameFontNormal")
- pin.symbol:SetPoint("CENTER")
- pin.symbol:SetTextColor(.05,.08,.12)
+ pin.symbol=pin:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+ pin.symbol:SetPoint("BOTTOMRIGHT",pin,"BOTTOMRIGHT",3,-2)
+ pin.symbol:SetShadowColor(0,0,0,1)
+ pin.symbol:SetShadowOffset(1,-1)
  pin:SetScript("OnEnter",function(self)
   if not GameTooltip then return end
   local entry=self.entry
@@ -382,7 +387,7 @@ local function showServices(canvas,mapID,scale)
    pin.border:SetVertexColor(.4,.9,1,1)
   else
    pin.background:SetColorTexture(.025,.055,.09,.96)
-   pin.markerColor={.7,.82,.94}
+   pin.markerColor=(point.symbol=='V' or point.symbol=='R') and {.48,.85,.70} or {.7,.82,.94}
    pin.border:SetVertexColor(.7,.82,.94,1)
   end
   local priority=(point.symbol=="B" or point.symbol=="AH") and 94 or 90
@@ -839,7 +844,7 @@ function M.Refresh()
   pin.entry,pin.focused,pin.samples,pin.nearby=entry,group.focused,group.samples,group.nearby
   pin.pickups,pin.pickupIndex=group.pickups,1
   local shared=group.nearby and #group.nearby>0
-  local size=group.focused and 22 or (shared and 17 or 13)
+  local size=group.focused and 28 or (entry.zoneStart and 26 or 22)
   if group.focused and not focus.complete then
    pin.ring:SetSize(group.radius*2,group.radius*2)
    pin.ring:Show()
@@ -849,25 +854,10 @@ function M.Refresh()
   pin:SetSize(size,size)
   pin:SetScale(1/scale)
   pin:SetFrameLevel(canvas:GetFrameLevel()+(group.focused and 102 or 101))
-  if group.focused then pin.badge:SetColorTexture(.32,.92,1,1)
-  elseif entry.quest.complete then pin.badge:SetColorTexture(.48,.91,.52,.93)
-  else pin.badge:SetColorTexture(.93,.76,.40,.86) end
-  if entry.pickup then
-   pin.outline:Hide()
-   pin.badge:SetTexture("Interface\\GossipFrame\\AvailableQuestIcon")
-   if entry.zoneStart then
-    pin.badge:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1")
-    pin.symbol:SetText("")
-   else
-    pin.symbol:SetText(shared and tostring(#group.pickups) or "")
-   end
-   pin.symbol:SetTextColor(1,1,1)
-   pin:SetSize(22,26)
-  else
-   pin.outline:Show()
-   pin.symbol:SetTextColor(.05,.08,.12)
-   pin.symbol:SetText(entry.quest.complete and "?" or (group.focused and ">" or (shared and "+" or "·")))
-  end
+  local sprite=entry.zoneStart and 0 or (entry.pickup and 1 or (entry.quest.complete and 3 or 2))
+  -- Sample each glyph independently so filtering never bleeds into its neighbor.
+  pin.badge:SetTexCoord((32*sprite+.5)/128,(32*sprite+31.5)/128,.5/32,31.5/32)
+  pin.symbol:SetText(shared and (group.pickups and tostring(#group.pickups) or "+") or "")
   pin:ClearAllPoints()
   pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
   pin:Show()
