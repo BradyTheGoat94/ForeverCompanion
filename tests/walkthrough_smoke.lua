@@ -134,3 +134,16 @@ sky.class='SHAMAN';assert(offered(92466) and not offered(92467))
 sky.completed=function(id) return id==92466 end
 assert(offered(92467) and not offered(92468))
 assert(chapter[3]==44)
+
+local zoneContext={level=36,bit=1,side='Alliance',active={},completed=function() return false end}
+local starters=G.ZoneStarts(2548,zoneContext)
+assert(#starters==1 and starters[1].quest.id==94613 and starters[1].zoneStart)
+zoneContext.level=35
+assert(#G.ZoneStarts(2548,zoneContext)==0)
+zoneContext.level=36;zoneContext.side='Horde';zoneContext.bit=2
+starters=G.ZoneStarts(2548,zoneContext)
+assert(#starters==1 and starters[1].quest.id==93787)
+zoneContext.active={{id=93787}}
+assert(#G.ZoneStarts(2548,zoneContext)==0)
+zoneContext.active={};zoneContext.completed=function() return true end
+assert(#G.ZoneStarts(2548,zoneContext)==0)

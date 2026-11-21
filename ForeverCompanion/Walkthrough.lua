@@ -107,6 +107,57 @@ local function eligible(r,ctx,done)
  end
  return true
 end
+-- Suggested first stops from the existing route records, indexed by zone.
+local entryQuests={
+ [1429]={2158,62},[1426]={2160,400},[1438]={2159,2438},
+ [1411]={2161,823},[1412]={748,745},[1420]={367,404},
+ [2521]={92460},[1436]={36,12},[1432]={416,418},[1439]={3524},
+ [1413]={844,871},[1421]={421,6321},[1433]={116,125},
+ [1431]={226,245},[1440]={991,6442},[1424]={494,496},
+ [1441]={4542,4821},[1434]={583},[1443]={1437,1367,1368},
+ [1417]={681,655},[2548]={94613,93787},[1445]={1220,1201},
+ [1446]={1690,1707},[1444]={2866,2975},[1425]={2988,7828},
+ [1419]={2581,2583},[1449]={3881,3883},[1448]={8460},
+ [1422]={5092},[1428]={4182,3823},[1452]={3783},
+ [1423]={5542},[1451]={8277,8284},
+}
+function G.ZoneStarts(map,ctx)
+ local ids=entryQuests[map]
+ local result={}
+ if not ids or not allowed(byMap[map],ctx.side) then return result end
+ local selected={}
+ for _,id in ipairs(ids) do selected[id]=true end
+ local active={}
+ for _,quest in ipairs(ctx.active or {}) do active[quest.id]=true end
+ for _,r in ipairs(records[map]) do
+  local id=r[1]
+  if selected[id] and not active[id] and ctx.completed(id)==false and eligible(r,ctx,ctx.completed) then
+   local target=point(r[6])
+   target.kind='pickup'
+   result[#result+1]={quest={id=id,title=r[2],level=r[3]},target=target,pickup=true,reference=true,zoneStart=true}
+  end
+ end
+ return result
+end
+local function playerIdentity()
+ local level=call(UnitLevel,'player')
+ local side=call(UnitFactionGroup,'player')
+ local _,class=call(UnitClass,'player')
+ local _,race,id=call(UnitRace,'player')
+ local bit=type(id)=='number' and id>=1 and id<=53 and 2^(id-1)
+ if race and race:lower():find('skyborne') then bit=side=='Horde' and 8589934592 or 4294967296 end
+ local provider=ForeverCompanionQuestLocations
+ local db=provider and provider.Provider()
+ if db and db.Enum and db.Enum.raceMaskById then bit=db.Enum.raceMaskById[id] or bit end
+ return {class=class,level=level,side=side or '',race=race,bit=bit,
+  completed=function(questID) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,questID) end}
+end
+function G.MapStarts(map,quests)
+ local ctx=playerIdentity()
+ if type(ctx.level)~='number' then return {} end
+ ctx.active=quests
+ return G.ZoneStarts(map,ctx)
+end
 function G.Build(chapter,ctx)
  local result,seen,reference,known={},{},{},{}
  if chapter[1]==2548 and ctx.level<36 then return result end
@@ -233,16 +284,10 @@ local rows,current,page={},nil,1
 local following,lastSignature,lastOwner=false,nil,nil
 local function currentMap() return C_Map and call(C_Map.GetBestMapForUnit,'player') end
 local function context()
- local level=call(UnitLevel,'player') or 1
- local side=call(UnitFactionGroup,'player') or ''
- local _,class=call(UnitClass,'player')
- local _,race,id=call(UnitRace,'player')
- local bit=type(id)=='number' and id>=1 and id<=53 and 2^(id-1)
- if race and race:lower():find('skyborne') then bit=side=='Horde' and 8589934592 or 4294967296 end
- local db=ForeverCompanionQuestLocations.Provider()
- if db and db.Enum and db.Enum.raceMaskById then bit=db.Enum.raceMaskById[id] or bit end
+ local ctx=playerIdentity()
+ local level=ctx.level or 1
  local map=currentMap()
- local ch=G.Chapter(level,map,side,race,cfg().chapter)
+ local ch=G.Chapter(level,map,ctx.side,ctx.race,cfg().chapter)
  local planner=ForeverCompanionQuestPlanner
  local live=planner.IsSupported() and planner.GetLive() or {}
  local pos=C_Map and map and call(C_Map.GetPlayerMapPosition,map,'player')
@@ -250,9 +295,10 @@ local function context()
  local w=ForeverCompanionQuestWaypoints
  local pickups=w.MapPickups(ch[1],live,true)
  local indexed=ForeverCompanionAvailableQuests.Status(ch[1])
- local ctx={class=class,level=level,map=map,side=side,bit=bit,x=x,y=y,active=live,pickups=pickups or {},skip=cfg().skip,focus=cfg().manualFocus,
-  catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion,
-  completed=function(q) return C_QuestLog and call(C_QuestLog.IsQuestFlaggedCompleted,q) end,location=w.Location}
+ ctx.level,ctx.map,ctx.x,ctx.y=level,map,x,y
+ ctx.active,ctx.pickups,ctx.skip,ctx.focus=live,pickups or {},cfg().skip,cfg().manualFocus
+ ctx.catalogReady=indexed.initialized and indexed.quests>0 and indexed.completion
+ ctx.location=w.Location
  local _,questCount=call(C_QuestLog and C_QuestLog.GetNumQuestLogEntries or GetNumQuestLogEntries)
  local limit=call(C_QuestLog and C_QuestLog.GetMaxNumQuestsCanAccept) or MAX_QUESTLOG_QUESTS
  if not (issecretvalue and issecretvalue(questCount)) and type(questCount)=='number' and type(limit)=='number' and limit>0 then ctx.logFull=questCount>=limit end

@@ -141,6 +141,26 @@ local function hidePins()
  if terrain then terrain:Hide() end
 end
 
+local function mapPickups(map,quests)
+ local entries=ForeverCompanionQuestWaypoints.MapPickups(map,quests)
+ local cfg=ForeverCompanionDB or {}
+ local guide=ForeverCompanionWalkthrough
+ if cfg.questMapHidePickups or cfg.mapHideZoneStarts or not guide then return entries end
+ local curated=guide.MapStarts(map,quests)
+ local starts={}
+ for _,entry in ipairs(curated) do starts[entry.quest.id]=entry end
+ local result,seen={},{}
+ for _,entry in ipairs(entries) do
+  local id=entry.quest.id
+  if starts[id] then
+   local marked={quest=entry.quest,target=entry.target,pickup=true,reference=entry.reference,zoneStart=true}
+   result[#result+1]=marked
+   seen[id]=true
+  elseif not cfg.mapOnlyZoneStarts then result[#result+1]=entry end
+ end
+ for _,entry in ipairs(curated) do if not seen[entry.quest.id] then result[#result+1]=entry end end
+ return result
+end
 local function createPin(canvas)
  local pin=CreateFrame("Button",nil,canvas)
  pin:EnableMouse(true)
@@ -175,7 +195,8 @@ local function createPin(canvas)
    if total>0 then GameTooltip:AddLine(done..' / '..total..' objectives complete'..(known<total and ' · some progress unknown' or ''),.7,.85,.75,true) end
    GameTooltip:AddLine('Right-click: quest actions and field guide',.82,.74,.55,true)
   end
-  if entry.reference then GameTooltip:AddLine("Level, race, class and quest-chain checks passed. Profession, reputation and event requirements may still apply.",.95,.76,.35,true) end
+  if entry.zoneStart then GameTooltip:AddLine('Suggested zone starter',1,.8,.35,true) end
+  if entry.reference and not entry.zoneStart then GameTooltip:AddLine("Level, race, class and quest-chain checks passed. Profession, reputation and event requirements may still apply.",.95,.76,.35,true) end
   if self.pickups and #self.pickups>1 then GameTooltip:AddLine("Shift-click to choose another quest at this location",.95,.76,.35,true) end
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
   for _,nearby in ipairs(self.nearby or {}) do
@@ -207,7 +228,7 @@ local function createPin(canvas)
   end
   if entry.pickup then
    local map=worldMap:GetMapID()
-   local target=ForeverCompanionQuestDiscovery.Resolve(ForeverCompanionQuestWaypoints.MapPickups(map,ForeverCompanionQuestPlanner.GetLive()),entry.quest.id,entry.target)
+   local target=ForeverCompanionQuestDiscovery.Resolve(mapPickups(map,ForeverCompanionQuestPlanner.GetLive()),entry.quest.id,entry.target)
    if not target then M.Refresh();guideHint:SetText('This quest pickup changed. Choose a current marker.');return end
    guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,entry.quest.title))
   else
@@ -235,8 +256,14 @@ end
 local function showServices(canvas,mapID,scale)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
- points=ForeverCompanionServiceClusters.Filter(points,ForeverCompanionDB and ForeverCompanionDB.questMapHiddenServices)
  local cfg=ForeverCompanionDB or {}
+ if cfg.mapVendorsOnly then
+  local vendors={}
+  for _,point in ipairs(points) do if point.symbol=="V" or point.symbol=="R" then vendors[#vendors+1]=point end end
+  points=vendors
+ else
+  points=ForeverCompanionServiceClusters.Filter(points,cfg.questMapHiddenServices)
+ end
  local iconSize=serviceIconSize(cfg)
  local hitSize=math.max(20,iconSize+4)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
@@ -389,11 +416,11 @@ end
 local function zoneRange(mapID)
  local lo,hi=readPublic(C_Map.GetMapLevels,mapID)
  if finite(lo) and finite(hi) and lo>0 and hi>=lo then
-  return lo==hi and ('Lv. %d'):format(lo) or ('Lv. %d-%d'):format(lo,hi)
+  return lo==hi and ('Lv. %d'):format(lo) or ('Lv. %d-%d'):format(lo,hi),lo,hi
  end
  local walkthrough=ForeverCompanionWalkthrough
  for _,chapter in ipairs(walkthrough and walkthrough.chapters or {}) do
-  if chapter[1]==mapID then return ('Lv. %d-%d'):format(chapter[2],chapter[3]) end
+  if chapter[1]==mapID then return ('Lv. %d-%d'):format(chapter[2],chapter[3]),chapter[2],chapter[3] end
  end
 end
 
@@ -414,11 +441,11 @@ function M.ContinentZoneLevels(mapID,info)
   local id=zone.mapID
   if finite(id) and id>0 and not seen[id] then
    seen[id]=true
-   local range=zoneRange(id)
+   local range,low,high=zoneRange(id)
    if range then
     local ok,left,right,top,bottom=pcall(C_Map.GetMapRectOnMap,id,mapID)
     if ok and validCoordinates(left,top) and validCoordinates(right,bottom) and left<right and top<bottom then
-     result[#result+1]={text=range,x=(left+right)/2,y=(top+bottom)/2}
+     result[#result+1]={id=id,name=zone.name,text=range,low=low,high=high,x=(left+right)/2,y=(top+bottom)/2}
     end
    end
   end
@@ -427,6 +454,7 @@ function M.ContinentZoneLevels(mapID,info)
 end
 
 local function showZoneLevels(canvas,mapID,info,width,height)
+ local level=readPublic(UnitLevel,'player')
  for i,zone in ipairs(M.ContinentZoneLevels(mapID,info)) do
   local label=zoneLevelLabels[i]
   if not label then
@@ -437,6 +465,11 @@ local function showZoneLevels(canvas,mapID,info,width,height)
    zoneLevelLabels[i]=label
   end
   label:SetText(zone.text)
+  if finite(level) and level>=zone.low and level<=zone.high then
+   label:SetTextColor(.58,1,.66)
+  else
+   label:SetTextColor(.98,.86,.58)
+  end
   label:ClearAllPoints()
   label:SetPoint('CENTER',canvas,'TOPLEFT',zone.x*width,-zone.y*height-10)
   label:Show()
@@ -559,15 +592,41 @@ local function createGuide(map)
  services=button(128,-35,126,'Service filters',function()
   if type(db.questMapHiddenServices)~='table' then db.questMapHiddenServices={} end
   local hidden=db.questMapHiddenServices;local entries={}
+  entries[#entries+1]={label='Vendors and repairs only',selected=db.mapVendorsOnly==true,action=function()
+   db.mapVendorsOnly=not db.mapVendorsOnly
+   if db.mapVendorsOnly then db.questMapHideTowns=false end
+   M.Refresh()
+  end}
   for _,entry in ipairs(ForeverCompanionServiceAtlas.Categories) do if entry[1]~='all' then
-   local key,label=entry[1],entry[2];entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() hidden[key]=not hidden[key];M.Refresh() end}
+   local key,label=entry[1],entry[2];entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() db.mapVendorsOnly=nil;hidden[key]=not hidden[key];M.Refresh() end}
   end end
-  entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};M.Refresh() end}
+  entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};db.mapVendorsOnly=nil;M.Refresh() end}
   U.Menu(services,'MAP SERVICES',entries)
  end)
  button(262,-35,94,'Overlay map',function() ForeverCompanionMapOverlay.Toggle() end)
  button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
  local appearance;appearance=button(442,-35,66,'Tools...',function() ForeverCompanionInterface.Menu(appearance,'MAP TOOLS',{
+  {label='Only show zone starter pickups',selected=db.mapOnlyZoneStarts==true,action=function()
+   db.mapOnlyZoneStarts=not db.mapOnlyZoneStarts
+   if db.mapOnlyZoneStarts then db.questMapHidePickups=false;db.mapHideZoneStarts=false;db.questMapMode='all' end
+   M.Refresh()
+  end},
+  {label='Mark zone starters',selected=not db.mapHideZoneStarts,action=function()
+   db.mapHideZoneStarts=not db.mapHideZoneStarts
+   if db.mapHideZoneStarts then db.mapOnlyZoneStarts=nil end
+   M.Refresh()
+  end},
+  {label='Browse zones by level',action=function()
+   local guide=ForeverCompanionWalkthrough
+   local choices={}
+   for _,chapter in ipairs(guide and guide.chapters or {}) do
+    local id,lo,hi,name=chapter[1],chapter[2],chapter[3],chapter[5]
+    choices[#choices+1]={low=lo,name=name,label=(M.ZoneLevelText(id) or ('Lv. %d-%d'):format(lo,hi))..'  |  '..name,
+     action=function() readPublic(map.SetMapID,map,id) end}
+   end
+   table.sort(choices,function(a,b) if a.low==b.low then return a.name<b.name end;return a.low<b.low end)
+   U.PagedMenu(appearance,'ZONES BY LEVEL',choices,nil,290)
+  end},
   {label='Map appearance',action=function() M.OpenAppearance(appearance) end},
   {label='Center on player',action=function()
    local current,x,y=ForeverCompanionMapTools.Position()
@@ -580,7 +639,7 @@ local function createGuide(map)
   {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(appearance) end},
  }) end)
- local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Right-click service clusters to choose · Drag header to move dock')
+ local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Gold star: zone start   ! pickup   ? turn-in · Drag header to move dock')
  return bar,title,hint
 end
 
@@ -724,7 +783,7 @@ function M.Refresh()
  modeButton:SetText("Map: "..modeNames[view])
  local style=mapStyle()
  styleButton:SetText(style=="atlas" and "Style: Atlas" or (style=="clear" and "Style: Clear" or "Style: Original"))
- townButton:SetText(townsEnabled() and "Services: On" or "Services: Off")
+ townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  if style=="atlas" then showTerrain(canvas) end
  showDungeons(worldMap,canvas,mapID,width,height)
@@ -759,12 +818,15 @@ function M.Refresh()
  if view=="all" then
   addOtherQuests(groups,locations,focus,width*scale,height*scale)
   local pickupPoints={}
-  for _,entry in ipairs(ForeverCompanionQuestWaypoints.MapPickups(mapID,quests)) do
+  for _,entry in ipairs(mapPickups(mapID,quests)) do
    pickupPoints[#pickupPoints+1]={x=entry.target.x,y=entry.target.y,symbol="!",label=entry.quest.title,entry=entry}
   end
   for _,cluster in ipairs(ForeverCompanionServiceClusters.Build(pickupPoints,width*scale,height*scale,20)) do
    local pickups,nearby={},{}
-   for i,point in ipairs(cluster) do pickups[i]=point.entry;if i>1 then nearby[#nearby+1]=point.entry end end
+   for _,point in ipairs(cluster) do
+    if point.entry.zoneStart then table.insert(pickups,1,point.entry) else pickups[#pickups+1]=point.entry end
+   end
+   for i=2,#pickups do nearby[#nearby+1]=pickups[i] end
    groups[#groups+1]={entry=pickups[1],pickups=pickups,focused=false,samples=#pickups,nearby=nearby}
   end
  end
@@ -793,13 +855,18 @@ function M.Refresh()
   if entry.pickup then
    pin.outline:Hide()
    pin.badge:SetTexture("Interface\\GossipFrame\\AvailableQuestIcon")
-   pin.symbol:SetText(shared and tostring(#group.pickups) or "")
+   if entry.zoneStart then
+    pin.badge:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcon_1")
+    pin.symbol:SetText("")
+   else
+    pin.symbol:SetText(shared and tostring(#group.pickups) or "")
+   end
    pin.symbol:SetTextColor(1,1,1)
    pin:SetSize(22,26)
   else
    pin.outline:Show()
    pin.symbol:SetTextColor(.05,.08,.12)
-   pin.symbol:SetText(shared and "+" or (entry.quest.complete and "?" or (group.focused and ">" or "")))
+   pin.symbol:SetText(entry.quest.complete and "?" or (group.focused and ">" or (shared and "+" or "·")))
   end
   pin:ClearAllPoints()
   pin:SetPoint("CENTER",canvas,"TOPLEFT",target.x*width*scale+(group.offsetX or 0),-target.y*height*scale)
