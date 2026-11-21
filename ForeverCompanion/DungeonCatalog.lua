@@ -44,9 +44,12 @@ function D.Names(query)
  end
  table.sort(names);return names
 end
+-- Both Stratholme approaches lead to the same instance.
+function D.JournalName(name)
+ return name=='Stratholme: Service Gate' and 'Stratholme' or name
+end
 function D.LevelRange(name)
- -- Both Stratholme approaches lead to the same instance.
- local e=D.entries[name=='Stratholme: Service Gate' and 'Stratholme' or name]
+ local e=D.entries[D.JournalName(name)]
  if e and e.low and e.high then return ('%d-%d'):format(e.low,e.high) end
 end
 function D.Summary(name)

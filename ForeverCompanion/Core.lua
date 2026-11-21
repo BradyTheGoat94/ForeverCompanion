@@ -1129,6 +1129,13 @@ local function createUI()
   done:SetPoint('TOPLEFT',604,0);done:SetSize(160,27);done:SetText('Back to quest log')
   done:SetScript('OnClick',function() questExplorerOpen=false;render();scroll:SetVerticalScroll(0) end)
   questExplorerTabs.backToLog=done
+  ForeverCompanionOpenDungeonJournal=function(name,quests)
+    local journal=ForeverCompanionEncounterBrowser
+    journal.questView=quests==true
+    journal.SelectDungeon(name)
+    if journal.questView then ForeverCompanionDungeonQuests.StartScan() end
+    openSection('Dungeons');window:Show();window:Raise()
+  end
   ForeverCompanionOpenQuestBook=function(view)
     questExplorerOpen=true
     questExplorerView=view=='history' and 'history' or 'catalog'

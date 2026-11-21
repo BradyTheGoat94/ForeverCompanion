@@ -135,6 +135,7 @@ local function showTerrain(canvas,diorama)
 end
 
 local dungeonPins,zoneLevelLabels={},{}
+local dungeonSelection
 local function showDungeons(map,canvas,mapID,width,height)
  if ForeverCompanionDB and ForeverCompanionDB.hideDungeonPins then return end
  local catalog=ForeverCompanionDungeonCatalog
@@ -163,14 +164,16 @@ local function showDungeons(map,canvas,mapID,width,height)
      GameTooltip:AddLine(range and (name..'  |  Suggested levels '..range) or name,1,1,1,true)
     end
     GameTooltip:AddLine(string.format('%s %.1f, %.1f',p.zone,p.x*100,p.y*100),.8,.85,.9)
+    GameTooltip:AddLine('Click for entrance details, quests and loot',.8,.85,.9,true)
     GameTooltip:Show()
    end)
    pin:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
    pin:SetScript('OnClick',function(self)
-    if self.location.map~=map:GetMapID() and map.SetMapID then
-     if GameTooltip then GameTooltip:Hide() end
-     map:SetMapID(self.location.map)
-    end
+    local location=self.location
+    if GameTooltip then GameTooltip:Hide() end
+    dungeonSelection={location=location,index=1}
+    if location.map~=map:GetMapID() and map.SetMapID then map:SetMapID(location.map) end
+    M.Refresh()
    end)
    dungeonPins[i]=pin
   end
@@ -196,6 +199,7 @@ local function showDungeons(map,canvas,mapID,width,height)
 end
 local function hidePins()
  if ForeverCompanionZoneBriefing then ForeverCompanionZoneBriefing.Hide() end
+ if ForeverCompanionDungeonBriefing then ForeverCompanionDungeonBriefing.Hide() end
  if ForeverCompanionWorldMapDetail then ForeverCompanionWorldMapDetail.Hide() end
  if bearingLayer then bearingLayer:Hide() end
  for _,label in ipairs(zoneLevelLabels) do label:Hide() end
@@ -758,7 +762,7 @@ local function createGuide(map)
   minimize:ClearAllPoints();minimize:SetPoint('TOPRIGHT',minimized and -8 or -45,minimized and -2 or -6);minimize:SetText(minimized and '+' or '-')
   expand:SetText(expanded and '-' or '+');updateCoordinates();fitToolbar()
  end
- minimize:SetScript('OnClick',function() db.mapDockMinimized=not db.mapDockMinimized;U.CloseMenu();layout();M.Refresh() end)
+ minimize:SetScript('OnClick',function() db.mapDockMinimized=not db.mapDockMinimized;dungeonSelection=nil;U.CloseMenu();layout();M.Refresh() end)
  minimize:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(db.mapDockMinimized and 'Restore Companion map panel' or 'Minimize Companion map panel');GameTooltip:Show() end end)
  minimize:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
  M.mapDock=bar;M.minimizeMapDock=minimize;M.mapDockFind=find;M.mapDockHint=hint;M.mapDockCoordinates=coordinates
@@ -1030,7 +1034,13 @@ function M.Refresh()
  guide:Show()
  local zone=knownMap and types and info.mapType==types.Zone
  briefingButton:SetEnabled(not not zone)
- if briefing and zone and not db.mapBriefingHidden and not db.mapDockMinimized then
+ if dungeonSelection and (dungeonSelection.location.map~=mapID or db.hideDungeonPins) then dungeonSelection=nil end
+ if dungeonSelection then
+  ForeverCompanionDungeonBriefing.Show(guide,dungeonSelection,function()
+   dungeonSelection=nil
+   M.Refresh()
+  end)
+ elseif briefing and zone and not db.mapBriefingHidden and not db.mapDockMinimized then
   local title=levelText and (name..'  |  '..levelText) or name
   briefing.Show(guide,mapID,title,briefingChoice(mapID),briefingServices(mapID),briefingChoice)
  end
@@ -1153,7 +1163,7 @@ local function attach()
    end)
   else M.Refresh() end
  end
- provider.OnHide=hidePins
+ provider.OnHide=function() dungeonSelection=nil;hidePins() end
  provider.RemoveAllData=hidePins
  map:AddDataProvider(provider)
  M.Refresh()
