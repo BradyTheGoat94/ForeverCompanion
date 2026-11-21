@@ -46,3 +46,13 @@ local labels=m.ContinentZoneLevels(11,C_Map.GetMapInfo(11))
 assert(#labels==2 and labels[1].text=='Lv. 36-44' and labels[2].text=='Lv. 40-49')
 assert(labels[1].x==.5 and labels[1].y==.25)
 assert(#m.ContinentZoneLevels(10,C_Map.GetMapInfo(10))==0)
+
+local canvas={GetWidth=function() return 800 end,GetHeight=function() return 500 end}
+local destination={map=10,x=.75,y=.5}
+ForeverCompanionQuestWaypoints.Active=function() return destination end
+C_Map.GetPlayerMapPosition=function() return {GetXY=function() return .25,.2 end} end
+local a,b,c,d=m.Bearing(canvas,10)
+assert(a==200 and b==100 and c==600 and d==250)
+assert(m.Bearing(canvas,11)==nil,'no false bearing on another map')
+C_Map.GetPlayerMapPosition=function() return nil end
+assert(m.Bearing(canvas,10)==nil,'no bearing from an unknown position')

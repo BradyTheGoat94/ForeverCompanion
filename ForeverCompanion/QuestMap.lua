@@ -5,6 +5,8 @@ ForeverCompanionQuestMap=M
 
 local provider,worldMap,area,areaChecked,guide,guideTitle,guideHint,modeButton,zoomButton,styleButton,terrain,townButton,pickupButton
 local pins,servicePins,zoomPoint={},{},nil
+local bearingLayer,bearingBeacon
+local bearingDots={}
 local modeNames={focus="Focus",all="All",off="Off"}
 local nextMode={all="focus",focus="off",off="all"}
 local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -140,6 +142,7 @@ local function showDungeons(map,canvas,mapID,width,height)
  end
 end
 local function hidePins()
+ if bearingLayer then bearingLayer:Hide() end
  for _,label in ipairs(zoneLevelLabels) do label:Hide() end
  for _,pin in ipairs(dungeonPins) do pin:Hide() end
  if ForeverCompanionMapTools then ForeverCompanionMapTools.HideMap() end
@@ -410,6 +413,65 @@ local function validCoordinates(x,y)
  return finite(x) and finite(y) and x>=0 and x<=1 and y>=0 and y<=1
 end
 
+-- World map bearing. Both endpoints use the currently viewed map coordinates.
+function M.Bearing(canvas,mapID)
+ local way=ForeverCompanionQuestWaypoints
+ local target=way and readPublic(way.Active)
+ if not target or target.map~=mapID or not validCoordinates(target.x,target.y) then return end
+ local width,height=readPublic(canvas.GetWidth,canvas),readPublic(canvas.GetHeight,canvas)
+ if not finite(width) or not finite(height) or width<=0 or height<=0 then return end
+ local pos=C_Map and readPublic(C_Map.GetPlayerMapPosition,mapID,'player')
+ if not pos then return end
+ local fromX,fromY=readPublic(pos.GetXY,pos)
+ if validCoordinates(fromX,fromY) then
+  return fromX*width,fromY*height,target.x*width,target.y*height
+ end
+end
+
+local function drawBearing(map)
+ local canvas=map:GetCanvas()
+ local options=ForeverCompanionDB
+ local fromX,fromY,toX,toY
+ if canvas and (not options or options.mapShowBearing~=false) then
+  fromX,fromY,toX,toY=M.Bearing(canvas,map:GetMapID())
+ end
+ if not fromX then
+  if bearingLayer then bearingLayer:Hide() end
+  return
+ end
+ if not bearingLayer or bearingLayer:GetParent()~=canvas then
+  if bearingLayer then bearingLayer:Hide() end
+  bearingLayer=CreateFrame('Frame',nil,canvas)
+  bearingLayer:SetAllPoints(canvas)
+  bearingLayer:EnableMouse(false)
+  bearingLayer:SetFrameLevel(canvas:GetFrameLevel()+95)
+  bearingDots={}
+  bearingBeacon=bearingLayer:CreateTexture(nil,'OVERLAY')
+  bearingBeacon:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\AtlasBearingBeacon')
+  bearingBeacon:SetSize(34,34)
+ end
+ local dx,dy=toX-fromX,toY-fromY
+ local span=math.sqrt(dx*dx+dy*dy)
+ local count=math.min(56,math.max(0,math.floor((span-34)/17)))
+ for i=1,count do
+  local dot=bearingDots[i]
+  if not dot then
+   dot=bearingLayer:CreateTexture(nil,'ARTWORK')
+   dot:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\AtlasBearingDot')
+   dot:SetSize(8,8)
+   bearingDots[i]=dot
+  end
+  local fraction=(17*i)/span
+  dot:ClearAllPoints()
+  dot:SetPoint('CENTER',bearingLayer,'TOPLEFT',fromX+dx*fraction,-(fromY+dy*fraction))
+  dot:Show()
+ end
+ for i=count+1,#bearingDots do bearingDots[i]:Hide() end
+ bearingBeacon:ClearAllPoints()
+ bearingBeacon:SetPoint('CENTER',bearingLayer,'TOPLEFT',toX,-toY)
+ bearingLayer:Show()
+end
+
 function M.CursorCoordinates(map)
  local scroll=map and map.ScrollContainer
  if scroll and readPublic(scroll.IsMouseOver,scroll)==true then
@@ -515,6 +577,9 @@ function M.OpenAppearance(anchor)
  entries[#entries+1]={label='Show player map coordinates',selected=db.mapShowCoordinates~=false,action=function() db.mapShowCoordinates=db.mapShowCoordinates==false;M.Refresh() end}
  entries[#entries+1]={label='Show cursor coordinates',selected=db.mapShowCursor~=false,action=function() db.mapShowCursor=db.mapShowCursor==false;M.Refresh() end}
  entries[#entries+1]={label='Show dungeon level labels',selected=db.mapShowDungeonLevels~=false,action=function() db.mapShowDungeonLevels=db.mapShowDungeonLevels==false;M.Refresh() end}
+ entries[#entries+1]={label='Show waypoint bearing',selected=db.mapShowBearing~=false,action=function()
+  db.mapShowBearing=db.mapShowBearing==false;M.Refresh()
+ end}
  entries[#entries+1]={label='Show zone levels',selected=db.mapShowLevels~=false,action=function() db.mapShowLevels=db.mapShowLevels==false;M.Refresh() end}
  entries[#entries+1]={label='Reset map dock position',action=function() db.mapDockPosition=nil;if guide then guide:ClearAllPoints();guide:SetPoint('BOTTOMLEFT',worldMap,'BOTTOMLEFT',12,12) end end}
  ForeverCompanionInterface.Menu(anchor or guide,'MAP APPEARANCE',entries)
@@ -566,8 +631,20 @@ local function createGuide(map)
   if playerText and cursorText then coordinates:SetText(playerText..'  |  '..cursorText)
   else coordinates:SetText(playerText or cursorText or '') end
  end
- local elapsed=0;bar:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=.25 then elapsed=0;updateCoordinates() end end);updateCoordinates()
- local find=U.Button(bar);find:SetSize(148,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
+ local elapsed=0
+ bar:SetScript('OnUpdate',function(_,dt)
+  elapsed=elapsed+dt
+  if elapsed>=.25 then
+   elapsed=0
+   updateCoordinates()
+   drawBearing(map)
+  end
+ end)
+ updateCoordinates()
+ local atlas=U.Button(bar);atlas:SetSize(74,26);atlas:SetPoint('TOPRIGHT',-225,-6);atlas:SetText('Atlas')
+ U.SetHoverHelp(atlas,'Atlas style','Toggle parchment styling and the coordinate grid on this world map.')
+ atlas:SetScript('OnClick',function() M.SetMapStyle(mapStyle()=='atlas' and 'clear' or 'atlas') end)
+ local find=U.Button(bar);find:SetSize(136,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
  local minimize=U.Button(bar);minimize:SetSize(26,26)
  local expand=U.Button(bar);expand:SetSize(26,26);expand:SetPoint('TOPRIGHT',-10,-6)
@@ -575,8 +652,8 @@ local function createGuide(map)
  local function layout()
   local minimized=db.mapDockMinimized==true;local expanded=db.mapDockExpanded==true
   bar:SetSize(minimized and 190 or 520,minimized and 30 or (expanded and 140 or 54))
-  drawer:SetShown(not minimized and expanded);find:SetShown(not minimized);expand:SetShown(not minimized);hint:SetShown(not minimized)
-  title:SetWidth(minimized and 136 or 270);drag:SetSize(minimized and 144 or 282,28)
+  drawer:SetShown(not minimized and expanded);atlas:SetShown(not minimized);find:SetShown(not minimized);expand:SetShown(not minimized);hint:SetShown(not minimized)
+  title:SetWidth(minimized and 136 or 192);drag:SetSize(minimized and 144 or 207,28)
   minimize:ClearAllPoints();minimize:SetPoint('TOPRIGHT',minimized and -8 or -45,minimized and -2 or -6);minimize:SetText(minimized and '+' or '-')
   expand:SetText(expanded and '-' or '+');updateCoordinates();fitToolbar()
  end
@@ -802,6 +879,7 @@ function M.Refresh()
  guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)
  guide:Show()
+ drawBearing(worldMap)
  if ForeverCompanionMapTools then ForeverCompanionMapTools.DrawMap(canvas,mapID,width,height,scale) end
  if view=="off" or (view=="focus" and not focus) then return end
  -- All-mode must still display live quest locations when no quest is focused.
