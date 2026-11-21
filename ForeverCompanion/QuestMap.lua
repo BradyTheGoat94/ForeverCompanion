@@ -9,6 +9,7 @@ local bearingLayer,bearingBeacon,zoneLabelLayer
 local stitchedArtLevel
 local openMapCallbacks
 local bearingDots={}
+local briefingButton
 local modeNames={focus="Focus",all="All",off="Off"}
 local nextMode={all="focus",focus="off",off="all"}
 local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -194,6 +195,7 @@ local function showDungeons(map,canvas,mapID,width,height)
  end
 end
 local function hidePins()
+ if ForeverCompanionZoneBriefing then ForeverCompanionZoneBriefing.Hide() end
  if ForeverCompanionWorldMapDetail then ForeverCompanionWorldMapDetail.Hide() end
  if bearingLayer then bearingLayer:Hide() end
  for _,label in ipairs(zoneLevelLabels) do label:Hide() end
@@ -206,11 +208,11 @@ local function hidePins()
  if terrain then terrain:Hide() end
 end
 
-local function mapPickups(map,quests)
- local entries=ForeverCompanionQuestWaypoints.MapPickups(map,quests)
+local function mapPickups(map,quests,briefing)
+ local entries=ForeverCompanionQuestWaypoints.MapPickups(map,quests,briefing)
  local cfg=ForeverCompanionDB or {}
  local guide=ForeverCompanionWalkthrough
- if cfg.questMapHidePickups or cfg.mapHideZoneStarts or not guide then return entries end
+ if (not briefing and (cfg.questMapHidePickups or cfg.mapHideZoneStarts)) or not guide then return entries end
  local curated=guide.MapStarts(map,quests)
  local starts={}
  for _,entry in ipairs(curated) do starts[entry.quest.id]=entry end
@@ -221,7 +223,7 @@ local function mapPickups(map,quests)
    local marked={quest=entry.quest,target=entry.target,pickup=true,reference=entry.reference,zoneStart=true}
    result[#result+1]=marked
    seen[id]=true
-  elseif not cfg.mapOnlyZoneStarts then result[#result+1]=entry end
+  elseif briefing or not cfg.mapOnlyZoneStarts then result[#result+1]=entry end
  end
  for _,entry in ipairs(curated) do if not seen[entry.quest.id] then result[#result+1]=entry end end
  return result
@@ -258,7 +260,7 @@ local function createPin(canvas)
   end
   if entry.zoneStart then GameTooltip:AddLine('Suggested zone starter',1,.8,.35,true) end
   if entry.reference and not entry.zoneStart then GameTooltip:AddLine("Level, race, class and quest-chain checks passed. Profession, reputation and event requirements may still apply.",.95,.76,.35,true) end
-  if self.pickups and #self.pickups>1 then GameTooltip:AddLine("Shift-click to choose another quest at this location",.95,.76,.35,true) end
+  if self.pickups and #self.pickups>1 then GameTooltip:AddLine("Right-click for every quest here, or Shift-click to cycle",.95,.76,.35,true) end
   if self.samples>1 then GameTooltip:AddLine("Nearby reported locations: "..self.samples,.68,.75,.82) end
   for _,nearby in ipairs(self.nearby or {}) do
    GameTooltip:AddLine(nearby.quest.title,.81,.87,.92,true)
@@ -271,6 +273,21 @@ local function createPin(canvas)
  end)
  pin:SetScript("OnClick",function(self,button)
   local entry=self.entry
+  if button=='RightButton' and entry.pickup and self.pickups and #self.pickups>1 then
+   local entries={}
+   for _,pickup in ipairs(self.pickups) do
+    local candidate=pickup
+    entries[#entries+1]={label=candidate.quest.title,action=function()
+     local map=worldMap:GetMapID()
+     local quests=ForeverCompanionQuestPlanner.GetLive()
+     local target=ForeverCompanionQuestDiscovery.Resolve(mapPickups(map,quests),candidate.quest.id,candidate.target)
+     if target then guideHint:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,candidate.quest.title))
+     else M.Refresh();guideHint:SetText('This quest pickup changed. Choose a current marker.') end
+    end}
+   end
+   ForeverCompanionInterface.PagedMenu(self,'Quest pickups',entries,nil,320)
+   return
+  end
   if button=='RightButton' and not entry.pickup and ForeverCompanionInterface then
    ForeverCompanionInterface.Menu(self,'QUEST ACTIONS',{
     {label='Open quest field guide',action=function() if ForeverCompanionOpenQuestGuide then ForeverCompanionOpenQuestGuide(entry.quest.id) end end},
@@ -327,7 +344,7 @@ local function serviceArtwork(pin,symbol)
   ForeverCompanionServiceAtlas.SetIcon(pin.icon,symbol)
  end
 end
-local function showServices(canvas,mapID,scale)
+local function showServices(canvas,mapID,scale,tier)
  if not townsEnabled() then return end
  local points,notice=ForeverCompanionTownServices.ForMap(mapID)
  local cfg=ForeverCompanionDB or {}
@@ -344,7 +361,9 @@ local function showServices(canvas,mapID,scale)
  local width,height=canvas:GetWidth()*scale,canvas:GetHeight()*scale
  -- Pixel-distance clustering crosses service categories, so a banker,
  -- repair vendor and trainer at the same building remain accessible.
- local ordered=ForeverCompanionServiceClusters.Build(points,width,height,cfg.mapServiceTight and hitSize or hitSize+6)
+ local radius=cfg.mapServiceTight and hitSize or hitSize+6
+ if tier=='zone' then radius=radius+12 end
+ local ordered=ForeverCompanionServiceClusters.Build(points,width,height,radius)
  for _,oldPin in ipairs(servicePins) do oldPin:Hide();oldPin.locations=nil end
  for i,group in ipairs(ordered) do
   local pin=servicePins[i]
@@ -654,6 +673,9 @@ function M.OpenAppearance(anchor)
  entries[#entries+1]={label='Show waypoint bearing',selected=db.mapShowBearing~=false,action=function()
   db.mapShowBearing=db.mapShowBearing==false;M.Refresh()
  end}
+ entries[#entries+1]={label='Adjust markers as you zoom',selected=db.mapAdaptiveMarkers~=false,action=function()
+  db.mapAdaptiveMarkers=db.mapAdaptiveMarkers==false;M.Refresh()
+ end}
  entries[#entries+1]={label='Show zone levels',selected=db.mapShowLevels~=false,action=function() db.mapShowLevels=db.mapShowLevels==false;M.Refresh() end}
  entries[#entries+1]={label='Reset map dock position',action=function() db.mapDockPosition=nil;if guide then guide:ClearAllPoints();guide:SetPoint('BOTTOMLEFT',worldMap,'BOTTOMLEFT',12,12) end end}
  ForeverCompanionInterface.Menu(anchor or guide,'MAP APPEARANCE',entries)
@@ -718,7 +740,12 @@ local function createGuide(map)
  local atlas=U.Button(bar);atlas:SetSize(74,26);atlas:SetPoint('TOPRIGHT',-225,-6);atlas:SetText('Diorama')
  U.SetHoverHelp(atlas,'Atlas Diorama','Toggle original 3D map markers and detailed close-up terrain.')
  atlas:SetScript('OnClick',function() M.SetMapStyle(mapStyle()=='diorama' and 'clear' or 'diorama') end)
- local find=U.Button(bar);find:SetSize(136,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Find services')
+ briefingButton=U.Button(bar);briefingButton:SetSize(69,26);briefingButton:SetPoint('TOPRIGHT',-146,-6);briefingButton:SetText('Briefing')
+ briefingButton:SetScript('OnClick',function()
+  db.mapBriefingHidden=not db.mapBriefingHidden
+  M.Refresh()
+ end)
+ local find=U.Button(bar);find:SetSize(62,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Services')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
  local minimize=U.Button(bar);minimize:SetSize(26,26)
  local expand=U.Button(bar);expand:SetSize(26,26);expand:SetPoint('TOPRIGHT',-10,-6)
@@ -726,12 +753,12 @@ local function createGuide(map)
  local function layout()
   local minimized=db.mapDockMinimized==true;local expanded=db.mapDockExpanded==true
   bar:SetSize(minimized and 190 or 520,minimized and 30 or (expanded and 140 or 54))
-  drawer:SetShown(not minimized and expanded);atlas:SetShown(not minimized);find:SetShown(not minimized);expand:SetShown(not minimized);hint:SetShown(not minimized)
+  drawer:SetShown(not minimized and expanded);atlas:SetShown(not minimized);briefingButton:SetShown(not minimized);find:SetShown(not minimized);expand:SetShown(not minimized);hint:SetShown(not minimized)
   title:SetWidth(minimized and 136 or 192);drag:SetSize(minimized and 144 or 207,28)
   minimize:ClearAllPoints();minimize:SetPoint('TOPRIGHT',minimized and -8 or -45,minimized and -2 or -6);minimize:SetText(minimized and '+' or '-')
   expand:SetText(expanded and '-' or '+');updateCoordinates();fitToolbar()
  end
- minimize:SetScript('OnClick',function() db.mapDockMinimized=not db.mapDockMinimized;U.CloseMenu();layout() end)
+ minimize:SetScript('OnClick',function() db.mapDockMinimized=not db.mapDockMinimized;U.CloseMenu();layout();M.Refresh() end)
  minimize:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(db.mapDockMinimized and 'Restore Companion map panel' or 'Minimize Companion map panel');GameTooltip:Show() end end)
  minimize:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
  M.mapDock=bar;M.minimizeMapDock=minimize;M.mapDockFind=find;M.mapDockHint=hint;M.mapDockCoordinates=coordinates
@@ -910,6 +937,42 @@ local function addOtherQuests(groups,locations,focus,width,height)
  end
 end
 
+local function liveQuests()
+ local planner=ForeverCompanionQuestPlanner
+ return planner.IsSupported() and planner.GetLive() or {}
+end
+
+local function briefingChoice(map,quests)
+ if not worldMap or not worldMap:IsShown() or worldMap:GetMapID()~=map then return end
+ quests=quests or liveQuests()
+ local way=ForeverCompanionQuestWaypoints
+ local pos=C_Map and readPublic(C_Map.GetPlayerMapPosition,map,'player')
+ local x,y
+ if pos then x,y=readPublic(pos.GetXY,pos) end
+ return ForeverCompanionZoneBriefing.Choose(map,way.MapLocations(map,quests),mapPickups(map,quests,true),x,y)
+end
+local function briefingServices(map)
+ local catalog=ForeverCompanionTownServices
+ local sources=catalog and catalog.ForMap(map)
+ local tools=ForeverCompanionMapTools
+ if not tools or type(sources)~='table' then return end
+ local here,x,y=tools.Position()
+ local names={}
+ for _,kind in ipairs({{'F','Flight'},{'R','Repairs'}}) do
+  local target
+  if here==map then
+   local ranked=tools.RankServices(sources,map,x,y,kind[1])
+   target=ranked[1] and ranked[1].target
+  else
+   for _,service in ipairs(sources) do
+    if service.symbol==kind[1] then target=service;break end
+   end
+  end
+  if target then names[#names+1]=kind[2]..': '..target.label end
+ end
+ return table.concat(names,'  |  ')
+end
+
 function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
  if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
@@ -948,25 +1011,37 @@ function M.Refresh()
  if ForeverCompanionWorldMapDetail then
   ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,(style=="atlas" or diorama) and not openMap)
  end
+ local info=readPublic(C_Map and C_Map.GetMapInfo,mapID)
+ local knownMap=type(info)=='table'
+ local name=knownMap and info.name or 'COMPANION MAP'
+ local db=ForeverCompanionDB or {}
+ local types=Enum and Enum.UIMapType
+ local briefing=ForeverCompanionZoneBriefing
+ local tier=briefing and briefing.Tier(knownMap and info.mapType,types,readPublic(worldMap.GetCanvasZoomPercent,worldMap),db.mapAdaptiveMarkers~=false) or 'detail'
  showDungeons(worldMap,canvas,mapID,width,height)
- local serviceNotice,serviceCount=showServices(canvas,mapID,scale)
- local ok,info=pcall(function() return C_Map and C_Map.GetMapInfo(mapID) end)
- local name=ok and type(info)=='table' and info.name or 'COMPANION MAP'
+ local serviceNotice,serviceCount
+ if tier~='overview' then serviceNotice,serviceCount=showServices(canvas,mapID,scale,tier) end
  local levels=not ForeverCompanionDB or ForeverCompanionDB.mapShowLevels~=false
  local levelText=levels and M.ZoneLevelText(mapID)
- if levels and ok and type(info)=='table' then showZoneLevels(canvas,mapID,info,width,height) end
+ if levels and knownMap then showZoneLevels(canvas,mapID,info,width,height) end
  guideTitle:SetText(levelText and (name..'  |  '..levelText) or name)
  guideHint:SetText(serviceNotice or ((serviceCount or 0)..' service references · '..(view=='off' and 'Quest layer hidden' or 'Choose a quest marker or Find services')))
  zoomButton:SetEnabled(false)
  guide:Show()
+ local zone=knownMap and types and info.mapType==types.Zone
+ briefingButton:SetEnabled(not not zone)
+ if briefing and zone and not db.mapBriefingHidden and not db.mapDockMinimized then
+  local title=levelText and (name..'  |  '..levelText) or name
+  briefing.Show(guide,mapID,title,briefingChoice(mapID),briefingServices(mapID),briefingChoice)
+ end
  drawBearing(worldMap)
  if ForeverCompanionMapTools then ForeverCompanionMapTools.DrawMap(canvas,mapID,width,height,scale) end
- if view=="off" or (view=="focus" and not focus) then return end
+ if tier=="overview" or view=="off" or (view=="focus" and not focus) then return end
  -- All-mode must still display live quest locations when no quest is focused.
  -- A missing focus is not an empty quest log.
 
  if focus then pcall(drawArea,canvas,mapID,focus,width,height) end
- local quests=planner.IsSupported() and planner.GetLive() or {}
+ local quests=liveQuests()
  local locations=ForeverCompanionQuestWaypoints.MapLocations(mapID,view=="focus" and {focus} or quests)
  local groups=focus and focusGroups(locations,focus,width*scale,height*scale) or {}
  if #groups>0 then
@@ -981,8 +1056,17 @@ function M.Refresh()
  if view=="all" then
   addOtherQuests(groups,locations,focus,width*scale,height*scale)
   local pickupPoints={}
-  for _,entry in ipairs(mapPickups(mapID,quests)) do
-   pickupPoints[#pickupPoints+1]={x=entry.target.x,y=entry.target.y,symbol="!",label=entry.quest.title,entry=entry}
+  local entries=mapPickups(mapID,quests)
+  local showStartersOnly=false
+  if tier=="zone" then
+   for _,entry in ipairs(entries) do
+    if entry.zoneStart then showStartersOnly=true;break end
+   end
+  end
+  for _,entry in ipairs(entries) do
+   if not showStartersOnly or entry.zoneStart then
+    pickupPoints[#pickupPoints+1]={x=entry.target.x,y=entry.target.y,symbol="!",label=entry.quest.title,entry=entry}
+   end
   end
   for _,cluster in ipairs(ForeverCompanionServiceClusters.Build(pickupPoints,width*scale,height*scale,20)) do
    local pickups,nearby={},{}
