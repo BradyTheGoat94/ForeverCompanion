@@ -22,6 +22,7 @@ function methods:SetShown(v) self.shown=v end
 function methods:SetValue(v) self.value=v end
 function methods:SetMinMaxValues(a,b) self.minimum,self.maximum=a,b end
 function methods:SetStatusBarColor(...) self.color={...} end
+function methods:SetTexture(value) self.texture=value end
 local function object(kind,parent)
  local o=setmetatable({kind=kind,parent=parent},{__index=function(_,k) return methods[k] or function() end end})
  objects[#objects+1]=o
@@ -40,6 +41,7 @@ local source={name=secret,totalAmount=secret,amountPerSecond=secret,classFilenam
 C_DamageMeter={GetCombatSessionFromType=function() return {combatSources={source},maxAmount=secret} end}
 RAID_CLASS_COLORS={MAGE={r=.2,g=.7,b=1}}
 dofile('ForeverCompanion/InterfaceKit.lua')
+dofile('ForeverCompanion/VisualTheme.lua')
 dofile('ForeverCompanion/CombatMeter.lua')
 local meterEvents=objects[#objects]
 local m=ForeverCompanionCombatMeter
@@ -53,11 +55,15 @@ assert(m.ExactAmount(0/0)==nil and m.ExactAmount(math.huge)==nil)
 assert(m.SourceKey({sourceGUID=secret,sourceCreatureID=77})=='creature:77')
 assert(m.SourceKey({sourceGUID=secret,sourceCreatureID=secret})==nil,'secret identities never enter stable keys')
 m.Show()
+local header=ForeverCompanionCombatMeterWindow
+assert(ForeverCompanionDB.combatMeter.skin=="battle" and header.meterArt.texture==ForeverCompanionVisualTheme.environmentAtlas)
+assert(header.primaryColumn.text=="TOTAL" and header.secondaryColumn.text=="PER SEC" and header.secondaryColumn:IsShown())
+assert(header.metricIcon.texture:find("SavageBlow",1,true))
 for _,layout in ipairs({'compact','standard','expanded'}) do
  assert(m.SetLayout(layout))
  m.Refresh()
  local window=ForeverCompanionCombatMeterWindow
- assert(window:GetHeight()==50+ForeverCompanionDB.combatMeter.rows*21)
+ assert(window:GetHeight()==68+ForeverCompanionDB.combatMeter.rows*21)
  for _,o in ipairs(objects) do
   if o.kind=='FontString' and o.text==secret then
    if o.parent~=window then
@@ -98,6 +104,7 @@ assert(nameLabel and totalLabel and rateLabel)
 assert(nameLabel.point[4]+nameLabel.width<=publicRow.width+totalLabel.point[4]-totalLabel.width,'dual columns cannot collide with names at minimum width')
 assert(publicRow.width+totalLabel.point[4]<=publicRow.width+rateLabel.point[4]-rateLabel.width,'total and rate columns remain separate')
 assert(m.SetBothColumns(false))
+assert(header.primaryColumn.text=='PER SEC' and not header.secondaryColumn:IsShown())
 assert(nameLabel.point[4]+nameLabel.width<=publicRow.width+totalLabel.point[4]-totalLabel.width,'single-column mode cannot collide with names')
 assert(m.SetBothColumns(true))
 local tooltipLines={}
@@ -127,6 +134,7 @@ assert(calls>0 and m.SelectedRow()==1,'selected player reads native breakdown ou
 local detail
 for _,o in ipairs(objects) do if o.kind=='Frame' and rawget(o,'width')==640 and rawget(o,'dragHandle') then detail=o end end
 assert(detail,'breakdown needs a dedicated drag handle')
+assert(detail.meterArt.texture==header.meterArt.texture and detail.summaryBand)
 UIParent.GetCenter=function() return 500,400 end
 detail.GetCenter=function() return 850,650 end
 detail.dragHandle.OnDragStart();detail.dragHandle.OnDragStop()

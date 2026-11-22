@@ -11,8 +11,8 @@ local metricNames={DPS="Damage / DPS",Damage="Damage Done",HPS="Healing / HPS",H
 local rowCount=8
 local ROW_HEIGHT=20
 local ROW_STEP=21
-local BASE_HEIGHT=50
-local ROW_TOP=26
+local BASE_HEIGHT=68
+local ROW_TOP=43
 local windowWidth=320
 local selectedRow,selectedSourceKey=nil,nil
 local detailOpen=false
@@ -27,12 +27,20 @@ local detailLabel
 local metricIndex,sessionIndex=1,1
 local metrics={{"DPS","Dps"},{"Damage","DamageDone"},{"HPS","Hps"},{"Healing","HealingDone"},{"Absorbs","Absorbs"},{"Interrupts","Interrupts"},{"Dispels","Dispels"},{"Taken","DamageTaken"}}
 local sessions={{"Current","Current"},{"Past","Expired"},{"Overall","Overall"}}
+local metricIcons={DPS="Ability_Warrior_SavageBlow",Damage="Ability_Warrior_Cleave",HPS="Spell_Holy_Heal",
+ Healing="Spell_Holy_HolyBolt",Absorbs="Spell_Holy_PowerWordShield",Interrupts="Ability_Kick",
+ Dispels="Spell_Holy_DispelMagic",Taken="INV_Shield_04"}
+local compactMetrics={DPS="DPS",Damage="Damage",HPS="HPS",Healing="Healing",Taken="Taken",Interrupts="Interrupt"}
 local skins={
- details={background={.016,.016,.018,.96},border={.17,.17,.19,1},accent={.65,.65,.68,1},rail={.035,.035,.04,.95},barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
- recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},barAlpha=.83,texture="Interface\\Buttons\\WHITE8X8"}
+ battle={background={.022,.016,.018,1},border={.51,.29,.16,1},accent={1,.64,.33,1},rail={.056,.035,.039,.96},
+  header={.17,.063,.045,1},band={.067,.028,.027,.98},value={.026,.012,.017,.82},art=.60,barAlpha=.96,
+  texture="Interface\\TargetingFrame\\UI-StatusBar"},
+ details={background={.016,.016,.018,.96},border={.17,.17,.19,1},accent={.65,.65,.68,1},rail={.035,.035,.04,.95},header={.055,.089,.13,1},band={.027,.044,.070,.98},value={.014,.025,.044,.86},art=.33,barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
+ recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},header={.15,.081,.11,1},band={.071,.044,.069,.98},value={.04,.019,.036,.84},art=.38,barAlpha=.87,texture="Interface\\Buttons\\WHITE8X8"}
 }
-local skinName="details"
-local function skin() return skins[skinName] or skins.details end
+local metricAccents={DPS={1,.67,.37},Damage={1,.67,.37},HPS={.54,1,.67},Healing={.54,1,.67},Absorbs={.55,.87,1},Interrupts={1,.81,.44},Dispels={.85,.72,1},Taken={1,.53,.49}}
+local skinName="battle"
+local function skin() return skins[skinName] or skins.battle end
 local elapsed=0
 local controls={}
 local function flatButton(parent)
@@ -314,18 +322,35 @@ local function build()
   if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_TOP");GameTooltip:SetText("Drag to resize • /fcmeter lock");GameTooltip:Show() end
  end)
  resizeGrip:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
- -- Compact title bar: native artwork and independently implemented controls.
+ -- The artwork is anchored to the header, so it follows the compact and wide layouts.
+ local function headerArtwork(parent,height)
+  local art=parent:CreateTexture(nil,"BORDER")
+  art:SetPoint("TOPLEFT",2,-2);art:SetPoint("TOPRIGHT",-2,-2);art:SetHeight(height)
+  local theme=ForeverCompanionVisualTheme
+  if theme and theme.PaintEnvironment then theme.PaintEnvironment(art,"Meter",skin().art,.08) end
+  return art
+ end
+ local function band(parent,y,height)
+  local texture=parent:CreateTexture(nil,"BACKGROUND",nil,1)
+  texture:SetPoint("TOPLEFT",1,y);texture:SetPoint("TOPRIGHT",-1,y);texture:SetHeight(height)
+  return texture
+ end
  local header=frame:CreateTexture(nil,"BACKGROUND")
  header:SetPoint("TOPLEFT",1,-1);header:SetPoint("TOPRIGHT",-1,-1);header:SetHeight(23)
- header:SetColorTexture(.065,.065,.07,.98)
+ header:SetColorTexture(unpack(skin().header));frame.meterHeader=header
+ frame.meterArt=headerArtwork(frame,22)
  local trim=frame:CreateTexture(nil,"BORDER")
  trim:SetPoint("TOPLEFT",0,0);trim:SetPoint("TOPRIGHT",0,0);trim:SetHeight(1)
  trim:SetColorTexture(.25,.25,.27,1);frame.meterTrim=trim
+ frame.columnBand=band(frame,-25,16)
  heading=ForeverCompanionInterface.Text(frame,12)
- heading:SetPoint("TOPLEFT",frame,"TOPLEFT",8,-5);heading:SetWidth(windowWidth-196)
+ heading:SetPoint("TOPLEFT",frame,"TOPLEFT",30,-5);heading:SetWidth(windowWidth-211)
+ heading:SetWordWrap(false)
+ frame.metricIcon=frame:CreateTexture(nil,"ARTWORK")
+ frame.metricIcon:SetPoint("TOPLEFT",6,-4);frame.metricIcon:SetSize(17,17)
  heading:SetHeight(16);heading:SetText("Damage / DPS")
  dragHandle=CreateFrame("Frame",nil,frame)
- dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",3,-2);dragHandle:SetSize(windowWidth-188,21)
+ dragHandle:SetPoint("TOPLEFT",frame,"TOPLEFT",3,-2);dragHandle:SetSize(windowWidth-185,21)
  dragHandle:EnableMouse(true);dragHandle:RegisterForDrag("LeftButton")
  dragHandle:SetScript("OnDragStart",function() if not saved().locked then frame:StartMoving() end end)
  dragHandle:SetScript("OnDragStop",function() frame:StopMovingOrSizing();savePosition(frame) end)
@@ -376,6 +401,13 @@ local function build()
  local range=ForeverCompanionInterface.Text(frame,10)
  range:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-19,5);range:SetWidth(70);range:SetJustifyH("RIGHT")
  frame.playerRange=range
+ local playerColumn=ForeverCompanionInterface.Text(frame,9)
+ playerColumn:SetPoint("TOPLEFT",8,-28);playerColumn:SetText("PLAYER")
+ local primary=ForeverCompanionInterface.Text(frame,9)
+ primary:SetJustifyH("RIGHT")
+ local secondary=ForeverCompanionInterface.Text(frame,9)
+ secondary:SetPoint("TOPRIGHT",-9,-28);secondary:SetJustifyH("RIGHT")
+ frame.playerColumn=playerColumn;frame.primaryColumn=primary;frame.secondaryColumn=secondary
  detailLabel=ForeverCompanionInterface.Text(frame,10);detailLabel:Hide()
  notice=ForeverCompanionInterface.Text(frame,10);notice:Hide()
  local footerRule=frame:CreateTexture(nil,"BORDER")
@@ -413,7 +445,7 @@ local function build()
   valueShade:SetPoint("TOPRIGHT",row,"TOPRIGHT",0,0)
   valueShade:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",0,0)
   valueShade:SetWidth(132)
-  valueShade:SetColorTexture(0,0,0,.28)
+  valueShade:SetColorTexture(unpack(skin().value))
   -- Readable text well over vivid class bars; preserve the class-colored fill.
   local nameShade=content:CreateTexture(nil,"OVERLAY")
   nameShade:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
@@ -435,11 +467,11 @@ local function build()
   valueDivider:SetPoint("TOPRIGHT",row,"TOPRIGHT",-111,-3)
   valueDivider:SetPoint("BOTTOMRIGHT",row,"BOTTOMRIGHT",-111,3)
   valueDivider:SetWidth(1)
-  valueDivider:SetColorTexture(1,1,1,0)
+  valueDivider:SetColorTexture(1,.84,.67,.22)
   local rank=content:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   rank:SetPoint("LEFT",row,"LEFT",2,0)
   rank:SetWidth(15)
-  rank:SetTextColor(.9,.94,.98)
+  rank:SetTextColor(1,.86,.67)
   rank:SetShadowOffset(1,-1)
   rank:SetText(i)
   local classIcon=content:CreateTexture(nil,"OVERLAY")
@@ -530,7 +562,7 @@ local function build()
   end)
   name:SetTextColor(1,1,1)
   amount:SetTextColor(1,1,1)
-  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail,rank=rank,rate=rate,valueShade=valueShade,selection=selection}
+  rows[i]={frame=row,fill=fill,name=name,amount=amount,accent=accent,background=bg,classIcon=classIcon,rail=rail,rank=rank,rate=rate,valueShade=valueShade,valueDivider=valueDivider,selection=selection}
   if i>rowCount then row:Hide() end
  end
  emptyTitle=ForeverCompanionInterface.Text(frame,14)
@@ -576,6 +608,8 @@ local function build()
   detailPanel:SetBackdropColor(.035,.055,.085,.96)
   detailPanel:SetBackdropBorderColor(.66,.48,.23,1)
  end
+ detailPanel.meterHeader=band(detailPanel,-1,61)
+ detailPanel.meterArt=headerArtwork(detailPanel,60)
  detailTitle=detailPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  detailTitle:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-12)
  detailTitle:SetText("PLAYER  /  DAMAGE DONE")
@@ -634,7 +668,7 @@ local function build()
  detailTrim:SetColorTexture(.85,.62,.29,1)
  detailTrim:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",1,-1)
  detailTrim:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-1,-1)
- detailTrim:SetHeight(3)
+ detailTrim:SetHeight(2);detailPanel.meterTrim=detailTrim
  local summaryPanel=CreateFrame("Frame",nil,detailPanel,"BackdropTemplate")
  summaryPanel:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-12,-130)
  summaryPanel:SetSize(216,270)
@@ -643,6 +677,8 @@ local function build()
   summaryPanel:SetBackdropColor(.025,.035,.055,.92)
   summaryPanel:SetBackdropBorderColor(.23,.29,.38,.9)
  end
+ detailPanel.summaryPanel=summaryPanel
+ detailPanel.summaryBand=band(summaryPanel,-1,31)
  local summaryHeading=summaryPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
  summaryHeading:SetPoint("TOPLEFT",summaryPanel,"TOPLEFT",12,-13)
  summaryHeading:SetText("Fight summary")
@@ -685,7 +721,7 @@ local function build()
   row:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",12,-130-(i-1)*34)
   local stripe=row:CreateTexture(nil,"BACKGROUND")
   stripe:SetAllPoints(row)
-  stripe:SetColorTexture(.04,.052,.069,i%2==0 and .6 or .95)
+  stripe:SetColorTexture(.06,.044,.046,i%2==0 and .72 or .93)
   local rank=ForeverCompanionInterface.Text(row,10)
   rank:SetPoint("LEFT",row,"LEFT",4,0);rank:SetWidth(16);rank:SetText(i)
   local icon=row:CreateTexture(nil,"ARTWORK")
@@ -721,7 +757,7 @@ local function build()
    if GameTooltip and (not GameTooltip.IsOwned or GameTooltip:IsOwned(self)) then GameTooltip:Hide() end
   end
   row:SetScript('OnLeave',hide);row:SetScript('OnHide',hide)
-  detailRows[i]={frame=row,label=label,value=value,icon=icon,bar=bar,percent=percent,rank=rank}
+  detailRows[i]={frame=row,label=label,value=value,icon=icon,bar=bar,percent=percent,rank=rank,stripe=stripe}
  end
  detailPanel:Hide()
  frame:Hide()
@@ -742,12 +778,28 @@ function M.SetSkin(name)
    detailPanel:SetBackdropColor(unpack(style.background))
    detailPanel:SetBackdropBorderColor(unpack(style.border))
   end
-  for _,entry in ipairs(detailRows) do entry.bar:SetStatusBarColor(unpack(style.accent)) end
+  frame.meterHeader:SetColorTexture(unpack(style.header))
+  frame.columnBand:SetColorTexture(unpack(style.band))
+  frame.meterArt:SetAlpha(style.art)
+  for _,label in ipairs({frame.playerColumn,frame.primaryColumn,frame.secondaryColumn}) do label:SetTextColor(unpack(style.accent)) end
+  if detailPanel then
+   detailPanel.meterHeader:SetColorTexture(unpack(style.header));detailPanel.meterArt:SetAlpha(style.art)
+   detailPanel.meterTrim:SetColorTexture(unpack(style.accent));detailPanel.summaryBand:SetColorTexture(unpack(style.band))
+   if detailPanel.summaryPanel.SetBackdropBorderColor then detailPanel.summaryPanel:SetBackdropBorderColor(unpack(style.border)) end
+  end
+  for i,entry in ipairs(detailRows) do
+   entry.bar:SetStatusBarColor(unpack(style.accent))
+   local r,g,b=unpack(style.rail)
+   local tint=i%2==0 and 1 or 1.32
+   entry.stripe:SetColorTexture(r*tint,g*tint,b*tint,.98)
+  end
   if frame.meterTrim then frame.meterTrim:SetColorTexture(unpack(style.accent)) end
   if heading then heading:SetText(metricNames[metrics[metricIndex][1]]) end
   for _,entry in ipairs(rows or {}) do
    entry.fill:SetStatusBarTexture(style.texture)
    entry.rail:SetColorTexture(unpack(style.rail))
+   entry.valueShade:SetColorTexture(unpack(style.value))
+   entry.selection:SetColorTexture(unpack(style.accent))
   end
  end
  M.Refresh()
@@ -769,7 +821,18 @@ end
 function M.Refresh()
  if not frame or not frame:IsShown() then return end
  applyReadability()
- heading:SetText(metricNames[metrics[metricIndex][1]])
+ local metric=metrics[metricIndex][1]
+ local rateMetric=metric=="DPS" or metric=="HPS"
+ local both=saved().showBoth~=false and (rateMetric or metric=="Damage" or metric=="Healing")
+ local totalWidth,rateWidth,nameWidth,shadeWidth=M.ValueWidths(windowWidth,both,saved().numberFormat=='exact')
+ heading:SetText(windowWidth<310 and (compactMetrics[metric] or metric) or metricNames[metric])
+ heading:SetTextColor(unpack(metricAccents[metric]))
+ frame.meterTrim:SetColorTexture(unpack(metricAccents[metric]))
+ frame.metricIcon:SetTexture("Interface\\Icons\\"..metricIcons[metric])
+ frame.primaryColumn:ClearAllPoints()
+ frame.primaryColumn:SetPoint("TOPRIGHT",both and -(rateWidth+14) or -9,-28)
+ frame.primaryColumn:SetText(both and "TOTAL" or (rateMetric and "PER SEC" or "TOTAL"))
+ frame.secondaryColumn:SetText("PER SEC");frame.secondaryColumn:SetShown(both)
  frame.resizeGrip:SetShown(not saved().locked)
  emptyTitle:ClearAllPoints();emptyTitle:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-30));emptyTitle:SetWidth(windowWidth-28)
  emptyBody:ClearAllPoints();emptyBody:SetPoint("TOP",frame,"TOP",0,-(ROW_TOP+rowCount*ROW_STEP/2-2));emptyBody:SetWidth(windowWidth-36)
@@ -857,11 +920,13 @@ function M.Refresh()
    -- Direct display is permitted for secret strings/numbers; do not format or compare them.
    -- No Lua boolean tests, comparisons or formatting on secret source values.
    row.name:SetText(M.DisplayName(source.name))
-   local metric=metrics[metricIndex][2]
-   local rateMetric=metric=="Dps" or metric=="Hps"
-   local both=saved().showBoth~=false and (rateMetric or metric=="DamageDone" or metric=="HealingDone")
    row.rate:SetShown(both)
-   local totalWidth,rateWidth,nameWidth,shadeWidth=M.ValueWidths(windowWidth,both,saved().numberFormat=='exact')
+   row.valueDivider:SetShown(both)
+   if both then
+    row.valueDivider:ClearAllPoints()
+    row.valueDivider:SetPoint("TOPRIGHT",row.frame,"TOPRIGHT",-(rateWidth+8),-3)
+    row.valueDivider:SetPoint("BOTTOMRIGHT",row.frame,"BOTTOMRIGHT",-(rateWidth+8),3)
+   end
    row.rate:SetWidth(rateWidth)
    row.amount:ClearAllPoints()
    row.amount:SetPoint("RIGHT",row.frame,"RIGHT",both and -(rateWidth+10) or -5,0)
@@ -904,8 +969,9 @@ function M.Refresh()
     row.fill:SetStatusBarColor(color.r,color.g,color.b,skin().barAlpha)
     row.accent:SetColorTexture(color.r,color.g,color.b,1)
    else
-    row.fill:SetStatusBarColor(.18,.72,.87,.68)
-    row.accent:SetColorTexture(.18,.83,.96,1)
+    local r,g,b=unpack(metricAccents[metric])
+    row.fill:SetStatusBarColor(r,g,b,.66)
+    row.accent:SetColorTexture(r,g,b,1)
    end
    -- In-combat percentage may be secret. Avoid Lua arithmetic entirely.
    -- The session may omit a maximum; only pass known-safe values to the bar.
@@ -1116,7 +1182,7 @@ function M.SetWidth(width)
  windowWidth=width
  if frame then
   frame:SetWidth(width)
-  heading:SetWidth(width-196);dragHandle:SetWidth(width-188)
+  heading:SetWidth(width-211);dragHandle:SetWidth(width-185)
   notice:SetWidth(width-68)
   if frame.meterFooter then frame.meterFooter:SetWidth(width-92) end
   for _,row in ipairs(rows) do
@@ -1306,6 +1372,7 @@ function M.OpenOptions(anchor)
   end
   ForeverCompanionInterface.Menu(anchor or optionsButton,'METER REFRESH RATE',choices,skin())
  end}
+ entries[#entries+1]={label='Citadel skin',selected=skinName=='battle',action=function() M.SetSkin('battle') end}
  entries[#entries+1]={label='Details-inspired skin',selected=skinName=='details',action=function() M.SetSkin('details') end}
  entries[#entries+1]={label='Recount-inspired skin',selected=skinName=='recount',action=function() M.SetSkin('recount') end}
  entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
@@ -1313,7 +1380,7 @@ function M.OpenOptions(anchor)
  entries[#entries+1]={label='Reset window appearance',action=function()
   saved().locked=false;saved().position=nil;saved().numberFormat='compact';saved().hideRealm=false;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
   M.ResetDetailPosition()
-  M.SetSkin('details');M.SetLayout('standard');rowOffset=0
+  M.SetSkin('battle');M.SetLayout('standard');rowOffset=0
   frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()
  end}
  entries[#entries+1]={label='Reset combat data...',action=function() M.RequestReset(anchor) end}
@@ -1347,7 +1414,7 @@ SlashCmdList.FOREVERCOMPANIONMETER=function(msg)
  elseif msg=="compact" or msg=="standard" or msg=="expanded" then
   M.SetLayout(msg)
   M.Show()
- elseif msg=="skin details" or msg=="skin recount" then
+ elseif msg=="skin details" or msg=="skin recount" or msg=="skin battle" then
   M.SetSkin(msg:match("^skin%s+(%w+)$"))
   M.Show()
  elseif msg=="details" then
