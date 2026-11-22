@@ -146,7 +146,9 @@ function B.Render(tab,class,db)
   rotationHeight=tonumber(ForeverCompanionRotationWorkspace.GetHeight()) or 0
   if rotationHeight~=rotationHeight or rotationHeight<0 or rotationHeight>2000 then rotationHeight=0 end
  end
- root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Leveling" and -(194+rotationHeight) or -5)
+ local activity=ForeverCompanionActivityWorkspace
+ local offset=tab=="Leveling" and 194+rotationHeight or (activity and activity.GetHeight() or 0)+18
+ root:SetPoint("TOPLEFT",host,"TOPLEFT",8,-offset)
  local accent=B.Accent(tab,class)
  heading:SetText(state.title)
  heading:SetTextColor(accent[1],accent[2],accent[3])

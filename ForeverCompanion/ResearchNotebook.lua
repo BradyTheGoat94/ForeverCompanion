@@ -111,7 +111,9 @@ function N.Render(tab,db,reload)
   for name,edit in pairs(fields) do edit:SetText(entry[name]) end
   status:SetText(current.dirty and "Unsaved draft restored. Save before reloading the UI; Escape discards this draft." or "Personal notes only; no source, mechanic or client compatibility is verified here.")
  end
- root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,tab=="Dungeons" and -728 or -395)
+ local activity=ForeverCompanionActivityWorkspace
+ local offset=tab=="Dungeons" and 728 or (activity and activity.GetHeight() or 0)+18
+ root:ClearAllPoints();root:SetPoint("TOPLEFT",host,"TOPLEFT",8,-offset)
  heading:SetText("PERSONAL RESEARCH / "..(tab=="Dungeons" and "SELECTED BOSS" or string.upper(tab)).." / NOT VERIFIED")
  root:Show()
 end

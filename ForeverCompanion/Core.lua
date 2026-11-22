@@ -6,7 +6,7 @@ local ROTATIONS = ForeverCompanionRotations
 local rotationModes={"leveling","dungeon","boss","aoe","pvp"}
 local rotationMode=1
 local rotationButton, rotationIcon, rotationDescription, specButton
-local DB, window, titleText, content, currentTab, headerMeta
+local DB, window, titleText, currentTab, headerMeta
 ForeverCompanionLootUI = ForeverCompanionLootUI or {query="", selectedIndex=1, dungeon="", boss="", savedOnly=false}
 local tabs = {"Overview", "Journey", "Leveling", "Training", "Legacy", "Alts", "Quests", "Dungeons", "Loot", "Professions", "Bank", "PvP", "Settings"}
 local classNames = {WARRIOR="Warrior", PALADIN="Paladin", HUNTER="Hunter", ROGUE="Rogue", PRIEST="Priest", SHAMAN="Shaman", MAGE="Mage", WARLOCK="Warlock", DRUID="Druid"}
@@ -148,14 +148,15 @@ local function render()
   local notesButton=ForeverCompanionUIState.professionNotesButton
   if notesButton then
     if currentTab=="Professions" then
-      notesButton:SetText(ForeverCompanionUIState.showProfessionNotes and "Hide detailed notes" or "Show detailed notes")
+      notesButton:SetText("Profession reference")
       notesButton:Show()
     else notesButton:Hide() end
   end
   if sectionHeader then
     if isOverview or isJournal or currentTab=="Leveling" then sectionHeader:Hide()
     else
-      sectionTitle:SetText(currentTab=='Quests' and 'QUEST JOURNAL' or (string.upper(currentTab).." GUIDE"))
+      local titles={Quests='Quest journal',PvP='PvP preparation',Alts='Alt leveling'}
+      sectionTitle:SetText(titles[currentTab] or currentTab)
       sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
       sectionMeta:SetWidth(currentTab=="Professions" and 610 or 755)
       sectionIcon:SetTexture(sectionIcons[currentTab] or "Interface\\Icons\\INV_Misc_Book_09")
@@ -179,9 +180,15 @@ local function render()
   end
   if ForeverCompanionLootWorkspace then ForeverCompanionLootWorkspace.Render(currentTab,DB,currentTab=="Loot" and lootMatches() or {}) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Render(currentTab,DB) end
-  if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Render(currentTab,DB) end
+  ForeverCompanionActivityWorkspace.Render(currentTab)
+  local isActivityPage=currentTab=="Legacy" or currentTab=="Alts"
+  local activityView=ForeverCompanionActivityWorkspace.View(currentTab)
+  if ForeverCompanionResearchNotebook then
+    local notebookTab=(not isActivityPage or activityView=="notes") and currentTab or ""
+    ForeverCompanionResearchNotebook.Render(notebookTab,DB)
+  end
   if ForeverCompanionStudyBoard then
-    local studyTab=currentTab
+    local studyTab=(not isActivityPage or activityView=="practice") and currentTab or ""
     if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then studyTab="" end
     ForeverCompanionStudyBoard.Render(studyTab,classToken(),DB)
   end
@@ -297,30 +304,8 @@ local function render()
     else sortButton:Hide() end
   end
   local lines = {}
-  if currentTab == "Overview" then
-    lines = {"YOUR ADVENTURE AT A GLANCE", "Recommended next steps", "1. Review your current quests in the Quest Planner.", "2. Open Leveling for class-specific ability priorities.", "3. Track crafting materials and profession goals.", "All suggestions are advisory. You remain in control."}
-    if ForeverCompanionCraftingPlanner then lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary() end
-    if ForeverCompanionReadiness then lines[#lines+1]=ForeverCompanionReadiness.Format(classToken(),level(),(DB and DB.professions or "")) end
-    if ForeverCompanionDiagnostics then lines[#lines+1]=ForeverCompanionDiagnostics.Collect() end
-  elseif currentTab == "Loot" then
-    lines = {}
-  elseif currentTab == "Legacy" then
-    lines = {"LEGACY SYSTEM / BLIZZARD LAUNCH REFERENCE",
-      "Unlock: Earn a Legacy Point at level 25 or 150 skill in a non-gathering primary profession. Open the Legacy shield or press Y.",
-      "Earn points: Class levels 25, 45 and 60. Profession skill 150, 225 and 300. Each eligible milestone awards one account-wide point.",
-      "Spend points: Choose perks per character. The launch cap of 16 points is reachable on one character.",
-      "REWARDS: Account-wide point totals unlock cosmetics. Check the client for current thresholds and ruleset restrictions.",
-      "Source: https://worldofwarcraft.blizzard.com/en-us/news/24307383",
-      "Based on Blizzard’s launch guide."}
-  elseif currentTab == "Alts" then
-    lines = {"ALT LEVELING / PLANNING GUIDE",
-      "Legacy perks: Check Well Rested for rested XP and Talented for earlier talents. Choose perks separately on each character.",
-      "Milestones: Review class challenges at levels 25, 45 and 60.",
-      "Before you start: Check rested XP, bags, class training and dungeon requirements.",
-      "Source: https://worldofwarcraft.blizzard.com/en-us/news/24307383",
-      "Checklist and notes are saved per character."}
-  elseif currentTab == "Leveling" then
-    if ForeverCompanionClassGuide.GetView()=="Rotations" and ForeverCompanionRotationWorkspace.ShowReference() then
+  if currentTab == "Leveling" then
+    if ForeverCompanionClassGuide.GetView()=="Rotations" and ForeverCompanionRotationWorkspace.TakeReferenceRequest() then
       lines = {"CLASS GUIDANCE",experienceText(),
         "ALT LEVELING: The Alt Leveling and Legacy pages explain shared points, character-specific perks and practical preparation."}
       -- Put the immediately actionable, spec-specific steps first in the
@@ -538,12 +523,8 @@ local function render()
     local live=ForeverCompanionQuestPlanner.GetLive()
     local visible=ForeverCompanionQuestTracker.Search(ForeverCompanionQuestPlanner.GetVisible(),questQuery)
     local focused,selectedIndex=ForeverCompanionQuestPlanner.GetSelected()
-    lines = #ForeverCompanionQuestPlanner.GetAll()>0 and {ForeverCompanionQuestPlanner.Format()} or {}
-    if not ForeverCompanionQuestPlanner.IsSupported() then
-      table.insert(lines,1,"Quest-log API unavailable: automatic tracking needs client verification.")
-    end
     if questSectionLabel then
-      questSectionLabel:SetText("ACTIVE QUESTS · Select a quest to update your next step")
+      questSectionLabel:SetText("Active quests")
       questSectionLabel:Show()
     end
     if filterButton then filterButton:SetText(ForeverCompanionQuestPlanner.FilterLabels[ForeverCompanionQuestPlanner.GetFilter()]) end
@@ -555,8 +536,10 @@ local function render()
       local q=item.quest
       local btn=questRows[i]
       local selected=selectedIndex==absoluteIndex
-      btn.title:SetText((selected and "> " or "  ")..(ForeverCompanionQuestPlanner.IsPinned(q) and "[PIN] " or "")..clipText(q.title,47))
-      btn.zone:SetText(clipText(q.zone or "Zone unavailable",23))
+      local pinned=ForeverCompanionQuestPlanner.IsPinned(q)
+      btn.icon:SetTexture(pinned and "Interface\\Icons\\INV_Misc_Map_01" or q.complete and "Interface\\GossipFrame\\ActiveQuestIcon" or "Interface\\Icons\\INV_Misc_Note_01")
+      btn.title:SetText(q.title or "Unnamed quest")
+      btn.zone:SetText(q.zone or "Zone unavailable")
       local total=#(q.objectives or {})
       local finished=0
       for _,objective in ipairs(q.objectiveStates or {}) do
@@ -577,7 +560,8 @@ local function render()
         colorTexture(self.bg,.11,.14,.19,1)
         if GameTooltip then
           GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-          GameTooltip:SetText(q.title or "Quest",1,0.8,0.3)
+          GameTooltip:SetText(q.title or "Quest",1,0.8,0.3,true)
+          if pinned then GameTooltip:AddLine("Pinned quest",.92,.79,.48) end
           if q.zone then GameTooltip:AddLine(q.zone..(q.id and (" · #"..q.id) or ""),0.8,0.8,0.8) end
           for j=1,math.min(12,#(q.objectives or {})) do
             local state=q.objectiveStates and q.objectiveStates[j]
@@ -603,101 +587,73 @@ local function render()
     if pageBack then pageBack:ClearAllPoints();pageBack:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-pageY) end
     if pageLabel then pageLabel:SetText(questPage.." / "..pages.." · "..#visible.." quests") end
     if pageBack then pageBack:SetEnabled(questPage>1); pageForward:SetEnabled(questPage<pages) end
-  elseif currentTab == "Settings" then
-    lines = {}
-  else
-    lines = (currentTab=="Dungeons" or currentTab=="PvP" or currentTab=="Professions") and {} or {string.upper(currentTab).." CHECKLIST"}
-    local entries = DATA.checklist[currentTab] or {}
-    if #entries==0 then lines={} end
-    for i, item in ipairs(entries) do
-      local done = DB.checks and DB.checks[currentTab] and DB.checks[currentTab][i]
-      if currentTab~="Dungeons" and currentTab~="PvP" and currentTab~="Professions" then lines[#lines+1]=(done and "[x] " or "[ ] ")..item end
-      if checkButtons[i] then
-        local button=checkButtons[i]
-        button:SetText((done and "[x]  " or "[ ]  ")..item)
+  elseif currentTab == "Professions" then
+    local entries=DATA.checklist.Professions or {}
+    for i,item in ipairs(entries) do
+      local done=DB.checks and DB.checks.Professions and DB.checks.Professions[i]
+      local button=checkButtons[i]
+      if button then
+        button:SetText((done and "Done  /  " or "")..item)
         button:ClearAllPoints();button:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-(284+ForeverCompanionMaterialWorkspace.GetHeight()+(i-1)*33))
         button:GetFontString():SetJustifyH("LEFT")
         ForeverCompanionInterface.StyleButton(button,nil,done)
-        if professionChecklistHeading then
-          professionChecklistHeading:ClearAllPoints();professionChecklistHeading:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-(256+ForeverCompanionMaterialWorkspace.GetHeight()))
-          professionChecklistHeading:SetShown(currentTab=="Professions")
-        end
-        if currentTab=="Dungeons" or currentTab=="PvP" then checkButtons[i]:Hide() else checkButtons[i]:Show() end
+        button:Show()
       end
     end
-    if currentTab == "Dungeons" then
-      if ForeverCompanionDungeonPreparation then
-        lines[#lines+1]=ForeverCompanionDungeonPreparation.LaunchReference(level())
-        lines[#lines+1]=ForeverCompanionDungeonPreparation.Format(DB.role)
-      end
-      if DB.role and DATA.roleAdvice and DATA.roleAdvice[DB.role] then
-        lines[#lines+1]="YOUR ROLE PREPARATION"
-        for _,tip in ipairs(DATA.roleAdvice[DB.role]) do lines[#lines+1]="- "..tip end
-      end
-      lines[#lines+1]="Boss drops in the journal are source references. Check the live game for current drops and tactics."
-
-    elseif currentTab == "Professions" then
-      local showNotes=ForeverCompanionUIState.showProfessionNotes
-      if showNotes and ForeverCompanionProfessionProgress and ForeverCompanionProfessionProgress.FormatOverview then
+    if professionChecklistHeading then
+      professionChecklistHeading:ClearAllPoints();professionChecklistHeading:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",8,-(256+ForeverCompanionMaterialWorkspace.GetHeight()))
+      professionChecklistHeading:Show()
+    end
+    local showNotes=ForeverCompanionUIState.professionReferenceRequested
+    ForeverCompanionUIState.professionReferenceRequested=nil
+    local guide=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
+    if showNotes and guide then
+      if ForeverCompanionProfessionProgress and ForeverCompanionProfessionProgress.FormatOverview then
         lines[#lines+1]=ForeverCompanionProfessionProgress.FormatOverview()
-      elseif showNotes and ForeverCompanionProfessionScanner then
+      elseif ForeverCompanionProfessionScanner then
         lines[#lines+1]=ForeverCompanionProfessionScanner.Format()
       end
-      local guide=DATA.professionHandbook and DATA.professionHandbook[professionIndex]
-      if guide then
-        lines[#lines+1]=guide.name.."  •  Pairs with "..guide.pair
-        lines[#lines+1]=guide.summary
-        if showNotes and ForeverCompanionProfessionFieldGuide then lines[#lines+1]=ForeverCompanionProfessionFieldGuide.Format(guide.name) end
-        if showNotes and ForeverCompanionCampingGuide then lines[#lines+1]=ForeverCompanionCampingGuide.Format(guide.name) end
-        if showNotes and ForeverCompanionCampingReadiness then lines[#lines+1]=ForeverCompanionCampingReadiness.ForProfession(guide.name) end
-        if showNotes and ForeverCompanionProfessionProgress then
-          lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
-          lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
-        end
-        if ForeverCompanionCraftingPlanner then
-          if showNotes then
-            lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
-            lines[#lines+1]=ForeverCompanionCraftingPlanner.ShoppingSummary(5)
-            lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
-          end
-        end
-        if showNotes and ForeverCompanionRecipePlans then
-          lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
-          lines[#lines+1]=ForeverCompanionRecipePlans.FormatForecast(guide.name)
-          if ForeverCompanionCraftCosts then lines[#lines+1]=ForeverCompanionCraftCosts.Format(guide.name) end
-          if ForeverCompanionShoppingBudget then lines[#lines+1]=ForeverCompanionShoppingBudget.Format(guide.name) end
-          if ForeverCompanionCraftingAdvice then lines[#lines+1]=ForeverCompanionCraftingAdvice.Format(guide.name)
-            lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatAllocation(guide.name)
-            lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatGatherList(guide.name,8) end
-        end
-        if showNotes and ForeverCompanionCraftingBridge then
-          lines[#lines+1]=ForeverCompanionCraftingBridge.Preview(guide.name)
-        end
-        for i,step in ipairs(guide.steps) do lines[#lines+1]=i..". "..step end
-        local deep=showNotes and ADVANCED and ADVANCED.crafting[guide.name]
-        if deep then
-          lines[#lines+1]="CRAFTING PROGRESSION (GENERAL REFERENCE)"
-          lines[#lines+1]="Materials: "..deep.materials.."  |  Output: "..deep.output
-          for i,step in ipairs(deep.stages) do lines[#lines+1]=i..". "..step end
-        end
-        for i,button in ipairs(handbookButtons) do
-          local entry=DATA.professionHandbook[i]
-          if entry then
-            button.label:SetText(clipText(entry.name,18))
-            button.icon:SetTexture(entry.icon)
-            local selected=professionIndex==i
-            ForeverCompanionVisualTheme.SelectRow(button,button.bg,selected)
-            colorTexture(button.trim,.82,.68,.43,0)
-            button.selected=selected
-            button:SetScript("OnClick",function() professionIndex=i; render() end)
-            button:Show()
-          end
+      lines[#lines+1]={title="Profession pairing",body=guide.pair.."\n\n"..guide.summary}
+      lines[#lines+1]={title="Preparation steps",body=table.concat(guide.steps,"\n\n")}
+      if ForeverCompanionProfessionFieldGuide then lines[#lines+1]=ForeverCompanionProfessionFieldGuide.Format(guide.name) end
+      if ForeverCompanionCampingGuide then lines[#lines+1]=ForeverCompanionCampingGuide.Format(guide.name) end
+      if ForeverCompanionCampingReadiness then lines[#lines+1]=ForeverCompanionCampingReadiness.ForProfession(guide.name) end
+      if ForeverCompanionProfessionProgress then
+        lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfession(guide.name)
+        lines[#lines+1]=ForeverCompanionProfessionProgress.ForProfessionNextSteps(guide.name)
+      end
+      if ForeverCompanionCraftingPlanner then
+        lines[#lines+1]=ForeverCompanionCraftingPlanner.Summary()
+        lines[#lines+1]=ForeverCompanionCraftingPlanner.ShoppingSummary(5)
+        lines[#lines+1]=ForeverCompanionCraftingPlanner.Format(guide.name)
+      end
+      if ForeverCompanionRecipePlans then
+        lines[#lines+1]=ForeverCompanionRecipePlans.Format(guide.name)
+        lines[#lines+1]=ForeverCompanionRecipePlans.FormatForecast(guide.name)
+        if ForeverCompanionCraftCosts then lines[#lines+1]=ForeverCompanionCraftCosts.Format(guide.name) end
+        if ForeverCompanionShoppingBudget then lines[#lines+1]=ForeverCompanionShoppingBudget.Format(guide.name) end
+        if ForeverCompanionCraftingAdvice then
+          lines[#lines+1]=ForeverCompanionCraftingAdvice.Format(guide.name)
+          lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatAllocation(guide.name)
+          lines[#lines+1]=ForeverCompanionCraftingAdvice.FormatGatherList(guide.name,8)
         end
       end
-      if showNotes then lines[#lines+1]="Set your professions with /fc professions <names>." end
-    elseif currentTab == "PvP" then
-      if ForeverCompanionPvPPreparation then lines[#lines+1]=ForeverCompanionPvPPreparation.Format(classToken()) end
-      lines[#lines+1] = "Use game-supported tools and coordinate objectives with your group."
+      if ForeverCompanionCraftingBridge then lines[#lines+1]=ForeverCompanionCraftingBridge.Preview(guide.name) end
+      local deep=ADVANCED and ADVANCED.crafting[guide.name]
+      if deep then lines[#lines+1]={title="Crafting progression",body="Materials: "..deep.materials.."  /  Output: "..deep.output.."\n\n"..table.concat(deep.stages,"\n\n")} end
+    end
+    for i,button in ipairs(handbookButtons) do
+      local entry=DATA.professionHandbook[i]
+      if entry then
+        button.label:SetText(entry.name)
+        button.icon:SetTexture(entry.icon)
+        local selected=professionIndex==i
+        ForeverCompanionVisualTheme.SelectRow(button,button.bg,selected)
+        colorTexture(button.trim,.82,.68,.43,0)
+        button.selected=selected
+        button:SetScript("OnClick",function() professionIndex=i;render() end)
+        button:Show()
+      end
     end
   end
   if pageBack then if currentTab=="Quests" then pageBack:Show(); pageForward:Show(); pageLabel:Show() else pageBack:Hide(); pageForward:Hide(); pageLabel:Hide() end end
@@ -712,15 +668,17 @@ local function render()
   ForeverCompanionQuestBook.Show(showExplorer and questExplorerView~='discover',scrollChild,explorerOffset+35,questExplorerView)
   if questDiscoveryButton then questDiscoveryButton:SetShown(currentTab=="Quests") end
   if ForeverCompanionUIState.questFieldGuideButton then ForeverCompanionUIState.questFieldGuideButton:SetShown(currentTab=='Quests') end
-  content:SetText(table.concat(lines, "\n\n"))
-  content:ClearAllPoints()
-  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+(showExplorer and (35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight())) or 0),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=646,Alts=646}
+  if #lines>0 then
+    local title=currentTab=="Leveling" and classLabel() or DATA.professionHandbook[professionIndex].name
+    ForeverCompanionReferenceWorkspace.Open(title.." reference",lines)
+  end
+  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+(showExplorer and (35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight())) or 0),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=ForeverCompanionActivityWorkspace.GetHeight(),Alts=ForeverCompanionActivityWorkspace.GetHeight()}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
   if currentTab=="Leveling" and ForeverCompanionClassGuide.GetView()~="Rotations" then offset=198+ForeverCompanionClassGuide.GetTopicHeight() end
-  content:SetPoint("TOPLEFT",scrollChild,"TOPLEFT",5,-offset)
-  if scrollChild then scrollChild:SetHeight(math.max(420,(tonumber(content:GetStringHeight()) or 0)+offset+30)) end
+  if isActivityPage then offset=offset+(activityView=="practice" and 401 or activityView=="notes" and 252 or 0) end
+  if scrollChild then scrollChild:SetHeight(math.max(420,offset+30)) end
   if ForeverCompanionUIState.updateScrollHint then ForeverCompanionUIState.updateScrollHint() end
   -- Keep the player's current scroll position during refresh.
   if ForeverCompanionUIState.classButton then ForeverCompanionUIState.classButton:SetText("Class: "..classLabel()) end
@@ -1063,9 +1021,10 @@ local function createUI()
   professionNotes:SetSize(150,24)
   professionNotes:SetPoint("RIGHT",sectionHeader,"RIGHT",-12,0)
   professionNotes:SetScript("OnClick",function()
-    ForeverCompanionUIState.showProfessionNotes=not ForeverCompanionUIState.showProfessionNotes
+    ForeverCompanionUIState.professionReferenceRequested=true
     render()
   end)
+  ForeverCompanionInterface.SetHoverHelp(professionNotes,"Profession reference","Browse training, camping, gathering and planning notes for the selected profession.")
   ForeverCompanionUIState.professionNotesButton=professionNotes
   professionNotes:Hide()
   sectionHeader:Hide()
@@ -1097,6 +1056,7 @@ local function createUI()
   end
   if ForeverCompanionStudyBoard then ForeverCompanionStudyBoard.Create(child,openSection) end
   if ForeverCompanionEncounterBrowser then ForeverCompanionEncounterBrowser.Create(child,openSection,function() scroll:SetVerticalScroll(420) end) end
+  ForeverCompanionActivityWorkspace.Create(child,openSection,function() return DB end)
   if ForeverCompanionResearchNotebook then ForeverCompanionResearchNotebook.Create(child) end
   if ForeverCompanionBankView then ForeverCompanionBankView.Create(child) end
   if ForeverCompanionJourney then ForeverCompanionJourney.Create(child,openSection) end
@@ -1167,6 +1127,7 @@ local function createUI()
       db=function() return DB end,
       classToken=classToken,
       classLabel=classLabel,
+      level=level,
       role=function() return DB and DB.role end
     })
   end
@@ -1299,8 +1260,6 @@ local function createUI()
   end
   ForeverCompanionMaterialWorkspace.Create(child,render)
   ForeverCompanionLootWorkspace.Create(child,openSection,render)
-  content = child:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  content:SetPoint("TOPLEFT", 5, -5)
   questSectionLabel=child:CreateFontString(nil,"OVERLAY","GameFontNormal")
   questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-160)
   questSectionLabel:SetTextColor(.82,.68,.43)
@@ -1317,9 +1276,11 @@ local function createUI()
     row.trim:SetPoint("TOPLEFT",row,"TOPLEFT",0,0)
     row.trim:SetSize(3,32)
     colorTexture(row.trim,0.30,0.28,0.21,1)
+    row.icon=row:CreateTexture(nil,"ARTWORK")
+    row.icon:SetPoint("LEFT",row,"LEFT",10,0);row.icon:SetSize(18,18)
     row.title=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    row.title:SetPoint("LEFT",row,"LEFT",13,0)
-    row.title:SetWidth(460)
+    row.title:SetPoint("LEFT",row,"LEFT",38,0)
+    row.title:SetWidth(435)
     row.title:SetJustifyH("LEFT")
     row.title:SetTextColor(.91,.94,.98);row.title:SetWordWrap(false);row.title:SetHeight(17)
     ForeverCompanionVisualTheme.Font(row.title,12)
@@ -1339,11 +1300,6 @@ local function createUI()
   end
   questEmpty=ForeverCompanionInterface.Text(child,14)
   questEmpty:SetPoint("TOPLEFT",child,"TOPLEFT",24,-252);questEmpty:SetWidth(710);questEmpty:SetHeight(65);questEmpty:SetWordWrap(true);questEmpty:SetJustifyH("CENTER");questEmpty:Hide()
-  content:SetWidth(760)
-  ForeverCompanionVisualTheme.Font(content,13)
-  if content.SetSpacing then content:SetSpacing(4) end
-  content:SetJustifyH("LEFT")
-  content:SetJustifyV("TOP")
   ForeverCompanionUIState.questFocusText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
   ForeverCompanionUIState.questFocusText:SetPoint("BOTTOMLEFT",220,83)
   ForeverCompanionUIState.questFocusText:SetWidth(385)

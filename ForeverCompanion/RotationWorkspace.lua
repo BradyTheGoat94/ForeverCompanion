@@ -65,9 +65,10 @@ function W.Create(parent,selectMode)
  W.reference=ForeverCompanionInterface.Button(rail)
  W.reference:SetSize(158,25);W.reference:SetPoint("TOPLEFT",rail,"TOPLEFT",11,-299)
  W.reference:SetScript("OnClick",function()
-  showReference=not showReference
+  showReference=true
   ForeverCompanionRefresh()
  end)
+ ForeverCompanionInterface.SetHoverHelp(W.reference,"Class reference","Browse spell, travel, unlock and training notes in a separate window.")
  prioritiesPanel=plate(root,192,0,578,302,"What to Press")
  heading=text(prioritiesPanel,14,-44,550,"",14)
  notice=text(prioritiesPanel,14,-66,550,"",11)
@@ -98,7 +99,11 @@ function W.GetHeight()
  return root and root:GetHeight() or 339
 end
 
-function W.ShowReference() return showReference end
+function W.TakeReferenceRequest()
+ local requested=showReference
+ showReference=nil
+ return requested
+end
 
 local function priorityRow(index)
  local row=W.rows[index]
@@ -178,7 +183,7 @@ function W.Render(tab,class,mode,level,role,fallback,playerClass)
  if not root then return end
  if tab~="Leveling" then root:Hide();return end
  root:Show()
- W.reference:SetText(showReference and "Hide guide notes" or "More guide notes")
+ W.reference:SetText("Class reference")
  local instructions,title,hint,source,primary,summary=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
  local plan,learned,missing=W.Plan(instructions,primary,playerClass,class,summary)
  if lastClass~=class then lastClass=class;search:SetText('') end

@@ -58,6 +58,22 @@ local function navButton(parent,x,title,target)
   return b
 end
 
+local function openPreparation()
+  local topics={}
+  local role=safe(context and context.role)
+  local token=safe(context and context.classToken)
+  if section=='Dungeons' then
+    local guide=ForeverCompanionDungeonPreparation
+    topics={{title='Suggested dungeon levels',body=guide.LaunchReference(safe(context and context.level))},
+      {title='Role readiness',body=guide.Format(role)}}
+    local advice=ForeverCompanionData and ForeverCompanionData.roleAdvice
+    if advice and advice[role] then topics[#topics+1]={title='Preparing for your role',body=table.concat(advice[role],'\n\n')} end
+  elseif section=='PvP' then
+    topics={{title='Class and team guidance',body=ForeverCompanionPvPPreparation.Format(token)}}
+  end
+  ForeverCompanionReferenceWorkspace.Open(section=='PvP' and 'PvP preparation' or 'Dungeon preparation',topics)
+end
+
 -- Pure, deterministic checklist summary for offline tests and honest UI labels.
 function Briefing.Summary(tasks,checked)
   tasks=type(tasks)=="table" and tasks or {}
@@ -84,6 +100,10 @@ function Briefing.Create(parent,openPage,ctx)
   emblem:SetSize(27,27)
   labels.icon=emblem
   labels.heading=label(left,50,-17,310,"PREPARATION CHECKLIST","GameFontNormal",GOLD)
+  local details=ForeverCompanionInterface.Button(right)
+  details:SetPoint('TOPRIGHT',right,'TOPRIGHT',-12,-7);details:SetSize(128,23);details:SetText('Preparation notes')
+  details:SetScript('OnClick',openPreparation)
+  ForeverCompanionInterface.SetHoverHelp(details,'Preparation notes','Browse role guidance and other preparation details for this page.')
   labels.count=label(left,15,-55,344,"Manual checklist not loaded","GameFontHighlight",PALE)
   labels.next=label(left,15,-80,344,"Next step unavailable","GameFontHighlightSmall",MUTED)
   strip(left,15,-108,BAR_WIDTH,9,{0.19,0.24,0.30,1})
@@ -92,10 +112,9 @@ function Briefing.Create(parent,openPage,ctx)
   labels.note=label(left,15,-133,345,"Manual planning only; no game-state changes","GameFontHighlightSmall",MUTED)
   label(right,15,-17,345,"CLASS & ROLE GUIDANCE","GameFontNormal",GOLD)
   labels.class=label(right,15,-46,346,"Class and role not available","GameFontHighlight",PALE)
-  labels.tip=label(right,15,-70,346,"Reference advice appears here","GameFontHighlightSmall",MUTED)
-  labels.roleTip=label(right,15,-100,346,"Verify mechanics in your game client","GameFontHighlightSmall",{0.91,0.73,0.43,1})
-  navButton(right,15,"OPEN CLASS GUIDE","Leveling")
-  navButton(right,203,"OPEN QUEST JOURNAL","Quests")
+  labels.tip=label(right,15,-76,346,"","GameFontHighlightSmall",MUTED)
+  ForeverCompanionInterface.SetHoverHelp(navButton(right,15,"Class guide","Leveling"),"Class and role guidance",function() return labels.guidance or "" end)
+  ForeverCompanionInterface.SetHoverHelp(navButton(right,203,"Quest journal","Quests"),"Quest journal","Open objectives and quest turn-ins.")
   -- Four real, clickable checklist tiles below the briefing cards.
   -- They only modify per-character SavedVariables; no game API is called.
   for i=1,4 do
@@ -128,9 +147,15 @@ function Briefing.Create(parent,openPage,ctx)
     end)
     button:SetScript("OnEnter",function(self)
       paint(self.bg,.075,.09,.115,1)
+      if GameTooltip and self.task then
+        GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:SetText(self.task,1,.83,.50,true)
+        GameTooltip:AddLine(self.checked and "Click to mark as unfinished." or "Click to mark as done.",.85,.9,.95,true)
+        GameTooltip:Show()
+      end
     end)
     button:SetScript("OnLeave",function(self)
       paint(self.bg,self.checked and .055 or .045,self.checked and .09 or .055,self.checked and .08 or .072,1)
+      if GameTooltip and (not GameTooltip.IsOwned or GameTooltip:IsOwned(self)) then GameTooltip:Hide() end
     end)
     taskRows[i]=button
   end
@@ -157,8 +182,8 @@ function Briefing.Render(page)
     local task=type(tasks)=="table" and tasks[i] or nil
     if task then
       local checked=type(checks)=="table" and checks[i]==true
-      button.checked=checked
-      button.caption:SetText(short(task,54))
+      button.task,button.checked=task,checked
+      button.caption:SetText(task)
       button.status:SetText(checked and "DONE" or "TODO")
       button.status:SetTextColor(checked and 0.51 or 0.70,checked and 0.89 or 0.73,checked and 0.57 or 0.76)
       paint(button.bg,checked and .055 or .045,checked and .09 or .055,checked and .08 or .072,1)
@@ -175,7 +200,7 @@ function Briefing.Render(page)
   local handbook=data and data.classHandbook
   local guide=handbook and handbook[token]
   local tip=guide and (page=="PvP" and guide.pvp or guide.dungeon)
-  labels.tip:SetText(short(tip or "Review class guidance and coordinate with your group.",84))
+  labels.tip:SetText(page=="PvP" and "Class and team tools" or "Class and role tools")
   local roleTip
   if page=="PvP" then
     local pvpRoleNotes={
@@ -188,7 +213,7 @@ function Briefing.Render(page)
     local roleTips=data and data.roleAdvice and data.roleAdvice[role]
     roleTip=type(roleTips)=="table" and roleTips[1] or nil
   end
-  labels.roleTip:SetText(short(roleTip or "Confirm objectives, positioning and defensive plans.",62))
+  labels.guidance=(tip or "Review class guidance and coordinate with your group.").."\n"..(roleTip or "Confirm objectives, positioning and defensive plans.")
 end
 
 function Briefing.Show(page)

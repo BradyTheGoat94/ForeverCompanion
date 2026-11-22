@@ -135,6 +135,8 @@ local function widget(kind)
  function w:HasFocus() return self.focused==true end
  function w:HighlightText() self.highlighted=true end
  function w:SetMaxLetters(v) self.maxLetters=v end
+ function w:SetMultiLine(value) self.multiLine=value end
+ function w:SetCursorPosition(value) self.cursor=value end
  function w:SetDisabledFontObject() end
  function w:SetFont(path,size,flags) self.font={path,size,flags} end
  function w:SetTexCoord(...) self.texCoord={...} end
@@ -392,7 +394,7 @@ assert(pinControl and pinControl.visible,"quest pin button must be visible")
 pinControl.OnClick(pinControl)
 assert(ForeverCompanionQuestPlanner.PinnedCount()==1,"pin button must persist quest priority")
 assert(pinControl.text=="Unpin Focus","pin control must reflect focused quest state")
-assert(readyRow.title.text:find("[PIN]",1,true),"journal row should show pinned badge")
+assert(readyRow.icon.texture:find("INV_Misc_Map_01",1,true),"journal row should show a pinned icon")
 assert(ForeverCompanionQuestPlanner.Overview().pinned==1,"journal overview must count pinned quests")
 local knownObjective=false
 for _,w in ipairs(frames) do
@@ -918,17 +920,12 @@ end
 alchemyTab.OnClick(alchemyTab)
 
 local notesToggle=ForeverCompanionUIState.professionNotesButton
-assert(notesToggle.visible and notesToggle.text=="Show detailed notes","profession details start collapsed")
+assert(notesToggle.visible and notesToggle.text=="Profession reference","profession reference is discoverable")
 notesToggle:OnClick()
-assert(notesToggle.text=="Hide detailed notes")
-local sourcedCampingVisible=false
-for _,w in ipairs(frames) do
- if w.kind=="FontString" and w.text:find("Mana Well",1,true) and w.text:find("Blizzard Forever Camping preview (2026-10-21)",1,true) then
-  sourcedCampingVisible=true
- end
-end
-assert(sourcedCampingVisible,"expanded notes show the source-attributed camp feature")
-notesToggle:OnClick()
+local professionReference
+for _,w in ipairs(frames) do if w.name=="ForeverCompanionReferenceFrame" then professionReference=w end end
+assert(professionReference and professionReference:IsShown(),"details open in a separate window")
+professionReference:Hide()
 local materialStatus=false
 for _,w in ipairs(frames) do if w.text=="0/1 material goals done" then materialStatus=true end end
 assert(materialStatus,"manual material goal status incorrect")
@@ -1090,8 +1087,9 @@ for _,button in ipairs(ForeverCompanionClassGuide.topicButtons) do
  assert(ForeverCompanionClassGuide.topicPanel.visible==(button.view~="Rotations"),"topic panel visibility")
  if button.view=="Talents" then
   assert(ForeverCompanionTalentWorkspace.root:IsShown(),"talent planner visibility")
- elseif button.view~="Rotations" then
-  assert(ForeverCompanionClassGuide.topicBody.text:find(button.view=="Gear & Stats" and "SOURCE-REVIEWED BETA THEORYCRAFT" or (button.view=="Overview" and "SELECTED SPEC" or "GENERAL REFERENCE"),1,true),"topic evidence notice")
+ elseif button.view~="Rotations" and button.view~="Macros" then
+  local browser=ForeverCompanionClassGuide.browser
+  assert(browser.frame:IsShown() and #browser.items>0 and browser.body.text~="","topic browser opens a specific topic")
  end
 end
 ForeverCompanionClassGuide.SelectView("Gear & Stats")
@@ -1283,10 +1281,12 @@ for i,button in ipairs(workspace.buttons) do
  assert(workspace.rows[1].visible,"selected context must show its first priority")
 end
 workspace.buttons[1].OnClick()
-assert(not workspace.ShowReference(),"long notes are collapsed by default")
+assert(not workspace.TakeReferenceRequest(),"long notes must open on demand")
 workspace.reference.OnClick()
-assert(workspace.ShowReference(),"guide notes toggle must reveal reference")
-workspace.reference.OnClick()
+local referenceFrame
+for _,f in ipairs(frames) do if f.name=="ForeverCompanionReferenceFrame" then referenceFrame=f end end
+assert(referenceFrame and referenceFrame:IsShown() and not workspace.TakeReferenceRequest(),"reference request opens its own window once")
+referenceFrame:Hide()
 local shortWorkspaceHeight=workspace.GetHeight()
 local row=workspace.rows[1]
 local originalMeasure=row.caption.GetStringHeight
@@ -1366,15 +1366,11 @@ for class,choices in pairs(ForeverCompanionSpecs) do
   guide.Render(class,class,60,choice[2])
   local profile=ForeverCompanionGearStats.Get(class,choice[1])
   if profile then
-   local cards=guide.readingCards
-   assert(cards[2].body.text:find(profile.order[1],1,true),'priority card must use this specialization profile')
-   assert(cards[3].body.text==profile.note,'comparison card must retain the full source note')
-   for _,card in ipairs(cards) do
-    if card.visible then
-     assert(card.body.height>=card.body:GetStringHeight(),'guide card must grow around wrapped text')
-     assert(-card.point[5]+card.height<=guide.GetTopicHeight(),'reading cards must stay inside the scroll content')
-    end
-   end
+   local browser=guide.browser
+   assert(browser.items[1].title=='Stat priority' and browser.items[1].body:find(profile.order[1],1,true),'priority topic must use this specialization profile')
+   local hasComparison=false
+   for _,item in ipairs(browser.items) do if item.body==profile.note then hasComparison=true end end
+   assert(hasComparison,'comparison topic must retain the full source note')
   end
   ForeverCompanionDB.classGuideView=previousView
   for _,mode in ipairs({"leveling","dungeon","boss","aoe","pvp"}) do
@@ -1402,15 +1398,15 @@ end
 assert(specCount==27)
 ForeverCompanionDB.specSelections=priorSelections
 ForeverCompanionClassGuide.SelectView("Leveling")
-local readingCard=ForeverCompanionClassGuide.readingCards[2]
-local originalTopicMeasure=readingCard.body.GetStringHeight
-readingCard.body.GetStringHeight=function() return 480 end
-ForeverCompanionClassGuide.SelectView("Leveling")
-assert(readingCard.body.height>=484,"long note needs measured reading space")
-assert(ForeverCompanionClassGuide.GetTopicHeight()>=602,"reading cards must expand the scroll content")
-local following=ForeverCompanionClassGuide.readingCards[3]
-assert(following and following.visible,'the next guide note must remain available')
-readingCard.body.GetStringHeight=originalTopicMeasure
+local classBrowser=ForeverCompanionClassGuide.browser
+local originalTopicMeasure=classBrowser.body.GetStringHeight
+local originalHeight=ForeverCompanionClassGuide.GetTopicHeight()
+classBrowser.body.GetStringHeight=function() return 480 end
+classBrowser.rows[2].OnClick(classBrowser.rows[2])
+assert(classBrowser.child:GetHeight()>=484,"long topics must scroll inside their own pane")
+assert(ForeverCompanionClassGuide.GetTopicHeight()==originalHeight,"long topics must preserve panel size")
+assert(classBrowser.rows[3].visible,'the next guide topic must remain available')
+classBrowser.body.GetStringHeight=originalTopicMeasure
 ForeverCompanionClassGuide.SelectView("Rotations")
 workspace.buttons[1].OnClick()
 rotationControl.OnClick(rotationControl)

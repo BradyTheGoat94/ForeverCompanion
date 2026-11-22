@@ -7,7 +7,7 @@ end
 function D.Version()
  local metadata=type(C_AddOns)=="table" and C_AddOns.GetAddOnMetadata
  local ok,version=pcall(metadata or GetAddOnMetadata,"ForeverCompanion","Version")
- return ok and type(version)=="string" and version or "3.82.4-beta"
+ return ok and type(version)=="string" and version or "unknown"
 end
 function D.Collect()
  local rows={}
