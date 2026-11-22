@@ -688,7 +688,7 @@ local function render()
     local title=currentTab=="Leveling" and classLabel() or DATA.professionHandbook[professionIndex].name
     ForeverCompanionReferenceWorkspace.Open(title.." reference",lines)
   end
-  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+(showExplorer and (35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight())) or 0),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=480,Legacy=ForeverCompanionActivityWorkspace.GetHeight(),Alts=ForeverCompanionActivityWorkspace.GetHeight()}
+  local offsets={Bank=ForeverCompanionBankView.GetHeight(),Journey=ForeverCompanionJourney.GetHeight(),Loot=5,Quests=explorerOffset+(showExplorer and (35+(questExplorerView=='discover' and ForeverCompanionQuestDiscovery.GetHeight() or ForeverCompanionQuestBook.GetHeight())) or 0),Professions=300+ForeverCompanionMaterialWorkspace.GetHeight()+33*#(DATA.checklist.Professions or {}),Leveling=970,Dungeons=969,PvP=325,Overview=215,Settings=ForeverCompanionSettingsBriefing.Height,Legacy=ForeverCompanionActivityWorkspace.GetHeight(),Alts=ForeverCompanionActivityWorkspace.GetHeight()}
   local offset=offsets[currentTab] or 5
   if currentTab=="Loot" then offset=22+ForeverCompanionLootWorkspace.GetHeight() end
   if currentTab=="Leveling" then offset=584+ForeverCompanionRotationWorkspace.GetHeight() end
@@ -721,7 +721,7 @@ local function openSection(name)
   if name:lower()=="plan" then ForeverCompanionLevelingWorkspace.Open();return true end
   if name:lower()=="hunterpets" or name:lower()=="pets" then ForeverCompanionHunterWorkspace.Open();return true end
   if name:lower()=="gear" then ForeverCompanionGearFinderWorkspace.Open();return true end
-  local aliases={["home"]="Overview",["leveling route"]="Journey",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
+  local aliases={["home"]="Overview",["features"]="Settings",["leveling route"]="Journey",["class guides"]="Leveling",["quest log"]="Quests",["alt leveling"]="Alts",["dungeons & raids"]="Dungeons",["dungeon journal"]="Dungeons",["gear & loot"]="Loot",["loot catalog"]="Loot",["pvp guide"]="PvP"}
   if name:lower()=="training" or name:lower()=="training guide" then ForeverCompanionTraining.Toggle();return true end
   name=aliases[name:lower()] or name
   for _,section in ipairs(tabs) do
@@ -1515,7 +1515,7 @@ SlashCmdList.FOREVERCOMPANION = function(msg)
   end
   if msg == "petxp" then say(ForeverCompanionPetXPTracker.Toggle());return end
   if msg == "flight" then say(ForeverCompanionFlightTimer.Toggle());return end
-  if msg == "help" then say("/fc training, /fc flight, /fc petxp, /fc party distance, /fc overlay inspect, /fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc coords <x> <y>, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
+  if msg == "help" then say("/fc features, /fc training, /fc flight, /fc petxp, /fc party distance, /fc overlay inspect, /fc minimap, /fc minimap hide, /fc minimap reset, /fc map, /fc coords <x> <y>, /fc search <text>, /fc recent, /fc notes, /fc note <name>, /fc nearest <service>, /fc overlay, /fc overlay options, /fc services, /fc vendors, /fc session, /fc next, /fc arrow, /fc arrow reset, /fc tracker, /fc setup, /fc meter, /fc open <section>, /fc wish <item>, /fc loot <item|boss|dungeon>, /fc status, /fc class <name|auto>, /fc role <role>, /fc professions <names>, /fc check <section> <1-4>, /fc reset, /fc position reset, /fcq sync"); return end
   local wish=msg:match("^wish%s+(.+)$")
   if wish then
     if not ForeverCompanionLoot then say("Loot Atlas unavailable."); return end

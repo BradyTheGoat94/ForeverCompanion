@@ -52,6 +52,26 @@ local function mode()
  return modeNames[saved] and saved or "all"
 end
 
+function M.PickupsEnabled()
+ local db=ForeverCompanionDB or {}
+ return not db.questMapHidePickups and (db.mapIndependentPickups==true or mode()=="all")
+end
+function M.SetPickupsEnabled(value)
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ ForeverCompanionDB.mapIndependentPickups=true
+ ForeverCompanionDB.questMapHidePickups=not value
+ M.Refresh()
+end
+function M.ObjectivesEnabled() return mode()~="off" end
+function M.SetObjectivesEnabled(value)
+ if value==M.ObjectivesEnabled() then return end
+ local db=ForeverCompanionDB or {};ForeverCompanionDB=db
+ local pickups=M.PickupsEnabled()
+ if not value then db.mapPreviousQuestMode=mode() end
+ db.questMapMode=value and (db.mapPreviousQuestMode=="focus" and "focus" or "all") or "off"
+ if M.PickupsEnabled()~=pickups then M.SetPickupsEnabled(pickups) else M.Refresh() end
+end
+
 local function mapStyle()
  local db=ForeverCompanionDB
  if db and db.questMapStyle=="clear" then return "clear" end
@@ -331,6 +351,25 @@ end
 
 local function townsEnabled()
  return not ForeverCompanionDB or ForeverCompanionDB.questMapHideTowns~=true
+end
+
+function M.ServiceEnabled(key)
+ local db=ForeverCompanionDB or {}
+ if db.mapVendorsOnly then return key=="V" or key=="R" end
+ return type(db.questMapHiddenServices)~="table" or db.questMapHiddenServices[key]~=true
+end
+function M.SetServiceEnabled(key,value)
+ local db=ForeverCompanionDB or {};ForeverCompanionDB=db
+ if type(db.questMapHiddenServices)~="table" then db.questMapHiddenServices={} end
+ local hidden=db.questMapHiddenServices
+ if db.mapVendorsOnly then
+  for _,entry in ipairs(ForeverCompanionServiceAtlas.Categories) do
+   if entry[1]~="all" then hidden[entry[1]]=not M.ServiceEnabled(entry[1]) end
+  end
+  db.mapVendorsOnly=nil
+ end
+ hidden[key]=not value
+ M.Refresh()
 end
 
 local serviceIconSizes={[20]=10,[24]=12,[28]=16}
@@ -675,16 +714,23 @@ function M.GoToCoordinates(input)
  return ForeverCompanionQuestWaypoints.Navigate({map=id,x=x/100,y=y/100,label=label,source='Entered coordinates'},false,label)
 end
 
+function M.CloseupEnabled()
+ local value=(ForeverCompanionDB or {}).mapCloseupTerrain
+ return value==true or (value==nil and (mapStyle()=="atlas" or mapStyle()=="diorama"))
+end
+function M.SetCloseupEnabled(value)
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ ForeverCompanionDB.mapCloseupTerrain=value
+ M.Refresh()
+end
+
 function M.OpenAppearance(anchor)
  ForeverCompanionDB=ForeverCompanionDB or {}
  local db=ForeverCompanionDB;local entries={
   {label="Reveal unexplored terrain",selected=db.mapRevealTerrain~=false,action=function()
    db.mapRevealTerrain=db.mapRevealTerrain==false;M.Refresh()
   end},
-  {label="Close-up terrain detail",selected=db.mapCloseupTerrain==true or (db.mapCloseupTerrain==nil and (mapStyle()=="atlas" or mapStyle()=="diorama")),action=function()
-   local active=db.mapCloseupTerrain==true or (db.mapCloseupTerrain==nil and (mapStyle()=="atlas" or mapStyle()=="diorama"))
-   db.mapCloseupTerrain=not active;M.Refresh()
-  end},
+  {label="Close-up terrain detail",selected=M.CloseupEnabled(),action=function() M.SetCloseupEnabled(not M.CloseupEnabled()) end},
  }
  for _,preset in ipairs({{'Small service icons',20},{'Standard service icons',24},{'Large service icons',28}}) do
   local name,size=preset[1],preset[2]
@@ -799,18 +845,17 @@ local function createGuide(map)
  zoomButton=button(122,-4,100,'Zoom focus',function() if zoomPoint and type(map.PanAndZoomTo)=='function' then map:PanAndZoomTo(zoomPoint.x,zoomPoint.y) end end)
  styleButton=button(232,-4,112,'',function() cycleMapStyle();M.Refresh() end)
  townButton=button(354,-4,154,'',function() db.questMapHideTowns=townsEnabled();M.Refresh() end)
- pickupButton=button(12,-35,108,'',function() db.questMapHidePickups=not db.questMapHidePickups;M.Refresh() end)
+ pickupButton=button(12,-35,108,'',function() M.SetPickupsEnabled(not M.PickupsEnabled()) end)
  local services
  services=button(128,-35,126,'Service filters',function()
-  if type(db.questMapHiddenServices)~='table' then db.questMapHiddenServices={} end
-  local hidden=db.questMapHiddenServices;local entries={}
+  local entries={}
   entries[#entries+1]={label='Vendors and repairs only',selected=db.mapVendorsOnly==true,action=function()
    db.mapVendorsOnly=not db.mapVendorsOnly
    if db.mapVendorsOnly then db.questMapHideTowns=false end
    M.Refresh()
   end}
   for _,entry in ipairs(ForeverCompanionServiceAtlas.Categories) do if entry[1]~='all' then
-   local key,label=entry[1],entry[2];entries[#entries+1]={label=label,selected=hidden[key]~=true,action=function() db.mapVendorsOnly=nil;hidden[key]=not hidden[key];M.Refresh() end}
+   local key,label=entry[1],entry[2];entries[#entries+1]={label=label,selected=M.ServiceEnabled(key),action=function() M.SetServiceEnabled(key,not M.ServiceEnabled(key)) end}
   end end
   entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};db.mapVendorsOnly=nil;M.Refresh() end}
   U.Menu(services,'MAP SERVICES',entries)
@@ -1014,6 +1059,11 @@ end
 
 function M.Refresh()
  if not worldMap or not worldMap:IsShown() then return end
+ if ForeverCompanionDB and ForeverCompanionDB.hideCompanionWorldMap then
+  hidePins()
+  if guide then guide:Hide() end
+  return
+ end
  if ForeverCompanionQuestDiscovery then ForeverCompanionQuestDiscovery.Refresh() end
  if ForeverCompanionQuestBook then ForeverCompanionQuestBook.Refresh() end
  if ForeverCompanionServiceAtlas then ForeverCompanionServiceAtlas.Refresh() end
@@ -1044,7 +1094,7 @@ function M.Refresh()
  local style=mapStyle()
  styleButton:SetText("Style: "..style:sub(1,1):upper()..style:sub(2))
  townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
- pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
+ pickupButton:SetText(M.PickupsEnabled() and "Pickups: On" or "Pickups: Off")
  local diorama=style=="diorama"
  local mapPrefs=ForeverCompanionDB or {}
  if ForeverCompanionMapReveal then
@@ -1052,8 +1102,7 @@ function M.Refresh()
  end
  if (style=="atlas" or diorama) and not openMap then showTerrain(canvas,diorama) end
  if ForeverCompanionWorldMapDetail then
-  local closeup=mapPrefs.mapCloseupTerrain==true or (mapPrefs.mapCloseupTerrain==nil and (style=="atlas" or diorama))
-  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,closeup and not openMap)
+  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,M.CloseupEnabled() and not openMap)
  end
  local info=readPublic(C_Map and C_Map.GetMapInfo,mapID)
  local knownMap=type(info)=='table'
@@ -1086,14 +1135,17 @@ function M.Refresh()
   briefing.Show(guide,mapID,title,briefingChoice(mapID),briefingServices(mapID),briefingChoice)
  end
  drawBearing(worldMap)
- if ForeverCompanionMapTools then ForeverCompanionMapTools.DrawMap(canvas,mapID,width,height,scale) end
- if tier=="overview" or view=="off" or (view=="focus" and not focus) then return end
+ if not db.mapHideNotes and ForeverCompanionMapTools then ForeverCompanionMapTools.DrawMap(canvas,mapID,width,height,scale) end
+ local showObjectives=view=="all" or (view=="focus" and focus~=nil)
+ local showPickups=M.PickupsEnabled()
+ if tier=="overview" or (not showObjectives and not showPickups) then return end
+ if not showObjectives then focus=nil end
  -- All-mode must still display live quest locations when no quest is focused.
  -- A missing focus is not an empty quest log.
 
  if focus then pcall(drawArea,canvas,mapID,focus,width,height) end
  local quests=liveQuests()
- local locations=ForeverCompanionQuestWaypoints.MapLocations(mapID,view=="focus" and {focus} or quests)
+ local locations=showObjectives and ForeverCompanionQuestWaypoints.MapLocations(mapID,view=="focus" and {focus} or quests) or {}
  local groups=focus and focusGroups(locations,focus,width*scale,height*scale) or {}
  if #groups>0 then
   zoomPoint=groups[1].entry.target
@@ -1104,8 +1156,8 @@ function M.Refresh()
  elseif view=="all" then
   guideHint:SetText("Click a quest marker to focus it")
  end
- if view=="all" then
-  addOtherQuests(groups,locations,focus,width*scale,height*scale)
+ if view=="all" then addOtherQuests(groups,locations,focus,width*scale,height*scale) end
+ if showPickups then
   local pickupPoints={}
   local entries=mapPickups(mapID,quests)
   local showStartersOnly=false

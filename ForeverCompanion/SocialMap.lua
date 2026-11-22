@@ -175,6 +175,10 @@ end
 local function dotsHidden() return ForeverCompanionDB and ForeverCompanionDB.hideSharedMapDots==true end
 function S.Refresh()
  S.Hide()
+ if ForeverCompanionDB and ForeverCompanionDB.hideCompanionWorldMap then
+  if panel then panel:Hide() end
+  return
+ end
  if not attached or not attached:IsShown() or not canvas or dotsHidden() or not outside() then return end
  local kind=read(C_Map and C_Map.GetMapInfo,mapID)
  local types=Enum and Enum.UIMapType

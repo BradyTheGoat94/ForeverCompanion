@@ -36,8 +36,16 @@ local function publicText(value,size)
  if (issecretvalue and issecretvalue(value)) or type(value)~='string' then return '' end
  return value:sub(1,size)
 end
+function B.SentHistoryEnabled()
+ return not (ForeverCompanionDB or {}).disableSentMailHistory
+end
+function B.SetSentHistoryEnabled(value)
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ ForeverCompanionDB.disableSentMailHistory=not value
+ if not value then outgoing=nil end
+end
 local function captureOutgoing(recipient,subject)
- if not mailOpen or outgoing then return end
+ if not B.SentHistoryEnabled() or not mailOpen or outgoing then return end
  recipient=publicText(recipient,100)
  if recipient=='' then return end
  local draft={to=recipient,subject=publicText(subject,120),items={}}

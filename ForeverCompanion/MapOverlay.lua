@@ -485,6 +485,21 @@ function M.PresetMenu(anchor)
  end
  ForeverCompanionInterface.Menu(anchor or header,'OVERLAY PRESETS',entries)
 end
+local layerDefaults={detail=true,quests=true,allQuests=false,mailboxes=false,services=false,landmarks=true,notes=true}
+function M.LayerEnabled(key)
+ local value=settings()[key]
+ if layerDefaults[key]==nil then return end
+ if value==nil then return layerDefaults[key] end
+ return value==true
+end
+function M.SetLayerEnabled(key,value)
+ if layerDefaults[key]==nil or type(value)~="boolean" then return false end
+ local d=settings()
+ d[key]=value
+ if key=="quests" or key=="allQuests" or key=="services" or key=="notes" then d.preset=nil end
+ M.Refresh(true)
+ return true
+end
 function M.Options()
  local U=ForeverCompanionInterface;local d=settings()
  if not frame then M.Toggle(true) end
@@ -504,14 +519,14 @@ function M.Options()
   {label='Artwork opacity...',action=function() submenu('ARTWORK OPACITY',{.2,.35,.5,.65},'opacity','%') end},
   {label='Overlay size...',action=function() submenu('OVERLAY WIDTH',{420,600,780},'width','') end},
   {label='Map layers...',action=function() U.Menu(header,'OVERLAY LAYERS',{
-   {label='Explored terrain detail',selected=d.detail~=false,action=function() d.detail=d.detail==false;M.Refresh(true) end},
+   {label='Explored terrain detail',selected=M.LayerEnabled('detail'),action=function() M.SetLayerEnabled('detail',not M.LayerEnabled('detail')) end},
    {label='Monochrome artwork',selected=d.monochrome~=false,action=function() d.monochrome=d.monochrome==false;d.preset=nil;M.Refresh(true) end},
-   {label='Quest markers',selected=d.quests~=false,action=function() d.quests=d.quests==false;d.preset=nil;M.Refresh(true) end},
-   {label='Show all active quests',selected=d.allQuests==true,action=function() d.allQuests=not d.allQuests;d.preset=nil;M.Refresh(true) end},
-   {label='Mailbox markers',selected=d.mailboxes==true,action=function() d.mailboxes=not d.mailboxes;M.Refresh(true) end},
-   {label='Service markers',selected=d.services==true,action=function() d.services=not d.services;d.preset=nil;M.Refresh(true) end},
-   {label='Native location landmarks',selected=d.landmarks~=false,action=function() d.landmarks=d.landmarks==false;M.Refresh(true) end},
-   {label='Personal notes',selected=d.notes~=false,action=function() d.notes=d.notes==false;d.preset=nil;M.Refresh(true) end},
+   {label='Quest markers',selected=M.LayerEnabled('quests'),action=function() M.SetLayerEnabled('quests',not M.LayerEnabled('quests')) end},
+   {label='Show all active quests',selected=M.LayerEnabled('allQuests'),action=function() M.SetLayerEnabled('allQuests',not M.LayerEnabled('allQuests')) end},
+   {label='Mailbox markers',selected=M.LayerEnabled('mailboxes'),action=function() M.SetLayerEnabled('mailboxes',not M.LayerEnabled('mailboxes')) end},
+   {label='Service markers',selected=M.LayerEnabled('services'),action=function() M.SetLayerEnabled('services',not M.LayerEnabled('services')) end},
+   {label='Native location landmarks',selected=M.LayerEnabled('landmarks'),action=function() M.SetLayerEnabled('landmarks',not M.LayerEnabled('landmarks')) end},
+   {label='Personal notes',selected=M.LayerEnabled('notes'),action=function() M.SetLayerEnabled('notes',not M.LayerEnabled('notes')) end},
   }) end},
   {label='Search map companion',action=function() ForeverCompanionMapHub.Open() end},
   {label='Find nearby service...',action=function() ForeverCompanionMapTools.NearestMenu(header) end},
@@ -609,10 +624,12 @@ local function create()
  position()
 end
 function M.Toggle(value)
+ if value==false and not frame then settings().visible=false;return end
  create();if value==nil then value=not frame:IsShown() end
  settings().visible=value==true;frame:SetShown(value==true)
  if value then frame:EnableMouse(false);if frame.EnableMouseWheel then frame:EnableMouseWheel(false) end;editing=false;inspecting=false;panStart=nil;hide(hitPins);if inspectButton then inspectButton:SetText('Inspect: Off') end;header:SetShown(settings().controls~=false);M.Refresh(true) end
 end
+function M.ApplyVisibility() M.Toggle(settings().visible==true) end
 function M.Command(command)
  if presets[command] then M.Preset(command)
  elseif command=='tilt' then M.SetTilt(not settings().tilted)

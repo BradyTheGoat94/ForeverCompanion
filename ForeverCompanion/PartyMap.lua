@@ -85,6 +85,8 @@ end
 function P.Refresh()
  -- Clear old-map blips even when the new map has no usable canvas or scale.
  for _,marker in ipairs(markers) do marker:Hide() end
+ local db=ForeverCompanionDB
+ if db and (db.hideCompanionWorldMap or db.hideWorldPartyPins) then return end
  if not map or not map.IsShown or not map:IsShown() then return end
  local canvas=map:GetCanvas()
  local mapID=map:GetMapID()

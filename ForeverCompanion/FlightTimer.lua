@@ -65,7 +65,7 @@ local function refreshMap()
  origin,nodes=readMap(mapID)
 end
 local function tooltip(slot)
- if not GameTooltip or not nodes then return end
+ if settings().hidden or not GameTooltip or not nodes then return end
  local key=routeKey(origin,nodes[slot])
  if not key then return end
  local duration=estimate(key)
@@ -175,9 +175,12 @@ events:SetScript('OnEvent',function(_,event)
   if pending or flight or read(UnitOnTaxi,'player')==true then watch() end
  end
 end)
-function F.Toggle()
- local db=settings()
- db.hidden=not db.hidden
+function F.Enabled() return settings().hidden~=true end
+function F.SetEnabled(value)
+ settings().hidden=not value
  render(GetTime())
- return db.hidden and 'Flight timer hidden.' or 'Flight timer enabled. Hover a flight destination for learned times.'
+end
+function F.Toggle()
+ F.SetEnabled(not F.Enabled())
+ return not F.Enabled() and 'Flight timer hidden.' or 'Flight timer enabled. Hover a flight destination for learned times.'
 end

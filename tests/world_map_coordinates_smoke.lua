@@ -75,3 +75,17 @@ ox,oy=m.CanvasPoint(10,.75,.25)
 assert(ox==.75 and oy==.25,'native world map uses unmodified coordinates')
 ox,oy=m.CanvasPoint(10,.75,.25,.2,.4)
 assert(ox==.2 and oy==.4,'parent-map dungeon positioning remains usable')
+
+ForeverCompanionDB={questMapMode="focus",questMapStyle="atlas"}
+assert(m.ObjectivesEnabled() and not m.PickupsEnabled() and m.CloseupEnabled())
+m.SetCloseupEnabled(false); assert(not m.CloseupEnabled())
+m.SetPickupsEnabled(true); assert(m.PickupsEnabled() and ForeverCompanionDB.questMapMode=="focus")
+m.SetObjectivesEnabled(false); assert(not m.ObjectivesEnabled() and m.PickupsEnabled())
+m.SetObjectivesEnabled(true); assert(ForeverCompanionDB.questMapMode=="focus" and m.PickupsEnabled())
+m.SetPickupsEnabled(false); assert(not m.PickupsEnabled() and m.ObjectivesEnabled())
+ForeverCompanionDB={mapVendorsOnly=true,questMapHiddenServices={V=true}}
+ForeverCompanionServiceAtlas={Categories={{"all","All"},{"V","Vendors"},{"R","Repairs"},{"M","Mailboxes"},{"B","Banks"}}}
+assert(m.ServiceEnabled("V") and not m.ServiceEnabled("M"))
+m.SetServiceEnabled("M",true)
+assert(m.ServiceEnabled("V") and m.ServiceEnabled("R") and m.ServiceEnabled("M") and not m.ServiceEnabled("B"))
+print("PASS: world quest layers are independent and service filters preserve other categories")

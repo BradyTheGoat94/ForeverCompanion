@@ -154,6 +154,7 @@ local function create()
 end
 
 function D.Start(point,label)
+ if settings().disabled then return false end
  if type(point)~="table" or not finite(point.x) or not finite(point.y)
   or point.x<0 or point.x>1 or point.y<0 or point.y>1
   or not finite(point.map) or point.map<=0 or point.map%1~=0 then return false end
@@ -220,6 +221,12 @@ function D.OpenOptions(anchor)
  entries[#entries+1]={label='Recent destinations',action=function() ForeverCompanionMapHub.Open('',true) end}
  entries[#entries+1]={label='Reset arrow position',action=D.ResetPosition}
  ForeverCompanionInterface.Menu(anchor or frame,'NAVIGATION ARROW',entries)
+end
+
+function D.Enabled() return settings().disabled~=true end
+function D.SetEnabled(value)
+ settings().disabled=not value
+ if not value then D.Stop() end
 end
 
 function D.Stop()

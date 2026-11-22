@@ -166,3 +166,12 @@ m.Refresh(false,true);m.Refresh(false,true)
 assert(reads==initial,'position refreshes leave static overlay pins cached')
 m.Refresh()
 assert(reads==initial+1,'explicit refresh rebuilds static overlay pins')
+
+assert(m.SetLayerEnabled("detail",false) and m.LayerEnabled("detail")==false)
+assert(m.SetLayerEnabled("landmarks",false) and m.LayerEnabled("landmarks")==false)
+local disabledReads=reads
+m.Refresh();assert(reads==disabledReads)
+ForeverCompanionDB.mapOverlay.visible=false
+m.ApplyVisibility();assert(not f.shown)
+ForeverCompanionDB.mapOverlay.visible=true
+m.ApplyVisibility();assert(f.shown and m.LayerEnabled("detail")==false and m.LayerEnabled("landmarks")==false)

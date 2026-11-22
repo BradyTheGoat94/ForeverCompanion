@@ -31,3 +31,11 @@ mapID=nil;provider.OnMapChanged();assert(not marker.shown,'missing map must hide
 mapID=2;provider.OnMapChanged();assert(marker.shown)
 canvas.width=0;provider.OnCanvasSizeChanged();assert(not marker.shown,'invalid canvas must hide previous blips')
 print('PASS: party map clears stale markers on unavailable maps and canvas changes')
+
+canvas.width=1000
+ForeverCompanionDB={hideWorldPartyPins=true}
+provider.OnMapChanged();assert(not marker.shown)
+ForeverCompanionDB.hideWorldPartyPins=false
+provider.OnMapChanged();assert(marker.shown)
+ForeverCompanionDB.hideCompanionWorldMap=true
+provider.OnMapChanged();assert(not marker.shown)
