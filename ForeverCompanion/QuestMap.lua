@@ -198,6 +198,7 @@ local function showDungeons(map,canvas,mapID,width,height)
  end
 end
 local function hidePins()
+ if ForeverCompanionSocialMap then ForeverCompanionSocialMap.Hide() end
  if ForeverCompanionZoneBriefing then ForeverCompanionZoneBriefing.Hide() end
  if ForeverCompanionDungeonBriefing then ForeverCompanionDungeonBriefing.Hide() end
  if ForeverCompanionWorldMapDetail then ForeverCompanionWorldMapDetail.Hide() end
@@ -847,6 +848,7 @@ local function createGuide(map)
    U.PagedMenu(appearance,'ZONES BY LEVEL',choices,nil,290)
   end},
   {label='Map appearance',action=function() M.OpenAppearance(appearance) end},
+  {label='Friends & Guild',action=function() ForeverCompanionSocialMap.Open(map) end},
   {label='Center on player',action=function()
    local current,x,y=ForeverCompanionMapTools.Position()
    if current and type(map.SetMapID)=='function' and type(map.PanAndZoomTo)=='function' then
@@ -1055,6 +1057,7 @@ function M.Refresh()
  end
  local info=readPublic(C_Map and C_Map.GetMapInfo,mapID)
  local knownMap=type(info)=='table'
+ if ForeverCompanionSocialMap then ForeverCompanionSocialMap.Attach(worldMap,canvas,mapID) end
  local name=knownMap and info.name or 'COMPANION MAP'
  local db=ForeverCompanionDB or {}
  local types=Enum and Enum.UIMapType
