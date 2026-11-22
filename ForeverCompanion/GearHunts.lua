@@ -54,7 +54,7 @@ function H.InstallHooks()
    hooks[frame]=true
    frame:HookScript('OnMouseUp',function(_,key)
     if key=='RightButton' and type(IsAltKeyDown)=='function' and IsAltKeyDown() then
-     G.Settings().slot=index;local W=ForeverCompanionGearFinderWorkspace;W.view='discover';W.page=1;W.selected=nil;W.Open()
+     G.Settings().slot=index;local W=ForeverCompanionGearFinderWorkspace;W.view='discover';W.offset=0;W.selected=nil;W.Open()
     end
    end)
   end

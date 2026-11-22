@@ -13,6 +13,7 @@ local worker,currentForAction
 local cachedKey,cachedResults,cachedStats,cachedScope
 local loadElapsed=0
 local filtersButton
+local sourceLabels={bags='In your bags',quest='Quest rewards',dungeon='Dungeon drops',crafted='Crafted gear'}
 local function text(parent,x,y,width,size,value,height)
  local f=ForeverCompanionInterface.Text(parent,size);f:SetPoint('TOPLEFT',x,y);f:SetWidth(width);f:SetText(value or '')
  if height then f:SetHeight(height);f:SetWordWrap(true);f:SetJustifyV('TOP') end;return f
@@ -47,7 +48,7 @@ end
 local function refreshTracker() if ForeverCompanionGearHunts then ForeverCompanionGearHunts.Refresh() end end
 local function handoff()
  local old=source(W.current);local current=currentForAction();local s=source(current)
- if not s or s.unavailable or (s.reference and not s.questID) or not old then return end
+ if not s or s.carried or s.unavailable or (s.reference and not s.questID) or not old then return end
  if s.dungeon~=old.dungeon or s.boss~=old.boss then tell('Source changed. Select it again before opening the journal.');return end
  if s.questID then if ForeverCompanionOpenQuestGuide(s.questID) then root:Hide() else tell('Quest is not in your live log. Review this reward source in game.') end;return end
  local guide=ForeverCompanionBossGuideWorkspace
@@ -71,8 +72,16 @@ local function renderDetail(row)
  detailMeta:SetText(row.slot[1]..' · slot '..row.slot[2]..' · Item #'..row.record.itemID..'\n'..(info and ((info.subkind or 'Type unknown')..' · Level '..tostring(info.required or '?')..' · Use: '..(row.usable==true and 'yes' or row.usable==false and 'no' or 'unchecked')) or 'Waiting for client item data'))
  detailScore:SetText(row.reason)
  detailScore:SetTextColor(unpack(V.Palette(kind).accent))
- detail.worn.value:SetText(row.baseline and row.baseline.score and G.Points(row.baseline.score) or '-')
- detail.candidate.value:SetText(info and info.score and G.Points(info.score) or '-')
+ local weapon=row.slot[2]>=16
+ local function score(entry)
+  if weapon then
+   local dps=G.WeaponDPS(entry)
+   return dps and (G.Points(dps)..' DPS') or entry and entry.itemLevel and ('iLvl '..entry.itemLevel) or '-'
+  end
+  return entry and entry.score and G.Points(entry.score) or '-'
+ end
+ detail.worn.value:SetText(score(row.baseline))
+ detail.candidate.value:SetText(score(info))
  sourceText:SetText(s.dungeon..'\n'..s.boss..'\n'..(row.owned==nil and 'Inventory unknown' or row.owned>0 and ('Owned: '..row.owned) or row.completed and 'Previously acquired' or 'Not in carried inventory'))
  local breakdown=G.Breakdown(row);local pages=math.max(1,math.ceil(#breakdown/7));W.statPage=math.min(W.statPage,pages)
  for i,fields in ipairs(statRows) do
@@ -88,8 +97,8 @@ local function renderDetail(row)
  statButton:SetText('More stats ('..W.statPage..'/'..pages..')');statButton:SetEnabled(pages>1)
  V.Style(saveButton,row.saved and 'hunts' or 'upgrade',not row.saved);V.Style(trackButton,'hunts',row.tracked);V.Style(bossButton,'discover',false)
  sourceButton:SetText('Source '..sourceIndex..' / '..#row.sources);sourceButton:SetEnabled(#row.sources>1)
- saveButton:SetText(row.saved and 'Remove hunt' or 'Save hunt');trackButton:SetText(row.tracked and (G.Settings().trackerHidden and 'Show tracker' or 'Unpin hunt') or 'Pin hunt');trackButton:SetEnabled(row.saved and not row.completed and not row.unavailable)
- bossButton:SetText(s.questID and 'Open quest details' or s.reference and 'Crafting source shown' or 'View source boss');bossButton:SetEnabled(not s.unavailable and (not s.reference or s.questID~=nil))
+ saveButton:SetText(row.saved and 'Remove hunt' or 'Save hunt');saveButton:SetEnabled(row.saved or not s.carried);trackButton:SetText(row.tracked and (G.Settings().trackerHidden and 'Show tracker' or 'Unpin hunt') or 'Pin hunt');trackButton:SetEnabled(row.saved and not row.completed and not row.unavailable)
+ bossButton:SetText(s.carried and 'In your bags' or s.questID and 'Open quest details' or s.reference and 'Crafting source shown' or 'View source boss');bossButton:SetEnabled(not s.carried and not s.unavailable and (not s.reference or s.questID~=nil))
  detail.icon:SetTexture(ForeverCompanionLoot.ItemIcon(row.record))
 end
 -- Preserve the first surviving visible identity when a background scan reorders
@@ -119,8 +128,8 @@ function W.Refresh()
   detail:Hide();empty:Hide();scrollBar:Hide();listArea:Hide();revealButton:Hide();counter:Hide();for _,row in ipairs(rows) do row:Hide() end
   return
  end
- local options={slot=cfg.slot,query=search:GetText(),dungeon=cfg.dungeon,saved=W.view=='hunts',active=W.view=='hunts',completed=W.view=='completed',ready=browse and cfg.ready,matchArmor=browse and cfg.matchArmor,bestNow=browse and cfg.bestNow~=false,includeReview=browse and cfg.bestNow~=false}
- local scope=table.concat({W.view,tostring(cfg.slot),search:GetText(),cfg.dungeon,tostring(options.ready),tostring(options.matchArmor),tostring(options.bestNow)},'\031')
+ local options={slot=cfg.slot,query=search:GetText(),dungeon=cfg.dungeon,saved=W.view=='hunts',active=W.view=='hunts',completed=W.view=='completed',ready=browse and cfg.ready,matchArmor=browse and cfg.matchArmor,bestNow=browse and cfg.bestNow~=false,includeReview=browse and cfg.bestNow~=false,includeBags=browse,sourceKind=browse and sourceLabels[cfg.sourceKind] and cfg.sourceKind or nil}
+ local scope=table.concat({W.view,tostring(cfg.slot),search:GetText(),cfg.dungeon,tostring(options.ready),tostring(options.matchArmor),tostring(options.bestNow),tostring(options.sourceKind)},'\031')
  local key,context=G.SnapshotKey(options)
  if key~=cachedKey then
   local results,_,_,stats=G.Build(options,context)
@@ -131,9 +140,9 @@ function W.Refresh()
  local results,stats=cachedResults,cachedStats
  W.results=results;W.stats=stats
  local maximum=math.max(0,#results-6);W.offset=math.max(0,math.min(maximum,W.offset or 0))
- local counts=options.bestNow and (stats.confirmed..' ranked  /  '..stats.estimated..' possible  /  '..stats.review..' inspect') or (#results..' items')
+ local counts=options.bestNow and (stats.confirmed..' ranked  /  '..stats.carried..' in bags  /  '..stats.estimated..' possible  /  '..stats.review..' inspect') or (#results..' items')
  summary:SetText(counts..(stats.loading>0 and '  /  Loading item data' or ''))
- dungeonButton:SetText(cfg.dungeon~='' and cfg.dungeon or 'All dungeons');readyButton:SetText(cfg.ready and 'Within my level' or 'Include future levels')
+ dungeonButton:SetText(cfg.dungeon~='' and cfg.dungeon or (browse and sourceLabels[cfg.sourceKind]) or 'All sources');readyButton:SetText(cfg.ready and 'Within my level' or 'Include future levels')
  armorButton:SetText(cfg.matchArmor and 'Match worn armor' or 'All armor types');upgradeButton:SetText(cfg.bestNow~=false and 'Switch to Browse' or 'Switch to Best Now')
  for index,b in pairs(slots) do
   local label=index==0 and 'All equipment' or (G.slots[index][1]..((index==10 or index==12) and ' 1' or (index==11 or index==13) and ' 2' or ''))
@@ -239,17 +248,29 @@ function W.Open(itemID)
    local icon=slots[i]:CreateTexture(nil,'ARTWORK');slots[i].slotIcon=icon;icon:SetSize(25,25);icon:SetPoint('TOP',0,-3);icon:SetTexture('Interface\\Icons\\'..V.slotIcons[i])
    hover(slots[i],slot[1]..' · slot '..slot[2],function() local info=G.Read(G.Call(GetInventoryItemLink,'player',slot[2]));return 'Equipped: '..(info and info.name or 'empty / unavailable') end)
   end
-  button(root,20,-678,180,'Reset filters',function() local cfg=G.Settings();cfg.slot=0;cfg.ready=true;cfg.matchArmor=true;cfg.upgrades=false;cfg.bestNow=true;cfg.dungeon='';search:SetText('');W.offset=0;W.selected=nil;W.Refresh();tell('Filters reset. Saved hunts and weights are unchanged.') end)
+  button(root,20,-678,180,'Reset filters',function() local cfg=G.Settings();cfg.slot=0;cfg.ready=true;cfg.matchArmor=true;cfg.upgrades=false;cfg.bestNow=true;cfg.dungeon='';cfg.sourceKind=nil;search:SetText('');W.offset=0;W.selected=nil;W.Refresh();tell('Filters reset. Saved hunts and weights are unchanged.') end)
   local tooltipButton
   tooltipButton=button(root,20,-714,180,G.Settings().tooltips==false and 'Tooltip estimates: Off' or 'Tooltip estimates: On',function()
    local cfg=G.Settings();cfg.tooltips=cfg.tooltips==false;tooltipButton:SetText(cfg.tooltips and 'Tooltip estimates: On' or 'Tooltip estimates: Off');if ForeverCompanionGearTooltips then ForeverCompanionGearTooltips.Refresh() end
   end)
-  search=ForeverCompanionInterface.EditBox(root,'Search item, boss, dungeon or ID');search:SetSize(420,28);search:SetPoint('TOPLEFT',220,-115);search:SetAutoFocus(false);search:SetMaxLetters(100)
+  search=ForeverCompanionInterface.EditBox(root,'Search gear, source, boss or item ID');search:SetSize(420,28);search:SetPoint('TOPLEFT',220,-115);search:SetAutoFocus(false);search:SetMaxLetters(100)
   search:SetScript('OnTextChanged',function(_,user) if user then W.offset=0;W.QueueSearch() end end);search:SetScript('OnEnterPressed',function(self) W.Refresh();self:ClearFocus() end);search:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
-  dungeonButton=button(root,650,-115,410,'All dungeons',function(self)
-   local entries={{label='All dungeons',action=function() G.Settings().dungeon='';W.offset=0;W.Refresh() end}}
-   for _,name in ipairs(ForeverCompanionLoot.DungeonNames()) do local dungeon=name;entries[#entries+1]={label=dungeon,action=function() G.Settings().dungeon=dungeon;W.offset=0;W.Refresh() end} end
-   ForeverCompanionInterface.PagedMenu(self,'Dungeon source',entries,V.Palette('discover'),300)
+  dungeonButton=button(root,650,-115,410,'All sources',function(self)
+   local function selectSource(kind,dungeon)
+    local cfg=G.Settings();cfg.sourceKind=kind;cfg.dungeon=dungeon or '';W.offset=0;W.selected=nil;W.Refresh()
+   end
+   local entries={{label='All sources',action=function() selectSource() end}}
+   if W.view=='discover' then
+    for _,key in ipairs({'bags','quest','crafted','dungeon'}) do
+     local kind=key
+     entries[#entries+1]={label=sourceLabels[kind],action=function() selectSource(kind) end}
+    end
+   end
+   for _,name in ipairs(ForeverCompanionLoot.DungeonNames()) do
+    local dungeon=name
+    entries[#entries+1]={label=dungeon,action=function() selectSource(nil,dungeon) end}
+   end
+   ForeverCompanionInterface.PagedMenu(self,'Acquisition source',entries,V.Palette('discover'),300)
   end)
   readyButton=button(root,220,-151,170,'Within my level',function() local cfg=G.Settings();cfg.ready=not cfg.ready;W.offset=0;W.Refresh() end)
   armorButton=button(root,400,-151,170,'Match worn armor',function() local cfg=G.Settings();cfg.matchArmor=not cfg.matchArmor;W.offset=0;W.Refresh() end)
@@ -265,7 +286,7 @@ function W.Open(itemID)
    entries[#entries+1]={label='Retry loading item data',action=function() G.RetryData();G.ObserveHunts();refreshTracker();W.Refresh();tell('Requested updated item data.') end}
    ForeverCompanionInterface.Menu(self,'Gear options',entries)
   end)
-  U.SetHoverHelp(dungeonButton,'Dungeon source','Limit the gear list to one dungeon or browse every source.')
+  U.SetHoverHelp(dungeonButton,'Acquisition source','Filter by carried gear, known quest rewards, crafting, or dungeon drops.')
   U.SetHoverHelp(readyButton,'Level filter','Limit Browse to gear within your current character level.')
   U.SetHoverHelp(armorButton,'Armor filter','Compare gear of the armor type you wear or show all armor types.')
   U.SetHoverHelp(upgradeButton,'Ranking mode','Best Now ranks verified stat gains first, then possible gains and gear to inspect. Browse includes the wider catalog.')
@@ -318,7 +339,7 @@ function W.Open(itemID)
   detailState=text(detail,16,-103,360,10,'')
   detailScore=text(detail,16,-119,360,11,'',18)
   detail.worn=U.MetricTile(detail,12,-141,181,'Worn item')
-  detail.candidate=U.MetricTile(detail,207,-141,181,'Candidate score','The item score for the selected weights. Review procs and other effects on the item tooltip.')
+  detail.candidate=U.MetricTile(detail,207,-141,181,'Candidate','Armor shows weighted stats. Weapons show base DPS when reported by the tooltip, or item level when unavailable. Hover the candidate name or worn tile to compare speed and effects.')
   V.Rectangle(detail,12,202,376,1,V.colors.border,'BORDER')
   local equippedHover=CreateFrame('Frame',nil,detail);equippedHover:SetSize(376,55);equippedHover:SetPoint('TOPLEFT',12,-141);equippedHover:EnableMouse(true)
   equippedHover:SetSize(181,55)
@@ -362,7 +383,7 @@ function W.Open(itemID)
   root:HookScript('OnHide',function() root:SetScript('OnUpdate',nil);W.searchPending=false;W.dirty=false;loadElapsed=0 end)
   root:Hide()
  end
- if type(itemID)=='number' then W.view='discover';G.Settings().slot=0;G.Settings().dungeon='';G.Settings().ready=false;G.Settings().upgrades=false;G.Settings().bestNow=false;G.Settings().matchArmor=false;search:SetText('');W.selected=itemID;W.offset=0;local savedSource=G.SavedSource(itemID);sourceChoice=savedSource and {itemID=itemID,dungeon=savedSource.dungeon,boss=savedSource.boss} or nil end
+ if type(itemID)=='number' then W.view='discover';G.Settings().slot=0;G.Settings().dungeon='';G.Settings().sourceKind=nil;G.Settings().ready=false;G.Settings().upgrades=false;G.Settings().bestNow=false;G.Settings().matchArmor=false;search:SetText('');W.selected=itemID;W.offset=0;local savedSource=G.SavedSource(itemID);sourceChoice=savedSource and {itemID=itemID,dungeon=savedSource.dungeon,boss=savedSource.boss} or nil end
  root:Show();W.ApplyScale();G.Invalidate();G.ObserveHunts();refreshTracker();W.Refresh()
  if itemID then for i,r in ipairs(W.results or {}) do if r.record.itemID==itemID then W.offset=math.max(0,math.min(i-1,#W.results-6));W.Refresh();break end end end
 end

@@ -15,6 +15,7 @@ function V.Quality(value)
 end
 function V.State(row)
  if row.unavailable or row.blocked or row.future then return 'REVIEW','review' end
+ if row.carried then return row.recommended and 'BAG UPGRADE' or 'IN BAGS',row.recommended and 'upgrade' or 'review' end
  if row.completed then return 'ACQUIRED','completed' end
  if row.owned and row.owned>0 then return 'OWNED','completed' end
  if row.tracked then return 'PINNED','hunts' end

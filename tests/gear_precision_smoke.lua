@@ -116,3 +116,52 @@ end
 local weapons=G.Build({slot=15,bestNow=true,includeReview=true})
 assert(weapons[1] and weapons[1].upgradeTier==1 and not weapons[1].delta,'eligible weapons appear as inspectable without a fabricated score gain')
 print('PASS: Best Now can include clearly marked possible and inspectable candidates')
+
+-- Carried gear uses exact variants and can appear even outside the source catalog.
+local carried={'item:2010:0','item:2010:17','item:2001:17','item:2011:17'}
+local scanCount=0
+C_Container={
+ GetContainerNumSlots=function(bag) return bag==0 and #carried or 0 end,
+ GetContainerItemInfo=function(_,slot) scanCount=scanCount+1;return {hyperlink=carried[slot]} end,
+}
+C_Item.GetItemInfo=function(item)
+ if type(item)=='string' and item:find('item:2010',1,true) then
+  return 'Carried upgrade',item,3,23,20,'Armor','Cloth',1,'INVTYPE_HEAD',nil,nil,4,1
+ elseif item==2012 then
+  return 'Misfiled boots','item:2012',3,20,10,'Armor','Cloth',1,'INVTYPE_FEET',nil,nil,4,1
+ end
+ return itemInfo(item)
+end
+local originalStats=C_Item.GetItemStats
+C_Item.GetItemStats=function(item)
+ if item=='item:2010:17' then return {ITEM_MOD_STRENGTH_SHORT=35}
+ elseif item=='item:2010:0' then return {ITEM_MOD_STRENGTH_SHORT=5} end
+ return originalStats(item)
+end
+rule={};C_PlayerInfo.CanUseItem=function() return true end
+ForeverCompanionLoot.records={record(2012,'Misfiled boots','Head')}
+local options={slot=0,bestNow=true,includeBags=true,sourceKind='bags',includeReview=true}
+G.Invalidate()
+local key,context=G.SnapshotKey(options)
+assert(G.SnapshotKey(options)==key and scanCount==#carried,'scrolling should reuse current backpack snapshot')
+local upgrades,_,_,summary=G.Build(options,context)
+assert(upgrades[1].record.itemID==2010 and upgrades[1].info.link=='item:2010:17' and upgrades[1].recommended)
+assert(upgrades[1].carried and upgrades[1].owned>=1 and #upgrades[1].sources==1 and summary.carried>=1)
+local dungeon=G.Build({slot=7,sourceKind='dungeon'})
+assert(dungeon[1].record.itemID==2012 and dungeon[1].slot[1]=='Feet')
+assert(#G.Build({slot=1,sourceKind='dungeon'})==0,'client equipment slots override catalog labels')
+table.remove(carried,2)
+G.Invalidate()
+local refreshed=G.Build({slot=1,bestNow=true,includeBags=true,sourceKind='bags',includeReview=true})
+for _,row in ipairs(refreshed) do assert(row.record.itemID~=2010,'removed bag item variant must not remain an upgrade') end
+print('PASS: carried gear outside the catalog, exact variants, scoped sources, bag refresh, and client slot corrections')
+DPS_TEMPLATE='(%.1f damage per second)'
+C_TooltipInfo={GetHyperlink=function(link)
+ assert(link=='item:2004')
+ return {lines={{leftText='+5 Fire Damage'},{leftText='|cffcccccc(27.4 damage per second)|r'}}}
+end}
+assert(G.WeaponDPS(weapons[1].info)==27.4,'read native base weapon DPS without treating it as a gear score')
+DPS_TEMPLATE='(%.1f Schaden pro Sekunde)'
+C_TooltipInfo.GetHyperlink=function() return {lines={{leftText='(27,4 Schaden pro Sekunde)'}}} end
+assert(G.WeaponDPS({classID=2,link='item:2004'})==27.4,'use the localized tooltip format')
+assert(G.WeaponDPS({classID=4,link='item:2004'})==nil,'armor never gets weapon DPS')

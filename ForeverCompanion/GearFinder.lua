@@ -159,9 +159,35 @@ function G.Read(item,context)
   end
   for key,n in pairs(rawStats) do if secret(key) or (not known[key] and (not finite(n) or n~=0)) then unmodeled=unmodeled+1 end end
  end
- local info={name=name,link=type(item)=='string' and item or link,required=required,equip=equip,quality=quality,kind=kind,subkind=subkind,classID=classID,subclassID=subclassID,stats=stats,unmodeled=unmodeled,score=not invalid and G.Score(stats,context and context.weights or G.Settings().weights) or nil}
+ local info={name=name,link=type(item)=='string' and item or link,required=required,equip=equip,itemLevel=level,quality=quality,kind=kind,subkind=subkind,classID=classID,subclassID=subclassID,stats=stats,unmodeled=unmodeled,score=not invalid and G.Score(stats,context and context.weights or G.Settings().weights) or nil}
  if info.score==nil and type(item)=='number' then G.Request(item) end
  if cache then cache[item]=info end;return info
+end
+-- The tooltip's displayed weapon DPS is a base weapon measurement. It is
+-- never substituted for the score of a complete build or a dual-wield setup.
+function G.WeaponDPS(info)
+ if not info or info.classID~=2 or type(info.link)~='string' then return end
+ if info.weaponDPS~=nil then return info.weaponDPS or nil end
+ local template=DPS_TEMPLATE
+ if type(template)~='string' then return end
+ local start,finish=template:find('%%[%.%d]*f')
+ if not start then return end
+ local function literal(value) return (value:gsub('(%W)','%%%1')) end
+ local pattern='^%s*'..literal(template:sub(1,start-1))..'(%d+[.,]?%d*)'..literal(template:sub(finish+1))..'%s*$'
+ local api=C_TooltipInfo or {}
+ local tooltip=call(api.GetHyperlink,info.link)
+ local lines=type(tooltip)=='table' and public(tooltip.lines)
+ if type(lines)~='table' then return end
+ for _,line in ipairs(lines) do
+  local value=type(line)=='table' and not secret(line) and public(line.leftText)
+  if type(value)=='string' then
+   value=value:gsub('|c%x%x%x%x%x%x%x%x',''):gsub('|r','')
+   local number=value:match(pattern)
+   local dps=number and tonumber((number:gsub(',','.')))
+   if finite(dps) and dps>0 then info.weaponDPS=dps;return dps end
+  end
+ end
+ info.weaponDPS=false
 end
 function G.Catalog()
  local records,byID={},{}
@@ -189,9 +215,40 @@ function G.SavedSource(itemID)
  return entry.record
 end
 local locations={Head='INVTYPE_HEAD',Neck='INVTYPE_NECK',Shoulder='INVTYPE_SHOULDER',Chest='INVTYPE_CHEST',Waist='INVTYPE_WAIST',Legs='INVTYPE_LEGS',Feet='INVTYPE_FEET',Wrist='INVTYPE_WRIST',Hands='INVTYPE_HAND',Finger='INVTYPE_FINGER',Trinket='INVTYPE_TRINKET',Back='INVTYPE_CLOAK'}
+local equipSlots={INVTYPE_ROBE='Chest',INVTYPE_WEAPON='One-Hand',INVTYPE_2HWEAPON='Two-Hand',
+ INVTYPE_WEAPONMAINHAND='Main Hand',INVTYPE_WEAPONOFFHAND='Off Hand',INVTYPE_SHIELD='Off Hand',
+ INVTYPE_HOLDABLE='Off Hand',INVTYPE_RANGED='Ranged',INVTYPE_RANGEDRIGHT='Ranged',INVTYPE_THROWN='Ranged'}
+for slot,location in pairs(locations) do equipSlots[location]=slot end
 local armorSlots={Head=true,Shoulder=true,Chest=true,Waist=true,Legs=true,Feet=true,Wrist=true,Hands=true}
 function G.Compatible(record,index)
  local slot=G.slots[index];return slot and (record.slot==slot[1] or (slot[2]==16 and (record.slot=='One-Hand' or record.slot=='Two-Hand')) or (slot[2]==17 and record.slot=='One-Hand'))
+end
+function G.SourceKind(source)
+ if source.carried then return 'bags' end
+ if source.questID then return 'quest' end
+ if source.reference then return 'crafted' end
+ return 'dungeon'
+end
+local bagSnapshot,bagRevision
+local function bagLinks()
+ local api=C_Container or {}
+ if bagRevision==G.revision and bagSnapshot then return bagSnapshot end
+ if type(api.GetContainerNumSlots)~='function' or type(api.GetContainerItemInfo)~='function' then return {} end
+ local found,seen={},{}
+ for bag=0,4 do
+  local count=call(api.GetContainerNumSlots,bag)
+  if finite(count) and count>=0 and count<=200 then
+   for slot=1,math.floor(count) do
+    local item=call(api.GetContainerItemInfo,bag,slot)
+    local link=type(item)=='table' and public(item.hyperlink)
+    if type(link)=='string' and not seen[link] and link:find('item:%d+') then
+     found[#found+1]=link;seen[link]=true
+    end
+   end
+  end
+ end
+ bagSnapshot,bagRevision=found,G.revision
+ return found
 end
 function G.Owned(itemID)
  G.metrics.ownershipReads=G.metrics.ownershipReads+1
@@ -221,7 +278,8 @@ end
 function G.SnapshotKey(options)
  options=options or {};local cfg=G.Settings();local context=G.Context(cfg,options.matchArmor or options.bestNow and not options.includeReview);context.bestNow=options.bestNow
  local fields={tostring(G.revision),tostring(context.level)}
- for _,key in ipairs({'slot','query','dungeon','saved','completed','active','ready','matchArmor','upgrades','hideOwned','bestNow','includeReview'}) do fields[#fields+1]=tostring(options[key]) end
+ if options.includeBags then context.bags=bagLinks();for _,link in ipairs(context.bags) do fields[#fields+1]=link end end
+ for _,key in ipairs({'slot','query','dungeon','saved','completed','active','ready','matchArmor','upgrades','hideOwned','bestNow','includeReview','includeBags','sourceKind'}) do fields[#fields+1]=tostring(options[key]) end
  for i in ipairs(G.slots) do fields[#fields+1]=tostring(context.links[i]);fields[#fields+1]=tostring(context.inventoryKnown[i]) end
  for i in ipairs(G.stats) do fields[#fields+1]=tostring(context.weights[i]) end
  local keys={};for key,value in pairs(cfg.sources) do if type(key)=='string' and type(value)=='table' and type(value.dungeon)=='string' and type(value.boss)=='string' then keys[#keys+1]='s'..key..value.dungeon..'/'..value.boss end end
@@ -274,16 +332,21 @@ local function blocked(itemID,index,context)
  return false,true
 end
 local function recommendable(row)
- return row.delta and row.delta>0 and not row.partial and row.owned==0
-  and row.usable==true and row.uniquenessChecked and row.slot[1]~='Trinket'
+ return row.delta and row.delta>0 and not row.partial and (row.owned==0 or row.carried)
+  and not row.isEquipped and row.usable==true and row.uniquenessChecked and row.slot[1]~='Trinket'
 end
 local function compare(entry,index,context)
- local record,info=entry.record,G.Read(entry.record.itemID,context)
+ local record,info=entry.record,G.Read(entry.record.bagLink or entry.record.itemID,context)
  local slot=G.slots[index];local equipped=context.links[index];local baseline=G.Read(equipped,context)
  local canUse=usable(record.itemID,context)
  local conflict,uniqueChecked=blocked(record.itemID,index,context)
  local r={record=record,sources=entry.sources,info=info,baseline=baseline,slotIndex=index,slot=slot,owned=observed(record.itemID,context),usable=canUse,uniquenessChecked=uniqueChecked,weights=context.weights}
- r.isEquipped=type(equipped)=='string' and tonumber(equipped:match('item:(%d+)'))==record.itemID
+ r.carried=record.carried
+ r.isEquipped=type(equipped)=='string' and not r.carried and tonumber(equipped:match('item:(%d+)'))==record.itemID
+ if r.carried then
+  r.isEquipped=type(equipped)=='string' and equipped:match('item:[^|]+')==record.bagLink:match('item:[^|]+')
+  r.owned=math.max(1,r.owned or 0)
+ end
  local reason
  if not info then reason='Loading item data'
  elseif not finite(info.required) or not finite(context.level) then reason='Level requirement unavailable'
@@ -319,14 +382,7 @@ function G.CompareLink(link)
  local itemID=tonumber(link:match('item:(%d+)'));if not id(itemID) then return nil end
  local cfg=G.Settings();local context=G.Context(cfg,cfg.matchArmor)
  local info=G.Read(link,context);if not info then return nil end
- local slotName
- for name,equip in pairs(locations) do if equip==info.equip then slotName=name end end
- if info.equip=='INVTYPE_ROBE' then slotName='Chest'
- elseif info.equip=='INVTYPE_WEAPON' then slotName='One-Hand'
- elseif info.equip=='INVTYPE_2HWEAPON' then slotName='Two-Hand'
- elseif info.equip=='INVTYPE_WEAPONMAINHAND' then slotName='Main Hand'
- elseif info.equip=='INVTYPE_WEAPONOFFHAND' or info.equip=='INVTYPE_SHIELD' or info.equip=='INVTYPE_HOLDABLE' then slotName='Off Hand'
- elseif info.equip=='INVTYPE_RANGED' or info.equip=='INVTYPE_RANGEDRIGHT' or info.equip=='INVTYPE_THROWN' then slotName='Ranged' end
+ local slotName=equipSlots[info.equip]
  if not slotName then return nil end
  context.cache[itemID]=info
  local record={itemID=itemID,item=info.name,slot=slotName};local entry={record=record,sources={}}
@@ -337,7 +393,7 @@ end
 -- An incomplete client check should surface an item for review, never certify it.
 local function reviewTier(row,level)
  if not row.info or not finite(level) or not finite(row.info.required) or row.info.required>level
-  or row.blocked or row.armorMismatch or row.isEquipped or (row.owned and row.owned>0) then return end
+  or row.blocked or row.armorMismatch or row.isEquipped or (row.owned and row.owned>0 and not row.carried) then return end
  if row.delta and row.delta>0 then return 2 end
  if not row.delta and (row.slot[2]>=16 or row.slot[1]=='Trinket' or row.info.score~=nil) then return 1 end
 end
@@ -345,15 +401,36 @@ local function betterUpgrade(a,b)
  if not b then return true end
  if a.upgradeTier~=b.upgradeTier then return a.upgradeTier>b.upgradeTier end
  if a.upgradeTier>1 and a.delta~=b.delta then return a.delta>b.delta end
- if a.upgradeTier==1 and a.info.required~=b.info.required then return a.info.required>b.info.required end
+ if a.upgradeTier==1 then
+  local aLevel=finite(a.info.itemLevel) and a.info.itemLevel or a.info.required
+  local bLevel=finite(b.info.itemLevel) and b.info.itemLevel or b.info.required
+  if aLevel~=bLevel then return aLevel>bLevel end
+ end
  return a.record.itemID<b.record.itemID
 end
 function G.Build(options,context)
  G.metrics.builds=G.metrics.builds+1
  options=options or {};local s=G.Settings();local result={};context=context or G.Context(s,options.matchArmor or options.bestNow and not options.includeReview);context.bestNow=options.bestNow
  local selected=options.slot==0 and 0 or (G.slots[options.slot or 1] and (options.slot or 1) or 1)
- local catalog=G.Catalog();local terms={};for term in label(options.query,100):lower():gmatch('%S+') do terms[#terms+1]=term end
- local stats={total=0,ranked=0,positive=0,loading=0,hidden=0,confirmed=0,estimated=0,review=0,slots={}}
+ local catalog,byID=G.Catalog()
+ local bagLoading=0
+ if options.includeBags and (not options.sourceKind or options.sourceKind=='bags') and (not options.dungeon or options.dungeon=='') then
+  for _,link in ipairs(context.bags or bagLinks()) do
+   local itemID=tonumber(link:match('item:(%d+)'))
+   local info=G.Read(link,context)
+   if not info then bagLoading=bagLoading+1 end
+   local slot=info and equipSlots[info.equip]
+   if slot then
+    local record={itemID=itemID,item=info.name,slot=slot,dungeon='Carried gear',boss='In your bags',carried=true,
+     reference=true,bagLink=link,status='Exact item in your carried inventory'}
+    local entry=byID[itemID]
+    if not entry then entry={record=record,sources={}};catalog[#catalog+1]=entry;byID[itemID]=entry end
+    entry.sources[#entry.sources+1]=record
+   end
+  end
+ end
+ local terms={};for term in label(options.query,100):lower():gmatch('%S+') do terms[#terms+1]=term end
+ local stats={total=0,ranked=0,positive=0,loading=bagLoading,hidden=0,confirmed=0,estimated=0,review=0,carried=0,slots={}}
  for _,entry in ipairs(catalog) do
   local record=entry.record;local key=tostring(record.itemID)
   local matches=(not options.saved or s.hunts[key]) and (not options.completed or s.completed[key])
@@ -361,32 +438,46 @@ function G.Build(options,context)
   local sourceText=record.item..' '..key..' '..record.slot
   local eligible,preferred,bestHits={},nil,-1
   for _,candidate in ipairs(entry.sources) do
-   if (not options.bestNow or not candidate.sourceMinLevel or (finite(context.level) and candidate.sourceMinLevel<=context.level)) and
+   if (not options.sourceKind or G.SourceKind(candidate)==options.sourceKind) and
+      (not options.bestNow or not candidate.sourceMinLevel or (finite(context.level) and candidate.sourceMinLevel<=context.level)) and
       (not options.dungeon or options.dungeon=='' or candidate.dungeon==options.dungeon) then
     eligible[#eligible+1]=candidate;local text=(candidate.dungeon..' '..candidate.boss):lower();local hits=0
     for _,term in ipairs(terms) do if text:find(term,1,true) then hits=hits+1 end end
     local saved=(options.saved or options.completed) and s.sources[key]
     local isSaved=type(saved)=='table' and candidate.dungeon==saved.dungeon and candidate.boss==saved.boss
     if hits>bestHits or (hits==bestHits and isSaved) then bestHits=hits;preferred=candidate end
-    sourceText=sourceText..' '..candidate.dungeon..' '..candidate.boss
+    sourceText=sourceText..' '..candidate.item..' '..candidate.dungeon..' '..candidate.boss
    end
   end
   for _,term in ipairs(terms) do if not sourceText:lower():find(term,1,true) then matches=false end end
   local sourceMatch=#eligible>0
-  local rowEntry={record=preferred or record,sources=options.bestNow and options.includeReview and eligible or entry.sources}
   local best
   if matches and sourceMatch then
-   for i in ipairs(G.slots) do if (selected==0 or selected==i) and G.Compatible(record,i) then
-    local r=compare(rowEntry,i,context)
+   local candidates={}
+   for _,candidate in ipairs(eligible) do
+    if candidate.carried then candidates[#candidates+1]=candidate end
+   end
+   if #candidates==0 then candidates[1]=preferred end
+   for _,candidate in ipairs(candidates) do
+    local info=G.Read(candidate.bagLink or record.itemID,context)
+    local slotInfo={slot=info and equipSlots[info.equip] or candidate.slot}
+    local rowEntry={record=candidate,sources=eligible}
+    for i in ipairs(G.slots) do if (selected==0 or selected==i) and G.Compatible(slotInfo,i) then
+     local r=compare(rowEntry,i,context)
     if options.bestNow then
      r.upgradeTier=recommendable(r) and 3 or options.includeReview and reviewTier(r,context.level) or nil
      if r.upgradeTier and betterUpgrade(r,best) then best=r end
     elseif not best or (r.delta~=nil and (best.delta==nil or r.delta>best.delta)) then best=r end
     if options.bestNow and not r.info then stats.loading=stats.loading+1 end
     if r.delta and r.delta>0 then stats.slots[i]=(stats.slots[i] or 0)+1 end
-   end end
+    end end
+   end
   end
   if best then
+   if best.carried then
+    best.sources={best.record}
+    for _,candidate in ipairs(eligible) do if not candidate.carried then best.sources[#best.sources+1]=candidate end end
+   end
    stats.total=stats.total+1;if best.delta~=nil then stats.ranked=stats.ranked+1;if best.delta>0 then stats.positive=stats.positive+1 end end
    if not best.info then stats.loading=stats.loading+1 end
    if (not options.upgrades or (best.delta and best.delta>0 and not best.partial and best.owned==0)) and
@@ -412,6 +503,7 @@ function G.Build(options,context)
  if options.bestNow then
   table.sort(result,betterUpgrade)
   for _,r in ipairs(result) do
+   if r.carried then stats.carried=stats.carried+1 end
    if r.upgradeTier==3 then stats.confirmed=stats.confirmed+1
    elseif r.upgradeTier==2 then stats.estimated=stats.estimated+1
    else stats.review=stats.review+1 end
