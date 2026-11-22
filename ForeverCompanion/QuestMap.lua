@@ -892,6 +892,7 @@ local function createGuide(map)
    table.sort(choices,function(a,b) if a.low==b.low then return a.name<b.name end;return a.low<b.low end)
    U.PagedMenu(appearance,'ZONES BY LEVEL',choices,nil,290)
   end},
+  {label='Current dungeon map',enabled=ForeverCompanionDungeonMaps.Current()~=nil,action=function() ForeverCompanionDungeonMaps.Open() end},
   {label='Map appearance',action=function() M.OpenAppearance(appearance) end},
   {label='Friends & Guild',action=function() ForeverCompanionSocialMap.Open(map) end},
   {label='Center on player',action=function()

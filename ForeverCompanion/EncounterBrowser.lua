@@ -169,8 +169,10 @@ function E.Create(parent,navigate,onPrep)
  openLoot=button(right,108,-270,88,"Boss loot",function() open() end)
  dropBack=button(right,205,-270,46,"<",function() E.dropPage=E.dropPage-1;ForeverCompanionRefresh() end)
  dropNext=button(right,258,-270,46,">",function() E.dropPage=E.dropPage+1;ForeverCompanionRefresh() end)
- local routeStatus=label(root,16,-383,592,'',10)
+ local routeStatus=label(root,16,-383,454,'',10)
  E.routeStatus=routeStatus
+ E.mapButton=button(root,478,-376,132,'Dungeon map',function() ForeverCompanionDungeonMaps.Open(E.dungeon) end)
+ ForeverCompanionInterface.SetHoverHelp(E.mapButton,'Dungeon map','Open the interior floor view or follow a landmark route for the selected dungeon.')
  E.routeButton=button(root,620,-376,134,'Find entrance',function()
   routeStatus:SetText(ForeverCompanionDungeonCatalog.Navigate(E.dungeon))
  end)
@@ -264,6 +266,7 @@ function E.Render(tab,db)
  if E.questView then ForeverCompanionDungeonQuests.Render(E.dungeon) else ForeverCompanionDungeonQuests.Hide() end
  if E.routeDungeon~=E.dungeon then
   E.routeDungeon=E.dungeon
+  E.mapButton:SetEnabled(E.dungeon~='')
   local p=ForeverCompanionDungeonCatalog.Approach(E.dungeon)
   E.routeButton:SetEnabled(p~=nil and not p.approximate)
   E.routeStatus:SetText(p and string.format(p.approximate and 'Dungeon area: %s %.1f, %.1f' or 'Outdoor approach: %s %.1f, %.1f',p.zone,p.x*100,p.y*100) or 'No sourced entrance approach for this dungeon.')
