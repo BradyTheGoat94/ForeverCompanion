@@ -2,7 +2,7 @@
 -- explicit selection menus. Contains no gameplay or combat-data processing.
 local U={}
 ForeverCompanionInterface=U
-U.palette={background={.025,.032,.044,.99},surface={.075,.11,.13,1},rail={.13,.21,.23,1},border={.23,.28,.35,1},accent={.94,.74,.42,1},text={.93,.95,.98,1},muted={.66,.72,.80,1}}
+U.palette={background={.027,.037,.052,.99},surface={.072,.093,.120,1},rail={.17,.145,.102,1},border={.21,.26,.31,1},accent={.96,.77,.46,1},text={.94,.95,.97,1},muted={.70,.75,.82,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
@@ -80,7 +80,7 @@ end
 local function paint(texture,color) texture:SetColorTexture(unpack(color)) end
 function U.Text(parent,size,color)
  local text=parent:CreateFontString(nil,'OVERLAY','GameFontHighlightSmall')
- if text.SetFont then text:SetFont('Fonts\\FRIZQT__.TTF',size or 12,'') end
+ if text.SetFont then text:SetFont((size or 12)>=15 and 'Fonts\\FRIZQT__.TTF' or 'Fonts\\ARIALN.TTF',size or 12,'') end
  text:SetTextColor(unpack(color or U.palette.text))
  text:SetJustifyH('LEFT')
  text:SetWordWrap(false)
@@ -129,12 +129,12 @@ function U.Surface(parent,palette)
  local p=palette or U.palette
  local bg=parent:CreateTexture(nil,'BACKGROUND')
  bg:SetAllPoints(parent);paint(bg,p.background or U.palette.background)
- if parent.GetObjectType and parent:GetObjectType()=='Frame' then
+ if not p.flat and parent.GetObjectType and parent:GetObjectType()=='Frame' then
   local material=parent:CreateTexture(nil,'BACKGROUND',nil,1)
   material:SetPoint('TOPLEFT',parent,'TOPLEFT',6,-6)
   material:SetPoint('BOTTOMRIGHT',parent,'BOTTOMRIGHT',-6,6)
   material:SetTexture('Interface\\DialogFrame\\UI-DialogBox-Background')
-  material:SetAlpha(.55)
+  material:SetAlpha(.26)
  end
  local edge=parent:CreateTexture(nil,'BORDER')
  edge:SetPoint('TOPLEFT',0,0);edge:SetPoint('TOPRIGHT',0,0);edge:SetHeight(1)
@@ -150,29 +150,11 @@ function U.Surface(parent,palette)
  end
  return bg,edge
 end
--- Blizzard's panel-button sheets, referenced from the installed client only.
-function U.NativeButtonFace(button)
- local face=button:CreateTexture(nil,'ARTWORK')
- face:SetAllPoints(button);face:SetTexCoord(0,.625,0,.6875)
- local function show(pressed)
-  -- Large result rows are list entries, not stretched red action buttons.
-  if button.GetHeight and (button:GetHeight() or 0)>36 then face:Hide();return end
-  face:Show()
-  local enabled=not button.IsEnabled or button:IsEnabled()
-  local state=not enabled and 'Disabled' or (pressed and 'Down' or 'Up')
-  face:SetTexture('Interface\\Buttons\\UI-Panel-Button-'..state)
- end
- show(false)
- button:HookScript('OnMouseDown',function() show(true) end)
- for _,event in ipairs({'OnMouseUp','OnLeave','OnShow','OnEnable','OnDisable','OnSizeChanged'}) do button:HookScript(event,function() show(false) end) end
- return face
-end
 function U.Button(parent,palette)
  local b=CreateFrame('Button',nil,parent)
  local p=palette or U.palette
  local bg,edge=U.Surface(b,{background=p.surface or U.palette.surface,border=p.border})
- local bevel=U.Bevel(b)
- U.NativeButtonFace(b)
+ local bevel=p.flat and {} or U.Bevel(b)
  local text=U.Text(b,12,p.text)
  text:ClearAllPoints();text:SetPoint('LEFT',b,'LEFT',7,0);text:SetPoint('RIGHT',b,'RIGHT',-7,0)
  text:SetJustifyH('CENTER')

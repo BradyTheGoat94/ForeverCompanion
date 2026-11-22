@@ -60,7 +60,6 @@ local function action(parent,x,y,w,label,icon,fn,height)
   bg:SetAllPoints(b)
   paint(bg,.043,.052,.068,1)
   ForeverCompanionInterface.Bevel(b)
-  ForeverCompanionInterface.NativeButtonFace(b)
   local rail=strip(b,0,0,2,h,{.22,.27,.34,1})
   local offset=12
   if icon then
@@ -84,9 +83,9 @@ local function action(parent,x,y,w,label,icon,fn,height)
     paint(bg,.075,.09,.115,1)
     paint(rail,.82,.68,.43,1)
     caption:SetTextColor(.98,.97,.93)
-    if self.detail and GameTooltip and type(GameTooltip.SetOwner)=="function" and type(GameTooltip.SetText)=="function" then
+    if GameTooltip and type(GameTooltip.SetOwner)=="function" and type(GameTooltip.SetText)=="function" then
       GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-      GameTooltip:SetText(self.detail,1,0.84,0.47,true)
+      GameTooltip:SetText(self.detail or caption:GetText(),1,0.84,0.47,true)
       if self.extraDetail and type(GameTooltip.AddLine)=="function" then
         GameTooltip:AddLine(self.extraDetail,0.74,0.80,0.83,true)
       end
@@ -280,6 +279,7 @@ function D.Create(parent,openPage,ctx)
   for i,entry in ipairs(shortcuts) do
     local target=entry[1]
     local b=action(quick,12+((i-1)%3)*96,-44-math.floor((i-1)/3)*63,90,entry[3] or target,nil,function() if target=='Session' then ForeverCompanionSessionProgress.Toggle() else navigate(target) end end,57)
+    b.extraDetail='Open '..(entry[3] or target)..'.'
     local icon=b:CreateTexture(nil,"ARTWORK");icon:SetPoint("TOP",b,"TOP",0,-5);icon:SetSize(27,27);icon:SetTexture("Interface\\Icons\\"..entry[2])
     b.caption:ClearAllPoints();b.caption:SetPoint("BOTTOM",b,"BOTTOM",0,5);b.caption:SetWidth(86);b.caption:SetJustifyH("CENTER")
     if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.caption,10) end
@@ -293,7 +293,7 @@ function D.Create(parent,openPage,ctx)
   advancedCards={character,quick,goals}
   beginnerHero=panel(0,-108,846,176,"CURRENT OBJECTIVE","Interface\\Icons\\INV_Misc_Map_01")
   beginnerHeadline=text(beginnerHero,beginnerHero,20,-49,790,"Checking your quests...","GameFontNormalLarge",PALE)
-  beginnerDescription=text(beginnerHero,beginnerHero,20,-82,785,"Start with one quest. You can explore other tools when you're ready.","GameFontHighlight",MUTED)
+  beginnerDescription=text(beginnerHero,beginnerHero,20,-82,785,"","GameFontHighlight",MUTED)
   beginnerDescription:SetHeight(38)
   beginnerDescription:SetWordWrap(true)
   beginnerQuestAction=action(beginnerHero,20,-127,210,"OPEN MY QUESTS",nil,function()
@@ -470,22 +470,25 @@ function D.Render()
   -- A beginner sees one concrete, honest next action rather than a feature menu.
   -- This never invents a quest or assumes that a stale quest snapshot is current.
   if beginnerHeadline then
-    local title,description="Open your quest log","Choose a quest, read its objective, then check the map for a known location."
+    local title,description="Open your quest log","Quest tracking unavailable"
     if firstReady then
       title="Turn in: "..tostring(firstReady.title or "completed quest")
-      description="This quest is marked complete. Open Quests to review where to turn it in."
+      description=(firstReady.zone and firstReady.zone~="" and firstReady.zone.."  /  " or "").."Ready to turn in"
     elseif questFocus then
       title="Continue: "..tostring(questFocus.title or "active quest")
-      description="Open Quests to review the objective. A map marker appears only if coordinates are known."
+      description=(questFocus.zone and questFocus.zone~="" and questFocus.zone.."  /  " or "").."In progress"
     elseif questSupported then
       title="Find your first quest"
-      description="No active quest was found. Talk to a quest giver or check your in-game quest log."
+      description="No active quests"
     else
-      description="Quest scanning is unavailable on this client. Use the in-game quest log to choose an objective."
+      description="Quest tracking unavailable"
     end
     beginnerHeadline:SetText(title)
     beginnerDescription:SetText(description)
-    if beginnerQuestAction then updateAction(beginnerQuestAction,firstReady and "REVIEW TURN-IN" or "OPEN MY QUESTS") end
+    if beginnerQuestAction then
+      updateAction(beginnerQuestAction,firstReady and "Review turn-in" or "Open my quests")
+      beginnerQuestAction.extraDetail=questSupported and "Review objectives, turn-ins and available map locations." or "Open the quest panel for tracking status and manual notes."
+    end
   end
   if beginnerQuest then
     if questSupported and firstReady and firstReady.title then
@@ -521,17 +524,17 @@ function D.Render()
     values.step1.extraDetail=("Zone: "..zone.."  |  Objective: "..objective.."  |  Addon focus only"):sub(1,350)
   end
   if firstReady and firstReady.title then
-    updateAction(values.step1,"1. Ready to turn in: "..tostring(firstReady.title))
+    updateAction(values.step1, "Turn in: "..tostring(firstReady.title))
   elseif questSupported and pinned and pinned.title and not pinned.complete then
-    updateAction(values.step1,"1. Pinned priority: "..tostring(pinned.title))
+    updateAction(values.step1, "Pinned: "..tostring(pinned.title))
   elseif questSupported and selected and selected.title then
-    updateAction(values.step1,"1. Quest focus: "..tostring(selected.title))
+    updateAction(values.step1, "Continue: "..tostring(selected.title))
   elseif questSupported then
-    updateAction(values.step1,"1. Review your quest log for a new objective.")
+    updateAction(values.step1,"Open quest log")
   else
-    updateAction(values.step1,"1. Quest API unavailable; check the game log or manual notes.")
+    updateAction(values.step1,"Quest tracking unavailable")
   end
-  updateAction(values.step2,"2. Review "..tostring(class).." leveling and rotation priorities.")
+  updateAction(values.step2,tostring(class).." class guide")
   values.step2.extraDetail="Select a specialization and compare trained spells before using advisory priorities."
   local shortage=type(stats)=="table" and tonumber(stats.missing) or nil
   values.step3.extraDetail="Material totals are manual planning entries, not an inventory or market-price scan."
@@ -539,12 +542,12 @@ function D.Render()
     local top=safeCall(craft and craft.TopShortages,1)
     local item=type(top)=="table" and top[1] or nil
     if item then
-      updateAction(values.step3,"3. Gather "..item.missing.." "..tostring(item.name).." for "..tostring(item.profession).." (manual).")
+      updateAction(values.step3,"Gather "..item.missing.." "..tostring(item.name))
     else
-      updateAction(values.step3,"3. Review "..shortage.." missing units in manual material goals.")
+      updateAction(values.step3,shortage.." materials needed")
     end
   else
-    updateAction(values.step3,"3. Add or review your manual profession goals.")
+    updateAction(values.step3,"Open profession goals")
   end
   local summary=questSupported and (questValid and (ready.." ready of "..questCount.." quests") or "Quest scan incomplete") or (questStale and "Quest snapshot stale" or "Quest scan unavailable")
   local materialSummary=shortage and (shortage.." material units needed (manual)") or "Material goals unverified"

@@ -47,7 +47,7 @@ local function widget()
  end})
 end
 CreateFrame=widget;UIParent=widget()
-ForeverCompanionInterface={Text=function() local t=widget();labels[#labels+1]=t;return t end,Button=function() local b=widget();buttons[#buttons+1]=b;return b end,Surface=noop,PreparePanel=noop,CloseButton=noop}
+ForeverCompanionInterface={Text=function() local t=widget();labels[#labels+1]=t;return t end,Button=function() local b=widget();buttons[#buttons+1]=b;return b end,Surface=noop,PreparePanel=noop,CloseButton=noop,SetHoverHelp=noop}
 UnitLevel=function() return 36 end;UnitRace=function() return 'Human','Human',1 end;UnitFactionGroup=function() return 'Alliance' end
 C_Map={GetBestMapForUnit=function() return 2548 end}
 C_QuestLog={IsQuestFlaggedCompleted=function() return false end}

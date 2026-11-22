@@ -4,7 +4,7 @@ local function widget()
  local w={shown=true,value=''}
  local methods={SetText=function(s,v) s.value=v end,GetText=function(s) return s.value end,
   SetScript=function(s,k,v) s[k]=v end,Show=function(s) s.shown=true end,Hide=function(s) s.shown=false end,
-  IsShown=function(s) return s.shown end,GetHeight=function() return 420 end,
+  SetShown=function(s,v) s.shown=v end,IsShown=function(s) return s.shown end,GetHeight=function() return 420 end,
   CreateTexture=function() return widget() end,CreateFontString=function() return widget() end}
  widgets[#widgets+1]=w
  return setmetatable(w,{__index=function(_,k) return methods[k] or noop end})
@@ -35,3 +35,15 @@ dofile('ForeverCompanion/ProfessionGuideWorkspace.lua')
 local W=ForeverCompanionProfessionGuideWorkspace
 W.Open(nil,'recipes',true);W.query='copper bar';W.Refresh();assert(#W.results==2)
 W.rows[2].OnClick(W.rows[2]);W.addButton.OnClick();assert(owner=='Blacksmithing')
+
+local hovered
+GameTooltip={
+ SetOwner=noop,SetText=function(_,title) hovered=title end,
+ AddLine=function(_,line) assert(line:find('per craft',1,true)) end,
+ Show=noop,Hide=noop,
+}
+W.materials.rows[1].OnEnter(W.materials.rows[1])
+assert(hovered=='Copper Bar','ingredient hover exposes the full name and quantities')
+assert(W.selected==b and W.materials.root.shown)
+W.query='unmatched material';W.Refresh()
+assert(not W.selected and not W.materials.root.shown,'empty searches clear detail and materials')

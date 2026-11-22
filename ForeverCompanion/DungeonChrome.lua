@@ -1,6 +1,6 @@
 -- Dungeon-local journal materials. All regions belong to their owning frame;
 -- decorative textures never add a covering frame or intercept mouse input.
-local C={gold={.90,.73,.43,1},cream={.94,.89,.78,1},muted={.70,.64,.53,1}}
+local C={gold={.90,.73,.43,1},cream={.94,.95,.97,1},muted={.67,.73,.80,1}}
 ForeverCompanionDungeonChrome=C
 local function strip(parent,x,y,w,h,color,layer)
  local t=parent:CreateTexture(nil,layer or 'BORDER');t:SetPoint('TOPLEFT',parent,'TOPLEFT',x,y);t:SetSize(w,h)
@@ -8,22 +8,19 @@ local function strip(parent,x,y,w,h,color,layer)
 end
 function C.Skin(parent,w,h,header,outer)
  local inset=outer and 7 or 4
- local bg=strip(parent,inset,-inset,w-inset*2,h-inset*2,{.035,.032,.027,1},'BACKGROUND')
+ local bg=strip(parent,inset,-inset,w-inset*2,h-inset*2,{.035,.052,.075,1},'BACKGROUND')
  local grain=parent:CreateTexture(nil,'BACKGROUND');grain:SetAllPoints(bg)
- grain:SetTexture('Interface\\DialogFrame\\UI-DialogBox-Background');grain:SetAlpha(1)
+ grain:SetTexture('Interface\\DialogFrame\\UI-DialogBox-Background');grain:SetAlpha(.24)
  if parent.SetBackdrop then
   parent:SetBackdrop({edgeFile=outer and 'Interface\\DialogFrame\\UI-DialogBox-Border' or 'Interface\\Tooltips\\UI-Tooltip-Border',edgeSize=outer and 24 or 12,insets={left=inset,right=inset,top=inset,bottom=inset}})
   parent:SetBackdropBorderColor(1,1,1,1)
  end
  if header then
-  strip(parent,8,-8,w-16,header-5,{.045,.045,.045,.95})
-  local leather=parent:CreateTexture(nil,'BORDER');leather:SetPoint('TOPLEFT',8,-8);leather:SetSize(w-16,math.min(header-5,28))
-  leather:SetTexture('Interface\\FriendsFrame\\UI-FriendsFrame-TitleBg');leather:SetAlpha(.85)
-  strip(parent,8,-header-3,w-16,1,{.35,.32,.25,1})
-  strip(parent,8,-header-4,w-16,1,{.015,.011,.006,1})
+  strip(parent,8,-8,w-16,header-5,{.074,.101,.136,1})
+  strip(parent,8,-header-3,w-16,1,{.31,.28,.21,1})
  end
  for _,inset in ipairs({4}) do
-  local color={.28,.26,.21,1}
+  local color={.20,.24,.31,1}
   strip(parent,inset,-inset,w-2*inset,1,color)
   strip(parent,inset,-h+inset,w-2*inset,1,color)
   strip(parent,inset,-inset,1,h-2*inset,color)
@@ -38,15 +35,15 @@ function C.Seal(parent,x,y,size)
  rim:SetTexture('Interface\\Buttons\\UI-Quickslot2');return seal
 end
 function C.Row(parent,w,h)
- local bg=strip(parent,0,0,w,h,{.03,.023,.014,.55},'BACKGROUND')
+ local bg=strip(parent,0,0,w,h,{.046,.067,.092,.86},'BACKGROUND')
  strip(parent,4,-h+1,w-8,1,{.32,.25,.15,.32})
  return bg
 end
 function C.Select(row,bg,selected)
  row.fcSelected=selected and true or false
  local function paint(hover)
-  if row.fcSelected then bg:SetColorTexture(.36,.27,.08,.8)
-  elseif hover then bg:SetColorTexture(.23,.20,.12,.8) else bg:SetColorTexture(.03,.023,.014,.55) end
+  if row.fcSelected then bg:SetColorTexture(.19,.156,.096,1)
+  elseif hover then bg:SetColorTexture(.095,.132,.173,1) else bg:SetColorTexture(.046,.067,.092,.86) end
  end
  if not row.fcDungeonHover then
   row.fcDungeonHover=true;row:HookScript('OnEnter',function() paint(true) end);row:HookScript('OnLeave',function() paint(false) end)

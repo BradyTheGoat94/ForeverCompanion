@@ -843,13 +843,7 @@ local function createUI()
   headerVelvet:SetPoint("TOPLEFT",window,"TOPLEFT",11,-11)
   headerVelvet:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-11)
   headerVelvet:SetHeight(79)
-  colorTexture(headerVelvet,.045,.056,.075,1)
-  local nativeTitle=window:CreateTexture(nil,"BORDER",nil,1)
-  nativeTitle:SetPoint("TOPLEFT",window,"TOPLEFT",12,-12)
-  nativeTitle:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-12)
-  nativeTitle:SetHeight(30)
-  nativeTitle:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-TitleBg")
-  nativeTitle:SetAlpha(.75)
+  colorTexture(headerVelvet,.049,.069,.097,1)
   local headerGold=window:CreateTexture(nil,"ARTWORK")
   headerGold:SetPoint("TOPLEFT",window,"TOPLEFT",12,-92)
   headerGold:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-92)
@@ -862,14 +856,10 @@ local function createUI()
   colorTexture(ForeverCompanionUIState.accentBar,.76,.63,.39,1)
 
   titleText = window:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  titleText:SetPoint("TOPLEFT", 86, -22)
+  titleText:SetPoint("TOPLEFT", 86, -29)
   titleText:SetTextColor(.95,.94,.90)
   titleText:SetWidth(620);titleText:SetHeight(32);titleText:SetWordWrap(false)
   if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(titleText,24,true) end
-  ForeverCompanionUIState.subtitleText=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-  ForeverCompanionUIState.subtitleText:SetPoint("TOPLEFT",86,-51)
-  ForeverCompanionUIState.subtitleText:SetText("Quest routes  /  Class guides  /  Character planning")
-  ForeverCompanionUIState.subtitleText:SetTextColor(0.72,0.78,0.84)
   if ForeverCompanionHeraldry then
     ForeverCompanionHeraldry.Create(window,13,-10,72)
   else
@@ -1003,6 +993,11 @@ local function createUI()
     local navIcons={'INV_Misc_Map_01','INV_Misc_Book_09','INV_Misc_Key_03','Trade_BlackSmithing','INV_Ingot_Iron','Ability_Warrior_SavageBlow','Trade_Engineering'}
     local icon=b:CreateTexture(nil,'ARTWORK');icon:SetSize(19,19);icon:SetPoint('LEFT',b,'LEFT',7,0);icon:SetTexture('Interface\\Icons\\'..navIcons[i])
     b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('LEFT',b,'LEFT',32,0);b:GetFontString():SetPoint('RIGHT',b,'RIGHT',-5,0);b:GetFontString():SetJustifyH('LEFT')
+    ForeverCompanionInterface.SetHoverHelp(b,group.name,function()
+      local names={}
+      for _,item in ipairs(group.items) do names[#names+1]=item[1] end
+      return table.concat(names,'\n')
+    end)
     b:SetScript('OnClick',function()
       if #group.items==1 and group.items[1][2]=='Meter' then ForeverCompanionCombatMeter.Toggle();return end
       local entries={}

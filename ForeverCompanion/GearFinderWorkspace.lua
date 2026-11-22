@@ -259,6 +259,11 @@ function W.Open(itemID)
    entries[#entries+1]={label='Retry loading item data',action=function() G.RetryData();G.ObserveHunts();refreshTracker();W.Refresh();tell('Requested updated item data.') end}
    ForeverCompanionInterface.Menu(self,'Gear options',entries)
   end)
+  U.SetHoverHelp(dungeonButton,'Dungeon source','Limit the gear list to one dungeon or browse every source.')
+  U.SetHoverHelp(readyButton,'Level filter','Limit Browse to gear within your current character level.')
+  U.SetHoverHelp(armorButton,'Armor filter','Compare gear of the armor type you wear or show all armor types.')
+  U.SetHoverHelp(upgradeButton,'Ranking mode','Best Now ranks gains over equipped gear. Browse shows candidates ranked within their slot.')
+  U.SetHoverHelp(filtersButton,'Gear options','Adjust filters or retry loading item data.')
   W.filtersButton=filtersButton
   ForeverCompanionInterface.HoverNote(root,1037,-198,'Gear rankings','Best Now ranks estimated gains over equipped gear. Browse ranks within each slot. Hover a selected item’s rank for details on its comparison.')
   W.listHeading=text(root,220,-218,420,12,'');W.listHeading:SetTextColor(unpack(V.colors.blue))

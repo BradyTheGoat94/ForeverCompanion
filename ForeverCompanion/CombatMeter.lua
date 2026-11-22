@@ -370,6 +370,8 @@ local function build()
  nextButton=flatButton(frame);nextButton:SetSize(16,17);nextButton:SetText(">")
  nextButton:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",-19,3)
  nextButton:SetScript("OnClick",function() M.StepHistory(-1) end)
+ ForeverCompanionInterface.SetHoverHelp(previousButton,'Older fight','Open the previous fight in combat history.')
+ ForeverCompanionInterface.SetHoverHelp(nextButton,'Newer fight','Open the next fight in combat history.')
  local footer=ForeverCompanionInterface.Text(frame,10)
  footer:SetPoint("BOTTOMLEFT",frame,"BOTTOMLEFT",6,5);footer:SetWidth(windowWidth-68)
  footer:SetTextColor(.7,.72,.76);frame.meterFooter=footer

@@ -761,7 +761,9 @@ local function createGuide(map)
   db.mapBriefingHidden=not db.mapBriefingHidden
   M.Refresh()
  end)
+ U.SetHoverHelp(briefingButton,'Zone briefing','Show or hide the next suggested quest and nearby town services.')
  local find=U.Button(bar);find:SetSize(62,26);find:SetPoint('TOPRIGHT',-80,-6);find:SetText('Services')
+ U.SetHoverHelp(find,'Service atlas','Search this map for vendors, repairs, mailboxes, trainers, and travel.')
  find:SetScript('OnClick',function() ForeverCompanionServiceAtlas.Toggle(true) end)
  local minimize=U.Button(bar);minimize:SetSize(26,26)
  local expand=U.Button(bar);expand:SetSize(26,26);expand:SetPoint('TOPRIGHT',-10,-6)
@@ -778,6 +780,7 @@ local function createGuide(map)
  minimize:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(db.mapDockMinimized and 'Restore Companion map panel' or 'Minimize Companion map panel');GameTooltip:Show() end end)
  minimize:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
  M.mapDock=bar;M.minimizeMapDock=minimize;M.mapDockFind=find;M.mapDockHint=hint;M.mapDockCoordinates=coordinates
+ U.SetHoverHelp(expand,'Map controls','Expand or collapse map layers, filters and tools.')
  expand:SetScript('OnClick',function() db.mapDockExpanded=not db.mapDockExpanded;layout() end);layout()
  local function button(x,y,w,value,fn)
   local b=U.Button(drawer);b:SetSize(w,23);b:SetPoint('TOPLEFT',x,y);b:SetText(value);b:SetScript('OnClick',fn);return b
@@ -802,8 +805,16 @@ local function createGuide(map)
   entries[#entries+1]={label='Show all service types',action=function() db.questMapHiddenServices={};db.mapVendorsOnly=nil;M.Refresh() end}
   U.Menu(services,'MAP SERVICES',entries)
  end)
- button(262,-35,94,'Overlay map',function() ForeverCompanionMapOverlay.Toggle() end)
- button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end)
+ U.SetHoverHelp(modeButton,'Quest markers','Switch among all quest markers, the current focus, and hidden.')
+ U.SetHoverHelp(zoomButton,'Zoom to focus','Center the map on the selected quest destination.')
+ U.SetHoverHelp(styleButton,'Map style','Cycle through the map visual styles.')
+ U.SetHoverHelp(townButton,'Town services','Show or hide vendor, mailbox, travel and other service markers.')
+ U.SetHoverHelp(pickupButton,'Quest pickups','Show or hide available and reported quest givers.')
+ U.SetHoverHelp(services,'Service filters','Choose which service categories appear on this map.')
+ U.SetHoverHelp(button(262,-35,94,'Overlay map',function() ForeverCompanionMapOverlay.Toggle() end),
+  'Overlay map','Open or hide the movable map overlay.')
+ U.SetHoverHelp(button(364,-35,70,'Stop arrow',function() ForeverCompanionQuestWaypoints.Clear();M.Refresh() end),
+  'Stop arrow','Clear the active Companion navigation destination.')
  local appearance;appearance=button(442,-35,66,'Tools...',function() ForeverCompanionInterface.Menu(appearance,'MAP TOOLS',{
   {label='Only show zone starter pickups',selected=db.mapOnlyZoneStarts==true,action=function()
    db.mapOnlyZoneStarts=not db.mapOnlyZoneStarts
@@ -838,7 +849,8 @@ local function createGuide(map)
   {label='Personal notes',action=function() ForeverCompanionMapTools.Toggle() end},
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(appearance) end},
  }) end)
- local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Gold star: zone start   ! pickup   ? turn-in · Drag header to move dock')
+ U.SetHoverHelp(appearance,'Map tools','Browse zones by level, add personal notes, and customize the map.')
+ local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Gold star: zone start    ! Pickup    ? Turn-in')
  return bar,title,hint
 end
 
