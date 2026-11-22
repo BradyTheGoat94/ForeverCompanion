@@ -60,7 +60,7 @@ local function action(parent,x,y,w,label,icon,fn,height)
   bg:SetAllPoints(b)
   paint(bg,.043,.052,.068,1)
   ForeverCompanionInterface.Bevel(b)
-  local rail=strip(b,0,0,2,h,{.22,.27,.34,1})
+  local rail=strip(b,0,0,3,h,{.22,.37,.32,1})
   local offset=12
   if icon then
     local i=b:CreateTexture(nil,"ARTWORK")
@@ -207,45 +207,7 @@ function D.Create(parent,openPage,ctx)
   root:SetSize(846,535)
   -- Welcome banner: a real in-game widget, not baked into the preview.
   local banner=panel(0,0,846,95,"",nil)
-  local bannerBg=banner:CreateTexture(nil,"ARTWORK")
-  bannerBg:SetPoint("TOPLEFT",banner,"TOPLEFT",1,-3)
-  bannerBg:SetSize(844,90)
-  paint(bannerBg,0.035,0.046,0.071,1)
-  if ForeverCompanionVisualTheme then
-    -- The artwork occupies BORDER above the panel background and below text.
-    bannerBg:Hide()
-    ForeverCompanionInterface.Material(banner,banner,.42)
-  end
-  -- Layered atmospheric bands and distant ridge lines enrich the banner
-  -- without external artwork or additional client dependencies.
-  if not ForeverCompanionVisualTheme then
-  strip(banner,2,-5,840,1,{0.78,0.57,0.28,0.46})
-  strip(banner,3,-86,838,1,{0.39,0.31,0.21,0.62})
-  strip(banner,504,-14,326,1,{0.65,0.49,0.30,0.18})
-  strip(banner,550,-25,270,1,{0.56,0.44,0.28,0.16})
-  for i=1,7 do
-    local x=510+(i-1)*46
-    local height=11+(i%3)*7
-    strip(banner,x,-86+height,47,1,{0.26,0.28,0.33,0.36})
-  end
-  -- A lightweight castle skyline built from native UI textures, not a fake image.
-  local towers={{615,28,29},{648,44,36},{689,33,31},{724,58,41},{770,39,34},{808,27,25}}
-  for _,tower in ipairs(towers) do
-    local left,height,width=tower[1],tower[2],tower[3]
-    local silhouette=banner:CreateTexture(nil,"ARTWORK")
-    silhouette:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left,5)
-    silhouette:SetSize(width,height)
-    paint(silhouette,0.14,0.16,0.22,1)
-    local spire=banner:CreateTexture(nil,"ARTWORK")
-    spire:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left+math.floor(width/2)-2,height+5)
-    spire:SetSize(4,12)
-    paint(spire,0.20,0.18,0.20,1)
-    local windowLight=banner:CreateTexture(nil,"OVERLAY")
-    windowLight:SetPoint("BOTTOMLEFT",banner,"BOTTOMLEFT",left+math.floor(width/2)-2,11)
-    windowLight:SetSize(4,8)
-    paint(windowLight,0.76,0.53,0.22,0.8)
-  end
-  end
+  ForeverCompanionVisualTheme.EnvironmentArt(banner,'TOPRIGHT',-2,-2,662,91,'Overview',.97,.11,'BORDER',2)
   if ForeverCompanionHeraldry then
     ForeverCompanionHeraldry.Create(banner,16,-13,68)
   else
@@ -256,14 +218,14 @@ function D.Create(parent,openPage,ctx)
   end
   local welcome=text(banner,banner,93,-18,540,"ADVENTURE JOURNAL","GameFontNormalLarge",PALE)
   if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(welcome,18) end
-  text(banner,banner,94,-49,540,"Quest log • Class notes • Equipment","GameFontHighlight",PALE)
+
   values.bannerStatus=text(banner,banner,94,-72,540,"Loading character…","GameFontHighlightSmall",MUTED)
   strip(banner,94,-88,402,1,{0.69,0.51,0.24,0.75})
   -- Keep the headline readable over the brighter portions of the citadel.
   local headlineShade=banner:CreateTexture(nil,"ARTWORK")
   headlineShade:SetPoint("TOPLEFT",banner,"TOPLEFT",84,-7)
-  headlineShade:SetSize(560,79)
-  paint(headlineShade,0.025,0.036,0.06,0.55)
+  headlineShade:SetSize(430,79)
+  paint(headlineShade,0.018,0.047,0.040,0.43)
   -- Three-card top row, echoing the original reference artwork.
   local character=panel(0,-108,263,176,"CHARACTER OVERVIEW","Interface\\Icons\\INV_Misc_Head_Human_01")
   values.character=text(character,character,16,-48,185,"","GameFontHighlight",PALE)
@@ -280,6 +242,8 @@ function D.Create(parent,openPage,ctx)
     local target=entry[1]
     local b=action(quick,12+((i-1)%3)*96,-44-math.floor((i-1)/3)*63,90,entry[3] or target,nil,function() if target=='Session' then ForeverCompanionSessionProgress.Toggle() else navigate(target) end end,57)
     b.extraDetail='Open '..(entry[3] or target)..'.'
+    local r,g,v=unpack(ForeverCompanionVisualTheme.Destination(target).rgb)
+    strip(b,3,-55,84,2,{r,g,v,1})
     local icon=b:CreateTexture(nil,"ARTWORK");icon:SetPoint("TOP",b,"TOP",0,-5);icon:SetSize(27,27);icon:SetTexture("Interface\\Icons\\"..entry[2])
     b.caption:ClearAllPoints();b.caption:SetPoint("BOTTOM",b,"BOTTOM",0,5);b.caption:SetWidth(86);b.caption:SetJustifyH("CENTER")
     if ForeverCompanionVisualTheme then ForeverCompanionVisualTheme.Font(b.caption,10) end
@@ -292,11 +256,12 @@ function D.Create(parent,openPage,ctx)
   -- clear decision is easier to understand than six unrelated shortcuts.
   advancedCards={character,quick,goals}
   beginnerHero=panel(0,-108,846,176,"CURRENT OBJECTIVE","Interface\\Icons\\INV_Misc_Map_01")
+  beginnerHero.heading:SetTextColor(.43,.90,.67)
   beginnerHeadline=text(beginnerHero,beginnerHero,20,-49,790,"Checking your quests...","GameFontNormalLarge",PALE)
   beginnerDescription=text(beginnerHero,beginnerHero,20,-82,785,"","GameFontHighlight",MUTED)
   beginnerDescription:SetHeight(38)
   beginnerDescription:SetWordWrap(true)
-  beginnerQuestAction=action(beginnerHero,20,-127,210,"OPEN MY QUESTS",nil,function()
+  beginnerQuestAction=action(beginnerHero,20,-127,210,"Open my quests","Interface\\Icons\\INV_Misc_Note_01",function()
     local planner=ForeverCompanionQuestPlanner
     if planner and type(planner.GetLive)=="function" and type(planner.Select)=="function" then
       local ok,quests=pcall(planner.GetLive)
@@ -308,12 +273,12 @@ function D.Create(parent,openPage,ctx)
     end
     if type(navigate)=="function" then navigate("Quests") end
   end,34)
-  action(beginnerHero,240,-127,180,"PLAN MY SESSION",nil,function() navigate('Plan') end,34)
-  local classAction=action(beginnerHero,430,-127,175,"MY CLASS GUIDE",nil,function()
+  action(beginnerHero,240,-127,180,"Plan my session","Interface\\Icons\\INV_Misc_Map_01",function() navigate('Plan') end,34)
+  local classAction=action(beginnerHero,430,-127,175,"Class guide","Interface\\Icons\\INV_Misc_Book_09",function()
     if type(navigate)=="function" then navigate("Leveling") end
   end,34)
   classAction.detail="See suggested abilities and leveling advice. Nothing is cast automatically."
-  local mapAction=action(beginnerHero,615,-127,210,"VIEW WORLD MAP",nil,function()
+  local mapAction=action(beginnerHero,615,-127,210,"World map","Interface\\Icons\\INV_Misc_Map_01",function()
     if type(navigate)=="function" then navigate("Map") end
   end,34)
   mapAction.detail="Only verified or recorded locations can show navigation markers."
@@ -351,6 +316,8 @@ function D.Create(parent,openPage,ctx)
   end
   -- Beginner-first guided entry. Advanced daily checklists remain one click away.
   beginnerPanel=panel(0,-296,846,148,"JOURNAL SHORTCUTS","Interface\\Icons\\INV_Misc_Book_09")
+  beginnerPanel.heading:SetTextColor(.47,.88,.97)
+  local shortcutIcons={"INV_Misc_Note_01","Spell_Holy_BlessingOfStrength","INV_Misc_Map_01"}
   local beginnerActions={
     {"FIND YOUR NEXT QUEST", "Quests", "Open your active quests and choose one objective."},
     {"LEARN YOUR CLASS", "Leveling", "See beginner ability priorities; check trained spells in-game."},
@@ -358,7 +325,7 @@ function D.Create(parent,openPage,ctx)
   }
   for i,entry in ipairs(beginnerActions) do
     local target=entry[2]
-    local button=action(beginnerPanel,14+(i-1)*274,-43,264,entry[1],nil,function()
+    local button=action(beginnerPanel,14+(i-1)*274,-43,264,entry[1],"Interface\\Icons\\"..shortcutIcons[i],function()
       if target=="Quests" then
         local planner=ForeverCompanionQuestPlanner
         if planner and type(planner.IsSupported)=="function" and planner.IsSupported() then
@@ -378,7 +345,7 @@ function D.Create(parent,openPage,ctx)
       end
       if type(navigate)=="function" then navigate(target) end
     end,68)
-    button.caption:SetWordWrap(true);button.caption:SetHeight(52);button.caption:SetWidth(240)
+    button.caption:SetWordWrap(true);button.caption:SetHeight(52);button.caption:SetWidth(211)
     button.detail=entry[3]
     if i==1 then beginnerQuest=button
     elseif i==2 then beginnerClass=button

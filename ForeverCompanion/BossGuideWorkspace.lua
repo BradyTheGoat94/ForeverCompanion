@@ -26,6 +26,7 @@ local function create()
  root:SetSize(640,422);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG')
  U.Surface(root);U.PreparePanel(root,'ForeverCompanionBossGuide',640,422)
  root:SetScript('OnEvent',function(self) U.FitPanel(self,640,self:GetHeight()) end)
+ ForeverCompanionVisualTheme.EnvironmentArt(root,'TOPRIGHT',-2,-2,468,95,'Dungeons',.89,.115,'BORDER',1)
  U.CloseButton(root,function() root:Hide() end)
  C.Seal(root,24,-20,54)
  W.root=root

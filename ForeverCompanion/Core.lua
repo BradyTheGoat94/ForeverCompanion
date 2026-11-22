@@ -131,7 +131,17 @@ end
 local lootMatches
 local function render()
   if not window or not DB then return end
-  titleText:SetText("Brady\'s Forever Companion")
+  titleText:SetText("Brady's Forever Companion")
+  local theme=ForeverCompanionVisualTheme
+  local r,g,b=unpack(theme.Destination(currentTab).rgb)
+  theme.PaintEnvironment(ForeverCompanionUIState.headerArt,currentTab,.93,.083)
+  if currentTab=='Overview' then
+    local art=ForeverCompanionUIState.headerArt
+    art:SetTexture(theme.citadel);art:SetTexCoord(0,1,.28,.56)
+  end
+  theme.PaintEnvironment(ForeverCompanionUIState.sectionArt,currentTab,.78,.082)
+  colorTexture(ForeverCompanionUIState.accentBar,r,g,b,.90)
+  colorTexture(ForeverCompanionUIState.contentBackground,.022+r*.025,.027+g*.025,.039+b*.035,1)
   if headerMeta then headerMeta:SetText(classLabel().."  |  Level "..tostring(level() or "?").."  |  "..(DB.role or "Choose role")) end
   if ForeverCompanionUIState.questCountText and ForeverCompanionQuestPlanner then
     local planner=ForeverCompanionQuestPlanner
@@ -157,6 +167,7 @@ local function render()
     else
       local titles={Quests='Quest journal',PvP='PvP preparation',Alts='Alt leveling'}
       sectionTitle:SetText(titles[currentTab] or currentTab)
+      sectionTitle:SetTextColor(r,g,b)
       sectionMeta:SetText(sectionDescriptions[currentTab] or "Reference guide")
       sectionMeta:SetWidth(currentTab=="Professions" and 610 or 755)
       sectionIcon:SetTexture(sectionIcons[currentTab] or "Interface\\Icons\\INV_Misc_Book_09")
@@ -255,11 +266,12 @@ local function render()
     local height,step=DB.compact and 26 or 30,DB.compact and 28 or 33
     b:ClearAllPoints();b:SetPoint("TOPLEFT",window,"TOPLEFT",23,-134-(i-1)*step)
     b:SetHeight(height);b.navAccent:SetHeight(height)
-    colorTexture(b.navBackground,selected and .085 or .025,selected and .10 or .031,selected and .13 or .041,1)
+    local r,g,v=unpack(theme.Destination(b.section).rgb)
+    colorTexture(b.navBackground,.035+r*(selected and .24 or .07),.040+g*(selected and .24 or .07),.058+v*(selected and .24 or .07),1)
     colorTexture(b.navGlow,0,0,0,0)
-    colorTexture(b.navAccent,.82,.68,.43,selected and 1 or 0)
+    colorTexture(b.navAccent,r,g,v,selected and 1 or .45)
     colorTexture(b.navTop,.18,.22,.28,0)
-    colorTexture(b.navMarker,.82,.68,.43,selected and 1 or 0)
+    colorTexture(b.navMarker,r,g,v,selected and 1 or 0)
     b.navLabel:SetTextColor(selected and .98 or .68,selected and .96 or .73,selected and .90 or .80)
     if b.navIcon and b.navIcon.SetVertexColor then
       local tone=selected and 1 or .65
@@ -270,7 +282,7 @@ local function render()
     b:SetShown(DB.beginnerMode~=false)
     local selected=false
     for _,section in ipairs(goalGroups[i].sections) do if section==currentTab then selected=true end end
-    ForeverCompanionInterface.StyleButton(b,nil,selected)
+    ForeverCompanionInterface.StyleButton(b,b.destinationPalette,selected)
   end
   for _, b in ipairs(checkButtons) do b:Hide() end
   if professionChecklistHeading then professionChecklistHeading:Hide() end
@@ -801,7 +813,14 @@ local function createUI()
   headerVelvet:SetPoint("TOPLEFT",window,"TOPLEFT",11,-11)
   headerVelvet:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-11)
   headerVelvet:SetHeight(79)
-  colorTexture(headerVelvet,.049,.069,.097,1)
+  colorTexture(headerVelvet,.034,.048,.071,1)
+  ForeverCompanionUIState.headerArt=ForeverCompanionVisualTheme.EnvironmentArt(window,'TOPRIGHT',-12,-11,765,79,'Overview',.93,.083,'BORDER',1)
+  local headerShade=window:CreateTexture(nil,'ARTWORK')
+  headerShade:SetAllPoints(ForeverCompanionUIState.headerArt)
+  colorTexture(headerShade,.022,.023,.044,.28)
+  local metaShade=window:CreateTexture(nil,'ARTWORK')
+  metaShade:SetPoint('TOPRIGHT',window,'TOPRIGHT',-41,-14);metaShade:SetSize(258,46)
+  colorTexture(metaShade,.026,.035,.062,.54)
   local headerGold=window:CreateTexture(nil,"ARTWORK")
   headerGold:SetPoint("TOPLEFT",window,"TOPLEFT",12,-92)
   headerGold:SetPoint("TOPRIGHT",window,"TOPRIGHT",-12,-92)
@@ -947,10 +966,14 @@ local function createUI()
   end
   for i,group in ipairs(goalGroups) do
     local b=ForeverCompanionInterface.Button(window)
-    b:SetSize(164,30);b:SetPoint('TOPLEFT',window,'TOPLEFT',23,-134-(i-1)*35);b:SetText(group.name)
+    local palette=ForeverCompanionVisualTheme.NavigationPalette(group.items[1][2])
+    b.destinationPalette=palette
+    b:SetSize(164,38);b:SetPoint('TOPLEFT',window,'TOPLEFT',23,-134-(i-1)*43);b:SetText(group.name)
+    local bezel=b:CreateTexture(nil,'BORDER')
+    bezel:SetPoint('LEFT',b,'LEFT',6,0);bezel:SetSize(28,28);bezel:SetColorTexture(unpack(palette.border))
     local navIcons={'INV_Misc_Map_01','INV_Misc_Book_09','INV_Misc_Key_03','Trade_BlackSmithing','INV_Ingot_Iron','Ability_Warrior_SavageBlow','Trade_Engineering'}
-    local icon=b:CreateTexture(nil,'ARTWORK');icon:SetSize(19,19);icon:SetPoint('LEFT',b,'LEFT',7,0);icon:SetTexture('Interface\\Icons\\'..navIcons[i])
-    b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('LEFT',b,'LEFT',32,0);b:GetFontString():SetPoint('RIGHT',b,'RIGHT',-5,0);b:GetFontString():SetJustifyH('LEFT')
+    local icon=b:CreateTexture(nil,'ARTWORK');icon:SetSize(24,24);icon:SetPoint('LEFT',b,'LEFT',8,0);icon:SetTexture('Interface\\Icons\\'..navIcons[i])
+    b:GetFontString():ClearAllPoints();b:GetFontString():SetPoint('LEFT',b,'LEFT',42,0);b:GetFontString():SetPoint('RIGHT',b,'RIGHT',-5,0);b:GetFontString():SetJustifyH('LEFT')
     ForeverCompanionInterface.SetHoverHelp(b,group.name,function()
       local names={}
       for _,item in ipairs(group.items) do names[#names+1]=item[1] end
@@ -993,6 +1016,7 @@ local function createUI()
   local sectionBg=sectionHeader:CreateTexture(nil,"BACKGROUND")
   sectionBg:SetAllPoints(sectionHeader)
   colorTexture(sectionBg,.034,.042,.055,1)
+  ForeverCompanionUIState.sectionArt=ForeverCompanionVisualTheme.EnvironmentArt(sectionHeader,'TOPRIGHT',-2,-2,465,43,'Overview',.8,.068,'BORDER',1)
   local sectionTop=sectionHeader:CreateTexture(nil,"ARTWORK")
   sectionTop:SetPoint("TOPLEFT",sectionHeader,"TOPLEFT",0,0)
   sectionTop:SetSize(846,2)

@@ -18,6 +18,8 @@ function V.State(row)
  if row.completed then return 'ACQUIRED','completed' end
  if row.owned and row.owned>0 then return 'OWNED','completed' end
  if row.tracked then return 'PINNED','hunts' end
+ if row.upgradeTier==2 then return 'POSSIBLE','review' end
+ if row.upgradeTier==1 then return 'INSPECT','review' end
  if row.partial then return 'PARTIAL','review' end
  if row.delta and row.delta>0 then return 'HIGHER','upgrade' end
  if row.delta and row.delta<0 then return 'LOWER','lower' end

@@ -56,6 +56,7 @@ end
 function A.Create(parent,openPage,db)
  navigate,getDB=openPage,db
  root=CreateFrame('Frame',nil,parent);root:SetPoint('TOPLEFT',8,-6);root:SetSize(770,306);U.Surface(root)
+ A.art=ForeverCompanionVisualTheme.EnvironmentArt(root,'TOPRIGHT',-2,-2,450,62,'Alts',.72,.086,'BORDER',1)
  heading=label(root,16,-12,495,19,U.palette.accent)
  subheading=label(root,16,-39,495,12,U.palette.muted)
  help=button(root,595,-20,159,26,openCurrent);help:SetText('Planning details')
@@ -103,6 +104,7 @@ function A.Render(page)
  root:SetShown(current~=nil)
  if not current then return end
  currentPage=page
+ ForeverCompanionVisualTheme.PaintEnvironment(A.art,page,.72,.086)
  heading:SetText(current.heading);subheading:SetText(current.desc)
  for key,control in pairs(viewButtons) do U.StyleButton(control,nil,viewByPage[page]==key) end
  local isAlt=page=='Alts'

@@ -99,7 +99,8 @@ local function create()
  local name='ForeverCompanionQuestIntelligence'
  panel=CreateFrame('Frame',name,UIParent,'BackdropTemplate')
  panel:SetSize(680,444);panel:SetPoint('CENTER');panel:SetFrameStrata('DIALOG')
- U.Surface(panel);U.PreparePanel(panel,name,680,444);U.CloseButton(panel,function() panel:Hide() end)
+ U.Surface(panel);U.PreparePanel(panel,name,680,444);
+ ForeverCompanionVisualTheme.EnvironmentArt(panel,'TOPRIGHT',-2,-2,412,53,'Quests',.76,.086,'BORDER',1);U.CloseButton(panel,function() panel:Hide() end)
  local function text(parent,x,y,w,size)
   local label=U.Text(parent,size);label:SetPoint('TOPLEFT',x,y);label:SetWidth(w);return label
  end

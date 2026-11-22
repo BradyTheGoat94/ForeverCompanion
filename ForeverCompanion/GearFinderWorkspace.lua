@@ -119,7 +119,7 @@ function W.Refresh()
   detail:Hide();empty:Hide();scrollBar:Hide();listArea:Hide();revealButton:Hide();counter:Hide();for _,row in ipairs(rows) do row:Hide() end
   return
  end
- local options={slot=cfg.slot,query=search:GetText(),dungeon=cfg.dungeon,saved=W.view=='hunts',active=W.view=='hunts',completed=W.view=='completed',ready=browse and cfg.ready,matchArmor=browse and cfg.matchArmor,bestNow=browse and cfg.bestNow~=false}
+ local options={slot=cfg.slot,query=search:GetText(),dungeon=cfg.dungeon,saved=W.view=='hunts',active=W.view=='hunts',completed=W.view=='completed',ready=browse and cfg.ready,matchArmor=browse and cfg.matchArmor,bestNow=browse and cfg.bestNow~=false,includeReview=browse and cfg.bestNow~=false}
  local scope=table.concat({W.view,tostring(cfg.slot),search:GetText(),cfg.dungeon,tostring(options.ready),tostring(options.matchArmor),tostring(options.bestNow)},'\031')
  local key,context=G.SnapshotKey(options)
  if key~=cachedKey then
@@ -131,7 +131,8 @@ function W.Refresh()
  local results,stats=cachedResults,cachedStats
  W.results=results;W.stats=stats
  local maximum=math.max(0,#results-6);W.offset=math.max(0,math.min(maximum,W.offset or 0))
- summary:SetText(#results..' items · '..(options.bestNow and 'Biggest estimated upgrades first' or browse and 'Ranked by equipment slot' or W.view=='hunts' and 'Saved gear hunts' or 'Acquired gear')..(stats.loading>0 and (' · '..stats.loading..' loading') or ''))
+ local counts=options.bestNow and (stats.confirmed..' ranked  /  '..stats.estimated..' possible  /  '..stats.review..' inspect') or (#results..' items')
+ summary:SetText(counts..(stats.loading>0 and '  /  Loading item data' or ''))
  dungeonButton:SetText(cfg.dungeon~='' and cfg.dungeon or 'All dungeons');readyButton:SetText(cfg.ready and 'Within my level' or 'Include future levels')
  armorButton:SetText(cfg.matchArmor and 'Match worn armor' or 'All armor types');upgradeButton:SetText(cfg.bestNow~=false and 'Switch to Browse' or 'Switch to Best Now')
  for index,b in pairs(slots) do
@@ -155,7 +156,7 @@ function W.Refresh()
    V.Style(row,kind,r.record.itemID==W.selected);V.Tint(row.rail,V.Palette(kind).accent)
   end
  end
- empty:SetShown(#results==0);empty:SetText(W.view=='hunts' and 'Your hunt log is clear. Save an item in Find upgrades, then pin the one you want next.' or W.view=='completed' and 'Acquired items appear when a saved hunt is observed in your carried inventory or equipped gear.' or options.bestNow and 'No confirmed upgrades found. Switch to Browse to inspect weapons, trinkets, future gear and items with incomplete data.' or 'No items match these filters. Try Include future levels, All armor types or Reset filters. Missing item data loads in the background while this window is open.')
+ empty:SetShown(#results==0);empty:SetText(W.view=='hunts' and 'Your hunt log is clear. Save an item in Find upgrades, then pin the one you want next.' or W.view=='completed' and 'Acquired items appear when a saved hunt is observed in your carried inventory or equipped gear.' or options.bestNow and (stats.loading>0 and 'Loading item data for this level and slot.' or 'No candidates at this level match the current filters. Browse to inspect future items.') or 'No items match these filters. Try Include future levels, All armor types or Reset filters. Missing item data loads in the background while this window is open.')
  renderDetail(selected)
  if #G.loadQueue>0 then W.Wake() end
 end
@@ -216,6 +217,7 @@ function W.Open(itemID)
  local U=ForeverCompanionInterface
  if not root then
   root=CreateFrame('Frame','ForeverCompanionGearFinderPanel',UIParent);W.root=root;root:SetSize(1080,760);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');V.Window(root,1080,760,'discover')
+  ForeverCompanionVisualTheme.EnvironmentArt(root,'TOPRIGHT',-2,-2,816,105,'Gear',.88,.11,'BORDER',1)
   V.Rectangle(root,12,112,196,640,{.040,.065,.115,1})
   V.Rectangle(root,220,188,840,43,{.055,.10,.17,1})
   ForeverCompanionInterface.PreparePanel(root,'ForeverCompanionGearFinderPanel',1080,760)
@@ -225,7 +227,7 @@ function W.Open(itemID)
   root:SetScript('OnDragStart',function(self) self:StartMoving() end);root:SetScript('OnDragStop',function(self) self:StopMovingOrSizing() end)
   ForeverCompanionInterface.CloseButton(root,function() root:Hide() end)
   local crest=root:CreateTexture(nil,'ARTWORK');crest:SetSize(38,38);crest:SetPoint('TOPLEFT',20,-18);crest:SetTexture('Interface\\AddOns\\ForeverCompanion\\Media\\Crest.tga')
-  text(root,70,-17,730,24,'Gear Upgrade Finder'):SetTextColor(unpack(V.colors.text));text(root,70,-47,970,11,'Dungeon gear research · Alt + right-click a character slot to open it here · Source coverage: bundled catalog')
+  text(root,70,-17,730,24,'Gear Upgrade Finder'):SetTextColor(unpack(V.colors.text));text(root,70,-47,970,11,'Pick a slot to find gear  /  Alt + right-click equipped gear')
   for i,entry in ipairs({{'discover','Find upgrades'},{'hunts','My hunts'},{'completed','Acquired'},{'weights','Weights'}}) do
    local view=entry[1];tabs[view]=button(root,20+(i-1)*168,-73,158,entry[2],function() tell('');W.view=view;W.offset=0;W.selected=nil;W.Refresh() end)
   end
@@ -256,15 +258,17 @@ function W.Open(itemID)
    local cfg=G.Settings();local entries={}
    if cfg.bestNow==false then
     entries[#entries+1]={label=readyButton:GetText(),action=function() cfg.ready=not cfg.ready;W.offset=0;W.Refresh() end}
-    entries[#entries+1]={label=armorButton:GetText(),action=function() cfg.matchArmor=not cfg.matchArmor;W.offset=0;W.Refresh() end}
    end
+   entries[#entries+1]={label='Match worn armor type',selected=cfg.matchArmor==true,action=function()
+    cfg.matchArmor=not cfg.matchArmor;W.offset=0;W.Refresh()
+   end}
    entries[#entries+1]={label='Retry loading item data',action=function() G.RetryData();G.ObserveHunts();refreshTracker();W.Refresh();tell('Requested updated item data.') end}
    ForeverCompanionInterface.Menu(self,'Gear options',entries)
   end)
   U.SetHoverHelp(dungeonButton,'Dungeon source','Limit the gear list to one dungeon or browse every source.')
   U.SetHoverHelp(readyButton,'Level filter','Limit Browse to gear within your current character level.')
   U.SetHoverHelp(armorButton,'Armor filter','Compare gear of the armor type you wear or show all armor types.')
-  U.SetHoverHelp(upgradeButton,'Ranking mode','Best Now ranks gains over equipped gear. Browse shows candidates ranked within their slot.')
+  U.SetHoverHelp(upgradeButton,'Ranking mode','Best Now ranks verified stat gains first, then possible gains and gear to inspect. Browse includes the wider catalog.')
   U.SetHoverHelp(filtersButton,'Gear options','Adjust filters or retry loading item data.')
   W.filtersButton=filtersButton
   ForeverCompanionInterface.HoverNote(root,1037,-198,'Gear rankings','Best Now ranks estimated gains over equipped gear. Browse ranks within each slot. Hover a selected item’s rank for details on its comparison.')
@@ -307,6 +311,7 @@ function W.Open(itemID)
   hover(rankHover,'How this rank works',function()
    local r=W.current;if not r then return 'Select an item first.' end
    if r.recommended then return '#'..r.rank..' by estimated gain over '..(r.empty and 'an empty ' or 'your worn ')..r.slot[1]..' using '..G.Settings().profile..' weights. Review effects and set bonuses on the item tooltip.' end
+   if r.upgradeTier==2 then return 'Positive gain from available stats. Verify use, item effects and restrictions before replacing your gear.' end
    if not r.rank then return 'Manual review: '..(r.reason or 'Supported comparison unavailable')..'. Weapons, missing stats and uncertain restrictions do not receive a fabricated rank.' end
    return '#'..r.rank..' of '..r.rankCount..' scored candidates in the filtered '..r.slot[1]..' list. Score '..G.Points(r.rankScore)..' uses profile '..G.Settings().profile..'. Higher weighted stat scores rank first; equal scores share a rank. Other slots have their own ranks. A #1 stat rank is not a universal BiS or DPS claim; inspect procs and set bonuses separately.'
   end)

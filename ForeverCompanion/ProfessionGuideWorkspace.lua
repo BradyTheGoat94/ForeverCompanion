@@ -10,12 +10,12 @@ local selected,selectedKey
 local pageSize,rowHeight=6,28
 local ink={.94,.95,.98,1}
 local muted={.65,.72,.80,1}
-local gold={.97,.78,.47,1}
+local gold={1,.66,.34,1}
 local yellow={1,.81,.34,1}
 local green={.53,.85,.71,1}
 local border={.18,.24,.31,1}
 local buttonPalette={flat=true,text=ink,accent=gold,border=border,surface={.09,.126,.17,1},rail={.20,.17,.12,1}}
-local primaryPalette={flat=true,text={.12,.08,.04,1},accent=gold,border={.70,.52,.27,1},surface={.86,.66,.37,1}}
+local primaryPalette={flat=true,text={.12,.08,.04,1},accent=gold,border={.82,.47,.22,1},surface={.99,.58,.28,1}}
 local backgrounds={main={.025,.035,.048,.99},header={.043,.062,.085,1},pane={.037,.053,.073,1},tile={.065,.095,.132,1},list={.053,.075,.101,1}}
 local combined,recipeOwner={},{}
 local function allRecipes()
@@ -456,6 +456,9 @@ local function create()
  end
  root:Hide();W.root=root
  local header=block(root,1,-1,998,72,backgrounds.header)
+ if ForeverCompanionVisualTheme then
+  ForeverCompanionVisualTheme.EnvironmentArt(header,'TOPRIGHT',-1,-1,625,70,'Professions',.94,.087,'BORDER',1)
+ end
  hero=icon(header,19,-15,42)
  title=text(header,75,-10,780,24,ink)
  subtitle=text(header,76,-43,780,13,gold)

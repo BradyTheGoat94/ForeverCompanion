@@ -17,7 +17,8 @@ function C.Skin(parent,w,h,header,outer)
  end
  if header then
   strip(parent,8,-8,w-16,header-5,{.074,.101,.136,1})
-  strip(parent,8,-header-3,w-16,1,{.31,.28,.21,1})
+  strip(parent,8,-header-3,w-16,1,{.50,.30,.64,1})
+  if outer then ForeverCompanionVisualTheme.EnvironmentArt(parent,'TOPRIGHT',-8,-8,math.floor(w*.68),header-5,'Dungeons',.86,.11,'BORDER',1) end
  end
  for _,inset in ipairs({4}) do
   local color={.20,.24,.31,1}
@@ -42,7 +43,7 @@ end
 function C.Select(row,bg,selected)
  row.fcSelected=selected and true or false
  local function paint(hover)
-  if row.fcSelected then bg:SetColorTexture(.19,.156,.096,1)
+  if row.fcSelected then bg:SetColorTexture(.22,.115,.31,1)
   elseif hover then bg:SetColorTexture(.095,.132,.173,1) else bg:SetColorTexture(.046,.067,.092,.86) end
  end
  if not row.fcDungeonHover then

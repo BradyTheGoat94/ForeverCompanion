@@ -60,7 +60,7 @@ function Guide.Create(parent,openPage)
  ForeverCompanionVisualTheme.Panel(hero,780,118)
  values.art=ForeverCompanionVisualTheme.Banner(hero,2,-2,776,114,1)
  values.crumb=text(hero,16,-12,480,"CLASS GUIDES",11,true)
- local iconMat=hero:CreateTexture(nil,"ARTWORK");iconMat:SetPoint("TOPLEFT",hero,"TOPLEFT",14,-39);iconMat:SetSize(60,60);iconMat:SetColorTexture(.76,.62,.36,1)
+ local iconMat=hero:CreateTexture(nil,"ARTWORK");values.iconMat=iconMat;iconMat:SetPoint("TOPLEFT",hero,"TOPLEFT",14,-39);iconMat:SetSize(60,60);iconMat:SetColorTexture(.76,.62,.36,1)
  values.icon=hero:CreateTexture(nil,"OVERLAY");values.icon:SetPoint("TOPLEFT",hero,"TOPLEFT",17,-42);values.icon:SetSize(54,54)
  values.name=text(hero,89,-37,445,"",30,true)
  values.role=text(hero,91,-75,425,"",12)
@@ -79,10 +79,13 @@ function Guide.Create(parent,openPage)
   end
  end)
  hero:SetScript("OnLeave",function() if GameTooltip then GameTooltip:Hide() end end)
+ local viewIcons={'INV_Misc_Book_09','Spell_Holy_BlessingOfStrength','Ability_Warrior_SavageBlow','INV_Scroll_03','INV_Misc_Map_01','INV_Misc_Key_03','Ability_DualWield','INV_Chest_Plate02','Trade_BlackSmithing'}
  for i,name in ipairs(views) do
   local b=CreateFrame("Button",nil,root);b:SetSize(81,32);b:SetPoint("TOPLEFT",root,"TOPLEFT",(i-1)*87,-129)
   b.bg=ForeverCompanionVisualTheme.Button(b,81,32)
-  b.label=text(b,3,-10,75,name,11);b.label:SetJustifyH("CENTER");b.view=name
+  local icon=b:CreateTexture(nil,'ARTWORK');icon:SetPoint('LEFT',b,'LEFT',5,0);icon:SetSize(14,14)
+  icon:SetTexture('Interface\\Icons\\'..viewIcons[i])
+  b.label=text(b,22,-10,58,name,10);b.view=name
   b.rail=b:CreateTexture(nil,"OVERLAY");b.rail:SetPoint("BOTTOMLEFT",b,"BOTTOMLEFT",0,0);b.rail:SetSize(81,2)
   b:SetScript("OnClick",function() Guide.SelectView(name) end)
   ForeverCompanionInterface.SetHoverHelp(b,name,"Open the "..name:lower().." tools for the selected class.")
@@ -154,8 +157,16 @@ function Guide.Render(class,label,level,role,mode)
  values.name:SetText(tostring(label))
  values.role:SetText("Level "..tostring(level or "?").."  /  "..(selected and selected[1] or "Choose specialization").."  /  "..tostring(role or "Choose role"))
  ForeverCompanionIcons.ApplyClass(values.icon,class)
- values.art:SetTexture(class=="WARRIOR" and ForeverCompanionVisualTheme.warrior or ForeverCompanionVisualTheme.citadel)
- if values.art.SetTexCoord then values.art:SetTexCoord(0,1,0,.66) end
+ local theme=ForeverCompanionVisualTheme
+ local r,g,blue=unpack(theme.ClassAccent(class))
+ values.iconMat:SetColorTexture(r,g,blue,1);values.name:SetTextColor(r,g,blue)
+ values.xpFill:SetColorTexture(r,g,blue,1)
+ if class=="WARRIOR" then
+  values.art:SetTexture(theme.warrior);values.art:SetTexCoord(0,1,0,.66);values.art:SetAlpha(1)
+ else
+  local landscape=({HUNTER='Journey',DRUID='Journey',ROGUE='Dungeons',WARLOCK='Dungeons',PALADIN='PvP',PRIEST='Bank',SHAMAN='Bank'})[class] or 'Leveling'
+  theme.PaintEnvironment(values.art,landscape,.63,.117)
+ end
  values.tip=entry.leveling or "Check trained spells and the reference guide."
  local levelNumber=tonumber(level)
  local curriculum=ForeverCompanionLevelingCurriculum
@@ -171,7 +182,7 @@ function Guide.Render(class,label,level,role,mode)
  for _,b in ipairs(topics) do
   local active=b.view==view
   ForeverCompanionVisualTheme.SelectRow(b,b.bg,active)
-  b.rail:SetColorTexture(.82,.68,.43,active and 1 or 0)
+  b.rail:SetColorTexture(r,g,blue,active and 1 or .31)
  end
  if view=="Macros" then
   ForeverCompanionTalentWorkspace.Hide()

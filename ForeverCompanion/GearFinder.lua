@@ -219,9 +219,9 @@ function G.Context(settings,matchArmor)
  return c
 end
 function G.SnapshotKey(options)
- options=options or {};local cfg=G.Settings();local context=G.Context(cfg,options.bestNow or options.matchArmor);context.bestNow=options.bestNow
+ options=options or {};local cfg=G.Settings();local context=G.Context(cfg,options.matchArmor or options.bestNow and not options.includeReview);context.bestNow=options.bestNow
  local fields={tostring(G.revision),tostring(context.level)}
- for _,key in ipairs({'slot','query','dungeon','saved','completed','active','ready','matchArmor','upgrades','hideOwned','bestNow'}) do fields[#fields+1]=tostring(options[key]) end
+ for _,key in ipairs({'slot','query','dungeon','saved','completed','active','ready','matchArmor','upgrades','hideOwned','bestNow','includeReview'}) do fields[#fields+1]=tostring(options[key]) end
  for i in ipairs(G.slots) do fields[#fields+1]=tostring(context.links[i]);fields[#fields+1]=tostring(context.inventoryKnown[i]) end
  for i in ipairs(G.stats) do fields[#fields+1]=tostring(context.weights[i]) end
  local keys={};for key,value in pairs(cfg.sources) do if type(key)=='string' and type(value)=='table' and type(value.dungeon)=='string' and type(value.boss)=='string' then keys[#keys+1]='s'..key..value.dungeon..'/'..value.boss end end
@@ -283,6 +283,7 @@ local function compare(entry,index,context)
  local canUse=usable(record.itemID,context)
  local conflict,uniqueChecked=blocked(record.itemID,index,context)
  local r={record=record,sources=entry.sources,info=info,baseline=baseline,slotIndex=index,slot=slot,owned=observed(record.itemID,context),usable=canUse,uniquenessChecked=uniqueChecked,weights=context.weights}
+ r.isEquipped=type(equipped)=='string' and tonumber(equipped:match('item:(%d+)'))==record.itemID
  local reason
  if not info then reason='Loading item data'
  elseif not finite(info.required) or not finite(context.level) then reason='Level requirement unavailable'
@@ -333,12 +334,26 @@ function G.CompareLink(link)
  for i in ipairs(G.slots) do if G.Compatible(record,i) then local r=compare(entry,i,context);if not best or (r.delta~=nil and (best.delta==nil or r.delta>best.delta)) then best=r end end end
  return best
 end
+-- An incomplete client check should surface an item for review, never certify it.
+local function reviewTier(row,level)
+ if not row.info or not finite(level) or not finite(row.info.required) or row.info.required>level
+  or row.blocked or row.armorMismatch or row.isEquipped or (row.owned and row.owned>0) then return end
+ if row.delta and row.delta>0 then return 2 end
+ if not row.delta and (row.slot[2]>=16 or row.slot[1]=='Trinket' or row.info.score~=nil) then return 1 end
+end
+local function betterUpgrade(a,b)
+ if not b then return true end
+ if a.upgradeTier~=b.upgradeTier then return a.upgradeTier>b.upgradeTier end
+ if a.upgradeTier>1 and a.delta~=b.delta then return a.delta>b.delta end
+ if a.upgradeTier==1 and a.info.required~=b.info.required then return a.info.required>b.info.required end
+ return a.record.itemID<b.record.itemID
+end
 function G.Build(options,context)
  G.metrics.builds=G.metrics.builds+1
- options=options or {};local s=G.Settings();local result={};context=context or G.Context(s,options.bestNow or options.matchArmor);context.bestNow=options.bestNow
+ options=options or {};local s=G.Settings();local result={};context=context or G.Context(s,options.matchArmor or options.bestNow and not options.includeReview);context.bestNow=options.bestNow
  local selected=options.slot==0 and 0 or (G.slots[options.slot or 1] and (options.slot or 1) or 1)
  local catalog=G.Catalog();local terms={};for term in label(options.query,100):lower():gmatch('%S+') do terms[#terms+1]=term end
- local stats={total=0,ranked=0,positive=0,loading=0,hidden=0,slots={}}
+ local stats={total=0,ranked=0,positive=0,loading=0,hidden=0,confirmed=0,estimated=0,review=0,slots={}}
  for _,entry in ipairs(catalog) do
   local record=entry.record;local key=tostring(record.itemID)
   local matches=(not options.saved or s.hunts[key]) and (not options.completed or s.completed[key])
@@ -358,12 +373,15 @@ function G.Build(options,context)
   end
   for _,term in ipairs(terms) do if not sourceText:lower():find(term,1,true) then matches=false end end
   local sourceMatch=#eligible>0
-  local rowEntry={record=preferred or record,sources=entry.sources}
+  local rowEntry={record=preferred or record,sources=options.bestNow and options.includeReview and eligible or entry.sources}
   local best
   if matches and sourceMatch then
    for i in ipairs(G.slots) do if (selected==0 or selected==i) and G.Compatible(record,i) then
     local r=compare(rowEntry,i,context)
-    if (not options.bestNow or recommendable(r)) and (not best or (r.delta~=nil and (best.delta==nil or r.delta>best.delta))) then best=r end
+    if options.bestNow then
+     r.upgradeTier=recommendable(r) and 3 or options.includeReview and reviewTier(r,context.level) or nil
+     if r.upgradeTier and betterUpgrade(r,best) then best=r end
+    elseif not best or (r.delta~=nil and (best.delta==nil or r.delta>best.delta)) then best=r end
     if options.bestNow and not r.info then stats.loading=stats.loading+1 end
     if r.delta and r.delta>0 then stats.slots[i]=(stats.slots[i] or 0)+1 end
    end end
@@ -392,12 +410,16 @@ function G.Build(options,context)
   end
  end
  if options.bestNow then
-  table.sort(result,function(a,b)
-   if a.delta~=b.delta then return a.delta>b.delta end
-   return a.record.itemID<b.record.itemID
-  end)
+  table.sort(result,betterUpgrade)
+  for _,r in ipairs(result) do
+   if r.upgradeTier==3 then stats.confirmed=stats.confirmed+1
+   elseif r.upgradeTier==2 then stats.estimated=stats.estimated+1
+   else stats.review=stats.review+1 end
+  end
   for i,r in ipairs(result) do
-   r.recommended=true;r.rank=i;r.rankCount=#result;r.rankScore=r.info.score;r.listIndex=i
+   r.recommended=r.upgradeTier==3
+   if r.recommended then r.rank=i;r.rankCount=stats.confirmed;r.rankScore=r.info.score end
+   r.listIndex=i
   end
   return result,G.Read(context.links[selected],context),G.slots[selected],stats
  end
