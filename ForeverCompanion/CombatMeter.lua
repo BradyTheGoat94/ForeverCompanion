@@ -32,11 +32,11 @@ local metricIcons={DPS="Ability_Warrior_SavageBlow",Damage="Ability_Warrior_Clea
  Dispels="Spell_Holy_DispelMagic",Taken="INV_Shield_04"}
 local compactMetrics={DPS="DPS",Damage="Damage",HPS="HPS",Healing="Healing",Taken="Taken",Interrupts="Interrupt"}
 local skins={
- battle={background={.022,.016,.018,1},border={.51,.29,.16,1},accent={1,.64,.33,1},rail={.056,.035,.039,.96},
+ battle={menuArt=true,background={.022,.016,.018,1},border={.51,.29,.16,1},accent={1,.64,.33,1},rail={.056,.035,.039,.96},
   header={.17,.063,.045,1},band={.067,.028,.027,.98},value={.026,.012,.017,.82},art=.60,barAlpha=.96,
   texture="Interface\\TargetingFrame\\UI-StatusBar"},
- details={background={.016,.016,.018,.96},border={.17,.17,.19,1},accent={.65,.65,.68,1},rail={.035,.035,.04,.95},header={.055,.089,.13,1},band={.027,.044,.070,.98},value={.014,.025,.044,.86},art=.33,barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
- recount={background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},header={.15,.081,.11,1},band={.071,.044,.069,.98},value={.04,.019,.036,.84},art=.38,barAlpha=.87,texture="Interface\\Buttons\\WHITE8X8"}
+ details={menuArt=true,background={.016,.016,.018,.96},border={.17,.17,.19,1},accent={.65,.65,.68,1},rail={.035,.035,.04,.95},header={.055,.089,.13,1},band={.027,.044,.070,.98},value={.014,.025,.044,.86},art=.33,barAlpha=.92,texture="Interface\\TargetingFrame\\UI-StatusBar"},
+ recount={menuArt=true,background={.028,.023,.032,.98},border={.43,.32,.20,1},accent={.98,.67,.22,1},rail={.075,.045,.065,.96},header={.15,.081,.11,1},band={.071,.044,.069,.98},value={.04,.019,.036,.84},art=.38,barAlpha=.87,texture="Interface\\Buttons\\WHITE8X8"}
 }
 local metricAccents={DPS={1,.67,.37},Damage={1,.67,.37},HPS={.54,1,.67},Healing={.54,1,.67},Absorbs={.55,.87,1},Interrupts={1,.81,.44},Dispels={.85,.72,1},Taken={1,.53,.49}}
 local skinName="battle"
@@ -644,7 +644,7 @@ local function build()
   local entries={}
   for _,option in ipairs({{'amount','Highest contribution'},{'name','Spell name'},{'native','Native order'}}) do
    local key,label=option[1],option[2]
-   entries[#entries+1]={label=label,selected=(saved().spellOrder or 'amount')==key,action=function() saved().spellOrder=key;spellPage=1;M.Refresh() end}
+   entries[#entries+1]={label=label,icon=key=='amount' and 'INV_Misc_Coin_01' or key=='name' and 'INV_Misc_Book_09' or 'INV_Misc_List_01',selected=(saved().spellOrder or 'amount')==key,action=function() saved().spellOrder=key;spellPage=1;M.Refresh() end}
   end
   ForeverCompanionInterface.Menu(sort,'SPELL ORDER',entries,skin())
  end)
@@ -1283,7 +1283,7 @@ function M.OpenMetrics(anchor)
  local enums=Enum and Enum.DamageMeterType or {}
  for i,item in ipairs(metrics) do
   local index=i
-  entries[#entries+1]={label=metricNames[item[1]],selected=i==metricIndex,enabled=enums[item[2]]~=nil,action=function() M.SetMode(metrics[index][1]) end}
+  entries[#entries+1]={label=metricNames[item[1]],icon=metricIcons[item[1]],selected=i==metricIndex,enabled=enums[item[2]]~=nil,action=function() M.SetMode(metrics[index][1]) end}
  end
  ForeverCompanionInterface.Menu(anchor or modeButton,'SELECT DISPLAY',entries,skin())
 end
@@ -1293,20 +1293,20 @@ function M.OpenSessions(anchor,page)
  local enums=Enum and Enum.DamageMeterSessionType or {}
  for _,item in ipairs({sessions[1],sessions[3]}) do
   local mode=item[1]
-  entries[#entries+1]={label=mode..' combat',selected=sessions[sessionIndex][1]==mode,enabled=enums[item[2]]~=nil,action=function() M.SetSession(mode) end}
+  entries[#entries+1]={label=mode..' combat',icon=mode=='Current' and 'Ability_Warrior_Charge' or 'INV_Misc_Book_09',selected=sessions[sessionIndex][1]==mode,enabled=enums[item[2]]~=nil,action=function() M.SetSession(mode) end}
  end
  local history=availableHistory()
  local index=historyPosition(history,pastID) or 1
  local current,pages
  if #history==0 then
-  entries[#entries+1]={label='Latest completed fight',selected=sessionIndex==2,enabled=enums.Expired~=nil,action=function() M.SetSession('Past') end}
+  entries[#entries+1]={label='Latest completed fight',icon='INV_Misc_PocketWatch_01',selected=sessionIndex==2,enabled=enums.Expired~=nil,action=function() M.SetSession('Past') end}
  else
   local fights={}
   for i,entry in ipairs(history) do
    local id=entry.id
    local duration=durationText(entry.duration)
    local label=i..'. '..fightTitle(entry)..(duration and ('  |  '..duration) or '')
-   fights[i]={label=label,selected=sessionIndex==2 and pastID==id,enabled=enums.Expired~=nil,action=function()
+   fights[i]={label=label,icon='INV_Misc_PocketWatch_01',selected=sessionIndex==2 and pastID==id,enabled=enums.Expired~=nil,action=function()
     if historyPosition(availableHistory(),id) then selectFight(id)
     else M.OpenSessions(anchor,page) end
    end}
@@ -1316,8 +1316,8 @@ function M.OpenSessions(anchor,page)
   visible,current,pages=U.MenuPage(fights,page or math.ceil(index/pageSize),pageSize)
   for _,fight in ipairs(visible) do entries[#entries+1]=fight end
   if pages>1 then
-   entries[#entries+1]={label='Newer fights',enabled=current>1,action=function() M.OpenSessions(anchor,current-1) end}
-   entries[#entries+1]={label='Older fights',enabled=current<pages,action=function() M.OpenSessions(anchor,current+1) end}
+   entries[#entries+1]={label='Newer fights',icon='INV_Misc_PocketWatch_01',enabled=current>1,action=function() M.OpenSessions(anchor,current-1) end}
+   entries[#entries+1]={label='Older fights',icon='INV_Misc_PocketWatch_01',enabled=current<pages,action=function() M.OpenSessions(anchor,current+1) end}
   end
  end
  U.Menu(anchor or sessionButton,pages and ('FIGHT HISTORY  |  %d / %d'):format(current,pages) or 'FIGHT HISTORY',entries,skin(),320)
@@ -1336,11 +1336,11 @@ function M.OpenQuickMenu(anchor)
   local name=metric
   local enabled=false
   for _,item in ipairs(metrics) do if item[1]==name then enabled=Enum and Enum.DamageMeterType and Enum.DamageMeterType[item[2]]~=nil end end
-  entries[#entries+1]={label=metricNames[name],enabled=enabled,selected=metrics[metricIndex][1]==name,action=function() M.SetMode(name) end}
+  entries[#entries+1]={label=metricNames[name],icon=metricIcons[name],enabled=enabled,selected=metrics[metricIndex][1]==name,action=function() M.SetMode(name) end}
  end
  entries[#entries+1]={label='Find my row',enabled=M.LocalPlayerIndex(lastSources)~=nil,action=M.FocusLocalPlayer}
- entries[#entries+1]={label='Combat segments...',action=function() M.OpenSessions(anchor) end}
- entries[#entries+1]={label='Meter options...',action=function() M.OpenOptions(anchor) end}
+ entries[#entries+1]={label='Combat segments...',icon='INV_Misc_PocketWatch_01',submenu=true,action=function() M.OpenSessions(anchor) end}
+ entries[#entries+1]={label='Meter options...',icon='INV_Misc_Gear_01',submenu=true,action=function() M.OpenOptions(anchor) end}
  ForeverCompanionInterface.Menu(anchor or frame,'QUICK DISPLAYS',entries,skin())
 end
 function M.ResetDetailPosition()
@@ -1351,41 +1351,65 @@ function M.ResetDetailPosition()
  end
  M.Refresh()
 end
-function M.OpenOptions(anchor)
+function M.OpenOptions(anchor,page)
+ anchor=anchor or optionsButton
+ local U=ForeverCompanionInterface
+ local db=saved()
  local entries={}
- for _,layout in ipairs({'compact','standard','expanded'}) do
-  local name=layout
-  entries[#entries+1]={label=name:sub(1,1):upper()..name:sub(2)..' layout',selected=saved().layout==name,action=function() M.SetLayout(name) end}
+ local title="METER OPTIONS"
+ local function add(label,icon,action,extra)
+  local option=extra or {}
+  option.label=label;option.icon=icon;option.action=action
+  entries[#entries+1]=option
  end
- entries[#entries+1]={label='Show fewer players',enabled=rowCount>4,action=function() M.SetRows(rowCount-1) end}
- entries[#entries+1]={label='Show more players',enabled=rowCount<12,action=function() M.SetRows(rowCount+1) end}
- entries[#entries+1]={label='Find my row',enabled=M.LocalPlayerIndex(lastSources)~=nil,action=M.FocusLocalPlayer}
- entries[#entries+1]={label='Exact numbers',selected=saved().numberFormat=='exact',action=function() M.SetNumberFormat(saved().numberFormat=='exact' and 'compact' or 'exact') end}
- entries[#entries+1]={label='Hide realm suffixes',selected=saved().hideRealm==true,action=function() M.SetHideRealm(saved().hideRealm~=true) end}
- entries[#entries+1]={label='Total + per second columns',selected=saved().showBoth~=false,action=function() M.SetBothColumns(saved().showBoth==false) end}
- entries[#entries+1]={label='Larger text',selected=saved().textSize==13,action=function() M.SetTextSize(saved().textSize==13 and 11 or 13) end}
- entries[#entries+1]={label='Refresh rate...',action=function()
-  local choices={}
-  for _,setting in ipairs({{'Fast / 0.2 seconds',.2},{'Standard / 0.4 seconds',.4},{'Low frequency / 0.8 seconds',.8}}) do
-   local value=setting[2]
-   choices[#choices+1]={label=setting[1],selected=M.GetUpdateInterval()==value,action=function() M.SetUpdateInterval(value) end}
+ local function reopen(action)
+  return function() action();M.OpenOptions(anchor,page) end
+ end
+ local function option(label,icon,enabled,action)
+  add(label,icon,reopen(action),{selected=enabled,badge=enabled and 'ON' or 'OFF'})
+ end
+ if page=='appearance' then
+  title='METER APPEARANCE'
+  for _,choice in ipairs({{'battle','Citadel skin','INV_Misc_EngGizmos_03'},{'details','Details-inspired skin','Spell_Frost_FrostBolt02'},{'recount','Recount-inspired skin','Spell_Fire_FlameBolt'}}) do
+   local key=choice[1]
+   add(choice[2],choice[3],reopen(function() M.SetSkin(key) end),{selected=skinName==key})
   end
-  ForeverCompanionInterface.Menu(anchor or optionsButton,'METER REFRESH RATE',choices,skin())
- end}
- entries[#entries+1]={label='Citadel skin',selected=skinName=='battle',action=function() M.SetSkin('battle') end}
- entries[#entries+1]={label='Details-inspired skin',selected=skinName=='details',action=function() M.SetSkin('details') end}
- entries[#entries+1]={label='Recount-inspired skin',selected=skinName=='recount',action=function() M.SetSkin('recount') end}
- entries[#entries+1]={label=saved().locked and 'Unlock window' or 'Lock window',selected=saved().locked==true,action=function() saved().locked=not saved().locked;M.Refresh() end}
- entries[#entries+1]={label='Reset breakdown position',action=M.ResetDetailPosition}
- entries[#entries+1]={label='Reset window appearance',action=function()
-  saved().locked=false;saved().position=nil;saved().numberFormat='compact';saved().hideRealm=false;saved().showBoth=true;saved().textSize=11;saved().updateInterval=.4
-  M.ResetDetailPosition()
-  M.SetSkin('battle');M.SetLayout('standard');rowOffset=0
-  frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',330,0);M.Refresh()
- end}
- entries[#entries+1]={label='Reset combat data...',action=function() M.RequestReset(anchor) end}
- entries[#entries+1]={label='Close meter',action=M.Hide}
- ForeverCompanionInterface.Menu(anchor or optionsButton,'METER OPTIONS',entries,skin())
+  for _,layout in ipairs({'compact','standard','expanded'}) do
+   local key=layout
+   add(key:sub(1,1):upper()..key:sub(2)..' layout','INV_Misc_Map_01',
+    reopen(function() M.SetLayout(key) end),{selected=db.layout==key})
+  end
+  option('Larger text','INV_Misc_Note_01',db.textSize==13,function() M.SetTextSize(db.textSize==13 and 11 or 13) end)
+  add('Reset window appearance','Spell_Arcane_PortalStormWind',reopen(function()
+   db.locked=false;db.position=nil;db.numberFormat='compact';db.hideRealm=false;db.showBoth=true;db.textSize=11;db.updateInterval=.4
+   M.ResetDetailPosition()
+   M.SetSkin('battle');M.SetLayout('standard');rowOffset=0
+   frame:ClearAllPoints();frame:SetPoint("CENTER",UIParent,"CENTER",330,0);M.Refresh()
+  end))
+ elseif page=='numbers' then
+  title='METER DATA & DISPLAY'
+  option('Exact numbers','INV_Misc_Note_01',db.numberFormat=='exact',function() M.SetNumberFormat(db.numberFormat=='exact' and 'compact' or 'exact') end)
+  option('Hide realm suffixes','INV_Misc_Note_05',db.hideRealm==true,function() M.SetHideRealm(db.hideRealm~=true) end)
+  option('Total + per second columns','INV_Misc_Book_09',db.showBoth~=false,function() M.SetBothColumns(db.showBoth==false) end)
+  for _,choice in ipairs({{'Fast refresh',.2},{'Standard refresh',.4},{'Low-frequency refresh',.8}}) do
+   local interval=choice[2]
+   add(choice[1],'INV_Misc_PocketWatch_01',reopen(function() M.SetUpdateInterval(interval) end),
+    {selected=M.GetUpdateInterval()==interval,badge=interval..'s'})
+  end
+ else
+  add('Appearance & layout','INV_Misc_Map_01',function() M.OpenOptions(anchor,'appearance') end,{submenu=true})
+  add('Numbers & refresh rate','INV_Misc_PocketWatch_01',function() M.OpenOptions(anchor,'numbers') end,{submenu=true})
+  add('Show fewer players','INV_Misc_GroupNeedMore',reopen(function() M.SetRows(rowCount-1) end),{enabled=rowCount>4})
+  add('Show more players','INV_Misc_GroupNeedMore',reopen(function() M.SetRows(rowCount+1) end),{enabled=rowCount<12})
+  add('Find my row','INV_Misc_Spyglass_03',M.FocusLocalPlayer,{enabled=M.LocalPlayerIndex(lastSources)~=nil})
+  add(db.locked and 'Unlock window' or 'Lock window','INV_Misc_Key_03',function() db.locked=not db.locked;M.Refresh() end,
+   {selected=db.locked==true,badge=db.locked and 'LOCKED' or nil})
+  add('Reset breakdown position','INV_Misc_Map_01',M.ResetDetailPosition)
+  add('Reset combat data...','Spell_Shadow_SacrificialShield',function() M.RequestReset(anchor) end,{submenu=true})
+  add('Close meter','INV_Misc_Rune_01',M.Hide)
+ end
+ if page then add('Back to meter options','INV_Misc_Map_01',function() M.OpenOptions(anchor) end) end
+ U.Menu(anchor,title,entries,skin())
 end
 function M.RequestReset(anchor)
  local api=C_DamageMeter

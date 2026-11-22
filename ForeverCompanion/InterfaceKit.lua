@@ -297,8 +297,10 @@ function U.Menu(anchor,title,entries,palette,width)
  shade:SetAllPoints(UIParent);shade:SetFrameStrata('FULLSCREEN_DIALOG')
  shade:SetScript('OnClick',U.CloseMenu)
  local panel=CreateFrame('Frame',nil,shade,'BackdropTemplate')
- width=width or 224
- panel:SetSize(width,40+#entries*27)
+ local decorated=p.menuArt==true
+ width=width or (decorated and 298 or 224)
+ local top,step=decorated and 46 or 34,decorated and 30 or 27
+ panel:SetSize(width,top+6+#entries*step)
  panel:SetPoint('TOPLEFT',anchor,'BOTTOMLEFT',0,-5)
  panel:SetClampedToScreen(true)
  panel:SetFrameLevel(shade:GetFrameLevel()+1)
@@ -308,15 +310,44 @@ function U.Menu(anchor,title,entries,palette,width)
   panel:SetBackdropColor(unpack(p.background or U.palette.background))
   panel:SetBackdropBorderColor(unpack(p.border or U.palette.border))
  end
- local heading=U.Text(panel,11,p.muted)
- heading:SetPoint('TOPLEFT',12,-12);heading:SetWidth(width-49);heading:SetText(title)
+ if decorated then
+  local header=panel:CreateTexture(nil,'BACKGROUND')
+  header:SetPoint('TOPLEFT',3,-3);header:SetPoint('TOPRIGHT',-3,-3);header:SetHeight(35)
+  paint(header,p.header or p.rail or U.palette.rail)
+  local theme=ForeverCompanionVisualTheme
+  if theme and theme.PaintEnvironment then
+   local art=panel:CreateTexture(nil,'BORDER')
+   art:SetAllPoints(header);theme.PaintEnvironment(art,'Meter',.42,.09)
+  end
+  local trim=panel:CreateTexture(nil,'ARTWORK')
+  trim:SetPoint('TOPLEFT',8,-38);trim:SetPoint('TOPRIGHT',-8,-38);trim:SetHeight(1)
+  paint(trim,p.accent or U.palette.accent)
+ end
+ local heading=U.Text(panel,decorated and 13 or 11,decorated and p.accent or p.muted)
+ heading:SetPoint('TOPLEFT',12,decorated and -13 or -12);heading:SetWidth(width-49);heading:SetText(title)
  local close=U.Button(panel,p)
- close:SetPoint('TOPRIGHT',-6,-5);close:SetSize(24,24);close:SetText('x')
+ close:SetPoint('TOPRIGHT',-7,decorated and -8 or -5);close:SetSize(24,24);close:SetText('x')
  close:SetScript('OnClick',U.CloseMenu)
  for i,entry in ipairs(entries) do
   local row=U.Button(panel,p)
-  row:SetSize(width-16,25);row:SetPoint('TOPLEFT',8,-34-(i-1)*27)
+  row:SetSize(width-16,step-2);row:SetPoint('TOPLEFT',8,-top-(i-1)*step)
   row:SetText(entry.label)
+  if decorated then
+   local icon=row:CreateTexture(nil,'ARTWORK')
+   icon:SetSize(18,18);icon:SetPoint('LEFT',9,0)
+   icon:SetTexture('Interface\\Icons\\'..(entry.icon or 'INV_Misc_Book_09'))
+   icon:SetTexCoord(.08,.92,.08,.92)
+   icon:SetAlpha(entry.enabled==false and .34 or 1);row.fcMenuIcon=icon
+   local badge=entry.badge or (entry.selected and 'ACTIVE') or (entry.submenu and '>')
+   local caption=row:GetFontString()
+   caption:ClearAllPoints();caption:SetPoint('LEFT',32,0);caption:SetPoint('RIGHT',badge and -70 or -9,0)
+   caption:SetJustifyH('LEFT');caption:SetWordWrap(false)
+   if badge then
+    local tag=U.Text(row,10,entry.selected and p.accent or p.muted)
+    tag:SetPoint('RIGHT',-8,0);tag:SetWidth(58);tag:SetJustifyH('RIGHT');tag:SetText(badge)
+    row.fcMenuBadge=tag
+   end
+  end
   U.StyleButton(row,p,entry.selected)
   row:SetEnabled(entry.enabled~=false)
   if entry.enabled==false then row:GetFontString():SetTextColor(.35,.4,.46) end

@@ -292,8 +292,20 @@ m.RequestReset(ForeverCompanionCombatMeterWindow.resetButton)
 for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Clear all native combat sessions' then confirm=o end end
 confirm.OnClick();assert(resetCount==1 and m.ScrollOffset()==0 and m.SelectedRow()==nil)
 ForeverCompanionCombatMeterWindow.optionsButton.OnClick()
-local lock
-for _,o in ipairs(objects) do if o.kind=='Button' and o.text=='Lock window' then lock=o end end
+local lock,appearance
+for _,o in ipairs(objects) do
+ if o.kind=='Button' and o.text=='Lock window' then lock=o end
+ if o.kind=='Button' and o.text=='Appearance & layout' then appearance=o end
+end
+assert(appearance and appearance.fcMenuBadge.text=='>' and appearance.fcMenuIcon.texture)
+appearance.OnClick()
+local exactSkin,back
+for _,o in ipairs(objects) do
+ if o.kind=='Button' and o.text=='Details-inspired skin' then exactSkin=o end
+ if o.kind=='Button' and o.text=='Back to meter options' then back=o end
+end
+assert(exactSkin and exactSkin.fcMenuBadge.text=='ACTIVE' and back)
+back.OnClick()
 assert(lock);lock.OnClick();assert(ForeverCompanionDB.combatMeter.locked and ForeverCompanionCombatMeterWindow.resizeGrip.shown==false)
 SlashCmdList.FOREVERCOMPANIONMETER('unlock');assert(ForeverCompanionCombatMeterWindow.resizeGrip.shown)
 C_DamageMeter=nil;m.Refresh()
