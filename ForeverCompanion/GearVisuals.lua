@@ -1,12 +1,12 @@
 -- Native textures and restrained semantic colors for gear research only.
 local V={};ForeverCompanionGearVisuals=V
-V.colors={ink={.025,.040,.075,1},panel={.045,.070,.120,1},border={.19,.28,.43,1},text={.94,.96,1,1},muted={.67,.75,.87,1},blue={.32,.73,1,1},amber={1,.73,.30,1},green={.34,.91,.65,1},violet={.76,.59,1,1},coral={1,.55,.47,1}}
+V.colors={ink={.035,.034,.031,1},panel={.055,.057,.058,1},border={.37,.28,.16,1},text={.97,.93,.83,1},muted={.75,.72,.65,1},blue={.32,.73,1,1},amber={1,.73,.30,1},green={.34,.91,.65,1},violet={.76,.59,1,1},coral={1,.55,.47,1}}
 local C=V.colors
-local accents={discover=C.blue,hunts=C.amber,completed=C.green,weights=C.violet,upgrade=C.green,lower=C.coral,review=C.amber,neutral=C.blue}
+local accents={discover=C.amber,hunts=C.amber,completed=C.green,weights=C.violet,upgrade=C.green,lower=C.coral,review=C.amber,neutral=C.blue}
 local rarity={{.67,.72,.80,1},{.94,.96,1,1},{.40,.91,.49,1},{.38,.70,1,1},{.79,.56,1,1},{1,.65,.27,1},{1,.82,.40,1},{.43,.90,.96,1}}
 function V.Palette(kind)
  local a=accents[kind] or C.blue
- return {background=C.ink,surface={.065,.105,.175,1},border=C.border,rail={.055+a[1]*.10,.07+a[2]*.10,.11+a[3]*.10,1},accent=a,text=C.text,muted=C.muted}
+ return {background=C.ink,surface={.115,.094,.068,1},border=C.border,rail={.065+a[1]*.12,.06+a[2]*.09,.048+a[3]*.07,1},accent=a,text=C.text,muted=C.muted}
 end
 function V.Quality(value)
  if issecretvalue and issecretvalue(value) then return C.muted end
@@ -32,9 +32,9 @@ function V.Rectangle(parent,x,y,width,height,color,layer)
 end
 function V.Window(parent,width,height,kind)
  ForeverCompanionInterface.Surface(parent,V.Palette(kind))
- local header=V.Rectangle(parent,1,1,width-2,106,{.065,.095,.175,1})
+ local header=V.Rectangle(parent,1,1,width-2,106,{.10,.075,.041,1})
  ForeverCompanionInterface.Material(parent,header,.65)
- V.Rectangle(parent,1,1,width-2,3,C.blue,'BORDER')
+ V.Rectangle(parent,1,1,width-2,3,C.amber,'BORDER')
  local segment=(width-2)/4
  for i,key in ipairs({'discover','hunts','completed','weights'}) do V.Rectangle(parent,1+(i-1)*segment,1,segment,3,V.Palette(key).accent,'BORDER') end
 end

@@ -3,7 +3,13 @@ local G={requested={},loadQueue={},interested={},revision=0,metrics={builds=0,it
 ForeverCompanionGearFinder=G
 G.slots={{'Head',1},{'Neck',2},{'Shoulder',3},{'Chest',5},{'Waist',6},{'Legs',7},{'Feet',8},{'Wrist',9},{'Hands',10},{'Finger',11},{'Finger',12},{'Trinket',13},{'Trinket',14},{'Back',15},{'Main Hand',16},{'Off Hand',17},{'Ranged',18}}
 G.stats={{'Strength','ITEM_MOD_STRENGTH_SHORT'},{'Agility','ITEM_MOD_AGILITY_SHORT'},{'Intellect','ITEM_MOD_INTELLECT_SHORT'},{'Stamina','ITEM_MOD_STAMINA_SHORT'},{'Spirit','ITEM_MOD_SPIRIT_SHORT'},{'Spell power','ITEM_MOD_SPELL_POWER_SHORT'},{'Attack power','ITEM_MOD_ATTACK_POWER_SHORT'},{'Armor','RESISTANCE0_NAME'},
- {'Healing power','ITEM_MOD_SPELL_HEALING_DONE_SHORT'},{'Mana / 5 sec','ITEM_MOD_MANA_REGENERATION_SHORT'},{'Hit rating','ITEM_MOD_HIT_RATING_SHORT'},{'Crit rating','ITEM_MOD_CRIT_RATING_SHORT'},{'Haste rating','ITEM_MOD_HASTE_RATING_SHORT'},{'Defense rating','ITEM_MOD_DEFENSE_SKILL_RATING_SHORT'},{'Dodge rating','ITEM_MOD_DODGE_RATING_SHORT'},{'Block rating','ITEM_MOD_BLOCK_RATING_SHORT'}}
+ {'Healing power','ITEM_MOD_SPELL_HEALING_DONE_SHORT'},{'Mana / 5 sec','ITEM_MOD_MANA_REGENERATION_SHORT'},{'Hit rating','ITEM_MOD_HIT_RATING_SHORT'},{'Crit rating','ITEM_MOD_CRIT_RATING_SHORT'},{'Haste rating','ITEM_MOD_HASTE_RATING_SHORT'},{'Defense rating','ITEM_MOD_DEFENSE_SKILL_RATING_SHORT'},{'Dodge rating','ITEM_MOD_DODGE_RATING_SHORT'},{'Block rating','ITEM_MOD_BLOCK_RATING_SHORT'},
+ {'Expertise rating','ITEM_MOD_EXPERTISE_RATING_SHORT'},{'Ranged attack power','ITEM_MOD_RANGED_ATTACK_POWER_SHORT'},
+ {'Block value','ITEM_MOD_BLOCK_VALUE_SHORT'},{'Parry rating','ITEM_MOD_PARRY_RATING_SHORT'},
+ {'Holy damage','ITEM_MOD_HOLY_DAMAGE_SHORT'},{'Fire damage','ITEM_MOD_FIRE_DAMAGE_SHORT'},{'Frost damage','ITEM_MOD_FROST_DAMAGE_SHORT'},
+ {'Arcane damage','ITEM_MOD_ARCANE_DAMAGE_SHORT'},{'Shadow damage','ITEM_MOD_SHADOW_DAMAGE_SHORT'},{'Nature damage','ITEM_MOD_NATURE_DAMAGE_SHORT'},
+ {'Spell damage','ITEM_MOD_SPELL_DAMAGE_DONE_SHORT'}}
+local originalStatCount=16
 G.presets={Balanced={1,1,1,1,1,1,.5,.02},Strength={2,.5,0,1,0,0,1,.02},Agility={.5,2,0,1,0,0,1,.02},Caster={0,0,2,1,1,2,0,0},Survival={.5,.5,0,2,0,0,0,.1},Healer={0,0,1.5,1,1,0,0,0,2,2}}
 -- Editable leveling estimates informed by WoW Forever guide priorities.
 -- See GearStats.lua for the per-spec source references. These values are
@@ -29,6 +35,24 @@ local specProfiles={
   Balance={0,0,.95,.5,.55,2,0,0,0,0,0,1.2,1},Restoration={0,0,.9,.5,1,0,0,0,2,.75,0,1.3,1.2},
   ["Guardian / Bear"]={.55,1.15,0,2,0,0,.35,.1,0,0,0,0,0,1.3,1.4}}
 }
+-- Ratings are editable raw-point preferences. No universal encounter cap is assumed.
+local extraWeights={
+ WARRIOR={Arms={[17]=1},Fury={[17]=1},Protection={[17]=.65,[19]=.8,[20]=1}},
+ ROGUE={Assassination={[17]=1},Combat={[17]=1},Subtlety={[17]=1}},
+ PALADIN={Protection={[17]=.55,[19]=.8,[20]=1,[21]=1.1,[27]=1.1},Retribution={[17]=.85,[21]=1.2,[27]=1.2}},
+ HUNTER={Marksmanship={[18]=1},["Beast Mastery"]={[18]=1},Survival={[18]=.45,[17]=.5}},
+ MAGE={Arcane={[24]=2,[27]=2},Fire={[22]=2,[27]=2},Frost={[23]=2,[27]=2}},
+ WARLOCK={Affliction={[25]=2,[27]=2},Demonology={[22]=1,[25]=1,[27]=2},Destruction={[22]=2,[27]=2}},
+ PRIEST={Shadow={[25]=2,[27]=2}},
+ SHAMAN={Elemental={[22]=1.1,[26]=2,[27]=2},Enhancement={[17]=.8,[22]=.4,[26]=.7,[27]=.8}},
+ DRUID={Balance={[24]=1.4,[26]=1.4,[27]=2},Feral={[17]=.9},["Guardian / Bear"]={[17]=.55}},
+}
+for class,profiles in pairs(specProfiles) do
+ for spec,weights in pairs(profiles) do
+  local extra=extraWeights[class] and extraWeights[class][spec] or {}
+  for i,value in pairs(extra) do weights[i]=value end
+ end
+end
 for class,profiles in pairs(specProfiles) do
  for spec,weights in pairs(profiles) do G.presets[spec..' '..class:sub(1,1)..class:sub(2):lower()]=weights end
 end
@@ -37,7 +61,7 @@ local function finite(n) return not secret(n) and type(n)=='number' and n==n and
 local function id(n) return finite(n) and n>0 and n%1==0 end
 local function public(v) if secret(v) then return nil end;return v end
 local function call(fn,...)
- if type(fn)=='function' then local ok,a,b,c,d,e,f,g,h,i,j,k,l,m=pcall(fn,...);if ok and not secret(a) and not secret(b) then return a,b,public(c),public(d),public(e),public(f),public(g),public(h),public(i),public(j),public(k),public(l),public(m) end end
+ if type(fn)=='function' then local ok,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p=pcall(fn,...);if ok and not secret(a) and not secret(b) then return a,b,public(c),public(d),public(e),public(f),public(g),public(h),public(i),public(j),public(k),public(l),public(m),public(n),public(o),public(p) end end
 end
 G.Call=call
 function G.Invalidate() G.revision=G.revision+1 end
@@ -67,7 +91,10 @@ function G.Settings()
  if type(s.weights)~='table' then
   s.weights={};local preset=G.SuggestPreset();for i in ipairs(G.stats) do s.weights[i]=G.presets[preset][i] or 0 end;s.profile=preset
  end
- for i in ipairs(G.stats) do if not finite(s.weights[i]) or s.weights[i]<0 or s.weights[i]>100 then s.weights[i]=G.presets.Balanced[i] or 0 end end
+ for i in ipairs(G.stats) do if not finite(s.weights[i]) or s.weights[i]<0 or s.weights[i]>100 then
+  local preset=i>originalStatCount and G.presets[s.profile] or G.presets.Balanced
+  s.weights[i]=preset and preset[i] or 0
+ end end
  for _,key in ipairs({'hunts','completed','profiles','sources'}) do if type(s[key])~='table' then s[key]={} end end
  local count=0
  for key,value in pairs(s.hunts) do
@@ -108,8 +135,14 @@ end
 function G.LoadProfile(index)
  local s=G.Settings();local p=s.profiles[index]
  if type(p)~='table' or type(p.weights)~='table' then return false end
- for i in ipairs(G.stats) do if not finite(p.weights[i]) or p.weights[i]<0 or p.weights[i]>100 then return false end end
- for i in ipairs(G.stats) do s.weights[i]=p.weights[i] end;s.profile=label(p.name,32);weightsChanged();return true
+ local migrated={}
+ for i in ipairs(G.stats) do
+  local value=p.weights[i]
+  if value==nil and i>originalStatCount then value=0 end
+  if not finite(value) or value<0 or value>100 then return false end
+  migrated[i]=value
+ end
+ for i,value in ipairs(migrated) do s.weights[i]=value end;s.profile=label(p.name,32);weightsChanged();return true
 end
 function G.Score(stats,weights)
  if secret(stats) or type(stats)~='table' or not next(stats) then return nil end
@@ -145,7 +178,7 @@ function G.Read(item,context)
  local cache=context and context.cache
  if cache and cache[item]~=nil then return cache[item] or nil end
  local api=C_Item or {};G.metrics.itemReads=G.metrics.itemReads+1
- local name,link,quality,level,required,kind,subkind,stack,equip,texture,sell,classID,subclassID=call(api.GetItemInfo,item)
+ local name,link,quality,level,required,kind,subkind,stack,equip,texture,sell,classID,subclassID,bindType,expansionID,setID=call(api.GetItemInfo,item)
  local itemID=type(item)=='number' and item or (type(item)=='string' and tonumber(item:match('item:(%d+)')))
  if id(itemID) then G.interested[itemID]=true end
  if type(name)~='string' then if id(itemID) then G.Request(itemID) end;if cache then cache[item]=false end;return nil end
@@ -159,35 +192,53 @@ function G.Read(item,context)
   end
   for key,n in pairs(rawStats) do if secret(key) or (not known[key] and (not finite(n) or n~=0)) then unmodeled=unmodeled+1 end end
  end
- local info={name=name,link=type(item)=='string' and item or link,required=required,equip=equip,itemLevel=level,quality=quality,kind=kind,subkind=subkind,classID=classID,subclassID=subclassID,stats=stats,unmodeled=unmodeled,score=not invalid and G.Score(stats,context and context.weights or G.Settings().weights) or nil}
+ local info={name=name,link=type(item)=='string' and item or link,required=required,equip=equip,itemLevel=level,quality=quality,kind=kind,subkind=subkind,classID=classID,subclassID=subclassID,setID=setID,stats=stats,unmodeled=unmodeled,score=not invalid and G.Score(stats,context and context.weights or G.Settings().weights) or nil}
  if info.score==nil and type(item)=='number' then G.Request(item) end
  if cache then cache[item]=info end;return info
 end
--- The tooltip's displayed weapon DPS is a base weapon measurement. It is
--- never substituted for the score of a complete build or a dual-wield setup.
-function G.WeaponDPS(info)
- if not info or info.classID~=2 or type(info.link)~='string' then return end
- if info.weaponDPS~=nil then return info.weaponDPS or nil end
- local template=DPS_TEMPLATE
- if type(template)~='string' then return end
- local start,finish=template:find('%%[%.%d]*f')
- if not start then return end
+local function numberPattern(template)
+ if type(template)~='string' then return nil end
+ local start,finish=template:find('%%[%d%$%.]*[fs]')
+ if not start then return nil end
  local function literal(value) return (value:gsub('(%W)','%%%1')) end
- local pattern='^%s*'..literal(template:sub(1,start-1))..'(%d+[.,]?%d*)'..literal(template:sub(finish+1))..'%s*$'
- local api=C_TooltipInfo or {}
- local tooltip=call(api.GetHyperlink,info.link)
+ return '^%s*'..literal(template:sub(1,start-1))..'(%d+[.,]?%d*)'..literal(template:sub(finish+1))..'%s*$'
+end
+local function tooltipNumber(value,pattern)
+ if type(value)~='string' or not pattern then return nil end
+ local number=value:gsub('|c%x%x%x%x%x%x%x%x',''):gsub('|r',''):match(pattern)
+ local numeric=number and tonumber((number:gsub(',','.')))
+ return finite(numeric) and numeric>0 and numeric or nil
+end
+-- Base weapon data stays separate from stat weights and combined loadout DPS.
+function G.WeaponDetails(info)
+ if not info or info.classID~=2 or type(info.link)~='string' then return end
+ if info.weaponDetails then return info.weaponDetails end
+ local dpsPattern=numberPattern(DPS_TEMPLATE)
+ local speedTemplate=ITEM_SPEED or SPEED_TEMPLATE
+ local speedPattern=numberPattern(speedTemplate) or (type(speedTemplate)=='string' and numberPattern(speedTemplate..' %.2f'))
+ if not speedPattern then
+  local locale=call(GetLocale)
+  if locale=='enUS' or locale=='enGB' then speedPattern=numberPattern('Speed %.2f') end
+ end
+ local tooltip=call((C_TooltipInfo or {}).GetHyperlink,info.link)
  local lines=type(tooltip)=='table' and public(tooltip.lines)
  if type(lines)~='table' then return end
+ local weapon={}
  for _,line in ipairs(lines) do
-  local value=type(line)=='table' and not secret(line) and public(line.leftText)
-  if type(value)=='string' then
-   value=value:gsub('|c%x%x%x%x%x%x%x%x',''):gsub('|r','')
-   local number=value:match(pattern)
-   local dps=number and tonumber((number:gsub(',','.')))
-   if finite(dps) and dps>0 then info.weaponDPS=dps;return dps end
+  if not secret(line) and type(line)=='table' then
+   local left,right=public(line.leftText),public(line.rightText)
+   weapon.dps=weapon.dps or tooltipNumber(left,dpsPattern) or tooltipNumber(right,dpsPattern)
+   weapon.speed=weapon.speed or tooltipNumber(right,speedPattern) or tooltipNumber(left,speedPattern)
+   if weapon.dps and weapon.speed then break end
   end
  end
- info.weaponDPS=false
+ if weapon.dps and weapon.speed then weapon.average=weapon.dps*weapon.speed end
+ info.weaponDetails=weapon
+ return weapon
+end
+function G.WeaponDPS(info)
+ local weapon=G.WeaponDetails(info)
+ return weapon and weapon.dps
 end
 function G.Catalog()
  local records,byID={},{}
@@ -354,7 +405,12 @@ local function compare(entry,index,context)
  elseif canUse==false then reason='Client reports this item cannot be used';r.blocked=true;r.unusable=true
  elseif conflict==true then reason='Unique-item limit conflicts with equipped gear';r.blocked=true
  elseif conflict==nil then reason='Unique-item restrictions unavailable';r.restrictionsUnknown=true
- elseif slot[2]>=16 then reason='Inspect weapon damage, speed and both hands'
+ elseif slot[2]>=16 then
+  if slot[2]==16 and info.equip=='INVTYPE_2HWEAPON' and context.links[16] then
+   reason='Two-handed swap also replaces your off-hand';r.displaced=G.Read(context.links[16],context)
+  elseif slot[2]==17 and context.links[15] and (G.Read(context.links[15],context) or {}).equip=='INVTYPE_2HWEAPON' then
+   reason='Off-hand swap needs a one-handed main hand'
+  else reason='Review weapon speed, DPS and effects' end
  elseif info.equip~=locations[slot[1]] and not (slot[1]=='Chest' and info.equip=='INVTYPE_ROBE') then reason='Client slot differs from source catalog'
  elseif context.matchArmor and armorSlots[slot[1]] and baseline and (not finite(info.subclassID) or not finite(baseline.subclassID)) then reason='Armor type unavailable';r.armorUnknown=true
  elseif context.matchArmor and armorSlots[slot[1]] and baseline and info.subclassID~=baseline.subclassID then reason='Different armor type';r.armorMismatch=true
@@ -372,6 +428,10 @@ local function compare(entry,index,context)
   r.partial=(info.unmodeled or 0)>0 or (baseline.unmodeled or 0)>0
   if baseline.score>0 then r.percent=100*r.delta/baseline.score end
   reason=G.Points(r.delta,true)..' estimated points'..(r.partial and ' · partial stats' or (r.percent and (' ('..G.Points(r.percent,true)..'% score)') or ''))
+ end
+ if r.delta~=nil and ((id(info.setID) and (not baseline or info.setID~=baseline.setID))
+  or (baseline and id(baseline.setID) and baseline.setID~=info.setID)) then
+  r.partial=true;r.setReview=true;reason=G.Points(r.delta,true)..' points / check set bonuses'
  end
  r.reason=reason;r.saved=context.settings.hunts[tostring(record.itemID)]==true;r.completed=context.settings.completed[tostring(record.itemID)];r.tracked=context.settings.tracked==tostring(record.itemID)
  return r
@@ -550,7 +610,7 @@ function G.Build(options,context)
 end
 function G.Breakdown(row)
  if not row or not row.info or type(row.info.stats)~='table' then return {} end
- local baseline=row.baseline and row.baseline.score~=nil and row.baseline.stats;local weights=row.weights or G.Settings().weights;local result={}
+ local baseline=row.baseline and row.baseline.score~=nil and row.baseline.stats or row.empty and {};local weights=row.weights or G.Settings().weights;local result={}
  for i,stat in ipairs(G.stats) do
   local a=row.info.stats[stat[2]] or 0;local b=type(baseline)=='table' and (baseline[stat[2]] or 0) or nil
   if finite(a) and (b==nil or finite(b)) and (a~=0 or (b and b~=0)) then result[#result+1]={name=stat[1],candidate=a,equipped=b,delta=b and a-b,weight=weights[i],points=b and (a-b)*weights[i]} end

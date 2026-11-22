@@ -1,5 +1,5 @@
 -- Slot overview, searchable candidates, persistent hunt log and explainable comparisons.
-local W={offset=0,view='discover',selected=nil,statPage=1}
+local W={offset=0,view='discover',selected=nil,statPage=1,weightPage=1}
 ForeverCompanionGearFinderWorkspace=W
 local G=ForeverCompanionGearFinder
 local V=ForeverCompanionGearVisuals
@@ -12,7 +12,8 @@ local sourceIndex=1
 local worker,currentForAction
 local cachedKey,cachedResults,cachedStats,cachedScope
 local loadElapsed=0
-local filtersButton
+local filtersButton,weightPageButton,groupButton
+local weightsPerPage=16
 local sourceLabels={bags='In your bags',quest='Quest rewards',dungeon='Dungeon drops',crafted='Crafted gear'}
 local function text(parent,x,y,width,size,value,height)
  local f=ForeverCompanionInterface.Text(parent,size);f:SetPoint('TOPLEFT',x,y);f:SetWidth(width);f:SetText(value or '')
@@ -70,18 +71,32 @@ local function renderDetail(row)
  local state,kind=V.State(row);detailState:SetText(row.rank and ('RANK #'..row.rank..' / '..row.rankCount..' · '..state) or state);detailState:SetTextColor(unpack(V.Palette(kind).accent))
  V.Tint(detail.scoreBand,{V.Palette(kind).accent[1]*.12+.03,V.Palette(kind).accent[2]*.12+.04,V.Palette(kind).accent[3]*.12+.07,1})
  detailMeta:SetText(row.slot[1]..' · slot '..row.slot[2]..' · Item #'..row.record.itemID..'\n'..(info and ((info.subkind or 'Type unknown')..' · Level '..tostring(info.required or '?')..' · Use: '..(row.usable==true and 'yes' or row.usable==false and 'no' or 'unchecked')) or 'Waiting for client item data'))
- detailScore:SetText(row.reason)
- detailScore:SetTextColor(unpack(V.Palette(kind).accent))
+ local spec=G.Settings().profile
  local weapon=row.slot[2]>=16
- local function score(entry)
+ local wornWeapon,candidateWeapon=weapon and G.WeaponDetails(row.baseline),weapon and G.WeaponDetails(info)
+ local reason=row.reason
+ if row.displaced and row.displaced.name then
+  reason="Also replaces "..row.displaced.name
+ elseif wornWeapon and candidateWeapon and wornWeapon.average and candidateWeapon.average and not row.blocked and not row.future and not row.restrictionsUnknown then
+  reason="Est. avg hit "..G.Points(wornWeapon.average).." > "..G.Points(candidateWeapon.average)
+  if spec=='Retribution Paladin' and info.equip=='INVTYPE_2HWEAPON' then reason=reason.." / Seal of Command"
+  elseif spec=='Protection Paladin' and row.slot[2]==16 then reason=reason.." / Seal of Fury" end
+ end
+ detailScore:SetText(reason)
+ detailScore:SetTextColor(unpack(V.Palette(kind).accent))
+ local function score(entry,comparison)
   if weapon then
-   local dps=G.WeaponDPS(entry)
-   return dps and (G.Points(dps)..' DPS') or entry and entry.itemLevel and ('iLvl '..entry.itemLevel) or '-'
+   if comparison and comparison.dps and comparison.speed then
+    return ('%s DPS / %.2fs'):format(G.Points(comparison.dps),comparison.speed)
+   end
+   if comparison and comparison.dps then return G.Points(comparison.dps)..' DPS' end
+   if comparison and comparison.speed then return ('Speed %.2fs'):format(comparison.speed) end
+   return entry and entry.itemLevel and ('iLvl '..entry.itemLevel) or '-'
   end
   return entry and entry.score and G.Points(entry.score) or '-'
  end
- detail.worn.value:SetText(score(row.baseline))
- detail.candidate.value:SetText(score(info))
+ detail.worn.value:SetText(score(row.baseline,wornWeapon))
+ detail.candidate.value:SetText(score(info,candidateWeapon))
  sourceText:SetText(s.dungeon..'\n'..s.boss..'\n'..(row.owned==nil and 'Inventory unknown' or row.owned>0 and ('Owned: '..row.owned) or row.completed and 'Previously acquired' or 'Not in carried inventory'))
  local breakdown=G.Breakdown(row);local pages=math.max(1,math.ceil(#breakdown/7));W.statPage=math.min(W.statPage,pages)
  for i,fields in ipairs(statRows) do
@@ -110,6 +125,18 @@ function W.AnchorOffset(before,after,offset)
  for i=math.min(offset,#before),1,-1 do local found=positions[before[i].record.itemID];if found then return math.min(maximum,found-1) end end
  return math.min(maximum,offset)
 end
+local function bySlot(results)
+ local buckets,ordered={},{}
+ for _,row in ipairs(results) do
+  local key=row.slotIndex or 0
+  buckets[key]=buckets[key] or {};buckets[key][#buckets[key]+1]=row
+ end
+ for i=1,#G.slots do
+  for _,row in ipairs(buckets[i] or {}) do ordered[#ordered+1]=row end
+ end
+ for _,row in ipairs(buckets[0] or {}) do ordered[#ordered+1]=row end
+ return ordered
+end
 function W.Refresh()
  if not root or not root:IsShown() then return end
  W.searchPending=false;W.dirty=false
@@ -120,8 +147,17 @@ function W.Refresh()
  profileButton:SetShown(isWeights);profileButton:SetText('Weights: '..cfg.profile);V.Style(profileButton,'weights',W.view=='weights')
  V.Style(readyButton,'discover',cfg.ready);V.Style(armorButton,'discover',cfg.matchArmor);V.Style(upgradeButton,'upgrade',cfg.bestNow~=false)
  for _,b in ipairs(weightSaveButtons) do V.Style(b,'weights',false) end
- for _,box in ipairs(weightBoxes) do if not box:HasFocus() then box:SetText(tostring(cfg.weights[box.statIndex])) end end
+ if isWeights then
+  for i,box in ipairs(weightBoxes) do
+   local visible=math.floor((i-1)/weightsPerPage)+1==W.weightPage
+   box:SetShown(visible);weightLabels[i]:SetShown(visible)
+   if visible and not box:HasFocus() then box:SetText(tostring(cfg.weights[i])) end
+  end
+  weightPageButton:SetText(W.weightPage==1 and 'More stats (2/2)' or 'Core stats (1/2)')
+ end
  local browse=W.view=='discover'
+ local grouped=browse and cfg.slot==0 and cfg.groupBySlot~=false
+ groupButton:SetShown(browse and cfg.slot==0);groupButton:SetText(grouped and 'By equipment slot' or 'By ranking')
  search:SetShown(not isWeights);dungeonButton:SetShown(not isWeights);readyButton:Hide();armorButton:Hide();upgradeButton:SetShown(browse);filtersButton:SetShown(browse)
  if isWeights then
   summary:SetText('Set your own priorities. Each item score is the sum of reported stat amounts × these weights. Enter applies a value (0–100).')
@@ -129,10 +165,12 @@ function W.Refresh()
   return
  end
  local options={slot=cfg.slot,query=search:GetText(),dungeon=cfg.dungeon,saved=W.view=='hunts',active=W.view=='hunts',completed=W.view=='completed',ready=browse and cfg.ready,matchArmor=browse and cfg.matchArmor,bestNow=browse and cfg.bestNow~=false,includeReview=browse and cfg.bestNow~=false,includeBags=browse,sourceKind=browse and sourceLabels[cfg.sourceKind] and cfg.sourceKind or nil}
- local scope=table.concat({W.view,tostring(cfg.slot),search:GetText(),cfg.dungeon,tostring(options.ready),tostring(options.matchArmor),tostring(options.bestNow),tostring(options.sourceKind)},'\031')
- local key,context=G.SnapshotKey(options)
+ local scope=table.concat({W.view,tostring(cfg.slot),search:GetText(),cfg.dungeon,tostring(options.ready),tostring(options.matchArmor),tostring(options.bestNow),tostring(options.sourceKind),tostring(grouped)},'\031')
+ local baseKey,context=G.SnapshotKey(options)
+ local key=baseKey..tostring(grouped)
  if key~=cachedKey then
   local results,_,_,stats=G.Build(options,context)
+  if grouped then results=bySlot(results) end
   if cachedResults and scope==cachedScope and (W.offset or 0)>0 then W.offset=W.AnchorOffset(cachedResults,results,W.offset) end
   if GameTooltip then GameTooltip:Hide() end
   cachedKey=key;cachedResults=results;cachedStats=stats;cachedScope=scope
@@ -159,6 +197,12 @@ function W.Refresh()
   local r=results[W.offset+i];row.record=r;row:SetShown(r~=nil);row:SetEnabled(true)
   if r then
    row.icon:SetTexture(ForeverCompanionLoot.ItemIcon(r.record));row.title:SetText((r.rank and ('#'..r.rank..'  ') or '')..r.record.item);row.title:SetTextColor(unpack(V.Quality(r.info and r.info.quality)));V.Tint(row.iconBorder,V.Quality(r.info and r.info.quality))
+   local previous=results[W.offset+i-1]
+   local section=grouped and (i==1 or not previous or previous.slotIndex~=r.slotIndex)
+   row.section:SetShown(section);row.section:SetText(r.slot[1]:upper())
+   row.title:ClearAllPoints();row.title:SetPoint('TOPLEFT',52,section and -21 or -7)
+   row.meta:ClearAllPoints();row.meta:SetPoint('TOPLEFT',52,section and -39 or -27)
+   row.score:SetShown(not section);row.state:ClearAllPoints();row.state:SetPoint('TOPLEFT',288,section and -51 or -45)
    row.meta:SetText(r.slot[1]..' · '..r.record.dungeon..(#r.sources>1 and (' + '..(#r.sources-1)..' sources') or ''))
    local state,kind=V.State(r);row.state:SetText(r.rank and ('#'..r.rank..' · '..(state=='UNRANKED' and 'COMPARE ?' or state)) or (state=='UNRANKED' and 'MANUAL REVIEW' or state));row.state:SetTextColor(unpack(V.Palette(kind).accent))
    row.score:SetText(r.rank and ('Score '..G.Points(r.rankScore)..(r.delta and (' · '..G.Points(r.delta,true)..' vs worn') or ' · worn score unknown')) or (r.delta and (G.Points(r.delta,true)..' estimated points') or r.reason));row.score:SetTextColor(unpack(V.colors.muted))
@@ -227,8 +271,9 @@ function W.Open(itemID)
  if not root then
   root=CreateFrame('Frame','ForeverCompanionGearFinderPanel',UIParent);W.root=root;root:SetSize(1080,760);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');V.Window(root,1080,760,'discover')
   ForeverCompanionVisualTheme.EnvironmentArt(root,'TOPRIGHT',-2,-2,816,105,'Gear',.88,.11,'BORDER',1)
-  V.Rectangle(root,12,112,196,640,{.040,.065,.115,1})
-  V.Rectangle(root,220,188,840,43,{.055,.10,.17,1})
+  V.Rectangle(root,12,112,196,640,{.064,.054,.041,1})
+  V.Rectangle(root,213,235,442,432,{.034,.036,.037,1})
+  V.Rectangle(root,220,188,840,43,{.092,.073,.046,1})
   ForeverCompanionInterface.PreparePanel(root,'ForeverCompanionGearFinderPanel',1080,760)
   root:SetScript('OnEvent',W.ApplyScale)
   local sizing=button(root,910,-18,120,'Window size',function(self) local cfg=G.Settings();cfg.largeWindow=not cfg.largeWindow;W.ApplyScale();self:SetText(cfg.largeWindow and 'Compact size' or 'Larger size') end);sizing:SetText(G.Settings().largeWindow and 'Compact size' or 'Larger size')
@@ -275,6 +320,11 @@ function W.Open(itemID)
   readyButton=button(root,220,-151,170,'Within my level',function() local cfg=G.Settings();cfg.ready=not cfg.ready;W.offset=0;W.Refresh() end)
   armorButton=button(root,400,-151,170,'Match worn armor',function() local cfg=G.Settings();cfg.matchArmor=not cfg.matchArmor;W.offset=0;W.Refresh() end)
   upgradeButton=button(root,580,-151,180,'Best upgrades now',function() local cfg=G.Settings();cfg.bestNow=cfg.bestNow==false;W.offset=0;W.Refresh() end)
+  groupButton=button(root,220,-151,350,'By equipment slot',function()
+   local cfg=G.Settings();cfg.groupBySlot=cfg.groupBySlot==false;W.offset=0;W.Refresh()
+  end)
+  U.SetHoverHelp(groupButton,'Result order','Click to switch between equipment groups and global ranking.')
+  W.groupButton=groupButton
   filtersButton=button(root,770,-151,290,'More gear options',function(self)
    local cfg=G.Settings();local entries={}
    if cfg.bestNow==false then
@@ -301,6 +351,7 @@ function W.Open(itemID)
   for i=1,6 do
    local row=ForeverCompanionInterface.Button(root);row:SetSize(420,66);row:SetPoint('TOPLEFT',220,-240-(i-1)*70);row:SetText('')
    row.icon=row:CreateTexture(nil,'ARTWORK');row.icon:SetSize(32,32);row.icon:SetPoint('TOPLEFT',10,-10);row.iconBorder=V.Rectangle(row,8,8,36,36,V.colors.muted,'BORDER');row.rail=V.Rectangle(row,0,0,3,66,V.colors.blue,'BORDER')
+   row.section=text(row,52,-4,235,10,'');row.section:SetTextColor(unpack(V.colors.amber))
    row.title=text(row,52,-7,355,13,'');row.meta=text(row,52,-27,355,10,'');row.score=text(row,52,-44,232,11,'');row.state=text(row,288,-45,120,10,'');row.state:SetJustifyH('RIGHT')
    row:EnableMouse(true);row:EnableMouseWheel(true);row:SetScript('OnMouseWheel',wheel)
    row:SetScript('OnClick',function(self) if self.record then W.Select(self.record.record.itemID) end end)
@@ -320,7 +371,8 @@ function W.Open(itemID)
   detail=CreateFrame('Frame',nil,root);detail:SetSize(400,460);detail:SetPoint('TOPLEFT',660,-240);V.Card(detail,'discover');W.detail=detail
   detail.scoreBand=V.Rectangle(detail,8,99,384,40,{.06,.16,.15,1})
   V.Rectangle(detail,8,143,384,61,{.065,.10,.16,1})
-  V.Rectangle(detail,8,207,384,67,{.075,.085,.15,1})
+  local parchment=V.Rectangle(detail,8,207,384,67,{.78,.66,.43,1},'BORDER')
+  U.Material(detail,parchment,.16)
   V.Rectangle(detail,12,310,376,1,V.colors.border,'BORDER')
   detail.icon=detail:CreateTexture(nil,'ARTWORK');detail.icon:SetSize(36,36);detail.icon:SetPoint('TOPLEFT',12,-12);detail.iconBorder=V.Rectangle(detail,10,10,40,40,V.colors.muted,'BORDER')
   detailTitle=text(detail,58,-12,328,15,'',39);detailMeta=text(detail,12,-60,376,11,'',34)
@@ -339,7 +391,7 @@ function W.Open(itemID)
   detailState=text(detail,16,-103,360,10,'')
   detailScore=text(detail,16,-119,360,11,'',18)
   detail.worn=U.MetricTile(detail,12,-141,181,'Worn item')
-  detail.candidate=U.MetricTile(detail,207,-141,181,'Candidate','Armor shows weighted stats. Weapons show base DPS when reported by the tooltip, or item level when unavailable. Hover the candidate name or worn tile to compare speed and effects.')
+  detail.candidate=U.MetricTile(detail,207,-141,181,'Candidate','Armor shows weighted stats. Weapons show base DPS and swing speed when the client reports them. Approximate average hit uses displayed DPS times swing speed. For Retribution, slow two-handers favor Seal of Command. With Seal of Fury and a shield, faster swings grant absorbs more often.')
   V.Rectangle(detail,12,202,376,1,V.colors.border,'BORDER')
   local equippedHover=CreateFrame('Frame',nil,detail);equippedHover:SetSize(376,55);equippedHover:SetPoint('TOPLEFT',12,-141);equippedHover:EnableMouse(true)
   equippedHover:SetSize(181,55)
@@ -352,7 +404,7 @@ function W.Open(itemID)
    GameTooltip:Show()
   end)
   equippedHover:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
-  sourceText=text(detail,12,-211,376,11,'',66)
+  sourceText=text(detail,17,-213,366,11,'',61);sourceText:SetTextColor(.15,.105,.06)
   local sourceHover=CreateFrame('Frame',nil,detail);sourceHover:SetPoint('TOPLEFT',12,-211);sourceHover:SetSize(376,62)
   hover(sourceHover,'Source details',function() return W.current and source(W.current).status or 'No source selected' end)
   sourceButton=button(detail,12,-281,140,'Source',function() local current=currentForAction();if current then sourceIndex=sourceIndex%#current.sources+1;local chosen=current.sources[sourceIndex];sourceChoice={itemID=current.record.itemID,dungeon=chosen.dungeon,boss=chosen.boss};renderDetail(current) end end,24)
@@ -369,9 +421,14 @@ function W.Open(itemID)
   notice=text(root,220,-715,840,11,'',32)
   weightPanel=CreateFrame('Frame',nil,root);weightPanel:SetSize(840,465);weightPanel:SetPoint('TOPLEFT',220,-235);V.Card(weightPanel,'weights');V.Rectangle(weightPanel,0,0,840,3,V.colors.violet,'BORDER')
   text(weightPanel,16,-16,808,13,'YOUR STAT PREFERENCES'):SetTextColor(unpack(V.colors.violet))
-  text(weightPanel,16,-44,808,11,'Presets are editable starting points. Caps, weapon damage, proc effects and set bonuses need separate review.\nRating weights apply to the raw rating amounts returned by the client. Missing stat keys are never converted to percentages.',42)
+  weightPageButton=button(weightPanel,658,-11,166,'More stats (2/2)',function()
+  W.weightPage=W.weightPage==1 and 2 or 1
+  W.Refresh()
+ end,24)
+ W.weightPageButton=weightPageButton
+ text(weightPanel,16,-44,808,11,'Presets are editable starting points. Caps, weapon damage, proc effects and set bonuses need separate review.\nRating weights apply to the raw rating amounts returned by the client. Missing stat keys are never converted to percentages.',42)
   for i,stat in ipairs(G.stats) do
-   local index=i;local col=(i-1)%2;local line=math.floor((i-1)/2);local x,y=16+col*412,-94-line*32
+   local index=i;local pageIndex=(i-1)%weightsPerPage;local col=pageIndex%2;local line=math.floor(pageIndex/2);local x,y=16+col*412,-94-line*32
    local color=(i==1 or i==7) and V.colors.coral or (i==2 or i==4 or i==8 or i>=14) and V.colors.green or V.colors.blue
    weightLabels[i]=text(weightPanel,x,y+2,205,12,stat[1]);weightLabels[i]:SetTextColor(unpack(color));local box=ForeverCompanionInterface.EditBox(weightPanel,'0–100');box:SetSize(180,26);box:SetPoint('TOPLEFT',x+210,y+6);box:SetAutoFocus(false);box:SetMaxLetters(7);box.statIndex=i
    box:SetScript('OnEnterPressed',function(self) if not G.SetWeight(index,tonumber(self:GetText())) then tell('Enter a number between 0 and 100. Your previous weight was kept.') else tell('Weight applied. Comparisons updated.') end;self:ClearFocus();W.Refresh() end)

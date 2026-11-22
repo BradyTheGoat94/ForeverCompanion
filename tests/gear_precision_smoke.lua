@@ -8,7 +8,7 @@ GetInventoryItemID=function(_,slot) local link=links[slot];return link and tonum
 local function record(id,name,slot,dungeon,boss) return {itemID=id,item=name,slot=slot or 'Head',dungeon=dungeon or 'Dungeon A',boss=boss or 'Boss AlphaSentinel',status='Fixture',source='https://example.test/'..id} end
 ForeverCompanionLoot={records={record(2001,'Candidate'),record(2001,'Candidate','Head','Dungeon B','Boss BetaWarden'),record(2002,'Partial candidate'),record(2003,'Ring','Finger')}}
 local stats={ [100]={ITEM_MOD_STRENGTH_SHORT=5},[101]={ITEM_MOD_STRENGTH_SHORT=5},[102]={ITEM_MOD_STRENGTH_SHORT=10},
- [2001]={ITEM_MOD_STRENGTH_SHORT=20},[2002]={ITEM_MOD_STRENGTH_SHORT=30,ITEM_MOD_FIRE_DAMAGE_SHORT=10},[2003]={ITEM_MOD_STRENGTH_SHORT=15}}
+ [2001]={ITEM_MOD_STRENGTH_SHORT=20},[2002]={ITEM_MOD_STRENGTH_SHORT=30,UNSUPPORTED_FIXTURE_STAT=10},[2003]={ITEM_MOD_STRENGTH_SHORT=15}}
 local allowed={};local rule={};local counts,uses={},{}
 C_PlayerInfo={CanUseItem=function(id) uses[id]=(uses[id] or 0)+1;return allowed[id]~=false end}
 C_Item={GetItemInfo=function(value)
@@ -165,3 +165,40 @@ DPS_TEMPLATE='(%.1f Schaden pro Sekunde)'
 C_TooltipInfo.GetHyperlink=function() return {lines={{leftText='(27,4 Schaden pro Sekunde)'}}} end
 assert(G.WeaponDPS({classID=2,link='item:2004'})==27.4,'use the localized tooltip format')
 assert(G.WeaponDPS({classID=4,link='item:2004'})==nil,'armor never gets weapon DPS')
+
+ITEM_SPEED='Tempo %.2f'
+C_TooltipInfo.GetHyperlink=function()
+ return {lines={{rightText='Tempo 3,50'},{leftText='(27,4 Schaden pro Sekunde)'}}}
+end
+local weapon=G.WeaponDetails({classID=2,link='item:2004'})
+assert(weapon.speed==3.5 and math.abs(weapon.average-95.9)<.01,'display average base damage using DPS and unhasted weapon speed')
+local attackPower='ITEM_MOD_RANGED_ATTACK_POWER_SHORT'
+local holy='ITEM_MOD_HOLY_DAMAGE_SHORT'
+assert(G.Score({[attackPower]=18},G.presets['Marksmanship Hunter'])>0)
+assert(G.Score({[holy]=8},G.presets['Retribution Paladin'])>0)
+assert(G.Score({[holy]=8},G.presets['Frost Mage'])==0)
+assert(G.Score({ITEM_MOD_BLOCK_VALUE_SHORT=8},G.presets['Protection Paladin'])>0)
+local legacy={};for i=1,16 do legacy[i]=i end
+G.Settings().profiles[1]={name='Old custom',weights=legacy}
+assert(G.LoadProfile(1) and G.Settings().weights[16]==16 and G.Settings().weights[17]==0)
+assert(G.Preset('Strength'))
+
+ForeverCompanionLoot.records={record(2001,'Different set'),record(2004,'Two-hander','Two-Hand')}
+local sourcedItem=C_Item.GetItemInfo
+C_Item.GetItemInfo=function(item)
+ if item==2004 then return 'Two-hander','item:2004',3,50,25,'Weapon','Sword',1,'INVTYPE_2HWEAPON',nil,nil,2,8 end
+ local name,link,quality,level,required,kind,subkind,stack,equip,texture,sell,class,subclass=sourcedItem(item)
+ return name,link,quality,level,required,kind,subkind,stack,equip,texture,sell,class,subclass,nil,nil,item==2001 and 91 or nil
+end
+stats[2001]={ITEM_MOD_STRENGTH_SHORT=25};stats[100]={ITEM_MOD_STRENGTH_SHORT=5}
+local setRows=G.Build({slot=1,bestNow=true,includeReview=true})
+assert(setRows[1].setReview and setRows[1].upgradeTier==2 and not setRows[1].recommended)
+local removedRow=G.Build({slot=15,bestNow=true,includeReview=true})[1]
+assert(removedRow and not removedRow.displaced)
+links[17]='item:101'
+removedRow=G.Build({slot=15,bestNow=true,includeReview=true})[1]
+assert(removedRow.displaced and removedRow.displaced.link==links[17] and not removedRow.recommended)
+links[1]=nil
+local emptySet=G.Build({slot=1,bestNow=true,includeReview=true})[1]
+assert(emptySet.empty and G.Breakdown(emptySet)[1].equipped==0,'a confirmed empty slot has a zero stat baseline')
+print('PASS: role-specific weights, old custom profiles, weapon speed and displaced gear, and set bonuses')
