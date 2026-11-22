@@ -39,3 +39,33 @@ ForeverCompanionDB.hideWorldPartyPins=false
 provider.OnMapChanged();assert(marker.shown)
 ForeverCompanionDB.hideCompanionWorldMap=true
 provider.OnMapChanged();assert(not marker.shown)
+
+local p=ForeverCompanionPartyMap
+canvas.width=1000
+ForeverCompanionDB.hideCompanionWorldMap=false
+local roster={party1="A",party2="B"}
+UnitExists=function(unit) return roster[unit]~=nil end
+UnitGUID=function(unit) return roster[unit] end
+UnitName=function(unit) return roster[unit]=="A" and "Arden" or "Bren" end
+function methods:SetShown(shown) self.shown=shown end
+local entries
+ForeverCompanionInterface={PagedMenu=function(_,_,rows) entries=rows end}
+p.Menu(marker,mapID)
+assert(#entries==2 and entries[1].label=="Arden")
+entries[1].action()
+assert(p.IsHighlighted("party1") and marker.fcPartyHalo.shown)
+roster.party1,roster.party2=roster.party2,roster.party1
+event.OnEvent(event,"GROUP_ROSTER_UPDATE")
+assert(p.IsHighlighted("party2") and not p.IsHighlighted("party1") and not marker.fcPartyHalo.shown)
+p.Menu(marker,mapID)
+local stale=entries[2]
+roster.party1="C"
+stale.action()
+assert(p.IsHighlighted("party2"),"ignore menu clicks on a reused slot")
+roster.party2=nil
+event.OnEvent(event,"GROUP_ROSTER_UPDATE")
+assert(not p.IsHighlighted("party2") and not p.Highlight("target"))
+p.Menu(marker,mapID)
+assert(#entries==1 and entries[1].label~="Clear highlight")
+print("PASS: world map member selection follows identity across roster changes and clears stale highlights")
+

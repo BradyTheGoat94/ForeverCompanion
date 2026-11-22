@@ -907,7 +907,9 @@ local function createGuide(map)
   {label='Find nearby service',action=function() ForeverCompanionMapTools.NearestMenu(appearance) end},
  }) end)
  U.SetHoverHelp(appearance,'Map tools','Browse zones by level, add personal notes, and customize the map.')
- local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(496);legend:SetText('Gold star: zone start    ! Pickup    ? Turn-in')
+ local partyButton;partyButton=button(432,-61,76,'Party',function() ForeverCompanionPartyMap.Menu(partyButton,map:GetMapID()) end)
+ U.SetHoverHelp(partyButton,'Highlight a party member','Select a party member to outline their world map marker.')
+ local legend=U.Text(drawer,10,U.palette.muted);legend:SetPoint('TOPLEFT',12,-65);legend:SetWidth(413);legend:SetText('Gold star: zone start    ! Pickup    ? Turn-in')
  return bar,title,hint
 end
 

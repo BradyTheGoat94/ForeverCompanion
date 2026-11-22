@@ -12,6 +12,7 @@ local mapWorldWidth,mapWorldHeight
 local terrainEdge,atlasTrim={},{}
 local courseDots,courseBeacon,courseCaption={}
 local lastCourseCaption
+local memberBeacon
 local edgeHeight=12
 local function finite(n)
  return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge
@@ -316,7 +317,26 @@ local function updateCourse(view,px,py)
   courseCaption:SetShown(text~='')
  end
 end
+function M.RefreshParty()
+ if not memberBeacon then return end
+ memberBeacon:Hide()
+ local party=ForeverCompanionPartyMap
+ if not layout or not frame:IsShown() or not party then return end
+ local unit=party.HighlightedUnit()
+ if not unit or settings().partyHighlight==false then return end
+ local current=safe(C_Map and C_Map.GetBestMapForUnit,'player')
+ if not finite(current) or current~=mapID then return end
+ local x,y=party.Point(mapID,unit)
+ if not x then return end
+ local px,py,visible=M.Project(x,y,layout.width,layout.height,settings())
+ if visible then
+  memberBeacon:ClearAllPoints()
+  memberBeacon:SetPoint('CENTER',frame,'TOPLEFT',px,-py)
+  memberBeacon:Show()
+ end
+end
 local function updatePlayer()
+ M.RefreshParty()
  player:Hide();if not layout then updateCourse();return end
  local current=safe(C_Map and C_Map.GetBestMapForUnit,'player')
  if not finite(current) or current~=mapID then
@@ -485,7 +505,7 @@ function M.PresetMenu(anchor)
  end
  ForeverCompanionInterface.Menu(anchor or header,'OVERLAY PRESETS',entries)
 end
-local layerDefaults={detail=true,quests=true,allQuests=false,mailboxes=false,services=false,landmarks=true,notes=true}
+local layerDefaults={detail=true,quests=true,allQuests=false,mailboxes=false,services=false,landmarks=true,notes=true,partyHighlight=true}
 function M.LayerEnabled(key)
  local value=settings()[key]
  if layerDefaults[key]==nil then return end
@@ -527,7 +547,9 @@ function M.Options()
    {label='Service markers',selected=M.LayerEnabled('services'),action=function() M.SetLayerEnabled('services',not M.LayerEnabled('services')) end},
    {label='Native location landmarks',selected=M.LayerEnabled('landmarks'),action=function() M.SetLayerEnabled('landmarks',not M.LayerEnabled('landmarks')) end},
    {label='Personal notes',selected=M.LayerEnabled('notes'),action=function() M.SetLayerEnabled('notes',not M.LayerEnabled('notes')) end},
+   {label='Highlighted party member',selected=M.LayerEnabled('partyHighlight'),action=function() M.SetLayerEnabled('partyHighlight',not M.LayerEnabled('partyHighlight')) end},
   }) end},
+  {label='Highlight a party member',action=function() ForeverCompanionPartyMap.Menu(header,mapID) end},
   {label='Search map companion',action=function() ForeverCompanionMapHub.Open() end},
   {label='Find nearby service...',action=function() ForeverCompanionMapTools.NearestMenu(header) end},
   {label='Hide controls (restore with command)',action=function() M.Inspect(false);editing=false;frame:EnableMouse(false);d.controls=false;header:Hide() end},
@@ -613,6 +635,11 @@ local function create()
  message=U.Text(frame,14,U.palette.muted);message:SetPoint('CENTER')
  legend=U.Text(frame,10,U.palette.muted);legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,-18);legend:SetHeight(30);legend:SetWordWrap(true)
  player=frame:CreateTexture(nil,'OVERLAY',nil,7);player:SetSize(26,26);player:SetTexture('Interface\\Minimap\\MinimapArrow')
+ memberBeacon=frame:CreateTexture(nil,'OVERLAY',nil,5)
+ memberBeacon:SetSize(20,20)
+ memberBeacon:SetColorTexture(1,.68,.19,1)
+ if memberBeacon.SetRotation then memberBeacon:SetRotation(math.pi/4) end
+ memberBeacon:Hide()
  frame:SetScript('OnUpdate',function(_,dt)
   if panStart and layout and GetCursorPosition then
    local x,y=GetCursorPosition();local scale=frame:GetEffectiveScale()

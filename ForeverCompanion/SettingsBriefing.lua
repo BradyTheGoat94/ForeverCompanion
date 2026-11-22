@@ -135,6 +135,7 @@ local function featureGroups()
     overlayLayer("Town services","Show services using the shared service category filters. Mailboxes have their own switch.","services"),
     overlayLayer("Native landmarks","Show location markers provided by the client.","landmarks"),
     overlayLayer("Personal notes","Show saved note pins on the overlay.","notes"),
+    overlayLayer("Party highlight","Show the highlighted party member on this overlay when a position is available.","partyHighlight"),
     overlayLayer("Explored terrain detail","Show the client's explored terrain details on the overlay.","detail"),
   }
   local minimap={

@@ -77,6 +77,11 @@ function M.Refresh()
     shown=shown+1
     local marker=markers[shown]
     if not marker then marker=makeMarker(minimap);markers[shown]=marker end
+    local party=ForeverCompanionPartyMap
+    if party and party.StyleHighlight then
+     local active=party.StyleHighlight(marker,unit)
+     marker:SetFrameLevel(minimap:GetFrameLevel()+(active and 12 or 10))
+    end
     marker:ClearAllPoints()
     marker:SetPoint("CENTER",minimap,"CENTER",ox,oy)
     local direction=facing(unit)

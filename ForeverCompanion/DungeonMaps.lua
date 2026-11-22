@@ -117,8 +117,8 @@ local function artwork(map,width,height)
 end
 
 local root,heading,subtitle,mapArea,detail,detailTitle,nextButton,backButton,guideButton
-local floorButton,routeButton,followButton,section,empty,wing,player,nativeLegend
-local tiles,bosses,routeNodes,paths={},{},{},{}
+local floorButton,routeButton,followButton,section,empty,wing,player,nativeLegend,partyButton,partyStatus
+local tiles,bosses,routeNodes,paths,partyPins={},{},{},{},{}
 local state={}
 local WIDTH,HEIGHT=524,332
 local TEAL={.43,.87,.85}
@@ -150,6 +150,42 @@ local function updatePlayer()
   player:SetPoint("CENTER",mapArea,"TOPLEFT",state.padX+x*state.layout.width,-state.padY-y*state.layout.height)
   player:Show()
  end
+end
+
+
+local function partyMapID()
+ return state.showFloor and state.map or nil
+end
+function D.RefreshParty()
+ if not root or not root:IsShown() then return end
+ local P=ForeverCompanionPartyMap
+ local map=partyMapID()
+ local shown,name,located=0,nil,false
+ for _,unit in ipairs(P.PartyUnits()) do
+  local active=P.IsHighlighted(unit)
+  if active then name=P.MemberName(unit) end
+  local memberMap=map and C_Map and read(C_Map.GetBestMapForUnit,unit)
+  local x,y
+  if map and (not id(memberMap) or memberMap==map) then x,y=P.Point(map,unit) end
+  if x then
+   shown=shown+1
+   local b=partyPins[shown] or P.CreateMarker(mapArea)
+   partyPins[shown]=b;b.unit=unit
+   P.StyleHighlight(b,unit)
+   b:SetFrameLevel(mapArea:GetFrameLevel()+(active and 135 or 125))
+   b:ClearAllPoints()
+   b:SetPoint("CENTER",mapArea,"TOPLEFT",state.padX+x*state.layout.width,-state.padY-y*state.layout.height)
+   b:Show()
+   if active then located=true end
+  end
+ end
+ for i=shown+1,#partyPins do partyPins[i]:Hide() end
+ local status=""
+ if name then
+  status=located and ("Highlighted: "..name) or name..(not map and " | see live map" or " | off this floor or unavailable")
+ end
+ if status~=partyStatus:GetText() then partyStatus:SetText(status) end
+ ForeverCompanionInterface.StyleButton(partyButton,nil,name~=nil)
 end
 
 local function renderNative(floor,layout)
@@ -192,7 +228,7 @@ local function showStop(route)
  local step=math.max(1,math.min(#route,state.step or 1))
  state.step=step
  local entry=route[step]
- setDetail(("%d. %s"):format(step,entry[1]),entry[2],entry[3])
+ setDetail(route.layout=="landmarks" and entry[1] or ("%d. %s"):format(step,entry[1]),entry[2],entry[3])
  local U=ForeverCompanionInterface
  for i=1,#route do U.StyleButton(routeNodes[i],nil,step==i) end
  backButton:SetEnabled(step>1);nextButton:SetEnabled(step<#route)
@@ -217,9 +253,9 @@ local function renderRoute(route)
    U.SetHoverHelp(b,"Route landmark",function() return state.route[stop][2] end)
    routeNodes[i]=b
   end
-  b:SetText(("%02d   %s"):format(i,entry[1]))
+  b:SetText(route.layout=="landmarks" and entry[1] or ("%02d   %s"):format(i,entry[1]))
   b:Show()
-  if i>1 then
+  if i>1 and route.layout~="landmarks" then
    local oldX,oldY=nodePosition(i-1)
    local t=paths[i-1] or mapArea:CreateTexture(nil,"BORDER")
    paths[i-1]=t
@@ -235,9 +271,24 @@ local function renderRoute(route)
  showStop(route)
 end
 
-local function activeMatch(name)
- return state.auto or name and state.dungeon==name
+
+local families={
+ {"Scarlet Monastery","Scarlet Monastery: Graveyard","Scarlet Monastery: Library","Scarlet Monastery: Armory","Scarlet Monastery: Cathedral"},
+ {"Blackrock Spire","Lower Blackrock Spire","Upper Blackrock Spire"},
+ {"Dire Maul","Dire Maul: East","Dire Maul: West","Dire Maul: North"},
+}
+local function family(name)
+ local wanted=key(name)
+ for _,group in ipairs(families) do
+  for _,entry in ipairs(group) do if wanted==key(entry) then return group end end
+ end
 end
+local function activeMatch(name)
+ if state.auto or name==state.dungeon then return true end
+ local group=family(name)
+ return group and key(name)==key(group[1]) and group==family(state.dungeon)
+end
+
 
 local function render()
  local current,map,instance=D.Current()
@@ -259,19 +310,20 @@ local function render()
  local route=package and package[state.section or 1]
  state.route=route
  local layout=selected and artwork(selected.map,WIDTH,HEIGHT)
- local showFloor=state.mode~="route" and layout~=nil
+ local showFloor=layout~=nil and (state.mode=="floor" or not route)
  state.showFloor=showFloor
  state.map,state.layout=nil,nil
  for _,objects in ipairs({tiles,bosses,routeNodes,paths}) do hideAll(objects) end
  player:Hide()
  empty:Hide()
  heading:SetText(ForeverCompanionDungeonCatalog.DisplayName(state.dungeon or "Dungeon maps"))
- subtitle:SetText(showFloor and "Live instance floor art" or route and "Route schematic  |  Landmarks in travel order  |  Not to scale" or "Interior map coverage")
+ local routeKind=route and (route.layout=="landmarks" and "Landmark diagram" or "Route diagram")
+ subtitle:SetText(showFloor and "Live client floor map" or routeKind and (routeKind..(package.classic and "  |  Classic layout reference" or "  |  Forever route reference").."  |  Not to scale") or "Interior map coverage")
  local U=ForeverCompanionInterface
  U.StyleButton(floorButton,nil,showFloor);floorButton:SetEnabled(layout~=nil)
  U.StyleButton(routeButton,nil,not showFloor);routeButton:SetEnabled(route~=nil)
- followButton:SetEnabled(state.liveMap~=nil and state.floor~=nil)
- wing:SetShown(key(state.dungeon):find("^scarletmonastery")~=nil)
+ followButton:SetEnabled(layout~=nil and (not showFloor or state.floor~=nil))
+ wing:SetShown(family(state.dungeon)~=nil)
  section:SetEnabled(showFloor and #state.floors>1 or not showFloor and package and #package>1 or false)
  nativeLegend:SetShown(showFloor)
  backButton:SetShown(not showFloor and route~=nil);nextButton:SetShown(not showFloor and route~=nil)
@@ -283,13 +335,13 @@ local function render()
   renderRoute(route)
  else
   section:SetText("No floor available")
-  empty:SetText(same and current and "The client did not expose floor artwork here." or "Enter the instance to load its client maps, when available.")
+  empty:SetText(family(state.dungeon) and "Choose your wing to view its route." or same and current and "The client did not expose floor artwork here." or "Enter the instance to load its client maps, when available.")
   empty:Show()
-  setDetail("Interior map unavailable","This dungeon has no sourced route diagram yet. You can still browse its journal for bosses and quests.")
+  setDetail("Choose a dungeon or wing","Select the specific dungeon or wing in the Dungeon Journal to see its route.")
  end
+ D.RefreshParty()
 end
 
-local wings={"Graveyard","Library","Armory","Cathedral"}
 local function openSections()
  local entries={}
  if state.showFloor or not state.route then
@@ -321,17 +373,25 @@ local function create()
  subtitle=label(root,17,42,800,12,U.palette.muted)
  floorButton=button(root,16,66,99,27,"Floor map",function() state.mode="floor";render() end)
  routeButton=button(root,121,66,99,27,"Route map",function() state.mode="route";render() end)
- followButton=button(root,226,66,104,27,"My floor",function() state.floor=nil;state.mode=nil;render() end)
- section=button(root,336,66,252,27,"",openSections)
+ followButton=button(root,226,66,104,27,"My floor",function() state.floor=nil;state.mode="floor";render() end)
+ section=button(root,336,66,249,27,"",openSections)
  wing=button(root,594,66,103,27,"Choose wing",function()
   local entries={}
-  for _,name in ipairs(wings) do
-   local dungeon="Scarlet Monastery: "..name
-   entries[#entries+1]={label=name,action=function() D.Open(dungeon) end}
+  local group=family(state.dungeon)
+  if not group then return end
+  for i=2,#group do
+   local dungeon=group[i]
+   entries[#entries+1]={label=dungeon,action=function() D.Open(dungeon) end}
   end
-  U.Menu(wing,"SCARLET MONASTERY",entries)
+  U.Menu(wing,group[1],entries)
  end)
+ partyButton=button(root,708,66,118,27,"Party",function() ForeverCompanionPartyMap.Menu(partyButton,partyMapID()) end)
+ U.SetHoverHelp(partyButton,"Party highlight","Select someone to highlight them on the live map when their position is available.")
  U.SetHoverHelp(followButton,"My floor","Return to the floor your character is on and follow floor changes.")
+ U.SetHoverHelp(routeButton,"Companion route",function()
+  local routeSet=ForeverCompanionDungeonRoutes[state.dungeon]
+  return routeSet and ("Route source: "..routeSet.source) or "Select the specific dungeon or wing to see its route."
+ end)
  mapArea=CreateFrame("Frame",nil,root)
  mapArea:SetPoint("TOPLEFT",16,-103);mapArea:SetSize(WIDTH,HEIGHT)
  U.Surface(mapArea,{flat=true})
@@ -346,7 +406,8 @@ local function create()
  U.Surface(card,{flat=true})
  detailTitle=label(card,13,15,248,17,TEAL);detailTitle:SetHeight(52);detailTitle:SetWordWrap(true)
  detail=label(card,13,75,248,13);detail:SetHeight(161);detail:SetWordWrap(true)
- nativeLegend=label(card,13,238,248,11,TEAL);nativeLegend:SetHeight(33);nativeLegend:SetWordWrap(true)
+ nativeLegend=label(card,13,231,248,11,TEAL);nativeLegend:SetHeight(27);nativeLegend:SetWordWrap(true)
+ partyStatus=label(card,13,268,248,10,GOLD);partyStatus:SetHeight(18);partyStatus:SetWordWrap(false)
  backButton=button(card,13,242,119,28,"Previous stop",function() state.step=state.step-1;showStop(state.route) end)
  nextButton=button(card,140,242,121,28,"Next stop",function() state.step=state.step+1;showStop(state.route) end)
  guideButton=button(card,13,288,248,31,"Boss guide",function()
@@ -361,7 +422,7 @@ local function create()
   if (state.auto and current~=state.dungeon)
    or (activeMatch(current) and (map~=state.liveMap or instance~=state.liveInstance))
    or (not activeMatch(current) and state.liveMap~=nil) then render()
-  elseif state.map then updatePlayer() end
+  elseif state.map then updatePlayer();D.RefreshParty() end
  end)
 end
 

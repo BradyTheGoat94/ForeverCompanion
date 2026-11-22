@@ -41,10 +41,14 @@ map=23;assert(select(2,D.Current())==nil and #D.Floors(map)==0 and #D.BossPins(m
 kind="none";assert(D.Current()==nil and D.Open():find("Dungeon Journal",1,true))
 local count=0
 for dungeon,paths in pairs(ForeverCompanionDungeonRoutes) do
- assert(ForeverCompanionDungeonCatalog.entries[dungeon] and paths.source and #paths>0)
+ assert(ForeverCompanionDungeonCatalog.entries[dungeon] and paths.source and #paths>0,dungeon)
  for _,path in ipairs(paths) do assert(path.name and #path>=2 and #path<=8) end
  count=count+1
 end
-assert(count==10)
-print("PASS: interior map guards, grouped floors, same-floor player coordinates, confirmed boss pins and ten dungeon route sets")
+assert(count==34)
+for _,dungeon in ipairs(ForeverCompanionDungeonCatalog.JournalDirectory()) do
+ assert(ForeverCompanionDungeonRoutes[dungeon], "missing route for "..dungeon)
+end
+print("PASS: interior map guards, grouped floors, same-floor player coordinates, confirmed boss pins and all 34 dungeon routes")
+
 
