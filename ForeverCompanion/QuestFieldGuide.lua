@@ -346,6 +346,10 @@ function G.Refresh()
  local evidence,evidenceHint=G.LocationStatus(step)
  if areaChosen and G.NeedsReview(step) then evidenceHint='Area selected. Confirm the reference on your map.' end
  detailHint:SetText(step and (step.done and 'Complete. Select the next unfinished objective.' or (G.NeedsReview(step) and not areaChosen and evidenceHint or (step.turnin and 'Speak to the quest giver when you arrive. Check your quest log for the correct NPC.' or (instructions[step.kind] or 'Follow the quest objective shown in your game log.'))..'  '..(t and evidenceHint or ''))) or 'Select a quest in your active list to begin.')
+ if isItem and item and ForeverCompanionBankView then
+  local banked=ForeverCompanionBankView.QuestItemCount(item.id)
+  if banked and banked>0 then detailSource:SetText('Bank snapshot: '..banked..' x '..item.name..'. Check your bank before collecting more.') end
+ end
  cycle:SetText(t and (areaChosen and 'Change area' or 'Choose area') or 'No area known')
  local supported=safeSupported(planner)
  cycle:SetShown(step~=nil and #G.Areas(step)>1);cycle:SetEnabled(supported and step~=nil and #step.targets>1);go:SetEnabled(supported and t~=nil and (not G.NeedsReview(step) or areaChosen))

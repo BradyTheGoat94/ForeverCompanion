@@ -299,6 +299,7 @@ local function render()
   for _, b in ipairs(questRows) do b:Hide() end
   if questEmpty then questEmpty:Hide() end
   if questSectionLabel then questSectionLabel:Hide() end
+  if questRows.routeControl then questRows.routeControl:SetShown(currentTab=="Quests") end
   if questSearch then questSearch:SetShown(currentTab=='Quests') end
   if filterButton then if currentTab=="Quests" then filterButton:Show() else filterButton:Hide() end end
   if questRows.pinControl then
@@ -549,6 +550,7 @@ local function render()
       local btn=questRows[i]
       local selected=selectedIndex==absoluteIndex
       local pinned=ForeverCompanionQuestPlanner.IsPinned(q)
+      local picked=ForeverCompanionObjectiveRoute.IsPicked(q)
       btn.icon:SetTexture(pinned and "Interface\\Icons\\INV_Misc_Map_01" or q.complete and "Interface\\GossipFrame\\ActiveQuestIcon" or "Interface\\Icons\\INV_Misc_Note_01")
       btn.title:SetText(q.title or "Unnamed quest")
       btn.zone:SetText(q.zone or "Zone unavailable")
@@ -557,12 +559,14 @@ local function render()
       for _,objective in ipairs(q.objectiveStates or {}) do
         if objective.known and objective.done then finished=finished+1 end
       end
-      btn.status:SetText(q.complete and "READY" or (total>0 and (finished.."/"..total.." OBJECTIVES") or "ACTIVE"))
+      local kind=ForeverCompanionQuestPlanner.GetSort()=="type" and ForeverCompanionQuestPlanner.ObjectiveType(q):upper()
+      btn.status:SetText(picked and "IN ROUTE" or kind or q.complete and "READY" or (total>0 and (finished.."/"..total.." OBJECTIVES") or "ACTIVE"))
       btn.status:SetTextColor(q.complete and 0.48 or 0.77,q.complete and 0.88 or 0.76,q.complete and 0.53 or 0.70)
       ForeverCompanionVisualTheme.SelectRow(btn,btn.bg,selected)
       colorTexture(btn.trim,.82,.68,.43,0)
       btn.selected=selected
       btn:SetScript("OnClick",function()
+        if IsShiftKeyDown and IsShiftKeyDown() then ForeverCompanionObjectiveRoute.TogglePicked(q);render();return end
         ForeverCompanionQuestPlanner.Select(absoluteIndex)
         render()
         if DB.beginnerMode==false then scrollFrame:SetVerticalScroll(questListBottom)
@@ -1189,6 +1193,7 @@ local function createUI()
     end
     ForeverCompanionInterface.Menu(self,"SHOW QUESTS",choices,nil,210)
   end)
+  ForeverCompanionInterface.SetHoverHelp(filterButton,"Filter quests","Show all quests, ready turn-ins, or quests in your zone.")
   filterButton:Hide()
   sortButton=ForeverCompanionInterface.Button(child)
   sortButton:SetSize(140,23)
@@ -1196,12 +1201,13 @@ local function createUI()
   sortButton:SetText("Sort: log")
   sortButton:SetScript("OnClick",function(self)
     local choices={}
-    for _,mode in ipairs({"log","zone","ready","pinned"}) do
+    for _,mode in ipairs({"log","zone","ready","pinned","type"}) do
       local choice=mode
       choices[#choices+1]={label=ForeverCompanionQuestPlanner.SortLabels[choice],action=function() questPage=1;ForeverCompanionQuestPlanner.SetSort(choice) end}
     end
     ForeverCompanionInterface.Menu(self,"SORT QUESTS",choices,nil,210)
   end)
+  ForeverCompanionInterface.SetHoverHelp(sortButton,"Sort quests","Order by objective type, zone, pins, readiness, or quest-log order.")
   sortButton:Hide()
   questSearch=ForeverCompanionInterface.EditBox(child,'Search quest, zone, objective or quest ID…')
   questSearch:SetSize(770,26);questSearch:SetPoint('TOPLEFT',child,'TOPLEFT',8,-210);questSearch:SetMaxLetters(120)
@@ -1288,6 +1294,11 @@ local function createUI()
   questSectionLabel:SetPoint("TOPLEFT",child,"TOPLEFT",8,-160)
   questSectionLabel:SetTextColor(.82,.68,.43)
   questSectionLabel:Hide()
+  questRows.routeControl=ForeverCompanionInterface.Button(child)
+  questRows.routeControl:SetSize(122,23);questRows.routeControl:SetPoint("TOPLEFT",child,"TOPLEFT",650,-156);questRows.routeControl:SetText("Quest route")
+  questRows.routeControl:SetScript("OnClick",ForeverCompanionObjectiveRoute.OpenPopup)
+  ForeverCompanionInterface.SetHoverHelp(questRows.routeControl,"Quest route","Choose multiple quests, or Shift-click journal rows, to order their nearby objectives.")
+  questRows.routeControl:Hide()
   -- Native journal rows replace stock gray buttons; all selection is addon-local.
   for i=1,8 do
     local row=CreateFrame("Button",nil,child)

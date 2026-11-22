@@ -21,6 +21,51 @@ end
 local function inboxCount(n)
  return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n>=0 and n<math.huge and n%1==0
 end
+function B.QuestItemCount(itemID)
+ local record=records()[character()]
+ local snapshot=record and record.bank or (ForeverCompanionDB and ForeverCompanionDB.bankSnapshot)
+ if type(snapshot)~='table' or type(snapshot.items)~='table' then return end
+ local count=0
+ for _,item in ipairs(snapshot.items) do
+  if item.id==itemID and inboxCount(item.count) then count=count+item.count end
+ end
+ return count
+end
+local outgoing,mailOpen
+local function publicText(value,size)
+ if (issecretvalue and issecretvalue(value)) or type(value)~='string' then return '' end
+ return value:sub(1,size)
+end
+local function captureOutgoing(recipient,subject)
+ if not mailOpen or outgoing then return end
+ recipient=publicText(recipient,100)
+ if recipient=='' then return end
+ local draft={to=recipient,subject=publicText(subject,120),items={}}
+ if GetSendMailItem then
+  for slot=1,ATTACHMENTS_MAX_SEND or 12 do
+   local ok,name,id,icon,count=pcall(GetSendMailItem,slot)
+   if ok and inboxCount(id) and id>0 then
+    draft.items[#draft.items+1]={name=publicText(name,100),id=id,count=inboxCount(count) and count or 1}
+   end
+  end
+ end
+ local money=GetSendMailMoney and GetSendMailMoney()
+ local cod=GetSendMailCOD and GetSendMailCOD()
+ draft.money=inboxCount(money) and money or 0
+ draft.cod=inboxCount(cod) and cod or 0
+ outgoing=draft
+end
+local function saveOutgoing()
+ local message=outgoing;outgoing=nil
+ if not message then return end
+ message.savedAt=time()
+ local record=ownRecord()
+ if type(record.sent)~='table' then record.sent={} end
+ table.insert(record.sent,1,message)
+ if #record.sent>100 then table.remove(record.sent) end
+ if root and root:IsShown() then B.Render() end
+end
+if hooksecurefunc and type(SendMail)=='function' then hooksecurefunc('SendMail',captureOutgoing) end
 local function captureMail()
  if not GetInboxNumItems or not GetInboxHeaderInfo or not GetInboxItem or not GetInboxItemLink then return end
  local loaded,total=GetInboxNumItems()
@@ -90,10 +135,9 @@ local function updateSnapshot()
 end
 
 local events=CreateFrame("Frame")
-for _,event in ipairs({"PLAYER_LOGIN","MAIL_SHOW","MAIL_INBOX_UPDATE","MAIL_CLOSED","BANKFRAME_OPENED","BANKFRAME_CLOSED","PLAYERBANKSLOTS_CHANGED","BAG_UPDATE_DELAYED","BANK_TABS_CHANGED"}) do
+for _,event in ipairs({"PLAYER_LOGIN","MAIL_SHOW","MAIL_INBOX_UPDATE","MAIL_CLOSED","MAIL_SEND_SUCCESS","MAIL_FAILED","BANKFRAME_OPENED","BANKFRAME_CLOSED","PLAYERBANKSLOTS_CHANGED","BAG_UPDATE_DELAYED","BANK_TABS_CHANGED"}) do
  pcall(events.RegisterEvent,events,event)
 end
-local mailOpen
 events:SetScript("OnEvent",function(_,event)
  if event=='PLAYER_LOGIN' then
   if ForeverCompanionDB and ForeverCompanionDB.bankSnapshot then ownRecord().bank=ForeverCompanionDB.bankSnapshot end
@@ -102,7 +146,9 @@ events:SetScript("OnEvent",function(_,event)
   mailOpen=true
   if GetInboxNumItems and (GetInboxNumItems() or 0)>0 then captureMail() end
   return
- elseif event=='MAIL_CLOSED' then mailOpen=false;return
+ elseif event=='MAIL_SEND_SUCCESS' then saveOutgoing();return
+ elseif event=='MAIL_FAILED' then outgoing=nil;return
+ elseif event=='MAIL_CLOSED' then mailOpen=false;outgoing=nil;return
  elseif event=='MAIL_INBOX_UPDATE' then if mailOpen then captureMail() end;return end
  if event=="BANKFRAME_CLOSED" then bankOpen=false;return end
  if event=="BANKFRAME_OPENED" then
@@ -143,7 +189,11 @@ function B.Create(parent)
  local filter=root:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
  filter:SetPoint("LEFT",search,"RIGHT",12,0);filter:SetText("Search items")
  sourceButton=makeButton(root,362,-47,'Mailbox',function()
-  source=source=='bank' and 'mail' or 'bank';page=1;B.Render()
+  local entries={}
+  for _,view in ipairs({{'bank','Bank'},{'mail','Inbox'},{'sent','Sent mail'}}) do
+   local key=view[1];entries[#entries+1]={label=view[2],selected=source==key,action=function() source=key;page=1;B.Render() end}
+  end
+  ForeverCompanionInterface.Menu(sourceButton,'INVENTORY VIEW',entries)
  end)
  ownerButton=makeButton(root,452,-47,'Alts',function()
   local keys={character()};for key in pairs(records()) do if key~=character() then keys[#keys+1]=key end end
@@ -181,7 +231,9 @@ function B.Create(parent)
   row:SetScript("OnEnter",function(self)
    if self.item and GameTooltip then
     GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-    GameTooltip:SetHyperlink(self.item.link or ("item:"..self.item.id))
+    if self.item.id then GameTooltip:SetHyperlink(self.item.link or ('item:'..self.item.id))
+    else GameTooltip:SetText(self.item.name or 'Sent mail') end
+    if self.item.sent then GameTooltip:AddLine(self.item.tab,.86,.82,.72,true) end
     GameTooltip:Show()
    end
   end)
@@ -203,8 +255,9 @@ function B.Render()
  local who=owner or character()
  local saved=(records()[who] or {})[source]
  if not saved and who==character() and source=='bank' then saved=ForeverCompanionDB and ForeverCompanionDB.bankSnapshot end
- local byCategory=ForeverCompanionDB and ForeverCompanionDB.inventorySort=='category'
- sourceButton:SetText(source=='bank' and 'Mailbox' or 'Bank')
+ local byCategory=source~='sent' and ForeverCompanionDB and ForeverCompanionDB.inventorySort=='category'
+ sourceButton:SetText(({bank='Bank',mail='Inbox',sent='Sent mail'})[source])
+ sortButton:SetEnabled(source~='sent' or owner==false)
  sortButton:SetText(byCategory and 'Sort: category' or 'Sort: A-Z')
  local items=type(saved)=="table" and saved.items
  local matches={}
@@ -212,7 +265,7 @@ function B.Render()
  local function collect(items,location)
  for _,item in ipairs(type(items)=="table" and items or {}) do
   local name=item.name or (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(item.id)) or ("Item "..item.id)
-  if name:lower():find(query,1,true) then matches[#matches+1]={item=item,name=name,location=location} end
+  if (name..(item.sent and (' '..item.tab..' '..item.subject) or '')):lower():find(query,1,true) then matches[#matches+1]={item=item,name=name,location=location} end
  end
  end
  sourceButton:SetEnabled(owner~=false)
@@ -223,18 +276,34 @@ function B.Render()
     if snapshot then collect(snapshot.items,name..' / '..(kind=='bank' and 'Bank' or 'Mailbox')) end
    end
   end
+ elseif source=='sent' then
+  local messages=type(saved)=='table' and saved or {}
+  for index,message in ipairs(messages) do
+   local context='To '..message.to..' / '..date('%b %d, %H:%M',message.savedAt)
+   local items=message.items
+   local currency=GetCoinTextureString
+   local detail=message.money>0 and (' / '..(currency and currency(message.money) or message.money..' copper')) or ''
+   if message.cod>0 then detail=detail..' / COD '..(currency and currency(message.cod) or message.cod..' copper') end
+   if #items==0 then collect({{name=message.subject~='' and message.subject or 'Sent message',tab=context..detail,subject=message.subject,sent=index}}) end
+   for _,item in ipairs(items) do
+    collect({{name=item.name~='' and item.name or nil,id=item.id,count=item.count,
+     tab=context..detail..(message.subject~='' and (' / '..message.subject) or ''),subject=message.subject,sent=index}})
+   end
+  end
  else collect(items) end
  for _,entry in ipairs(matches) do
   local info=C_Item and C_Item.GetItemInfo or GetItemInfo
   entry.category=byCategory and info and select(6,info(entry.item.id)) or 'Other'
  end
  table.sort(matches,function(a,b)
+  if source=='sent' and owner~=false and a.item.sent~=b.item.sent then return a.item.sent<b.item.sent end
   if byCategory and a.category~=b.category then return a.category<b.category end
   if a.name~=b.name then return a.name:lower()<b.name:lower() end
   if a.location~=b.location then return (a.location or "")<(b.location or "") end
   return (a.item.count or 1)>(b.item.count or 1)
  end)
  if owner==false then header:SetText('All characters | Saved bank items and mailbox attachments')
+ elseif source=='sent' then header:SetText(('%s | Sent mail | %d recorded messages'):format(who,type(saved)=='table' and #saved or 0))
  elseif source=='mail' and saved then
   local partial=(records()[who] or {}).partialMail
   local detail=partial and (saved==partial or saved.loaded<saved.total) and ' | Partial inbox' or (partial and (' | Latest read partial: '..partial.loaded..'/'..partial.total) or '')
@@ -258,13 +327,13 @@ function B.Render()
    local item=entry.item
    row.icon:SetTexture(item.icon or 134400)
    row.name:SetText(entry.name)
-   row.count:SetText("×"..tostring(item.count or 1))
+   row.count:SetText(item.sent and not item.id and '' or 'x'..tostring(item.count or 1))
    row.tab:SetText((entry.location and (entry.location..' / ') or '')..(byCategory and (entry.category..' / ') or '')..(item.tab or ''))
    row:Show()
   else row:Hide() end
  end
  empty:SetShown(#matches==0)
- empty:SetText(owner==false and "No matching items in saved banks or mailboxes." or type(items)~="table" and "No snapshot recorded for this character and inventory." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this snapshot."))
+ empty:SetText(owner==false and "No matching items in saved banks or mailboxes." or source=='sent' and 'No matching sent mail. Messages appear after the game confirms sending.' or type(items)~="table" and "No snapshot recorded for this character and inventory." or (query~="" and "No items match this search. Try another name or clear the field." or "There are no items in this snapshot."))
  back:SetEnabled(page>1);nextPage:SetEnabled(page<pages)
  pageLabel:SetText(("%d matches  ·  Page %d of %d"):format(#matches,page,pages))
 end

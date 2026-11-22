@@ -157,3 +157,12 @@ end,400)
 assert(chosen==high and #best==8 and best.height==200)
 best,chosen=m.BestArtwork({low,high},function(index) return index==1 and {1,2} or {10} end,400)
 assert(chosen==low and #best==2)
+
+local reads=0
+C_AreaPoiInfo={GetAreaPOIForMap=function() reads=reads+1;return {} end}
+m.Refresh()
+local initial=reads
+m.Refresh(false,true);m.Refresh(false,true)
+assert(reads==initial,'position refreshes leave static overlay pins cached')
+m.Refresh()
+assert(reads==initial+1,'explicit refresh rebuilds static overlay pins')

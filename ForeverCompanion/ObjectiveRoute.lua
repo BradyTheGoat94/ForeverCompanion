@@ -4,9 +4,16 @@ ForeverCompanionObjectiveRoute=R
 local root,rows,summary,notice,previous,nextPage,counter,optionsButton
 local current={}
 local deferred={}
+local picked={}
 function R.StepKey(stop)
  if type(stop)~='table' or type(stop.quest)~='table' or type(stop.quest.id)~='number' then return end
  return stop.quest.id..':'..tostring(stop.objectiveIndex)..':'..tostring(stop.turnin==true)..':'..tostring(stop.text)
+end
+function R.IsPicked(q) return q and q.id and picked[q.id]==q.title end
+function R.TogglePicked(q)
+ if not q or type(q.id)~='number' then return end
+ if R.IsPicked(q) then picked[q.id]=nil else picked[q.id]=q.title end
+ if R.RefreshPopup then R.RefreshPopup() end
 end
 local function settings()
  ForeverCompanionDB=ForeverCompanionDB or {}
@@ -27,7 +34,7 @@ function R.Build(quests,targets,map,x,y,pinned,options)
  local candidates,stats={},{remaining=0,matched=0,unlocated=0,otherMaps=0,unknownQuests=0,excluded=0,deferred=0,review=0,positionKnown=point(x,y)}
  for index,q in ipairs(quests or {}) do
   local isPinned=pinned and pinned(q)==true or false
-  local include=not options.filter or options.filter=='all' or options.filter=='pinned' and isPinned or options.filter=='turnin' and q.complete==true or options.filter=='selected' and (q==options.selected or options.selected and q.id and q.id==options.selected.id)
+  local include=not options.filter or options.filter=='all' or options.filter=='pinned' and isPinned or options.filter=='turnin' and q.complete==true or options.filter=='picked' and R.IsPicked(q) or options.filter=='selected' and (q==options.selected or options.selected and q.id and q.id==options.selected.id)
   if include then
   local steps=ForeverCompanionQuestFieldGuide.Steps(q,targets[q] or {})
   if #steps==0 then stats.unknownQuests=stats.unknownQuests+1 end
@@ -47,12 +54,13 @@ function R.Build(quests,targets,map,x,y,pinned,options)
   end end
   else stats.excluded=stats.excluded+1 end
  end
+ local startX,startY=x,y
  local stops={}
  -- Bound the planning work for unexpectedly large provider/log snapshots.
  for _=1,math.min(40,#candidates) do
   local best,bestTarget,bestRank,bestDistance,bestIndex
   for i,c in ipairs(candidates) do
-   local rank=c.pinned and 2 or (c.quest.complete and 1 or 0)
+   local rank=options.filter=='picked' and 0 or (c.pinned and 2 or (c.quest.complete and 1 or 0))
    for _,t in ipairs(c.targets) do
     local distance=options.order~='log' and stats.positionKnown and ((t.x-x)^2+(t.y-y)^2) or 0
     if not best or rank>bestRank or (rank==bestRank and distance<bestDistance) then
@@ -65,6 +73,21 @@ function R.Build(quests,targets,map,x,y,pinned,options)
    turnin=best.step.turnin,target=bestTarget,pinned=best.pinned}
   if stats.positionKnown then x,y=bestTarget.x,bestTarget.y end
   table.remove(candidates,bestIndex)
+ end
+ if options.filter=='picked' and stats.positionKnown then
+  local function distance(a,b) return math.sqrt((a.x-b.x)^2+(a.y-b.y)^2) end
+  local origin={x=startX,y=startY}
+  for _=1,3 do
+   for a=1,#stops-1 do for b=a+1,#stops do
+    local left=a==1 and origin or stops[a-1].target
+    local right=stops[b+1] and stops[b+1].target
+    local before=distance(left,stops[a].target)+(right and distance(stops[b].target,right) or 0)
+    local after=distance(left,stops[b].target)+(right and distance(stops[a].target,right) or 0)
+    if after+1e-9<before then
+     for i=0,math.floor((b-a-1)/2) do stops[a+i],stops[b-i]=stops[b-i],stops[a+i] end
+    end
+   end end
+  end
  end
  return stops,stats
 end
@@ -211,3 +234,89 @@ function R.Refresh()
  if profiler then profiler.Finish('itinerary',started) end
 end
 function R.GetHeight() return root and root:GetHeight() or 354 end
+
+local popup,routeRows,routeSummary,routeNotice,selectButton,tabs
+local routePage=1
+local function routeButton(parent,x,y,w,name,action,help)
+ local U=ForeverCompanionInterface
+ local b=U.Button(parent);b:SetSize(w,25);b:SetPoint('TOPLEFT',x,y);b:SetText(name);b:SetScript('OnClick',action)
+ if help then U.SetHoverHelp(b,name,help) end
+ return b
+end
+function R.RefreshPopup()
+ if not popup or not popup:IsShown() then return end
+ local planner=ForeverCompanionQuestPlanner
+ local quests=planner.IsSupported() and planner.GetLive() or {}
+ local count=0
+ for _,q in ipairs(quests) do if R.IsPicked(q) then count=count+1 end end
+ local stops,stats=snapshot(quests,{filter='picked',order='nearest',deferred=deferred})
+ local pages=math.max(1,math.ceil(#stops/#routeRows));routePage=math.max(1,math.min(routePage,pages))
+ routeSummary:SetText(('%d selected / %d stops on this map / Page %d of %d'):format(count,#stops,routePage,pages))
+ routeNotice:SetText(not planner.IsSupported() and 'Open the game quest log to refresh active quests.' or count==0 and 'Choose quests above, or Shift-click their rows in the journal.' or
+  ('%d on other maps / %d without a clear location. %s'):format(stats.otherMaps,stats.unlocated+stats.review,
+   stats.positionKnown and 'Estimated by straight-line distance.' or 'Player position unavailable. Showing quest-log order.'))
+ for i,row in ipairs(routeRows) do
+  local n=(routePage-1)*#routeRows+i
+  row.stop=stops[n];row:SetShown(row.stop~=nil)
+  if row.stop then row:SetText(n..'. '..row.stop.quest.title..' / '..row.stop.text) end
+ end
+ tabs[1]:SetEnabled(routePage>1);tabs[2]:SetEnabled(routePage<pages)
+end
+local function openPickMenu(page)
+ local U=ForeverCompanionInterface
+ local planner=ForeverCompanionQuestPlanner
+ local choices={}
+ if planner.IsSupported() then for _,q in ipairs(planner.GetLive()) do
+  if type(q.id)=='number' then choices[#choices+1]=q end
+ end end
+ local visible,current,pages=U.MenuPage(choices,page)
+ local menu={}
+ for _,quest in ipairs(visible) do
+  menu[#menu+1]={label=quest.title,selected=R.IsPicked(quest),action=function() R.TogglePicked(quest);openPickMenu(current) end}
+ end
+ if #menu==0 then menu[1]={label='No active quests available',enabled=false} end
+ if pages>1 then
+  menu[#menu+1]={label='Previous page',enabled=current>1,action=function() openPickMenu(current-1) end}
+  menu[#menu+1]={label='Next page',enabled=current<pages,action=function() openPickMenu(current+1) end}
+ end
+ U.Menu(selectButton,('SELECT ACTIVE QUESTS  /  %d of %d'):format(current,pages),menu,nil,350)
+end
+function R.OpenPopup()
+ local U=ForeverCompanionInterface
+ if not popup then
+  popup=CreateFrame('Frame','ForeverCompanionQuestRoutePopup',UIParent)
+  popup:SetSize(592,370);popup:SetPoint('CENTER');popup:SetFrameStrata('DIALOG');U.Surface(popup)
+  U.WindowControls(popup,'ForeverCompanionQuestRoutePopup',592,370)
+  text(popup,14,-9,430,15,'Quest route')
+  U.CloseButton(popup,function() popup:Hide() end)
+  routeSummary=text(popup,14,-70,556,12,'')
+  selectButton=routeButton(popup,14,-35,170,'Choose quests',function() openPickMenu(1) end,'Toggle active quests to include them in this route.')
+  routeButton(popup,193,-35,112,'Clear selected',function() picked={};routePage=1;R.RefreshPopup() end,'Remove all quests from this route.')
+  routeButton(popup,314,-35,100,'Recalculate',R.RefreshPopup,'Reorder route stops from your current position.')
+  routeRows={}
+  for i=1,6 do
+   local row
+   row=routeButton(popup,14,-95-(i-1)*31,562,'',function()
+    local p=ForeverCompanionQuestPlanner
+    if p.IsSupported() then
+     local q,index,target=R.Resolve(row.stop,p.GetLive(),ForeverCompanionQuestWaypoints.Targets)
+     if target then
+      p.Select(index)
+      routeNotice:SetText(ForeverCompanionQuestWaypoints.Navigate(target,false,q.title..' / '..row.stop.text,q.id))
+      return
+     end
+    end
+    R.RefreshPopup()
+   end,'Start directions to this stop.')
+   local name=row:GetFontString()
+   name:SetJustifyH('LEFT');name:SetWordWrap(false)
+   routeRows[i]=row
+  end
+  routeNotice=text(popup,14,-288,562,11,'');routeNotice:SetHeight(32);routeNotice:SetWordWrap(true)
+  tabs={
+   routeButton(popup,14,-331,92,'Previous',function() routePage=routePage-1;R.RefreshPopup() end,'Show earlier route stops.'),
+   routeButton(popup,114,-331,92,'Next',function() routePage=routePage+1;R.RefreshPopup() end,'Show later route stops.'),
+  }
+ end
+ popup:Show();R.RefreshPopup()
+end

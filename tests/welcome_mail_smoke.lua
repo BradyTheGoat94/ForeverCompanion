@@ -48,3 +48,21 @@ assert(record.mail.total==0 and #record.mail.items==0 and record.partialMail==ni
 fire('MAIL_CLOSED');loaded,total,count=1,1,1;fire('MAIL_INBOX_UPDATE')
 assert(record.mail.total==0)
 print('PASS: first-login tutorial, replay, guide handoff and complete mailbox snapshot preservation')
+
+local recordOutgoing
+SendMail=function() end
+hooksecurefunc=function(api,callback) assert(api=='SendMail');recordOutgoing=callback end
+GetSendMailItem=function(slot) if slot==1 then return 'Test item',12,13,2 end end
+GetSendMailMoney=function() return 500 end
+dofile('ForeverCompanion/BankView.lua')
+fire('MAIL_SHOW')
+recordOutgoing('Alt','Supplies','Private body')
+fire('MAIL_FAILED');fire('MAIL_SEND_SUCCESS')
+assert(not record.sent,'failed drafts and unsolicited success events do not create sent mail')
+recordOutgoing('Alt','Supplies','Private body')
+fire('MAIL_SEND_SUCCESS');fire('MAIL_SEND_SUCCESS')
+assert(#record.sent==1 and record.sent[1].to=='Alt' and record.sent[1].items[1].count==2 and record.sent[1].money==500)
+assert(record.sent[1].body==nil)
+record.bank={items={{id=12,count=3},{id=12,count=5},{id=9,count=7}}}
+assert(ForeverCompanionBankView.QuestItemCount(12)==8 and ForeverCompanionBankView.QuestItemCount(44)==0)
+print('PASS: sent mail records only confirmed sends; bank quest items count across stacks')

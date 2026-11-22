@@ -406,7 +406,8 @@ function M.SetTilt(enabled)
  M.Toggle(true)
 end
 
-function M.Refresh(force)
+local lastQuest,lastLog
+function M.Refresh(force,positionOnly)
  if not frame or not frame:IsShown() then return end
  M.ApplyContext()
  local id=safe(C_Map and C_Map.GetBestMapForUnit,'player')
@@ -447,13 +448,19 @@ function M.Refresh(force)
   title:SetText((d.tilted and 'Tilted atlas' or 'Overlay')..' · '..(type(info)=='table' and info.name or 'Current zone'))
   message:SetText(layout and '' or 'Map artwork unavailable here.');message:SetShown(not layout)
   courseCaption:SetWidth(layout and layout.width or width)
+  positionOnly=false
   if legend then
    legend:ClearAllPoints()
    legend:SetPoint('TOPLEFT',frame,'BOTTOMLEFT',0,d.tilted and -37 or -6)
    legend:SetShown(layout~=nil)
   end
  end
- refreshPins();updatePlayer()
+ local planner=ForeverCompanionQuestPlanner
+ local active=planner and planner.GetSelected and planner.GetSelected()
+ local log=planner and planner.GetLive and planner.GetLive()
+ if not positionOnly or active~=lastQuest or log~=lastLog then refreshPins() end
+ lastQuest,lastLog=active,log
+ updatePlayer()
 end
 function M.Edit(value)
  inspecting=false;hide(hitPins);if frame.EnableMouseWheel then frame:EnableMouseWheel(false) end;if inspectButton then inspectButton:SetText('Inspect: Off') end;editing=value==true;settings().controls=true;frame:EnableMouse(editing);header:Show();M.ApplyContext()
@@ -597,7 +604,7 @@ local function create()
    if finite(x) and finite(y) and finite(scale) and scale>0 then local d=settings();d.centerX=panStart.cx-(x/scale-panStart.x)/(layout.width*d.zoom);d.centerY=panStart.cy+(y/scale-panStart.y)/(layout.height*d.zoom);settings();M.Redraw() end
   end
   elapsed=(elapsed or 0)+dt;slow=(slow or 0)+dt
-  if slow>=1 then slow=0;elapsed=0;M.Refresh() elseif elapsed>=.05 then elapsed=0;updatePlayer() end
+  if slow>=1 then slow=0;elapsed=0;M.Refresh(false,true) elseif elapsed>=.05 then elapsed=0;updatePlayer() end
  end)
  position()
 end
@@ -624,5 +631,10 @@ function M.Command(command)
  elseif command=='hide' then M.Toggle(false)
  else M.Toggle() end
 end
-local events=CreateFrame('Frame');for _,event in ipairs({'PLAYER_ENTERING_WORLD','MAP_EXPLORATION_UPDATED','PLAYER_REGEN_DISABLED','PLAYER_REGEN_ENABLED'}) do events:RegisterEvent(event) end
-events:SetScript('OnEvent',function(_,event) if event=='PLAYER_ENTERING_WORLD' then if settings().visible then M.Toggle(true) end elseif event=='MAP_EXPLORATION_UPDATED' then M.Refresh(true) else M.ApplyContext() end end)
+local events=CreateFrame('Frame');for _,event in ipairs({'PLAYER_ENTERING_WORLD','MAP_EXPLORATION_UPDATED','QUEST_LOG_UPDATE','QUEST_POI_UPDATE','PLAYER_REGEN_DISABLED','PLAYER_REGEN_ENABLED'}) do events:RegisterEvent(event) end
+events:SetScript('OnEvent',function(_,event) if event=='PLAYER_ENTERING_WORLD' then if settings().visible then M.Toggle(true) end elseif event=='MAP_EXPLORATION_UPDATED' then M.Refresh(true) elseif event=='QUEST_LOG_UPDATE' or event=='QUEST_POI_UPDATE' then
+ if frame and frame:IsShown() then
+  local queue=ForeverCompanionRefreshQueue
+  if queue then queue.Schedule('overlay-quests',M.Refresh) else M.Refresh() end
+ end
+ else M.ApplyContext() end end)

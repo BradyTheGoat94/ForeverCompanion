@@ -270,6 +270,7 @@ function Planner.Sync()
   if ForeverCompanionQuestWaypoints and ForeverCompanionQuestWaypoints.Reconcile then ForeverCompanionQuestWaypoints.Reconcile(rows,true) end
   local followNew=Planner.IsAutoFocus() and not (old and Planner.IsPinned(old) and matched)
   auto.selected=(followNew and firstNew) or matched or 1
+  if ForeverCompanionObjectiveRoute and ForeverCompanionObjectiveRoute.RefreshPopup then ForeverCompanionObjectiveRoute.RefreshPopup() end
   refresh()
   return true
 end
@@ -322,7 +323,7 @@ function Planner.GetPinned()
 end
 function Planner.AutoCount() return auto.lastCount end
 Planner.FilterLabels={all="All quests",ready="Ready to turn in",zone="My zone"}
-Planner.SortLabels={log="Quest log order",zone="By zone",ready="Ready first",pinned="Pinned first"}
+Planner.SortLabels={log="Quest log order",zone="By zone",ready="Ready first",pinned="Pinned first",type="By objective type"}
 function Planner.GetFilter() return auto.filter end
 function Planner.IsSupported() return auto.supported end
 function Planner.IsSnapshotStale() return auto.scanned and not auto.supported and #auto.entries>0 end
@@ -342,10 +343,24 @@ function Planner.CycleFilter()
   else auto.filter="all" end
   if ForeverCompanionRefresh then ForeverCompanionRefresh() end
 end
-local sortModes={"log","zone","ready","pinned"}
+local sortModes={"log","zone","ready","pinned","type"}
+local typeOrder={kill=1,collect=2,mixed=3,other=4,ready=5}
+function Planner.ObjectiveType(q)
+ if q.complete then return "ready" end
+ local kill,collect,other=false,false,false
+ for _,step in ipairs(q.objectiveStates or {}) do
+  if not step.done then
+   if step.kind=="monster" or step.kind=="kill" then kill=true
+   elseif step.kind=="item" then collect=true else other=true end
+  end
+ end
+ if kill then return (collect or other) and "mixed" or "kill" end
+ if collect then return other and "mixed" or "collect" end
+ return "other"
+end
 function Planner.GetSort()
   ensure()
-  if db.questSort~="log" and db.questSort~="zone" and db.questSort~="ready" and db.questSort~="pinned" then
+  if db.questSort~="log" and db.questSort~="zone" and db.questSort~="ready" and db.questSort~="pinned" and db.questSort~="type" then
     db.questSort="log"
   end
   return db.questSort
@@ -395,6 +410,10 @@ function Planner.GetVisible()
     table.sort(visible,function(a,b)
       local aq,bq=a.quest,b.quest
       if mode=="ready" and aq.complete~=bq.complete then return aq.complete==true end
+      if mode=="type" then
+        local ar,br=typeOrder[Planner.ObjectiveType(aq)],typeOrder[Planner.ObjectiveType(bq)]
+        if ar~=br then return ar<br end
+      end
       if mode=="pinned" then
         local ap,bp=Planner.IsPinned(aq),Planner.IsPinned(bq)
         if ap~=bp then return ap end

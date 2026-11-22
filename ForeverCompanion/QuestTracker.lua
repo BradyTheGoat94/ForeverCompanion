@@ -75,7 +75,8 @@ function T.Order(quests,mode,zone,pinned)
  for i,q in ipairs(quests or {}) do
   if type(q)=='table' then
   local pin=type(pinned)=='function' and pinned(q)==true
-  if (mode~='pinned' and mode~='ready' and mode~='zone') or (mode=='pinned' and pin) or (mode=='ready' and q.complete) or (mode=='zone' and q.zoneKnown and type(zone)=='string' and zone~='' and q.zone==zone) then
+  local byType=(mode=='kill' or mode=='collect' or mode=='mixed' or mode=='other')
+  if (byType and ForeverCompanionQuestPlanner.ObjectiveType(q)==mode) or (not byType and ((mode~='pinned' and mode~='ready' and mode~='zone') or (mode=='pinned' and pin) or (mode=='ready' and q.complete) or (mode=='zone' and q.zoneKnown and type(zone)=='string' and zone~='' and q.zone==zone))) then
    result[#result+1]={quest=q,index=i,pinned=pin,localZone=q.zoneKnown and type(zone)=='string' and zone~='' and q.zone==zone}
   end
   end
@@ -131,7 +132,7 @@ function T.ApplyScale()
 end
 local function filterMenu(anchor)
  local cfg=settings();local entries={}
- for _,v in ipairs({{'all','All active quests'},{'zone','In my zone'},{'pinned','Pinned quests'},{'ready','Ready to turn in'}}) do
+ for _,v in ipairs({{'all','All active quests'},{'zone','In my zone'},{'pinned','Pinned quests'},{'ready','Ready to turn in'},{'kill','Kill objectives'},{'collect','Collect objectives'},{'mixed','Mixed objectives'},{'other','Other objectives'}}) do
   local key,name=v[1],v[2]
   entries[#entries+1]={label=name,selected=(cfg.mode or 'all')==key,action=function() cfg.mode=key;T.page=1;T.Refresh() end}
  end
@@ -161,7 +162,7 @@ local function create()
  local db=settings()
  if type(db.position)=='table' and finite(db.position.x) and finite(db.position.y) then root:ClearAllPoints();root:SetPoint('CENTER',UIParent,'CENTER',db.position.x,db.position.y) end
  heading=label(root,12,-8,264,13)
- local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(278,27);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
+ local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(264,27);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
  drag:SetScript('OnDragStart',function() if not settings().locked then root:StartMoving() end end)
  drag:SetScript('OnDragStop',function()
   root:StopMovingOrSizing()
@@ -172,9 +173,11 @@ local function create()
    if finite(x) and finite(y) and finite(px) and finite(py) then settings().position={x=x-px,y=y-py} end
   end
  end)
- collapse=U.Button(root);collapse:SetSize(24,22);collapse:SetPoint('TOPRIGHT',-63,-3)
+ collapse=U.Button(root);collapse:SetSize(24,22);collapse:SetPoint('TOPRIGHT',-63,-3);collapse:SetFrameLevel(root:GetFrameLevel()+8)
+ U.SetHoverHelp(collapse,'Collapse or expand','Toggle the quest list while keeping the tracker header visible.')
  collapse:SetScript('OnClick',function() settings().collapsed=not settings().collapsed;T.Refresh() end)
  local options=U.Button(root);options:SetSize(28,22);options:SetPoint('TOPRIGHT',-32,-3);options:SetText('...')
+ U.SetHoverHelp(options,'Tracker options','Change filters, layout, and minimap markers.')
  options:SetScript('OnClick',function()
   local cfg=settings()
   U.PagedMenu(options,'QUEST TRACKER',{
@@ -201,14 +204,15 @@ local function create()
    {label='Hide tracker',action=T.Hide},
   })
  end)
- groupButton=U.Button(root);groupButton:SetSize(48,20);groupButton:SetPoint('TOPRIGHT',-12,-66);groupButton:SetText('Zones');groupButton:SetScript('OnClick',function() settings().grouped=not settings().grouped;T.page=1;T.Refresh() end)
- local close=U.Button(root);close:SetSize(24,22);close:SetPoint('TOPRIGHT',-5,-3);close:SetText('x');close:SetScript('OnClick',T.Hide)
+ groupButton=U.Button(root);U.SetHoverHelp(groupButton,'Group by zone','Switch between a flat list and collapsible zone groups.');groupButton:SetSize(48,20);groupButton:SetPoint('TOPRIGHT',-12,-66);groupButton:SetText('Zones');groupButton:SetScript('OnClick',function() settings().grouped=not settings().grouped;T.page=1;T.Refresh() end)
+ local close=U.Button(root);close:SetSize(24,22);close:SetPoint('TOPRIGHT',-5,-3);close:SetText('x');close:SetScript('OnClick',T.Hide);U.SetHoverHelp(close,'Hide tracker','Reopen My Quests from the journal.')
  searchBox=U.EditBox(root,'Search quests, objectives or ID')
  searchBox:SetSize(220,26);searchBox:SetPoint('TOPLEFT',12,-35);searchBox:SetMaxLetters(70)
  searchBox:SetScript('OnTextChanged',function() T.page=1;T.Refresh() end)
  searchBox:SetScript('OnEscapePressed',function(self) self:ClearFocus() end)
  searchBox:SetScript('OnEnterPressed',function(self) self:ClearFocus() end)
  filterButton=U.Button(root);filterButton:SetSize(128,26);filterButton:SetPoint('TOPRIGHT',-12,-35)
+ U.SetHoverHelp(filterButton,'Filter quests','Show particular zones, pins, turn-ins, or objective types.')
  filterButton:SetScript('OnClick',function(self) filterMenu(self) end)
  clearSearch=U.Button(root);clearSearch:SetSize(48,20);clearSearch:SetPoint('TOPRIGHT',-64,-66);clearSearch:SetText('Clear')
  clearSearch:SetScript('OnClick',function() searchBox:SetText('');searchBox:ClearFocus();T.page=1;T.Refresh() end)
@@ -234,6 +238,8 @@ local function create()
   end)
   row.map:SetText('Guide')
   row.pin=U.Button(row);row.pin:SetSize(88,20);row.pin:SetPoint('TOPRIGHT',-5,-30)
+  U.SetHoverHelp(row.map,'Quest guide','Open this quest or navigate to the next known objective.')
+  U.SetHoverHelp(row.pin,'Pin quest','Toggle the addon pin for this quest.')
   row.pin:SetScript('OnClick',function()
    if not row.item then return end
    local planner=ForeverCompanionQuestPlanner
@@ -362,7 +368,7 @@ function T.Refresh()
  readyLabel:SetEnabled(ready>0)
  readyLabel:SetText(ready>0 and ((T.readyNotice and 'New: ' or '')..ready..' ready to turn in · View') or (T.focusNotice or journey and journey.notice or 'Select a quest to see your next step'))
  if ready==0 then T.readyNotice=nil end
- filterButton:SetText(({all='All quests',zone='My zone',pinned='Pinned',ready='Ready to turn in'})[cfg.mode or 'all'] or 'All quests')
+ filterButton:SetText(({all='All quests',zone='My zone',pinned='Pinned',ready='Ready to turn in',kill='Kill objectives',collect='Collect objectives',mixed='Mixed objectives',other='Other objectives'})[cfg.mode or 'all'] or 'All quests')
  heading:SetText('MY QUESTS  ·  '..#live..' active'..(not isSupported(planner) and ' · cached' or ''))
  local focused=read(planner and planner.GetSelected)
  empty:SetShown(not cfg.collapsed and #ordered==0);findQuests:SetShown(not cfg.collapsed and #ordered==0)
