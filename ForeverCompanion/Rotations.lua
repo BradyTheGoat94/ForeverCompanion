@@ -82,7 +82,7 @@ ForeverCompanionForeverMechanics = {
  ROGUE={
   "FOREVER: Energy regenerates continuously; avoid sitting at full energy.",
   "FOREVER: Subtlety's Cutthroat can permit Ambush outside stealth when talented.",
-  "FOREVER: Assassination gains Venom as a poison-focused finisher when talented."
+  "FOREVER: Shank is trained at level 24. With the Venom talent, it also boosts your poisons."
  },
  SHAMAN={
   "FOREVER: The new totem bar supports assigning totems to a single cast; Totemic Projection can reposition them.",
@@ -97,7 +97,7 @@ ForeverCompanionForeverDpsCoaching={
   enhancement={"Use an appropriate two-handed weapon for the Forever Enhancement design.","When Maelstrom Weapon is talented, account for its Lightning Bolt cast-time and mana reduction.","Keep Windfury Totem available to support your group when trained."}
  },
  ROGUE={
-  assassination={"Build combo points with your trained attacks.","Use Venom only if talented; it enhances poison-focused damage.","Avoid energy capping; do not treat the priority as a fixed macro."},
+  assassination={"Build combo points with your trained attacks.","Use Shank after training it. If talented into Venom, use its poison boost during sustained melee uptime.","Avoid energy capping; do not treat the priority as a fixed macro."},
   subtlety={"Maintain bleed effects only when they will tick and will not disrupt crowd control.","Cutthroat can enable Ambush outside stealth when talented.","Keep energy available for interrupts or required control."}
  },
  WARRIOR={

@@ -12,7 +12,7 @@ local function render()
  local p=current.location
  local name=selectedName()
  local range=ForeverCompanionDungeonCatalog.LevelRange(name)
- title:SetText(name)
+ title:SetText(ForeverCompanionDungeonCatalog.DisplayName(name))
  details:SetText(('%s  |  %.1f, %.1f%s'):format(p.zone,p.x*100,p.y*100,range and ('  |  Levels '..range) or ''))
  local note=p.approximate and 'Dungeon area reference. Entrance coordinates are unconfirmed.' or 'Outdoor approach reference.'
  if #p.names>1 then note=('Shared approach (%d of %d).'):format(current.index,#p.names) end
@@ -71,7 +71,7 @@ local function create(owner)
  U.SetHoverHelp(nextWing,'Next wing','View the next dungeon that shares this approach.')
  route=button(12,91,132,'Route to approach',function()
   if not current or current.location.approximate then return end
-  status:SetText(ForeverCompanionQuestWaypoints.Navigate(current.location,false,selectedName()..' approach'))
+  status:SetText(ForeverCompanionQuestWaypoints.Navigate(current.location,false,ForeverCompanionDungeonCatalog.DisplayName(selectedName())..' approach'))
  end)
  quests=button(154,91,132,'Dungeon quests',function() openJournal(true) end)
  loot=button(296,91,142,'Bosses & loot',function() openJournal(false) end)

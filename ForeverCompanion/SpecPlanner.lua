@@ -8,7 +8,7 @@ ForeverCompanionSpecs={
  SHAMAN={{"Elemental","Damage","Spell pressure and totem utility"},{"Enhancement","Damage","Melee uptime and supportive totems"},{"Restoration","Healer","Healing throughput and mana"}},
  MAGE={{"Arcane","Damage","Burst windows and mana planning"},{"Fire","Damage","Sustained spell pressure and positioning"},{"Frost","Damage","Control, survivability, and uptime"}},
  WARLOCK={{"Affliction","Damage","Damage-over-time upkeep and pet utility"},{"Demonology","Damage","Pet support and survivability"},{"Destruction","Damage","Direct spell damage and threat"}},
- DRUID={{"Balance","Damage","Spell uptime and mana management"},{"Feral","Damage","Form-specific resources and positioning"},{"Restoration","Healer","Healing-over-time and mana efficiency"},{"Guardian / Bear","Tank","Bear-form threat and survival (availability depends on version)"}}
+ DRUID={{"Balance","Damage","Spell uptime and mana management"},{"Feral","Damage","Form-specific resources and positioning"},{"Restoration","Healer","Healing-over-time and mana efficiency"},{"Guardian / Bear","Tank","Feral tank build for Bear Form threat and survival"}}
 }
 ForeverCompanionSpecPlanner={}
 local P=ForeverCompanionSpecPlanner

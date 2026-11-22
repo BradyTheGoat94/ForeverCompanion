@@ -504,7 +504,7 @@ assert(dungeonGuide.LaunchReference(47):find("outside the listed bands",1,true))
 assert(not dungeonGuide.LaunchReference(nil):find("[YOUR LEVEL]",1,true))
 for _,role in ipairs({"Tank","Healer","Damage"}) do
  local guidance=ForeverCompanionDungeonPreparation.Format(role)
- assert(guidance:find("DUNGEON READY CHECK",1,true) and guidance:find("not verified",1,true),"missing role readiness guidance")
+ assert(guidance:find("DUNGEON READY CHECK",1,true) and guidance:find("five resets and entries per dungeon per hour",1,true),"missing role readiness guidance")
 end
 
 dofile("ForeverCompanion/PvPPreparation.lua")
@@ -823,7 +823,7 @@ local function selectSpec(class,name)
  error("missing spec "..class.." "..name)
 end
 selectSpec("PRIEST","Shadow")
-assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("30% of maximum health",1,true),"Shadow Word: Death backlash caution missing")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("safely take its backlash",1,true),"Shadow Word: Death backlash caution missing")
 selectSpec("PRIEST","Holy")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("PRIEST")," "):find("Holy Binding",1,true),"Holy Binding hotfix missing")
 selectSpec("DRUID","Restoration")
@@ -832,7 +832,7 @@ ForeverCompanionDB.specSelections={}
 
 -- Prelaunch talent-diff advisory checks (not claims of live verification).
 selectSpec("MAGE","Frost")
-assert(table.concat(ForeverCompanionSourcedPriorityLines("MAGE")," "):find("8-second cooldown",1,true),"Frost Ice Lance hotfix cooldown missing")
+assert(table.concat(ForeverCompanionSourcedPriorityLines("MAGE")," "):find("follow it with Ice Lance during the proc window",1,true),"Frost Ice Lance proc guidance missing")
 selectSpec("PALADIN","Protection")
 assert(table.concat(ForeverCompanionSourcedPriorityLines("PALADIN")," "):find("Judgement taunts with Seal of Fury",1,true),"Protection taunt guidance missing")
 selectSpec("DRUID","Restoration")

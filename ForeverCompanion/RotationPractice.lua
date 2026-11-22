@@ -24,15 +24,15 @@ local practice={
  HUNTER={
   ["Beast Mastery"]={
    opener="Send a healthy pet onto the target, then start Auto Shot.",
-   leveling={{"Auto Shot","Let your pet get ahead on threat. Keep firing."},{"Serpent Sting","Use on a target that will live through several ticks."},{"Arcane Shot","Weave it in when Mana allows."}},
+   leveling={{"Auto Shot","Let your pet get ahead on threat. Keep firing."},{"Serpent Sting","Use on a target that will live through several ticks."},{"Aimed Shot","Use on durable targets once trained at level 20.",20,19434},{"Arcane Shot","Use while moving or when Mana permits."}},
    aoe={{"Multi-Shot","Use on grouped targets clear of crowd control."},{"Bestial Wrath","Use when talented and your pet can stay on the priority target."},{"Volley","Channel only when the pack will stay in place."}},
    pvp={{"Concussive Shot","Keep space for ranged attacks."},{"Bestial Wrath","Commit once your pet can reliably reach the target."},{"Freezing Trap","Peel an attacker or isolate a second enemy."}},
   },
   Marksmanship={
    opener="Mark a durable target and start Auto Shot. Keep your pet on the kill target.",
-   leveling={{"Aimed Shot","Use if talented when it fits between shots."},{"Arcane Shot","Use while moving or when an Aimed Shot cast is unsafe."},{"Auto Shot","Avoid delaying shots unnecessarily."}},
+   leveling={{"Aimed Shot","Use this baseline shot once trained at level 20. Keep Auto Shot firing.",20,19434},{"Arcane Shot","Use while moving or when an Aimed Shot cast is unsafe."},{"Auto Shot","Avoid delaying shots unnecessarily."}},
    aoe={{"Multi-Shot","Use over Aimed Shot when extra targets can be hit safely."},{"Volley","Use on a stationary pack if you can channel safely."},{"Arcane Shot","Pressure the priority target between pack abilities."}},
-   pvp={{"Concussive Shot","Create a window for aimed pressure."},{"Aimed Shot","Use if talented when safe to stop and cast."},{"Freezing Trap","Protect your firing position or isolate an enemy."}},
+   pvp={{"Concussive Shot","Create a window for aimed pressure."},{"Aimed Shot","Use when trained and safe to stop and cast.",20,19434},{"Freezing Trap","Protect your firing position or isolate an enemy."}},
   },
   Survival={
    opener="Set up the trap path and decide whether you can safely fight in melee.",
@@ -44,13 +44,13 @@ local practice={
  ROGUE={
   Assassination={
    opener="Apply poisons. Open from Stealth when it is safe.",
-   leveling={{"Mutilate","Use as your builder if talented and using two daggers."},{"Sinister Strike","Use your trained builder before Mutilate."},{"Eviscerate","Finish when the target will die before a bleed pays off."}},
+   leveling={{"Mutilate","Use as your builder if talented and using two daggers."},{"Sinister Strike","Build points before Mutilate or when your weapons do not support it."},{"Shank","Use when trained and you have room to gain Energy. Venom adds a poison boost.",24,1329283},{"Eviscerate","Finish when the target will die before a bleed pays off."}},
    aoe={{"Mutilate","Build on the most dangerous target with the right daggers."},{"Rupture","Bleed a target that will live through the ticks."},{"Kick","Save Energy to interrupt a dangerous caster."}},
    pvp={{"Cheap Shot","Open with control when it gives you a safe damage window."},{"Mutilate","Build pressure if talented with daggers."},{"Kidney Shot","Spend points for control when a stun will matter."}},
   },
   Combat={
    opener="Apply poisons and equip your strongest appropriate main-hand weapon.",
-   leveling={{"Sinister Strike","Build points without wasting Energy."},{"Riposte","Use after a parry if talented."},{"Slice and Dice","Maintain it on fights long enough to benefit."}},
+   leveling={{"Sinister Strike","Build points without wasting Energy."},{"Shank","Use when trained and you have room to gain Energy.",24,1329283},{"Riposte","Use after a parry if talented."},{"Slice and Dice","Maintain it on fights long enough to benefit."}},
    aoe={{"Blade Flurry","Use if talented when two enemies can stay in range."},{"Slice and Dice","Keep your swings fast during the cleave window."},{"Sinister Strike","Build on the target the group needs dead first."}},
    pvp={{"Gouge","Create room to reposition or wait for Energy."},{"Sinister Strike","Apply steady pressure when in range."},{"Kick","Save Energy for the next important cast."}},
   },
@@ -169,20 +169,21 @@ local practice={
  },
 }
 
-local fury={"Righteous Fury","Apply before tanking. This long buff increases Holy threat.",16,25780}
+local fury={"Righteous Fury","Apply before tanking. This long buff increases Holy threat.",10,25780}
 local tankSeal={"Seal of Fury","Keep this short seal active with a shield. Melee hits add Holy damage and an absorb.",10,1311649}
 local tankJudge={"Judgement","With Seal of Fury active, use it to taunt a loose enemy. Save it for swaps when needed.",4,20271}
 local tankShield={"Holy Shield","Use if talented while taking melee hits. Equip a shield and keep Mana for it.",30,20925}
 local tankStrike={"Holy Strike","Use in melee to build threat on the target you need to hold.",6,679}
 local tankGround={"Consecration","Drop it when enemies are grouped and will stay in it. Keep Mana for the next pull.",20,26573}
-local tankWall={"Templar's Bulwark","Use before a dangerous hit if talented. Check Forbearance first.",30,1311015}
+local tankWall={"Templar's Bulwark","Use before a dangerous hit if talented. Check Forbearance first.",nil,1311015}
+local tankSwift={"Swift Judgement","If talented, this has its own cooldown. With Seal of Fury active, reserve it if another taunt may be needed.",nil,1310994}
 local retSeal={"Seal of Righteousness","Keep it active until Seal of Command is learned. It also suits a Holy Shock hybrid.",1,21084}
-local retCommand={"Seal of Command","Use this damage seal if talented, especially with a slow two-hander.",18,20375}
+local retCommand={"Seal of Command","Use this damage seal if talented, especially with a slow two-hander.",20,20375}
 local retCrusader={"Seal of the Crusader","On durable enemies, apply its Judgement if assigned. Then switch to your damage seal.",6,21082}
 local retJudge={"Judgement","Use when ready with your damage seal. Judgement leaves your seal active in Forever.",4,20271}
 local retStrike={"Holy Strike","Press in melee when ready. Sacred Arbiter can refresh your applied Judgements.",6,679}
 local retExecute={"Hammer of Wrath","Use below 20% health if trained and safe to cast.",44,24275}
-local retSwap={"Unsealed Wrath","With the talent and a slow weapon, build 2–3 Command echoes, switch to Righteousness for one swing, then switch back.",30,1310735}
+local retSwap={"Unsealed Wrath","If talented, build two Command echoes, switch to Righteousness for one melee swing, then return to Command. A third echo can suit planned burst.",40,1310735}
 local retGround={"Consecration","Prioritize it on packs. Skip it on short solo fights or when Mana is tight.",20,26573}
 local retExorcism={"Exorcism","Use on Undead or Demons when it fits between your main attacks.",20,879}
 local earlyHeal={"Holy Light","Heal when needed; keep enough Mana for the next hit.",1,635}
@@ -192,15 +193,15 @@ practice.PALADIN={
   opener="Equip a shield. Keep Righteous Fury up when trained and use Seal of Fury while tanking.",
   dungeonOpener="Group the pack first. Use Consecration once it is held in place.",
   leveling={fury,tankSeal,tankJudge,tankStrike,tankGround,earlyHeal},
-  boss={fury,tankSeal,tankJudge,tankShield,tankStrike,tankGround,tankWall},
-  dungeon={fury,tankSeal,tankGround,tankShield,tankJudge,tankStrike,tankWall},
+  boss={fury,tankSeal,tankJudge,tankShield,tankStrike,tankSwift,tankGround,tankWall},
+  dungeon={fury,tankSeal,tankGround,tankShield,tankJudge,tankStrike,tankSwift,tankWall},
   aoe={fury,tankSeal,tankGround,tankShield,tankJudge,tankStrike},
   pvp={{"Hammer of Justice","Stun a threat to protect an ally or stop a cast.",8,853},{"Blessing of Freedom","Help yourself or an ally break roots.",18,1044},earlyHeal},
  },
  Retribution={
   opener="Put up your assigned Blessing and damage seal. Stay in melee so your swings land.",
   dungeonOpener="Let the tank establish threat before placing Consecration or committing damage.",
-  leveling={retSeal,retCommand,retJudge,retStrike,retGround,retExecute},
+  leveling={retSeal,retCommand,retJudge,retStrike,retGround,retSwap,retExecute},
   boss={retCrusader,retCommand,retSeal,retJudge,retExecute,retStrike,retSwap,retExorcism},
   dungeon={retCommand,retSeal,retJudge,retGround,retStrike,retExecute,retSwap,retExorcism},
   aoe={retCommand,retSeal,retGround,retJudge,retStrike,retExorcism},

@@ -121,7 +121,8 @@ local function priorityRow(index)
   if not GameTooltip then return end
   GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
   local ok=self.spellID and type(GameTooltip.SetSpellByID)=="function" and pcall(GameTooltip.SetSpellByID,GameTooltip,self.spellID)
-  if not ok then GameTooltip:SetText(self.spellName or 'Guide advice');GameTooltip:AddLine(self.instruction or '',.9,.9,.85,true) end
+  if not ok then GameTooltip:SetText(self.spellName or 'Guide advice') end
+  if self.instruction and self.instruction~='' then GameTooltip:AddLine(self.instruction,.9,.9,.85,true) end
   if self.spellID then GameTooltip:AddLine('Spell ID: '..self.spellID,.7,.8,.9) end
   GameTooltip:AddLine(self.readinessText or 'Spell availability unconfirmed',.7,.85,.8,true)
   GameTooltip:AddLine(self.trainingEnabled and "Click to review training. Guide advice is a reference, not a live rotation recommendation." or "Class preview. Training belongs to your current character.",.7,.8,.9,true)
@@ -184,7 +185,8 @@ function W.Render(tab,class,mode,level,role,fallback,playerClass)
  if tab~="Leveling" then root:Hide();return end
  root:Show()
  W.reference:SetText("Class reference")
- local instructions,title,hint,source,primary,summary=ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
+ local guideLevel=playerClass==class and level or nil
+ local instructions,title,hint,source,primary,summary=ForeverCompanionVisiblePriority(class,mode,guideLevel,role,fallback)
  local plan,learned,missing=W.Plan(instructions,primary,playerClass,class,summary)
  if lastClass~=class then lastClass=class;search:SetText('') end
  local filter=W.GetFilter();local steps=W.FilterPlan(plan,search:GetText(),filter);local counts=W.Readiness(plan)

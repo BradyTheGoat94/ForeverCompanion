@@ -229,7 +229,7 @@ ForeverCompanionSpecPriorityNotes={
  SHAMAN={Elemental={"Totem setup should match the pull.","Save mana for emergency healing and utility."},Enhancement={"Stormstrike requires its talent.","Weapon enhancement and totem uptime matter."},Restoration={"Chain Heal requires training.","Choose efficient single-target healing when only one ally is injured."}},
  MAGE={Arcane={"Arcane Blast requires the Forever Arcane talent.","Missile Barrage and Heating Up priorities depend on the acquired build."},Fire={"Pyroblast and Hot Streak are talent-dependent.","Maintain safe cast uptime instead of forcing a long cast while moving."},Frost={"Frozen-target interactions depend on trained abilities.","Use Frost Nova for space, not automatically on cooldown."}},
  WARLOCK={Affliction={"Banes and utility Curses serve different purposes.","Life Tap is unsafe at low health."},Demonology={"Pet uptime and its learned abilities matter.","Do not assume every demon talent is unlocked."},Destruction={"Conflagrate requires the relevant talent.","Watch threat when casting large direct spells."}},
- DRUID={["Guardian / Bear"]={"This alternate spec may not exist in the current Forever talent system.","Verify Bear Form and threat tools in the live spellbook."},Balance={"Eclipse interactions require the corresponding talents.","Use periodic effects only when targets survive long enough."},Feral={"Lacerate is reported talent-gated after November tuning.","Cat combo points and Bear threat are different roles."},Restoration={"Revive is out-of-combat utility.","Use efficient healing over time when its ticks will matter."}}
+ DRUID={["Guardian / Bear"]={"Bear tanking uses the Feral tree. Select the Tank role to browse Bear priorities.","Verify Bear Form and threat tools in the live spellbook."},Balance={"Eclipse interactions require the corresponding talents.","Use periodic effects only when targets survive long enough."},Feral={"Lacerate is reported talent-gated after November tuning.","Cat combo points and Bear threat are different roles."},Restoration={"Revive is out-of-combat utility.","Use efficient healing over time when its ticks will matter."}}
 }
 function ForeverCompanionSpecPriorityNoteLines(classToken)
  local planner=ForeverCompanionSpecPlanner
@@ -251,6 +251,18 @@ end
 -- Never substitute similarly named Midnight guides for Forever mechanics.
 ForeverCompanionSourcedPriorities={
  DRUID={
+  ["Guardian / Bear"]={
+   primary={"Primal Bite","Lacerate","Maul","Swipe","Growl"},
+   source="https://www.wowhead.com/forever/guide/classes/druid/feral/rotation-cooldowns-pve-tank",
+   reviewed="Wowhead Forever / Feral tank build",
+   rules={
+    "1. Keep Primal Bite on cooldown when talented. Save Rage for the next cast.",
+    "2. Build and maintain five Lacerate stacks on a durable target when talented.",
+    "3. Queue Maul with surplus Rage, especially when off-tanking and getting hit less often.",
+    "4. Use Swipe for pack threat and rotate through dangerous enemies to build threat with Lacerate.",
+    "5. Use Growl to recover an enemy or take a planned swap, then follow it with threat.",
+   },
+  },
   Restoration={
    primary={"Rejuvenation", "Regrowth", "Wild Growth", "Swiftmend", "Nature's Swiftness", "Rejuvenation", "Innervate", false},
    source="https://www.wowhead.com/forever/guide/classes/druid/restoration/rotation-cooldowns-pve-healer",
@@ -327,16 +339,16 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Shadow={
-   primary={"Mind Blast", "Shadow Word: Pain", "Devouring Plague", "Mind Blast", "Vampiric Embrace", "Mind Flay", "Shadow Word: Pain", false},
-   source="https://www.wowhead.com/forever/guide/classes/shadow/priest/rotation-cooldowns-pve-dps",
+   primary={"Mind Blast", "Shadow Word: Pain", "Devouring Plague", "Shadow Word: Death", "Vampiric Embrace", "Mind Flay", "Shadow Word: Pain", false},
+   source="https://www.wowhead.com/forever/guide/classes/priest/shadow/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/shadow-priest-ranged-dps-pve-guide/",
    reviewed="Wowhead updated Oct 30, 2026; Icy Veins level-30 beta guide",
    rules={
     "1. For durable enemies, open with Mind Blast, then apply Shadow Word: Pain and Devouring Plague.",
     "2. Keep Shadow Word: Pain active, refreshing as it expires rather than clipping early.",
     "3. Maintain Devouring Plague on your primary target when trained and worthwhile.",
-    "4. Cast Mind Blast on cooldown; use Shadow Word: Death only when safe: the Oct 31 client diff reports backlash equal to 30% of maximum health if the target survives. This risk may outweigh damage gains.",
-    "5. Use Vampiric Embrace when the party needs its healing; it is optional for pure single-target damage.",
+    "4. Cast Mind Blast when ready. Use Shadow Word: Death when trained and you can safely take its backlash if the enemy survives.",
+    "5. Maintain Vampiric Embrace when the party benefits from healing. Its healing was reduced in the November hotfixes.",
     "6. Fully channel Mind Flay as filler instead of repeatedly clipping its channel.",
     "7. For several durable enemies, spread Shadow Word: Pain selectively; Mana cost can outweigh the benefit.",
     "8. While leveling at low levels, conserve Mana with wand finishing attacks; do not assume the endgame priority is efficient.",
@@ -373,17 +385,16 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Arms={
-   primary={"Battle Shout", "Charge", "Rend", "Overpower", false, "Sweeping Strikes"},
-   source="https://www.icy-veins.com/wow-forever/arms-warrior-melee-dps-pve-guide",
-   corroboration="https://www.wowhead.com/forever/guide/classes/warrior/arms/overview-pve-dps",
-   reviewed="Icy Veins Oct 27 level-30 beta; Wowhead Oct 7 beta overview",
+   primary={"Rend", "Mortal Strike", "Overpower", "Slam", "Execute", "Sweeping Strikes"},
+   source="https://www.wowhead.com/forever/guide/classes/warrior/arms/rotation-cooldowns-pve-dps",
+   reviewed="Wowhead Forever / two-handed PvE build",
    rules={
-    "1. Keep Battle Shout active and use Bloodrage between pulls when safe.",
-    "2. Charge only from outside combat and when the target is at a valid distance.",
-    "3. Apply Rend early to targets that will live long enough for the bleed; Bloodthrill can enable Overpower when talented.",
-    "4. React to Overpower availability instead of trying to cast it on every attack.",
-    "5. Save Rage on enemies near death; finish with auto-attacks if a spender would waste Rage.",
-    "6. Against two durable targets, use Sweeping Strikes when talented and affordable; use Cleave without breaking crowd control.",
+    "1. Maintain Rend on durable targets. Bloodthrill can enable Overpower when talented.",
+    "2. Use talented Mortal Strike and keep enough Rage for the next one.",
+    "3. Use Overpower when available.",
+    "4. Fill with Slam when trained and affordable. Queue Heroic Strike only with spare Rage.",
+    "5. Below 20% health, weave in Execute while keeping your core attacks going.",
+    "6. For cleave, save Rage for Sweeping Strikes and follow it with your heavy attacks. Use Cleave only when Rage permits.",
    },
   },
  },
@@ -512,14 +523,14 @@ ForeverCompanionSourcedPriorities={
    primary={"Seal of the Crusader","Seal of Command","Judgement","Hammer of Wrath","Holy Strike","Unsealed Wrath","Consecration"},
    source="https://www.wowhead.com/forever/guide/classes/paladin/retribution/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/retribution-paladin-melee-dps-pve-rotation-cooldowns-abilities",
-   reviewed="Wowhead Nov 4, 2026; Unsealed Wrath and Shockadin builds",
+   reviewed="Wowhead Nov 15, 2026 / Unsealed Wrath and Shockadin builds",
    rules={
     "1. Judge Seal of the Crusader if assigned and the enemy will live long enough.",
     "2. Keep Seal of Command up with a suitable two-hander if talented. Use Seal of Righteousness before it or in a Holy Shock hybrid.",
     "3. Use Judgement when ready. It leaves your seal active.",
     "4. Use Hammer of Wrath below 20% when you can cast safely.",
     "5. Use Holy Strike in melee. Sacred Arbiter can refresh your applied Judgements.",
-    "6. With Unsealed Wrath and a slow weapon, swap to Righteousness after 2–3 Command echoes. Let one swing land, then return to Command.",
+    "6. With Unsealed Wrath, build two Command echoes, switch to Righteousness for one melee swing, then switch back. A third echo can suit planned burst.",
     "7. Use Consecration on packs as Mana allows. Holy Shock hybrids use Holy Shock instead of the seal-swap setup.",
    },
   },
@@ -553,32 +564,32 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Frost={
-   primary={"Frostbolt", "Ice Lance", "Ice Lance", "Arcane Missiles", "Cone of Cold"},
-   source="https://www.icy-veins.com/wow-forever/frost-mage-ranged-dps-pve-guide",
-   corroboration="https://www.wowhead.com/forever/guide/classes/mage/frost/rotation-cooldowns-pve-dps",
-   reviewed="Icy Veins Oct 30 leveling update; Wowhead priority reference",
+   primary={"Ice Barrier", "Ice Lance", "Cone of Cold", "Frostbolt", "Blizzard"},
+   source="https://www.wowhead.com/forever/guide/classes/mage/frost/rotation-cooldowns-pve-dps",
+   corroboration="https://www.icy-veins.com/wow-forever/frost-mage-ranged-dps-pve-guide",
+   reviewed="Wowhead Forever / Frost proc and pack priorities",
    rules={
-    "1. Maintain Frostbolt casting uptime when no higher-priority condition applies.",
-    "2. React to Fingers of Frost or a frozen target with Ice Lance; the Oct 31 client diff reports 300% frozen-target bonus and an 8-second cooldown, so do not spam it.",
-    "3. With Frostbite, plan Ice Lance after the next Frostbolt rather than canceling an in-progress cast; check the cooldown before using it.",
-    "4. Use Missile Barrage Arcane Missiles when the talent procs and the cast is safe.",
-    "5. For controlled large packs, use Cone of Cold and Blizzard; do not use single-target priority blindly.",
+    "1. Put up Ice Barrier before the pull when talented. Refresh it for protection or to maintain Frigid Power if talented.",
+    "2. Spend Fingers of Frost on frozen-target damage. On a boss, finish Frostbolt and follow it with Ice Lance during the proc window.",
+    "3. Use Cone of Cold when positioning and your build support it. Save Cold Snap for a worthwhile reset.",
+    "4. Cast Frostbolt as single-target filler.",
+    "5. Use Blizzard on grouped packs when safe to channel. Use Cone of Cold and Ice Lance during Fingers of Frost windows.",
    },
   },
  },
  ROGUE={
   Assassination={
-   primary={"Instant Poison", "Slice and Dice", "Mutilate", "Eviscerate", "Blade Flurry", "Kick", false},
+   primary={"Instant Poison", "Slice and Dice", "Mutilate", "Eviscerate", "Shank", "Cold Blood", "Kick"},
    source="https://www.wowhead.com/forever/guide/classes/rogue/assassination/rotation-cooldowns-pve-dps",
-   reviewed="Wowhead Oct 30, 2026; level and talents conditional",
+   reviewed="Wowhead Forever / Shank and poison talents",
    rules={
     "1. Before the fight, apply Instant Poison to main hand and Deadly Poison to off hand when available.",
     "2. Maintain Slice and Dice; this takes priority over damage finishers.",
     "3. Build combo points with Mutilate when talented and usable.",
     "4. Spend surplus combo points on Eviscerate only if Slice and Dice will not fall off.",
-    "5. Use Blade Flurry for cleave or planned burst; Cold Blood and Thistle Tea can be aligned when available.",
-    "6. Use Kick to stop dangerous spells even if doing so delays damage.",
-    "7. The Oct 30 guide says Venom is not worth pressing in its evaluated build; revisit after tuning.",
+    "5. Use Shank when ready with room to gain Energy. If you have Venom, Shank also boosts your poison pressure.",
+    "6. If talented, pair Cold Blood with a high-combo-point Eviscerate.",
+    "7. Save energy for Kick when assigned a dangerous cast.",
    },
   },
   Subtlety={
@@ -596,14 +607,14 @@ ForeverCompanionSourcedPriorities={
    },
   },
   Combat={
-   primary={false, "Sinister Strike", "Slice and Dice", "Adrenaline Rush", "Kick"},
+   primary={false, "Slice and Dice", "Shank", "Adrenaline Rush", "Kick"},
    source="https://www.wowhead.com/forever/guide/classes/rogue/combat/rotation-cooldowns-pve-dps",
-   reviewed="Wowhead Oct 30, 2026 / beta patch 1.60.1",
+   reviewed="Wowhead Forever / Blizzard Nov 20 Shank hotfix",
    rules={
     "1. Apply the appropriate poisons to both weapons before the pull.",
-    "2. Build combo points with Sinister Strike, or Backstab if your weapon, build and position allow it.",
-    "3. Keep Slice and Dice active. Use Eviscerate only if you can refresh Slice and Dice before it falls off.",
-    "4. Pair Adrenaline Rush with Blade Flurry during sustained uptime or a planned cleave window.",
+    "2. Maintain Slice and Dice. Build with Sinister Strike, or Backstab with a suitable dagger build and position.",
+    "3. Use Shank for Energy before you cap, then spend spare combo points on Eviscerate without dropping Slice and Dice.",
+    "4. Pair Adrenaline Rush with Blade Flurry during sustained uptime or a planned cleave window. Shank now cleaves with Blade Flurry.",
     "5. Save enough Energy for Kick when assigned an important interrupt.",
    },
   },
@@ -611,7 +622,7 @@ ForeverCompanionSourcedPriorities={
  HUNTER={
   Survival={
    primary={"Hunter's Mark", "Auto Shot", "Raptor Strike", "Mongoose Bite", "Strider Kick", "Immolation Trap", "Multi-Shot", "Rapid Fire", false},
-   source="https://www.wowhead.com/forever/guide/classes/hunter/survival/rotation-cooldowns-pve",
+   source="https://www.wowhead.com/forever/guide/classes/hunter/survival/rotation-cooldowns-pve-dps",
    corroboration="https://www.icy-veins.com/wow-forever/survival-hunter-melee-dps-pve-guide/",
    reviewed="Wowhead Oct 30; Icy Veins level-30 beta, 2026",
    rules={
@@ -781,7 +792,7 @@ function ForeverCompanionVisiblePriority(class,mode,level,role,fallback)
  end
  if entry and (mode=="boss" or mode=="dungeon") then
   local source=entry.source:find("icy%-veins") and "Icy Veins" or "Wowhead"
-  return entry.rules,title,hint,source.." · Forever",entry.primary,summary
+  return entry.rules,title,hint,source.." · Forever",entry.primary,{keepOrder=true}
  end
  local playbook=ForeverCompanionSpecPlaybooks[class]
  return playbook and playbook[name] or fallback,title,hint,nil,nil,summary

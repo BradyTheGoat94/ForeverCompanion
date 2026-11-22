@@ -25,7 +25,8 @@ function P.Format(role)
  local items=P.roles[role] or P.roles.Damage
  local lines={"DUNGEON READY CHECK - "..tostring(role or "Damage")}
  for i,item in ipairs(items) do lines[#lines+1]=i..". "..item end
- lines[#lines+1]="Encounter mechanics, drops and routes are not verified Forever-specific data."
+ lines[#lines+1]="Check the encounter guide for boss-specific instructions. Unverified details may be incomplete."
+ lines[#lines+1]="For repeat runs, Blizzard lists a limit of five resets and entries per dungeon per hour (Nov 20 hotfix)."
  return table.concat(lines,"\n")
 end
 
