@@ -88,7 +88,7 @@ function D.Refresh(map,canvas,mapID,enabled)
    texture:SetPoint('TOPLEFT',layer,'TOPLEFT',tile.left*width,-tile.top*height)
    texture:SetPoint('BOTTOMRIGHT',layer,'TOPLEFT',tile.right*width,-tile.bottom*height)
    texture:SetTexCoord(tile.u1,tile.u2,tile.v1,tile.v2)
-   if texture:SetTexture(tile.file)~=false then texture:Show() end
+   if texture:SetTexture(tile.file,nil,nil,"TRILINEAR")~=false then texture:Show() end
   end
  end
  if projection.tiles and #projection.tiles>0 then

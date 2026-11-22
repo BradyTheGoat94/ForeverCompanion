@@ -201,6 +201,7 @@ local function hidePins()
  if ForeverCompanionZoneBriefing then ForeverCompanionZoneBriefing.Hide() end
  if ForeverCompanionDungeonBriefing then ForeverCompanionDungeonBriefing.Hide() end
  if ForeverCompanionWorldMapDetail then ForeverCompanionWorldMapDetail.Hide() end
+ if ForeverCompanionMapReveal then ForeverCompanionMapReveal.Hide() end
  if bearingLayer then bearingLayer:Hide() end
  for _,label in ipairs(zoneLevelLabels) do label:Hide() end
  for _,pin in ipairs(dungeonPins) do pin:Hide() end
@@ -675,7 +676,15 @@ end
 
 function M.OpenAppearance(anchor)
  ForeverCompanionDB=ForeverCompanionDB or {}
- local db=ForeverCompanionDB;local entries={}
+ local db=ForeverCompanionDB;local entries={
+  {label="Reveal unexplored terrain",selected=db.mapRevealTerrain~=false,action=function()
+   db.mapRevealTerrain=db.mapRevealTerrain==false;M.Refresh()
+  end},
+  {label="Close-up terrain detail",selected=db.mapCloseupTerrain==true or (db.mapCloseupTerrain==nil and (mapStyle()=="atlas" or mapStyle()=="diorama")),action=function()
+   local active=db.mapCloseupTerrain==true or (db.mapCloseupTerrain==nil and (mapStyle()=="atlas" or mapStyle()=="diorama"))
+   db.mapCloseupTerrain=not active;M.Refresh()
+  end},
+ }
  for _,preset in ipairs({{'Small service icons',20},{'Standard service icons',24},{'Large service icons',28}}) do
   local name,size=preset[1],preset[2]
   entries[#entries+1]={label=name,selected=serviceIconSize(db)==serviceIconSizes[size],action=function() db.mapServiceIconSize=size;M.Refresh() end}
@@ -1035,9 +1044,14 @@ function M.Refresh()
  townButton:SetText(townsEnabled() and ((ForeverCompanionDB or {}).mapVendorsOnly and "Vendors & repairs" or "Services: On") or "Services: Off")
  pickupButton:SetText(ForeverCompanionDB and ForeverCompanionDB.questMapHidePickups and "Pickups: Off" or "Pickups: On")
  local diorama=style=="diorama"
+ local mapPrefs=ForeverCompanionDB or {}
+ if ForeverCompanionMapReveal then
+  ForeverCompanionMapReveal.Refresh(canvas,mapID,mapPrefs.mapRevealTerrain~=false and not openMap)
+ end
  if (style=="atlas" or diorama) and not openMap then showTerrain(canvas,diorama) end
  if ForeverCompanionWorldMapDetail then
-  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,(style=="atlas" or diorama) and not openMap)
+  local closeup=mapPrefs.mapCloseupTerrain==true or (mapPrefs.mapCloseupTerrain==nil and (style=="atlas" or diorama))
+  ForeverCompanionWorldMapDetail.Refresh(worldMap,canvas,mapID,closeup and not openMap)
  end
  local info=readPublic(C_Map and C_Map.GetMapInfo,mapID)
  local knownMap=type(info)=='table'
@@ -1200,9 +1214,14 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 pcall(events.RegisterEvent,events,"QUEST_POI_UPDATE")
 pcall(events.RegisterEvent,events,"PLAYER_LEVEL_UP")
 pcall(events.RegisterEvent,events,"QUEST_TURNED_IN")
+pcall(events.RegisterEvent,events,"MAP_EXPLORATION_UPDATED")
 events:SetScript("OnEvent",function(_,event,name)
  if event=="ADDON_LOADED" and name=="OpenMap" then attachOpenMap();return end
  if event=="ADDON_LOADED" and name~="Blizzard_WorldMap" and name~="ForeverCompanion" then return end
  attachOpenMap()
+ if event=="MAP_EXPLORATION_UPDATED" then
+  if ForeverCompanionMapReveal then ForeverCompanionMapReveal.Invalidate() end
+  M.Refresh();return
+ end
  if event=="QUEST_POI_UPDATE" or event=="PLAYER_LEVEL_UP" or event=="QUEST_TURNED_IN" then M.Refresh() else attach() end
 end)
