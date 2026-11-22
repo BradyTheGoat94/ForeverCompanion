@@ -93,25 +93,84 @@ function J.Recommend(quests,targetReader,map,x,y,pin)
  table.sort(candidates,function(a,b) if a.rank~=b.rank then return a.rank>b.rank end;if a.distance and b.distance and a.distance~=b.distance then return a.distance<b.distance end;return a.index<b.index end)
  return candidates[1],candidates
 end
-local panel,body,heading,selected,status
-function J.Show(q)
- local fresh=J.Resolve(q);if not fresh then return false end;selected={id=fresh.id,title=fresh.title}
- if not panel then
-  local U=ForeverCompanionInterface
-  panel=CreateFrame('Frame','ForeverCompanionQuestIntelligence',UIParent,'BackdropTemplate');panel:SetSize(650,480);panel:SetPoint('CENTER');panel:SetFrameStrata('DIALOG');panel:SetMovable(true);panel:EnableMouse(true);panel:RegisterForDrag('LeftButton');panel:SetScript('OnDragStart',function(self) self:StartMoving() end);panel:SetScript('OnDragStop',function(self) self:StopMovingOrSizing() end);panel:SetClampedToScreen(true);U.Surface(panel);U.PreparePanel(panel,'ForeverCompanionQuestIntelligence',650,480);U.CloseButton(panel,function() panel:Hide() end)
-  heading=U.Text(panel,16);heading:SetPoint('TOPLEFT',16,-18);heading:SetWidth(585)
-  body=U.Text(panel,12);body:SetPoint('TOPLEFT',16,-54);body:SetSize(618,340);body:SetWordWrap(true)
-  status=U.Text(panel,11);status:SetPoint('BOTTOMLEFT',16,48);status:SetWidth(618)
-  local function button(x,w,label,action) local b=U.Button(panel);b:SetPoint('BOTTOMLEFT',x,12);b:SetSize(w,26);b:SetText(label);b:SetScript('OnClick',function() local live=J.Resolve(selected);if not live then status:SetText('Quest changed or scan unavailable. Reopen this report.');return end;action(live) end) end
-  button(16,140,'Focus quest',function(live) local _,msg=J.Focus(live);status:SetText(msg);if ForeverCompanionQuestTracker then ForeverCompanionQuestTracker.Refresh() end end)
-  button(166,140,'Next objective',function(live) status:SetText(ForeverCompanionObjectiveRoute.NavigateNext(live)) end)
-  button(316,140,'Quest details',function(live) ForeverCompanionOpenQuestGuide(live.id);panel:Hide() end)
-  button(466,168,'Reward equipment',function(live) if ForeverCompanionQuestRewards then ForeverCompanionQuestRewards.Open(live) end end)
+local panel,heading,selected,status,nextStep,metrics,activity,empty
+local function create()
+ local U=ForeverCompanionInterface
+ local name='ForeverCompanionQuestIntelligence'
+ panel=CreateFrame('Frame',name,UIParent,'BackdropTemplate')
+ panel:SetSize(680,444);panel:SetPoint('CENTER');panel:SetFrameStrata('DIALOG')
+ U.Surface(panel);U.PreparePanel(panel,name,680,444);U.CloseButton(panel,function() panel:Hide() end)
+ local function text(parent,x,y,w,size)
+  local label=U.Text(parent,size);label:SetPoint('TOPLEFT',x,y);label:SetWidth(w);return label
  end
- local details=ForeverCompanionQuestLocations.Details(fresh);local targets=ForeverCompanionQuestWaypoints.Targets(fresh)
- local c=J.Coverage(fresh,targets,details)
- local lines={'NEXT STEP',ForeverCompanionLevelingPlan.NextStep(fresh),'','LOCATION COVERAGE / references are not live verification',c.matched..' matched · '..c.review..' need an area choice · '..c.missing..' missing / '..c.unfinished..' unfinished steps',c.pickups..' pickup references · '..c.turnins..' turn-in references','',details.source or 'No matching quest database reference. In-game quest instructions take priority.','Prerequisites: '..(#(details.prerequisites or {})>0 and 'Review conditions in Quest details' or 'Not documented; this does not prove none apply'),'','RECENT QUEST ACTIVITY'}
- for i=1,math.min(4,#J.history) do local e=J.history[i];lines[#lines+1]=e.event..' · '..e.title end
- if #J.history==0 then lines[#lines+1]='Activity will appear after successful quest updates.' end
- heading:SetText('QUEST INTELLIGENCE · '..fresh.title);body:SetText(table.concat(lines,'\n'));status:SetText('Choose directions deliberately. No route is started automatically.');panel:Show();return true
+ heading=text(panel,16,-12,610,18);heading:SetHeight(40);heading:SetWordWrap(true);heading:SetJustifyV('TOP')
+ local card=CreateFrame('Frame',nil,panel);card:SetPoint('TOPLEFT',16,-57);card:SetSize(648,68);U.Surface(card)
+ local label=text(card,12,-8,610,11);label:SetText('Next step');label:SetTextColor(unpack(U.palette.muted))
+ nextStep=text(card,12,-27,624,15);nextStep:SetHeight(38);nextStep:SetWordWrap(true);nextStep:SetJustifyV('TOP')
+ card:EnableMouse(true);U.SetHoverHelp(card,'Next step',function() return nextStep:GetText() end)
+ metrics={
+  U.MetricTile(panel,16,-136,208,'Matched areas','Unfinished steps with a matched location.'),
+  U.MetricTile(panel,236,-136,208,'Choose an area','Unfinished steps that need a location choice.'),
+  U.MetricTile(panel,456,-136,208,'Missing location','Unfinished steps without a matched location.'),
+ }
+ text(panel,16,-213,460,13):SetText('Recent quest activity')
+ activity={}
+ for i=1,4 do
+  local row=CreateFrame('Frame',nil,panel);row:SetPoint('TOPLEFT',16,-236-(i-1)*27);row:SetSize(648,24)
+  U.Surface(row,{background=U.palette.surface,flat=true})
+  row.quest=text(row,9,-3,430,12)
+  row.event=text(row,447,-3,191,11);row.event:SetJustifyH('RIGHT');row.event:SetTextColor(unpack(U.palette.accent))
+  row:EnableMouse(true);U.SetHoverHelp(row,'Quest update',function() return row.quest:GetText()..'\n'..row.event:GetText() end)
+  activity[i]=row
+ end
+ empty=text(panel,17,-243,644,12);empty:SetText('No quest updates recorded')
+ status=text(panel,16,-353,648,11);status:SetHeight(35);status:SetWordWrap(true)
+ local function button(x,y,w,label,help,action)
+  local b=U.Button(panel);b:SetPoint('TOPLEFT',x,y);b:SetSize(w,25);b:SetText(label)
+  U.SetHoverHelp(b,label,help)
+  b:SetScript('OnClick',function()
+   local live=J.Resolve(selected)
+   if not live then status:SetText('Quest changed or scan unavailable. Reopen this view.');return end
+   action(live)
+  end)
+ end
+ button(529,-207,135,'Location sources','Review coverage, prerequisites and reference data for this quest.',function(live)
+  local details=ForeverCompanionQuestLocations.Details(live)
+  local c=J.Coverage(live,ForeverCompanionQuestWaypoints.Targets(live),details)
+  ForeverCompanionReferenceWorkspace.Open(live.title,{
+   {title='Map coverage',body=c.matched..' matched, '..c.review..' need an area choice, '..c.missing..' missing / '..c.unfinished..' unfinished steps\n\n'..c.pickups..' pickup references / '..c.turnins..' turn-in references'},
+   {title='Location sources',body=details.source or 'No matching quest database reference. In-game quest instructions take priority.'},
+   {title='Prerequisites',body=#(details.prerequisites or {})>0 and 'Review conditions in Quest details.' or 'Prerequisites are undocumented. Confirm with the giver.'},
+  })
+ end)
+ button(16,-403,148,'Focus quest','Select this quest in your journal and tracker.',function(live)
+  local _,msg=J.Focus(live);status:SetText(msg)
+  if ForeverCompanionQuestTracker then ForeverCompanionQuestTracker.Refresh() end
+ end)
+ button(179,-403,148,'Next objective','Start directions for the next objective with a usable location.',function(live)
+  status:SetText(ForeverCompanionObjectiveRoute.NavigateNext(live))
+ end)
+ button(342,-403,148,'Quest details','Open the quest in the main journal.',function(live)
+  ForeverCompanionOpenQuestGuide(live.id);panel:Hide()
+ end)
+ button(505,-403,159,'Reward equipment','Compare equipment offered by this quest.',function(live)
+  if ForeverCompanionQuestRewards then ForeverCompanionQuestRewards.Open(live) end
+ end)
+end
+function J.Show(q)
+ local fresh=J.Resolve(q)
+ if not fresh then return false end
+ selected={id=fresh.id,title=fresh.title}
+ if not panel then create() end
+ local details=ForeverCompanionQuestLocations.Details(fresh)
+ local c=J.Coverage(fresh,ForeverCompanionQuestWaypoints.Targets(fresh),details)
+ heading:SetText(fresh.title)
+ nextStep:SetText(ForeverCompanionLevelingPlan.NextStep(fresh))
+ metrics[1].value:SetText(c.matched);metrics[2].value:SetText(c.review);metrics[3].value:SetText(c.missing)
+ for i,row in ipairs(activity) do
+  local entry=J.history[i];row:SetShown(entry~=nil)
+  if entry then row.quest:SetText(entry.title);row.event:SetText(entry.event) end
+ end
+ empty:SetShown(#J.history==0)
+ status:SetText('');panel:Show();return true
 end

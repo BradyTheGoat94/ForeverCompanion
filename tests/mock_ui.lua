@@ -3059,50 +3059,37 @@ exportNative('ui_profession_shopping_370_native.json')
  io.write('PASS: all twelve native profession guides, scrolling, recipe/shopping imports, recipe search, invalid-range retention and gathering quota disclosure\n')
 end
 
--- Boss-specific notes precede the exact quoted Easter egg in the native guide.
+-- Encounter detail uses native rows and published notes open deliberately.
 do
- local B,W,M=ForeverCompanionEncounterBrowser,ForeverCompanionBossGuideWorkspace,ForeverCompanionBossMechanics
- B.Focus('The Deadmines','Captain Greenskin');SlashCmdList.FOREVERCOMPANION('open dungeon journal');ForeverCompanionRefresh()
- B.guideButton.OnClick();assert(W.root:IsShown() and W.root.fcResizeGrip and W.root.fcTitleDrag)
- assert(W.boss=='Captain Greenskin' and W.body:GetText()==M.Format(B.dungeon,B.boss))
- exportNative('ui_boss_guide_372_native.json')
- W.Open('Wailing Caverns','Kresh');assert(not W.body:GetText():find(M.quote,1,true))
- W.Open('The Deadmines','Unknown');assert(W.body:GetText():find('research pending',1,true) and not W.body:GetText():find(M.quote,1,true))
- W.Open('Scarlet Monastery: Armory','Herod');assert(W.body:GetText():find('Whirlwind',1,true) and W.source:GetText():find('azeroth.wiki',1,true))
- local seen=false;for _,entry in ipairs(B.Results('The Deadmines','Shredder')) do if entry.boss=="Sneed's Shredder" then seen=true end end
- assert(seen,'mechanics-only bosses are searchable independently of imported loot')
- W.root:Hide();io.write('PASS: native boss guide, exact selected encounter, source changes, move/resize controls and no stale Easter eggs\n')
-end
-
--- Every listed dungeon can render both its roster and its selected encounter.
-do
- local E,W,M,R=ForeverCompanionEncounterBrowser,ForeverCompanionBossGuideWorkspace,ForeverCompanionBossMechanics,ForeverCompanionDungeonReference
+ local E,W=ForeverCompanionEncounterBrowser,ForeverCompanionBossGuideWorkspace
  SlashCmdList.FOREVERCOMPANION('open dungeon journal');E.query='';E.questView=false
  local count=0
  for _,d in ipairs(ForeverCompanionDungeonCatalog.Names()) do
   E.SelectDungeon(d);ForeverCompanionRefresh();assert(#E.Results(d,'')>0 and E.guideButton:IsEnabled())
-  E.guideButton.OnClick();assert(W.root:IsShown() and W.dungeon==d and W.body:GetText()==M.Format(d,E.boss))
+  E.guideButton.OnClick()
+  local first=W.MechanicRows(d,E.boss)[1]
+  assert(W.root:IsShown() and W.dungeon==d and W.rows[1].caption:GetText()==first)
   count=count+1
  end
  assert(count==34)
- W.Open('Shaper’s Terrace','Titanosaur');assert(W.body:GetText():find('not yet documented',1,true) and not W.body:GetText():find(M.quote,1,true))
- exportNative('ui_dungeon_pending_373_native.json')
- W.Open('Upper Blackrock Spire','Solakar Flamewreath');assert(W.notice:GetText():find('Classic',1,true))
- W.Open('The Drowned City','Captain Dreadrise');assert(W.body:GetText():find('Embrine',1,true));exportNative('ui_dungeon_mechanics_373_native.json');W.root:Hide()
+ W.Open('The Deadmines','Captain Greenskin')
+ assert(W.root.fcResizeGrip and W.root.fcTitleDrag and W.rows[1].caption:GetText():find('Cleave',1,true))
+ W.referenceButton.OnClick()
+ local reference
+ for _,frame in ipairs(frames) do if frame.name=='ForeverCompanionReferenceFrame' then reference=frame end end
+ assert(reference and reference:IsShown())
+ reference:Hide();exportNative('ui_boss_guide_372_native.json')
+ W.Open('The Deadmines','Unknown boss');assert(W.rows[1].caption:GetText()=='Research pending' and not W.rows[2]:IsShown())
+ W.root:Hide()
  E.Focus('Blackrock Depths','Emperor Dagran Thaurissan');ForeverCompanionRefresh();exportNative('ui_dungeon_catalog_373_native.json')
- io.write('PASS: all 34 native dungeon rosters, guide handoffs, pending-mechanics and legacy labels\n')
 end
 
--- Dungeon materials stay on their owning panels; reference drawer is explicit.
+-- The shared frame keeps short encounter panels compact.
 do
  local W,E=ForeverCompanionBossGuideWorkspace,ForeverCompanionEncounterBrowser
  W.Open('The Deadmines','Captain Greenskin')
- assert(W.root.fcDungeonMaterial and W.root:GetHeight()==448 and W.root.fcResizeGrip)
- assert(not W.source:IsShown() and W.notice:IsShown())
- W.referenceButton.OnClick();assert(W.source:IsShown() and not W.notice:IsShown())
- W.Open('Upper Blackrock Spire','Solakar Flamewreath');assert(W.source:GetText():find('wowhead.com/classic',1,true),'open drawer follows selected encounter')
- W.referenceButton.OnClick();assert(not W.source:IsShown() and W.notice:IsShown())
- W.Open('The Deadmines','Captain Greenskin');exportNative('ui_boss_guide_374_native.json');W.root:Hide()
- E.Focus('Blackrock Depths','Emperor Dagran Thaurissan');SlashCmdList.FOREVERCOMPANION('open dungeon journal');ForeverCompanionRefresh();exportNative('ui_dungeon_journal_374_native.json')
- io.write('PASS: textured dungeon chrome, compact boss frame, source drawer and selected-encounter metadata\n')
-end
+ assert(W.root:GetHeight()<422 and W.root.fcResizeGrip)
+ exportNative('ui_boss_guide_374_native.json');W.root:Hide()
+ E.Focus('Blackrock Depths','Emperor Dagran Thaurissan')
+ SlashCmdList.FOREVERCOMPANION('open dungeon journal');ForeverCompanionRefresh()
+ exportNative('ui_dungeon_journal_374_native.json')

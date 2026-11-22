@@ -7,7 +7,7 @@ local detailState,statRows,statHeader,weightLabels,weightSaveButtons
 statRows={};weightLabels={};weightSaveButtons={}
 local root,summary,counter,search,scrollBar,listArea,revealButton,dungeonButton,readyButton,armorButton,upgradeButton,profileButton,notice,empty
 local rows,slots,tabs,weightBoxes={},{},{},{}
-local detail,detailTitle,detailMeta,detailScore,equippedText,sourceText,statText,saveButton,trackButton,bossButton,sourceButton,statButton,weightPanel,weightName
+local detail,detailTitle,detailMeta,detailScore,sourceText,statText,saveButton,trackButton,bossButton,sourceButton,statButton,weightPanel,weightName
 local sourceIndex=1
 local worker,currentForAction
 local cachedKey,cachedResults,cachedStats,cachedScope
@@ -71,8 +71,9 @@ local function renderDetail(row)
  detailMeta:SetText(row.slot[1]..' · slot '..row.slot[2]..' · Item #'..row.record.itemID..'\n'..(info and ((info.subkind or 'Type unknown')..' · Level '..tostring(info.required or '?')..' · Use: '..(row.usable==true and 'yes' or row.usable==false and 'no' or 'unchecked')) or 'Waiting for client item data'))
  detailScore:SetText(row.reason)
  detailScore:SetTextColor(unpack(V.Palette(kind).accent))
- equippedText:SetText('EQUIPPED IN THIS SLOT\n'..(row.baseline and row.baseline.name or 'Empty / data unavailable')..'\n'..(row.baseline and row.baseline.score and ('Score '..G.Points(row.baseline.score)) or 'Score unavailable')..(info and info.score and ('   →   Candidate '..G.Points(info.score)) or ''))
- sourceText:SetText('Where to get it · '..s.dungeon..'\n'..s.boss..'\n'..s.status..'\n'..(row.owned==nil and 'Inventory scan unavailable' or row.owned>0 and 'Currently owned: '..row.owned or row.completed and 'Previously acquired (observed)' or 'Not observed in carried inventory'))
+ detail.worn.value:SetText(row.baseline and row.baseline.score and G.Points(row.baseline.score) or '-')
+ detail.candidate.value:SetText(info and info.score and G.Points(info.score) or '-')
+ sourceText:SetText(s.dungeon..'\n'..s.boss..'\n'..(row.owned==nil and 'Inventory unknown' or row.owned>0 and ('Owned: '..row.owned) or row.completed and 'Previously acquired' or 'Not in carried inventory'))
  local breakdown=G.Breakdown(row);local pages=math.max(1,math.ceil(#breakdown/7));W.statPage=math.min(W.statPage,pages)
  for i,fields in ipairs(statRows) do
   local stat=breakdown[(W.statPage-1)*7+i]
@@ -212,6 +213,7 @@ function W.ApplyScale()
  root:SetScale(math.min((G.Settings().largeWindow and 1 or .84)*U.SizePreference(root),fit))
 end
 function W.Open(itemID)
+ local U=ForeverCompanionInterface
  if not root then
   root=CreateFrame('Frame','ForeverCompanionGearFinderPanel',UIParent);W.root=root;root:SetSize(1080,760);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');V.Window(root,1080,760,'discover')
   V.Rectangle(root,12,112,196,640,{.040,.065,.115,1})
@@ -309,12 +311,24 @@ function W.Open(itemID)
    return '#'..r.rank..' of '..r.rankCount..' scored candidates in the filtered '..r.slot[1]..' list. Score '..G.Points(r.rankScore)..' uses profile '..G.Settings().profile..'. Higher weighted stat scores rank first; equal scores share a rank. Other slots have their own ranks. A #1 stat rank is not a universal BiS or DPS claim; inspect procs and set bonuses separately.'
   end)
   detailState=text(detail,16,-103,360,10,'')
-  detailScore=text(detail,16,-119,360,11,'',18);equippedText=text(detail,12,-148,376,11,'',55)
+  detailScore=text(detail,16,-119,360,11,'',18)
+  detail.worn=U.MetricTile(detail,12,-141,181,'Worn item')
+  detail.candidate=U.MetricTile(detail,207,-141,181,'Candidate score','The item score for the selected weights. Review procs and other effects on the item tooltip.')
   V.Rectangle(detail,12,202,376,1,V.colors.border,'BORDER')
-  local equippedHover=CreateFrame('Frame',nil,detail);equippedHover:SetSize(376,55);equippedHover:SetPoint('TOPLEFT',12,-148);equippedHover:EnableMouse(true)
-  equippedHover:SetScript('OnEnter',function(self) if GameTooltip and W.current and W.current.baseline and W.current.baseline.link then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');pcall(GameTooltip.SetHyperlink,GameTooltip,W.current.baseline.link);GameTooltip:Show() end end)
+  local equippedHover=CreateFrame('Frame',nil,detail);equippedHover:SetSize(376,55);equippedHover:SetPoint('TOPLEFT',12,-141);equippedHover:EnableMouse(true)
+  equippedHover:SetSize(181,55)
+  equippedHover:SetScript('OnEnter',function(self)
+   if not GameTooltip or not W.current then return end
+   local baseline=W.current.baseline
+   GameTooltip:SetOwner(self,'ANCHOR_RIGHT')
+   if baseline and baseline.link and type(GameTooltip.SetHyperlink)=='function' then pcall(GameTooltip.SetHyperlink,GameTooltip,baseline.link)
+   else GameTooltip:SetText(baseline and baseline.name or 'Worn item unavailable') end
+   GameTooltip:Show()
+  end)
   equippedHover:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   sourceText=text(detail,12,-211,376,11,'',66)
+  local sourceHover=CreateFrame('Frame',nil,detail);sourceHover:SetPoint('TOPLEFT',12,-211);sourceHover:SetSize(376,62)
+  hover(sourceHover,'Source details',function() return W.current and source(W.current).status or 'No source selected' end)
   sourceButton=button(detail,12,-281,140,'Source',function() local current=currentForAction();if current then sourceIndex=sourceIndex%#current.sources+1;local chosen=current.sources[sourceIndex];sourceChoice={itemID=current.record.itemID,dungeon=chosen.dungeon,boss=chosen.boss};renderDetail(current) end end,24)
   bossButton=button(detail,164,-281,224,'View source boss',handoff,24)
   statHeader=text(detail,12,-317,130,10,'STAT');statHeader:SetTextColor(unpack(V.colors.violet))

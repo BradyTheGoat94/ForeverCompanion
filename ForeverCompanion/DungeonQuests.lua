@@ -4,11 +4,12 @@
 local D={page=1}
 ForeverCompanionDungeonQuests=D
 local database,index,loading,generation=nil,{},false,0
-local panel,heading,summary,rows,back,nextPage,counter,body,scroll,detailBack,pickup,guide,rescan
+local panel,heading,summary,rows,back,nextPage,counter,scroll,detailBack,pickup,guide,rescan
 local selectedID,dungeon
 local searchBox,filterButton,planButton
 local query,filter="","all"
 local displayedDetailID
+local detailRows,detailStatus,detailSources,selectedDetail={},nil,nil,nil
 local function read(fn,...)
  if type(fn)~='function' then return end
  local ok,a=pcall(fn,...);if ok then return a end
@@ -158,6 +159,55 @@ local function button(parent,x,y,w,label,action)
  local b=ForeverCompanionInterface.Button(parent);b:SetSize(w,24);b:SetPoint('TOPLEFT',x,y);b:SetText(label);b:SetScript('OnClick',action);return b
 end
 local function render() if ForeverCompanionRefresh then ForeverCompanionRefresh() end end
+function D.DetailRows(entry,liveSupported,details)
+ local result={}
+ if finite(entry.minimum) then result[#result+1]={label='Required level',value=tostring(entry.minimum)} end
+ if entry.faction then result[#result+1]={label='Faction',value=entry.faction} end
+ if entry.source then
+  local start=entry.start or {}
+  result[#result+1]={label=start[1] and table.concat(start,' / ') or 'Pickup undocumented',value='Pickup reference'}
+  if #(entry.prerequisites or {})>0 then
+   result[#result+1]={label=table.concat(entry.prerequisites,', '),value='Prerequisites'}
+  end
+ else
+  local objectives=entry.live and entry.live.objectives or details and details.objectives
+  for i,line in ipairs(type(objectives)=='table' and objectives or {}) do
+   local states=entry.live and entry.live.objectiveStates
+   local state=type(states)=='table' and states[i]
+   local progress=not entry.live and 'Reference' or not liveSupported and 'Cached' or
+    type(state)=='table' and state.known==true and (state.done and 'Done' or 'Remaining') or 'Unknown'
+   result[#result+1]={label=tostring(line),value=progress}
+  end
+  if type(objectives)~='table' or #objectives==0 then result[#result+1]={label='Check objectives in the quest log.',value='Unreported'} end
+ end
+ return result
+end
+
+local function renderDetails(entry,liveSupported,details)
+ local U=ForeverCompanionInterface
+ local records=D.DetailRows(entry,liveSupported,details)
+ local height=0
+ for i,data in ipairs(records) do
+  local row=detailRows[i]
+  if not row then
+   row=CreateFrame('Frame',nil,scroll.child);U.Surface(row,{background=U.palette.surface,flat=true})
+   row.label=text(row,9,-7,365,12);row.label:SetWordWrap(true);row.label:SetJustifyV('TOP')
+   row.value=text(row,381,-7,99,11);row.value:SetJustifyH('RIGHT')
+   row:EnableMouse(true);U.SetHoverHelp(row,'Quest detail',function() return row.label:GetText()..'\n'..row.value:GetText() end)
+   detailRows[i]=row
+  end
+  row.label:SetText(data.label);row.value:SetText(data.value)
+  local h=math.max(18,row.label:GetStringHeight()+2)
+  row.label:SetHeight(h);row:SetSize(488,h+13);row:ClearAllPoints();row:SetPoint('TOPLEFT',0,-height)
+  row:Show();height=height+h+18
+ end
+ for i=#records+1,#detailRows do detailRows[i]:Hide() end
+ scroll.child:SetHeight(math.max(scroll:GetHeight(),height))
+ local maximum=math.max(0,height-scroll:GetHeight())
+ scroll:SetVerticalScroll(displayedDetailID==entry.id and math.min(scroll:GetVerticalScroll(),maximum) or 0)
+ displayedDetailID=entry.id
+end
+
 function D.Create(parent)
  local U=ForeverCompanionInterface
  panel=CreateFrame('Frame','ForeverCompanionDungeonQuestsPanel',parent,'BackdropTemplate');panel:SetPoint('TOPLEFT',214,-72);panel:SetSize(544,302);ForeverCompanionDungeonChrome.Skin(panel,544,302,32)
@@ -178,6 +228,7 @@ function D.Create(parent)
   local row=CreateFrame('Button',nil,panel);row:SetPoint('TOPLEFT',12,-80-(i-1)*43);row:SetSize(520,39);row.bg=U.Surface(row)
   row.title=text(row,8,-4,504,12);row.state=text(row,8,-22,504,10)
   row:SetScript('OnClick',function() if row.entry then selectedID=row.entry.id;D.Render(dungeon) end end)
+  U.SetHoverHelp(row,'Dungeon quest',function() return row.title:GetText()..'\n'..row.state:GetText() end)
   rows[i]=row
  end
  summary=text(panel,12,-253,520,11);summary:SetWordWrap(true);summary:SetHeight(17)
@@ -185,6 +236,16 @@ function D.Create(parent)
  nextPage=button(panel,442,-273,90,'Next',function() D.page=D.page+1;D.Render(dungeon) end)
  counter=text(panel,114,-278,310,11);counter:SetJustifyH('CENTER')
  detailBack=button(panel,12,-80,96,'Back to quests',function() selectedID=nil;D.Render(dungeon) end)
+ detailStatus=text(panel,12,-44,365,12)
+ detailStatus:SetTextColor(unpack(U.palette.accent))
+ detailSources=button(panel,400,-40,132,'Quest sources',function()
+  local entry=selectedDetail
+  if not entry then return end
+  local detail=entry.source or ForeverCompanionQuestLocations.DetailText(entry.live or entry)
+  ForeverCompanionReferenceWorkspace.Open(entry.title,{{title='Quest sources',body=detail},
+   {title='Quest status',body=entry.state}})
+ end)
+ U.SetHoverHelp(detailSources,'Quest sources','Show the source and coverage notes for this quest.')
  pickup=button(panel,118,-80,172,'Givers / turn-in',function(self)
   local entries=D.Entries(dungeon,read(ForeverCompanionQuestPlanner.GetLive) or {})
   local selected;for _,entry in ipairs(entries) do if entry.id==selectedID then selected=entry end end
@@ -211,7 +272,6 @@ function D.Create(parent)
  end)
  scroll=CreateFrame('ScrollFrame',nil,panel,'UIPanelScrollFrameTemplate');scroll:SetPoint('TOPLEFT',12,-115);scroll:SetSize(498,133);scroll:SetClipsChildren(true)
  local child=CreateFrame('Frame',nil,scroll);child:SetSize(498,200);scroll:SetScrollChild(child);scroll.child=child
- body=text(child,0,0,488,12);body:SetWordWrap(true)
  scroll:EnableMouseWheel(true);scroll:SetScript('OnMouseWheel',function(self,delta)
   local maximum=math.max(0,child:GetHeight()-self:GetHeight());self:SetVerticalScroll(math.max(0,math.min(maximum,self:GetVerticalScroll()-delta*36)))
  end)
@@ -235,43 +295,25 @@ function D.Render(name)
  back:SetEnabled(D.page>1);nextPage:SetEnabled(D.page<pages);counter:SetText(#entries..' / '..#allEntries..' matching quests · '..D.page..' / '..pages)
  planButton:SetShown(selected~=nil);
  detailBack:SetShown(selected~=nil);pickup:SetShown(selected~=nil);guide:SetShown(selected~=nil);scroll:SetShown(selected~=nil)
- if selected and selected.source then
-  heading:SetText('QUEST PICKUP')
-  planButton:Hide();pickup:Hide();guide:Hide()
-  local lines={selected.title,selected.state}
-  if selected.minimum then lines[#lines+1]='Minimum level: '..selected.minimum end
-  lines[#lines+1]='Faction: '..(selected.faction or 'Not established')
-  local start=selected.start
-  lines[#lines+1]='Starts at: '..(start[1] and table.concat(start,' · ') or 'Pickup not documented')
-  if #selected.prerequisites>0 then lines[#lines+1]='Prerequisite references: '..table.concat(selected.prerequisites,', ') end
-  lines[#lines+1]='Source: '..selected.source
-  body:SetText(table.concat(lines,'\n\n'))
-  local h=body:GetStringHeight()+8;body:SetHeight(h);scroll.child:SetHeight(h)
-  if displayedDetailID~=selected.id then scroll:SetVerticalScroll(0) end
-  displayedDetailID=selected.id
- elseif selected then
+ searchBox:SetShown(not selected);filterButton:SetShown(not selected)
+ detailStatus:SetShown(selected~=nil);detailSources:SetShown(selected~=nil)
+ selectedDetail=selected
+ if selected then
   heading:SetText(selected.title)
-  planButton:SetText(selected.planned and 'Remove plan' or 'Plan this run')
-  local lines={selected.title,selected.live and not liveSupported and 'Cached quest log; confirm in game' or selected.state}
-  if finite(selected.minimum) then lines[#lines+1]='Required level (reference): '..selected.minimum end
-  lines[#lines+1]=selected.faction or 'Faction/race restrictions: check giver; eligibility is not assumed'
-  local q=selected.live or selected
-  local objectives=selected.live and selected.live.objectives or ForeverCompanionQuestLocations.Details(q).objectives
-  if selected.live then lines[#lines+1]=liveSupported and D.Progress(selected.live) or 'Progress is cached; confirm in game' end
-  lines[#lines+1]='Objectives'..(selected.live and (liveSupported and ' (live log):' or ' (cached log):') or ' (reference):')
-  if type(objectives)=='table' and #objectives>0 then for i,line in ipairs(objectives) do
-   local states=selected.live and selected.live.objectiveStates;local state=type(states)=='table' and states[i]
-   local prefix=type(state)=='table' and state.known==true and (state.done and '[Done] ' or '[Next] ') or '[Check] '
-   lines[#lines+1]=prefix..tostring(line)
-  end else lines[#lines+1]='Not available. Inspect the quest in game.' end
-  lines[#lines+1]=ForeverCompanionQuestLocations.DetailText(q)
-  body:SetText(table.concat(lines,'\n\n'));local h=body:GetStringHeight()+8;body:SetHeight(h);scroll.child:SetHeight(h)
-  if displayedDetailID~=selected.id then scroll:SetVerticalScroll(0) else scroll:SetVerticalScroll(math.min(scroll:GetVerticalScroll(),math.max(0,h-scroll:GetHeight()))) end
-  displayedDetailID=selected.id
-  local locations=ForeverCompanionQuestLocations.Details(q)
-  pickup:SetEnabled(#locations.pickups+#locations.turnins>0)
-  guide:SetEnabled(selected.live~=nil)
- else heading:SetText('DUNGEON QUESTS');displayedDetailID=nil end
+  detailStatus:SetText(selected.live and (liveSupported and D.Progress(selected.live) or 'Cached quest log') or selected.state)
+  local locations
+  if selected.source then
+   planButton:Hide();pickup:Hide();guide:Hide()
+  else
+   locations=ForeverCompanionQuestLocations.Details(selected.live or selected)
+   pickup:SetEnabled(#locations.pickups+#locations.turnins>0)
+   guide:SetEnabled(selected.live~=nil)
+   planButton:SetText(selected.planned and 'Remove plan' or 'Plan this run')
+  end
+  renderDetails(selected,liveSupported,locations)
+ else
+  heading:SetText('Dungeon quests');displayedDetailID=nil
+ end
  summary:SetText(status.loading and 'Indexing Forever references in small batches…' or (#entries==0 and (#allEntries>0 and 'No quests match these filters. Clear search or choose All quests.' or status.provider and 'No matching dungeon references found. This is incomplete coverage, not proof this dungeon has no quests.' or 'No compatible Forever database installed. Published references and exact live log matches are shown.') or 'Partial coverage · published pickups and live quest status.'))
  panel:Show()
 end

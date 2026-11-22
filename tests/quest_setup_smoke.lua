@@ -16,3 +16,8 @@ assert(lines():find('42 character-compatible mapped quests / 65 giver references
 assert(lines():find('eligibility stays unknown',1,true))
 assert(lines():find('not a count of quests currently available',1,true))
 print('PASS: quest setup distinguishes native/provider/old-contract/loading/coverage/unknown eligibility')
+
+local labels=s.StatusLabels({provider=true,contract=false,completion=true},false)
+assert(labels[1]=='Awaiting scan' and labels[2]=='Update needed' and labels[3]=='Available')
+assert(s.StatusLabels({provider=true,contract=true,loading=true},true)[2]=='Indexing')
+assert(s.StatusLabels({provider=true,contract=true,initialized=true},true)[2]=='Indexed')

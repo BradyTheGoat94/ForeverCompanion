@@ -19,8 +19,6 @@ local detailOpen=false
 local detailRows={}
 local detailPanel,detailTitle,detailClose,detailEmpty,detailMessage
 local detailSummary={}
-local detailTabs={}
-local detailTab="Spells"
 local spellPage=1
 local spellPageLabel
 local spellQuery=''
@@ -589,25 +587,13 @@ local function build()
  detailClose:SetSize(22,22);detailClose:SetText("x")
  detailClose:SetPoint("TOPRIGHT",detailPanel,"TOPRIGHT",-7,-7)
  detailClose:SetScript("OnClick",function() detailOpen=false;selectedRow=nil;selectedSourceKey=nil;M.Refresh() end)
- -- Screenshot-inspired tab strip. Only Spells is populated from verified
- -- native breakdown data; unsupported views are explicitly labeled.
- local tabNames={"Spells"}
- for i,tabName in ipairs(tabNames) do
-  local tab=flatButton(detailPanel)
-  tab:SetSize(77,24)
-  tab:SetPoint("TOPLEFT",detailPanel,"TOPLEFT",9+(i-1)*81,-32)
-  tab:SetText(tabName)
-  tab:SetScript("OnClick",function()
-   detailTab=tabName
-   spellPage=1
-   M.Refresh()
-  end)
-  detailTabs[i]=tab
- end
+ local titleHint=ForeverCompanionInterface.Text(detailPanel,11)
+ titleHint:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',12,-38);titleHint:SetWidth(108);titleHint:SetText('Spell breakdown')
  local dock=flatButton(detailPanel)
  dock:SetSize(112,24);dock:SetText('Dock to meter')
- dock:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',94,-32)
+ dock:SetPoint('TOPLEFT',detailPanel,'TOPLEFT',124,-32)
  dock:SetScript('OnClick',function() M.ResetDetailPosition() end)
+ ForeverCompanionInterface.SetHoverHelp(dock,"Dock to meter","Attach this spell breakdown to the combat meter.")
  detailPanel.dockButton=dock
  local search=ForeverCompanionInterface.EditBox(detailPanel,'Search spells or pets')
  search:SetSize(230,26);search:SetPoint('TOPLEFT',12,-65);search:SetMaxLetters(120)
@@ -1013,16 +999,13 @@ function M.Refresh()
     titleName=name
    end
   end
-  detailTitle:SetText(titleName.."  /  "..(detailTab=="Spells" and
-   (safeToInspect and (metrics[metricIndex][1]:upper().." SPELLS") or "AFTER COMBAT")
-   or detailTab:upper()))
-  for _,tab in ipairs(detailTabs) do ForeverCompanionInterface.StyleButton(tab,skin(),tab:GetText()==detailTab) end
+  detailTitle:SetText(titleName.."  /  "..(safeToInspect and (metrics[metricIndex][1]:upper().." SPELLS") or "AFTER COMBAT"))
   -- Find the largest inspectable spell amount instead of assuming the
   -- native API sorts spell entries by damage. Never inspect secret amounts.
   local spellMaximum=0
   local spellTotal=0
   local allSpellAmountsSafe=type(spells)=="table" and #spells>0
-  if detailTab=="Spells" and type(spells)=="table" then
+  if type(spells)=="table" then
    for _,entry in ipairs(spells) do
     if type(entry)=="table" and safeNumber(entry.totalAmount) and entry.totalAmount>=0 then
      spellTotal=spellTotal+entry.totalAmount
@@ -1034,13 +1017,6 @@ function M.Refresh()
   else
    allSpellAmountsSafe=false
   end
-  -- Tab availability is explicit: do not suggest unsupported native data
-  -- is implemented just because the visual tab exists.
-  if detailPanel.prevSpells then
-   detailPanel.prevSpells:SetShown(detailTab=="Spells")
-   detailPanel.nextSpells:SetShown(detailTab=="Spells")
-  end
-  if spellPageLabel then spellPageLabel:SetShown(detailTab=="Spells") end
   local nativeCount=type(spells)=='table' and #spells or 0
   spells=M.FilterSpells(type(spells)=='table' and spells or {},spellQuery,saved().spellFilter,saved().spellOrder)
   detailPanel.spellFilter:SetText(saved().spellFilter=='pets' and 'Pets only' or 'All spells')
@@ -1052,8 +1028,8 @@ function M.Refresh()
   local pageCount=math.max(1,math.ceil(#spells/8))
   if spellPage>pageCount then spellPage=pageCount end
   if detailPanel.prevSpells then
-   detailPanel.prevSpells:SetEnabled(detailTab=="Spells" and spellPage>1)
-   detailPanel.nextSpells:SetEnabled(detailTab=="Spells" and spellPage<pageCount)
+   detailPanel.prevSpells:SetEnabled(spellPage>1)
+   detailPanel.nextSpells:SetEnabled(spellPage<pageCount)
   end
   if spellPageLabel then spellPageLabel:SetText(spellPage.."/"..pageCount) end
   -- Coverage compares the sum of inspectable spell entries to the native
@@ -1065,7 +1041,7 @@ function M.Refresh()
    else detailSummary[5]:SetText("N/A") end
   end
   for i,item in ipairs(detailRows) do
-   local spell=detailTab=="Spells" and type(spells)=="table" and spells[(spellPage-1)*8+i]
+   local spell=spells[(spellPage-1)*8+i]
    item.frame:SetShown(type(spell)=="table")
    if type(spell)=="table" then
     item.rank:SetText((spellPage-1)*8+i)
@@ -1089,7 +1065,7 @@ function M.Refresh()
     else item.bar:SetMinMaxValues(0,1);item.bar:SetValue(0);item.percent:SetText("") end
    else
     item.frame.spellName=nil;item.frame.spellID=nil;item.frame.totalAmount=nil
-    item.label:SetText(i==1 and (detailTab~="Spells" and "Not available from native meter" or (safeToInspect and "No spell data available" or "Available after combat")) or "")
+    item.label:SetText(i==1 and (safeToInspect and "No spell data available" or "Available after combat") or "")
     item.value:SetText("")
     item.bar:SetValue(0)
     item.percent:SetText("")

@@ -1,7 +1,7 @@
 -- Login-session observations. XP is sampled, never inferred from quest rewards.
 local S={limit=10}
 ForeverCompanionSessionProgress=S
-local state,root,body,pauseButton,historyButton,view
+local state,root,pauseButton,historyButton,view
 local function finite(n) return not (issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and n>=0 and n<math.huge end
 local function read(fn,...)
  if type(fn)~='function' then return end
@@ -86,73 +86,103 @@ function S.Duration(seconds)
  if not finite(seconds) then return 'Unknown' end
  return string.format('%d:%02d:%02d',math.floor(seconds/3600),math.floor(seconds/60)%60,math.floor(seconds)%60)
 end
-function S.Lines(snapshot)
- local p=snapshot or S.Snapshot()
- local lines={'TIME TRACKED   '..S.Duration(p.seconds)..(p.paused and ' · Paused' or ''),
-  'OBSERVED XP   '..string.format('%.0f',p.xp or 0),
-  'XP PER HOUR   '..(p.rate and string.format('%.0f',p.rate) or 'Unavailable — needs 60 seconds of complete samples'),
-  'QUEST TURN-INS   '..(p.turnins or 0),
-  'REPORTED QUEST REWARDS   '..(p.rewardXP or 0)..' XP ('..(p.rewardXPKnown or 0)..' reported) · '..ForeverCompanionQuestHistory.Money(p.money or 0)..' ('..(p.moneyKnown or 0)..' reported)'}
- if p.clockGap or (p.gaps or 0)>0 then lines[#lines+1]='Some time or XP samples were unavailable. Observed XP is partial; no rate is inferred.' end
- lines[#lines+1]='RECENT OBSERVED TURN-INS'
- for _,entry in ipairs(p.recent or {}) do lines[#lines+1]='• '..entry.title..' · '..(entry.xp and (entry.xp..' XP') or 'XP not reported') end
- if #(p.recent or {})==0 then lines[#lines+1]='No turn-ins recorded in this session yet.' end
- return lines
-end
 function S.Refresh()
  if not root or not root:IsShown() then return end
  local snapshot=view or S.Snapshot()
- local lines=S.Lines(snapshot);local details={}
- for i=5,#lines do details[#details+1]=lines[i] end
- if not snapshot.rate and not snapshot.clockGap and snapshot.gaps==0 then details[#details+1]='XP/hour appears after at least 60 seconds with observed XP gains.' end
- body:SetText(table.concat(details,'\n\n'))
- local values={S.Duration(snapshot.seconds),string.format('%.0f',snapshot.xp or 0),snapshot.rate and string.format('%.0f',snapshot.rate) or 'Unavailable',snapshot.turnins or 0}
- for i,value in ipairs(values) do root.metrics[i]:SetText(value) end
- root.heading:SetText(view and 'PREVIOUS LEVELING SESSION' or (snapshot.paused and 'MY LEVELING SESSION · PAUSED' or 'MY LEVELING SESSION'))
+ root.snapshot=snapshot
+ local value={S.Duration(snapshot.seconds),string.format('%.0f',snapshot.xp or 0),
+  snapshot.rate and string.format('%.0f',snapshot.rate) or 'Unavailable',snapshot.turnins or 0,
+  (snapshot.rewardXPKnown or 0)>0 and (snapshot.rewardXP or 0)..' XP' or 'Not reported',
+  (snapshot.moneyKnown or 0)>0 and ForeverCompanionQuestHistory.Money(snapshot.money) or 'Not reported'}
+ for i,v in ipairs(value) do root.metrics[i].value:SetText(v) end
+ for i,row in ipairs(root.rows) do
+  local entry=(snapshot.recent or {})[i]
+  row:SetShown(type(entry)=='table')
+  if type(entry)=='table' then
+   row.title:SetText(type(entry.title)=='string' and entry.title or 'Quest turn-in')
+   row.xp:SetText(finite(entry.xp) and entry.xp..' XP' or '-')
+   row.money:SetText(finite(entry.money) and ForeverCompanionQuestHistory.Money(entry.money) or '-')
+  end
+ end
+ local count=math.min(#root.rows,#(snapshot.recent or {}))
+ root.empty:SetShown(count==0)
+ root.qualityFrame:SetShown(snapshot.clockGap==true or (snapshot.gaps or 0)>0)
+ local height=286+math.max(2,count)*28
+ if root:GetHeight()~=height then root:SetHeight(height);ForeverCompanionInterface.FitPanel(root,660,height) end
+ root.heading:SetText(view and 'Previous leveling session' or 'Leveling session')
+ root.headingState:SetText(view and 'Saved' or snapshot.paused and 'Paused' or 'Tracking')
  pauseButton:SetEnabled(view==nil);pauseButton:SetText(state and state.paused and 'Resume tracking' or 'Pause tracking')
  historyButton:SetText(view and 'Return to current' or 'Previous sessions')
 end
 function S.Toggle()
  if not root then
   local U=ForeverCompanionInterface
-  root=CreateFrame('Frame','ForeverCompanionSessionPanel',UIParent);root:SetSize(660,590);root:SetPoint('CENTER');root:SetClampedToScreen(true);root:SetFrameStrata('DIALOG');U.Surface(root);U.WindowControls(root,'ForeverCompanionSessionPanel',660,590)
-  root:SetMovable(true);root:EnableMouse(true)
-  local drag=CreateFrame('Frame',nil,root);drag:SetPoint('TOPLEFT',0,0);drag:SetSize(615,40);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
-  drag:SetScript('OnDragStart',function() root:StartMoving() end);drag:SetScript('OnDragStop',function() root:StopMovingOrSizing() end)
-  local heading=U.Text(root,18);heading:SetPoint('TOPLEFT',18,-14);heading:SetWidth(580);heading:SetText('MY LEVELING SESSION')
-  root.heading=heading
-  U.CloseButton(root,function() root:Hide() end)
-  root.metrics={}
-  for i,label in ipairs({'TIME TRACKED','OBSERVED XP','XP / HOUR','QUEST TURN-INS'}) do
-   local card=CreateFrame('Frame',nil,root);card:SetSize(147,66);card:SetPoint('TOPLEFT',18+(i-1)*159,-55);U.Surface(card)
-   local caption=U.Text(card,10,U.palette.muted);caption:SetPoint('TOPLEFT',10,-9);caption:SetWidth(127);caption:SetText(label)
-   local value=U.Text(card,17,U.palette.accent);value:SetPoint('TOPLEFT',10,-32);value:SetWidth(127);value:SetHeight(23);root.metrics[i]=value
+  local name='ForeverCompanionSessionPanel'
+  root=CreateFrame('Frame',name,UIParent,'BackdropTemplate');root:SetSize(660,454);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG')
+  U.Surface(root);U.PreparePanel(root,name,660,454);U.CloseButton(root,function() root:Hide() end)
+  root:SetScript('OnEvent',function(self) U.FitPanel(self,660,self:GetHeight()) end)
+  local function label(parent,x,y,w,size)
+   local t=U.Text(parent,size);t:SetPoint('TOPLEFT',x,y);t:SetWidth(w);return t
   end
-  body=U.Text(root,12);body:SetPoint('TOPLEFT',18,-141);body:SetWidth(624);body:SetHeight(350);body:SetWordWrap(true);body:SetJustifyV('TOP')
-  local hint=U.Text(root,10);hint:SetPoint('BOTTOMLEFT',18,54);hint:SetWidth(624);hint:SetHeight(28);hint:SetWordWrap(true);hint:SetText('Tracks observed activity since login or reset. Reload starts a new session. Pause excludes time and rewards. Keeps 10 manually ended sessions.')
-  pauseButton=U.Button(root);pauseButton:SetSize(190,28);pauseButton:SetPoint('BOTTOMLEFT',18,16);pauseButton:SetScript('OnClick',function() S.SetPaused(not state.paused) end)
-  historyButton=U.Button(root);historyButton:SetSize(200,28);historyButton:SetPoint('BOTTOMLEFT',220,16)
-  historyButton:SetScript('OnClick',function()
+  root.heading=label(root,18,-13,450,20)
+  root.headingState=label(root,500,-16,102,12);root.headingState:SetTextColor(unpack(U.palette.accent));root.headingState:SetJustifyH('RIGHT')
+  root.metrics={}
+  local captions={'Time tracked','Observed XP','XP per hour','Turn-ins'}
+  local explanations={'Active tracking time since login or reset.',
+   'XP observed from character progress. Reported quest rewards are tracked separately.',
+   'Requires 60 seconds of complete samples with positive XP gains.',
+   'Quest completions observed through turn-in events.'}
+  for i,caption in ipairs(captions) do root.metrics[i]=U.MetricTile(root,18+(i-1)*159,-53,147,caption,explanations[i]) end
+  root.metrics[5]=U.MetricTile(root,18,-125,306,'Reported quest XP',function()
+   return (root.snapshot and root.snapshot.rewardXPKnown or 0)..' turn-ins reported XP rewards.'
+  end)
+  root.metrics[6]=U.MetricTile(root,336,-125,306,'Reported quest money',function()
+   return (root.snapshot and root.snapshot.moneyKnown or 0)..' turn-ins reported money rewards.'
+  end)
+  label(root,18,-202,390,13):SetText('Recent quest turn-ins')
+  label(root,457,-204,78,11):SetText('Reward XP')
+  label(root,550,-204,92,11):SetText('Money')
+  root.rows={}
+  for i=1,6 do
+   local row=CreateFrame('Frame',nil,root);row:SetPoint('TOPLEFT',18,-225-(i-1)*28);row:SetSize(624,25)
+   U.Surface(row,{background=U.palette.surface,flat=true})
+   row.title=label(row,8,-4,420,12)
+   row.xp=label(row,439,-4,83,12)
+   row.money=label(row,532,-4,85,12)
+   row:EnableMouse(true);U.SetHoverHelp(row,'Turn-in',function() return row.title:GetText() end)
+   root.rows[i]=row
+  end
+  root.empty=label(root,28,-236,608,13);root.empty:SetText('No turn-ins recorded')
+  local indicator=CreateFrame('Frame',nil,root)
+  indicator:SetPoint('BOTTOMLEFT',18,40);indicator:SetSize(155,22);indicator:EnableMouse(true)
+  root.qualityFrame=indicator
+  local quality=label(indicator,0,0,150,11);quality:SetText('Partial samples');quality:SetTextColor(unpack(U.palette.accent))
+  U.SetHoverHelp(indicator,'Sample quality','Some time or XP samples are unavailable. Observed XP is partial and the rate is suppressed.')
+  local function action(x,w,text,tip,callback)
+   local b=U.Button(root);b:SetSize(w,28);b:SetPoint('BOTTOMLEFT',x,12);b:SetText(text)
+   U.SetHoverHelp(b,text,tip);b:SetScript('OnClick',callback)
+   return b
+  end
+  pauseButton=action(18,190,'Pause / resume','Exclude time and rewards while tracking is paused.',function() S.SetPaused(not state.paused) end)
+  historyButton=action(220,200,'Previous sessions','Review a manually ended session. Up to 10 are saved.',function()
    if view then view=nil;S.Refresh();return end
    local entries={}
-   for i,p in ipairs(archive()) do
+   for _,p in ipairs(archive()) do
     if type(p)=='table' and finite(p.seconds) and finite(p.xp) and type(p.recent)=='table' then
-     local saved=p;entries[#entries+1]={label=i..'. '..S.Duration(p.seconds)..' · '..p.xp..' XP',action=function() view=saved;S.Refresh() end}
+     local saved=p;entries[#entries+1]={label=S.Duration(p.seconds)..'  /  '..p.xp..' XP',action=function() view=saved;S.Refresh() end}
     end
    end
    if #entries==0 then entries[1]={label='No ended sessions yet',enabled=false} end
-   U.Menu(historyButton,'PREVIOUS SESSIONS',entries)
+   U.PagedMenu(historyButton,'Previous sessions',entries,nil,260)
   end)
-  local reset=U.Button(root);reset:SetSize(210,28);reset:SetPoint('BOTTOMRIGHT',-18,16);reset:SetText('End & start new session')
-  reset:SetScript('OnClick',function() U.Menu(reset,'END CURRENT SESSION?',{{label='Save summary and start new',action=S.NewSession},{label='Cancel',action=function() end}}) end)
-  local elapsed=0;root:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=1 then elapsed=0;S.Refresh() end end)
+  action(432,210,'End & start new session','Save this session and start a fresh one.',function(self)
+   U.Menu(self,'End current session?',{{label='Save summary and start new',action=S.NewSession},{label='Cancel',action=function() end}})
+  end)
+  local elapsed=0
+  root:SetScript('OnUpdate',function(_,dt) elapsed=elapsed+dt;if elapsed>=1 then elapsed=0;S.Refresh() end end)
   root:Hide()
  end
  if not state then S.Start() end
- if UIParent.GetWidth and UIParent.GetHeight then
-  local w,h=UIParent:GetWidth(),UIParent:GetHeight()
-  if finite(w) and finite(h) and w>32 and h>32 then root:SetScale(math.min(ForeverCompanionInterface.SizePreference(root),(w-32)/660,(h-32)/590)) end
- end
  root:SetShown(not root:IsShown());S.Refresh()
 end
 local events=CreateFrame('Frame')

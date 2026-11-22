@@ -325,6 +325,17 @@ function U.SetHoverHelp(button,title,description)
  return button
 end
 
+function U.MetricTile(parent,x,y,width,caption,help)
+ local tile=CreateFrame('Frame',nil,parent)
+ tile:SetPoint('TOPLEFT',x,y);tile:SetSize(width,61)
+ U.Surface(tile,{background=U.palette.surface,flat=true})
+ local title=U.Text(tile,11,U.palette.muted);title:SetPoint('TOPLEFT',10,-8);title:SetWidth(width-20);title:SetText(caption)
+ local value=U.Text(tile,16,U.palette.text);value:SetPoint('TOPLEFT',10,-28);value:SetWidth(width-20);value:SetHeight(24)
+ tile.value=value
+ if help then tile:EnableMouse(true);U.SetHoverHelp(tile,caption,help) end
+ return tile
+end
+
 function U.HoverNote(parent,x,y,title,description)
  local button=U.Button(parent)
  button:SetPoint('TOPLEFT',x,y);button:SetSize(23,23);button:SetText('?')
