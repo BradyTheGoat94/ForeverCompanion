@@ -27,7 +27,11 @@ for _,r in ipairs({
  {'Dire Maul: West','Feralas',58,60},{'Dire Maul: North','Feralas',58,60},{'Scholomance','Western Plaguelands',58,60},
  {'Stratholme','Eastern Plaguelands',58,60},
 }) do add(r[1],r[2],r[3],r[4],directory) end
-D.entries["Temple of Atal'Hakkar"].aliases='sunken temple'
+local temple=D.entries["Temple of Atal'Hakkar"]
+temple.aliases='sunken temple st temple of atalhakkar'
+temple.minimum=45
+temple.display='Sunken Temple'
+D.entries.Maraudon.wings='Wicked Grotto and Foulspore Cavern: 45-53. Earth Song Falls: 48-57.'
 D.entries['Maraudon'].aliases='wicked grotto foulspore cavern earth song falls'
 D.entries['Krol’dok Stronghold'].aliases="krol'dok stronghold kroldok"
 D.entries['Shaper’s Terrace'].aliases="shaper's terrace shapers terrace"
@@ -46,17 +50,31 @@ function D.Names(query)
 end
 -- Both Stratholme approaches lead to the same instance.
 function D.JournalName(name)
- return name=='Stratholme: Service Gate' and 'Stratholme' or name
+ if name=='Stratholme: Service Gate' then return 'Stratholme' end
+ local key=type(name)=='string' and name:lower():gsub('[^%w]','') or ''
+ if key=='sunkentemple' or key=='templeofatalhakkar' or key=='thetempleofatalhakkar' or key=='st' then return "Temple of Atal'Hakkar" end
+ return name
+end
+function D.DisplayName(name)
+ local info=D.entries[D.JournalName(name)]
+ return info and info.display or name
+end
+function D.JournalDirectory(query)
+ local key=D.JournalName(query)
+ if query and D.entries[key] and key~=query then return {key} end
+ local names=D.Names(query)
+ table.sort(names,function(a,b) return D.DisplayName(a)<D.DisplayName(b) end)
+ return names
 end
 function D.LevelRange(name)
  local e=D.entries[D.JournalName(name)]
  if e and e.low and e.high then return ('%d-%d'):format(e.low,e.high) end
 end
 function D.Summary(name)
- local e=D.entries[name]
+ local e=D.entries[D.JournalName(name)]
  if not e then return 'Dungeon reference · confirm access in game' end
  local range=D.LevelRange(name)
- return e.zone..(range and (' · suggested '..e.low..'–'..e.high) or '')
+ return e.zone..(range and (' · suggested '..range) or '')..(e.minimum and (' · entry '..e.minimum..'+') or '')
 end
 
 -- Outdoor approach references, not interior portal or boss coordinates.
@@ -67,6 +85,7 @@ local approaches={
 
  Uldaman={map=1418,x=.352,y=.103,zone='Badlands',source='https://azeroth.wiki/forever/map/badlands/uldaman'},
 }
+approaches["Temple of Atal'Hakkar"]={map=1435,x=.696,y=.532,zone='Swamp of Sorrows',source=directory}
 local mapGuide='https://mmonster.co/wow-forever/tools/world-map?d=hall-of-thanes'
 local entranceGroups={
  {1455,'Ironforge',27.8,47.9,'Hall of Thanes'},
@@ -84,7 +103,7 @@ local entranceGroups={
  {1434,'Stranglethorn Vale',21.4,27.9,'The Drowned City'},
  {1413,'The Barrens',50.9,92.9,'Razorfen Downs'},
  {1445,'Dustwallow Marsh',75.5,13.7,'Alcaz Prison'},
- {1435,'Swamp of Sorrows',70.2,52.3,"Temple of Atal'Hakkar"},
+
  {1428,'Burning Steppes',22.6,7.5,'Blackrock Depths'},
  {1444,'Feralas',64.9,29.4,'Dire Maul: East'},
  {1447,'Azshara',34.9,23.8,'Blackmaw Hold'},
@@ -143,7 +162,7 @@ function D.MapLocations(mapID)
  return groups
 end
 function D.Approach(name)
- local p=approaches[name]
+ local p=approaches[D.JournalName(name)]
  if not p then return nil end
  return {map=p.map,x=p.x,y=p.y,zone=p.zone,source=p.source,approximate=p.approximate,reference=true,kind='dungeon approach'}
 end

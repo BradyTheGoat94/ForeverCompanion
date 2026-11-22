@@ -1168,6 +1168,7 @@ local function attachOpenMap()
  api.RegisterCallback(openMapCallbacks,'OpenMap_StitchedChanged',redraw)
 end
 local function attach()
+ if WorldMapFrame and ForeverCompanionInterface and ForeverCompanionInterface.ManageWorldMap then ForeverCompanionInterface.ManageWorldMap(WorldMapFrame) end
  local map=WorldMapFrame
  if provider or not map or not map.AddDataProvider or not map.GetCanvas
   or not MapCanvasDataProviderMixin or not CreateFromMixins then return end

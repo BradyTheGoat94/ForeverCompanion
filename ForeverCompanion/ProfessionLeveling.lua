@@ -110,19 +110,76 @@ function P.ReadCarriedStock(plan)
  plan.stockBasis='carried bags'
  return true,'Carried stock snapshot updated; bank excluded. Manual goals are unchanged. Read again after inventory changes; updating the guide restores manual stock.'
 end
-function P.RecipeState(recipe)
- local fn=C_TradeSkillUI and C_TradeSkillUI.GetRecipeInfo
- if type(fn)=='function' then
-  local ok,state=pcall(function()
-   local info=fn(recipe.id)
-   if issecretvalue and issecretvalue(info) then return end
-   if type(info)~='table' or (issecretvalue and issecretvalue(info.recipeID)) or info.recipeID~=recipe.id then return end
-   local learned=info.learned;if issecretvalue and issecretvalue(learned) then return end
-   if learned==true then return 'Learned' elseif learned==false then return 'Not learned' end
-  end)
-  if ok and state then return state end
+local professionNames={[171]='Alchemy',[164]='Blacksmithing',[333]='Enchanting',[202]='Engineering',
+ [182]='Herbalism',[165]='Leatherworking',[186]='Mining',[393]='Skinning',[197]='Tailoring',
+ [185]='Cooking',[129]='First Aid',[356]='Fishing'}
+local observed={}
+local function readValue(fn,...)
+ if type(fn)~='function' then return end
+ local ok,result=pcall(fn,...)
+ if ok and not (issecretvalue and issecretvalue(result)) then return result end
+end
+local function knownRecipes()
+ ForeverCompanionDB=ForeverCompanionDB or {}
+ if type(ForeverCompanionDB.knownRecipeSpells)~='table' then ForeverCompanionDB.knownRecipeSpells={} end
+ return ForeverCompanionDB.knownRecipeSpells
+end
+function P.CaptureRecipeKnowledge()
+ local api=C_TradeSkillUI or {}
+ observed={}
+ if readValue(api.IsTradeSkillLinked) or readValue(api.IsTradeSkillGuild)
+  or readValue(api.IsNPCCrafting) or readValue(IsTradeSkillLinked) then return false end
+ local known=knownRecipes()
+ local info=readValue(api.GetBaseProfessionInfo)
+ local name=type(info)=='table' and (professionNames[readValue(function() return info.professionID end)] or readValue(function() return info.professionName end))
+ name=name or readValue(GetTradeSkillLine)
+ if name=='Smelting' then name='Mining' end
+ if not D.professions[name] then return false end
+ local inCatalog={}
+ for _,r in ipairs(P.Catalog(name)) do inCatalog[r.id]=true end
+ local ids=readValue(api.GetAllRecipeIDs)
+ local matched=false
+ if type(ids)=='table' then
+  for _,id in ipairs(ids) do
+   if integer(id,1,100000000) and inCatalog[id] then
+    local result=readValue(api.GetRecipeInfo,id)
+    local returned=type(result)=='table' and readValue(function() return result.recipeID end) or nil
+    local learned=type(result)=='table' and readValue(function() return result.learned end)
+    if type(learned)=='boolean' and (returned==nil or returned==id) then
+     observed[id]=learned;matched=true
+     if learned then known[id]=true else known[id]=nil end
+    end
+   end
+  end
  end
+ local count=integer(readValue(GetNumTradeSkills),1,4096)
+ if not matched and count then
+  for i=1,count do
+   local link=readValue(GetTradeSkillRecipeLink,i)
+   local id=type(link)=='string' and tonumber(link:match('|Henchant:(%d+)'))
+   if id and inCatalog[id] then known[id]=true;observed[id]=true;matched=true end
+  end
+ end
+ return matched
+end
+function P.RecipeState(recipe)
+ if observed[recipe.id]==true or knownRecipes()[recipe.id]==true then return 'Learned' end
+ if observed[recipe.id]==false then return 'Not learned' end
  return 'Access unknown'
+end
+if CreateFrame then
+ local events=CreateFrame('Frame')
+ for _,event in ipairs({'TRADE_SKILL_SHOW','TRADE_SKILL_UPDATE','TRADE_SKILL_LIST_UPDATE','TRADE_SKILL_CLOSE','NEW_RECIPE_LEARNED'}) do
+  pcall(events.RegisterEvent,events,event)
+ end
+ events:SetScript('OnEvent',function(_,event)
+  if event=='TRADE_SKILL_CLOSE' then observed={};return end
+  local function refresh()
+   P.CaptureRecipeKnowledge()
+   if ForeverCompanionProfessionGuideWorkspace then ForeverCompanionProfessionGuideWorkspace.Refresh() end
+  end
+  if ForeverCompanionRefreshQueue then ForeverCompanionRefreshQueue.Schedule('recipe-knowledge',refresh) else refresh() end
+ end)
 end
 
 function P.ShowRecipeTooltip(owner,recipe)

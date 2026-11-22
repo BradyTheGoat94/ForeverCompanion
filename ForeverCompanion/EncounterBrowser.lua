@@ -22,7 +22,7 @@ function E.Results(dungeon,query,directoryMatches)
  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then term=ForeverCompanionBossMechanics.Canonical(dungeon,term):lower() end
  local directoryMatch=false
  if directoryMatches and term==originalTerm then directoryMatch=not not directoryMatches[dungeon]
- elseif term~='' and ForeverCompanionDungeonCatalog then for _,name in ipairs(ForeverCompanionDungeonCatalog.Names(term)) do if name==dungeon then directoryMatch=true;break end end end
+ elseif term~='' and ForeverCompanionDungeonCatalog then for _,name in ipairs(ForeverCompanionDungeonCatalog.JournalDirectory(term)) do if name==dungeon then directoryMatch=true;break end end end
  for _,name in ipairs(E.BossNames(dungeon)) do
   local drops=ForeverCompanionLoot.BossDrops(dungeon,name)
   local matches=term=="" or directoryMatch or name:lower():find(term,1,true) or dungeon:lower():find(term,1,true)
@@ -31,22 +31,27 @@ function E.Results(dungeon,query,directoryMatches)
  end
  return result
 end
-function E.SelectDungeon(name)
+function E.SelectDungeon(name,keepSearch)
+ name=ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.JournalName(name) or name
  E.dungeon=name
- E.boss=ForeverCompanionLoot.BossNames(name)[1] or E.BossNames(name)[1] or ""
- E.page=1;E.dropPage=1;E.query=""
- if ForeverCompanionDungeonCatalog then for i,n in ipairs(ForeverCompanionDungeonCatalog.Names()) do if n==name then E.dungeonPage=math.floor((i-1)/9)+1;break end end end
- if E.searchBox then E.searchBox:SetText("") end
+ E.boss=name~="" and (ForeverCompanionLoot.BossNames(name)[1] or E.BossNames(name)[1]) or ""
+ E.page=1;E.dropPage=1
+ if not keepSearch then
+  E.query=""
+  if ForeverCompanionDungeonCatalog then for i,n in ipairs(ForeverCompanionDungeonCatalog.JournalDirectory()) do if n==name then E.dungeonPage=math.floor((i-1)/9)+1;break end end end
+  if E.searchBox then E.searchBox:SetText("") end
+ end
 end
 function E.Focus(dungeon,boss)
  E.questView=false
  E.SelectDungeon(dungeon)
+ dungeon=E.dungeon
  if ForeverCompanionBossMechanics and ForeverCompanionBossMechanics.Canonical then boss=ForeverCompanionBossMechanics.Canonical(dungeon,boss) end
  E.boss=boss
  for i,entry in ipairs(E.Results(dungeon,"")) do
   if entry.boss==boss then E.page=math.floor((i-1)/E.pageSize)+1;break end
  end
- for i,name in ipairs((ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Names() or ForeverCompanionLoot.DungeonNames())) do
+ for i,name in ipairs((ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.JournalDirectory() or ForeverCompanionLoot.DungeonNames())) do
   if name==dungeon then E.dungeonPage=math.floor((i-1)/9)+1;break end
  end
 end
@@ -104,7 +109,7 @@ function E.Create(parent,navigate,onPrep)
  if E.searchBox.SetAutoFocus then E.searchBox:SetAutoFocus(false) end
  if E.searchBox.SetMaxLetters then E.searchBox:SetMaxLetters(120) end
  E.searchBox:SetScript("OnTextChanged",function(self,userInput)
-  if userInput then E.query=self:GetText():sub(1,120);E.page=1;ForeverCompanionRefresh() end
+  if userInput then E.query=self:GetText():sub(1,120);E.page=1;E.dungeonPage=1;ForeverCompanionRefresh() end
  end)
  E.searchBox:SetScript("OnEscapePressed",function(self) if self.ClearFocus then self:ClearFocus() end end)
  E.searchBox:SetScript("OnEnterPressed",function(self) if self.ClearFocus then self:ClearFocus() end end)
@@ -120,6 +125,11 @@ function E.Create(parent,navigate,onPrep)
  end
  dungeonBack=button(left,8,-272,75,"Previous",function() E.dungeonPage=E.dungeonPage-1;ForeverCompanionRefresh() end)
  dungeonNext=button(left,111,-272,75,"Next",function() E.dungeonPage=E.dungeonPage+1;ForeverCompanionRefresh() end)
+ local function wheel(_,delta)
+  E.dungeonPage=E.dungeonPage+(delta<0 and 1 or -1);ForeverCompanionRefresh()
+ end
+ left:EnableMouseWheel(true);left:SetScript('OnMouseWheel',wheel)
+ for _,row in ipairs(dungeons) do row:EnableMouseWheel(true);row:SetScript('OnMouseWheel',wheel) end
  rows={};E.rows=rows
  for i=1,E.pageSize do
   local row=entry(center,-39-(i-1)*36,206,34,function(self)
@@ -180,10 +190,10 @@ function E.Render(tab,db)
  if not root then return end
  if tab~="Dungeons" then root:Hide();ForeverCompanionDungeonQuests.Hide();return end
  local loot=ForeverCompanionLoot
- local names=ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Names() or loot.DungeonNames()
+ local names=ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.JournalDirectory() or loot.DungeonNames()
  local selectedMatches
  if E.query~='' and ForeverCompanionDungeonCatalog then
-  local filtered,seen=ForeverCompanionDungeonCatalog.Names(E.query),{}
+  local filtered,seen=ForeverCompanionDungeonCatalog.JournalDirectory(E.query),{}
   for _,n in ipairs(filtered) do seen[n]=true end
   for _,n in ipairs(names) do
    if not seen[n] then
@@ -192,18 +202,23 @@ function E.Render(tab,db)
     if #matches>0 then filtered[#filtered+1]=n end
    end
   end
-  table.sort(filtered);names=filtered
+  table.sort(filtered,function(a,b) return ForeverCompanionDungeonCatalog.DisplayName(a)<ForeverCompanionDungeonCatalog.DisplayName(b) end);names=filtered
+  local found=false
+  for i,n in ipairs(names) do
+   if n==E.dungeon then found=true;break end
+  end
+  if not found then E.SelectDungeon(names[1] or '',true);E.dungeonPage=1;selectedMatches=nil end
  end
- if E.dungeon=="" then E.SelectDungeon(names[1] or "") end
- subtitle:SetText((ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Summary(E.dungeon) or E.dungeon).." · "..#loot.BossNames(E.dungeon).." loot sources")
+ if E.dungeon=="" and E.query=="" then E.SelectDungeon(names[1] or "") end
+ subtitle:SetText(E.dungeon=="" and "Dungeon search" or (ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Summary(E.dungeon) or E.dungeon).." · "..#loot.BossNames(E.dungeon).." loot sources")
 
  local dungeonPages=math.max(1,math.ceil(#names/#dungeons))
  E.dungeonPage=math.max(1,math.min(dungeonPages,E.dungeonPage))
  for i,row in ipairs(dungeons) do
   row.dungeon=names[(E.dungeonPage-1)*#dungeons+i]
   if row.dungeon then
-   row.name:SetText(row.dungeon);tint(row,row.dungeon==E.dungeon);row:Show()
-   row:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(self.dungeon);GameTooltip:AddLine(ForeverCompanionDungeonCatalog and ForeverCompanionDungeonCatalog.Summary(self.dungeon) or '',.8,.85,.9,true);GameTooltip:AddLine(#loot.BossNames(self.dungeon)..' imported loot sources · coverage is partial',.8,.72,.5,true);GameTooltip:Show() end end)
+   row.name:SetText(ForeverCompanionDungeonCatalog.DisplayName(row.dungeon));tint(row,row.dungeon==E.dungeon);row:Show()
+   row:SetScript('OnEnter',function(self) if GameTooltip then GameTooltip:SetOwner(self,'ANCHOR_RIGHT');GameTooltip:SetText(ForeverCompanionDungeonCatalog.DisplayName(self.dungeon));GameTooltip:AddLine(ForeverCompanionDungeonCatalog.Summary(self.dungeon),.8,.85,.9,true);local info=ForeverCompanionDungeonCatalog.entries[self.dungeon];if info and info.wings then GameTooltip:AddLine(info.wings,.85,.85,.85,true) end;GameTooltip:AddLine(#loot.BossNames(self.dungeon)..' imported loot sources · coverage is partial',.8,.72,.5,true);GameTooltip:Show() end end)
    row:SetScript('OnLeave',function() if GameTooltip then GameTooltip:Hide() end end)
   else row:Hide() end
  end
@@ -220,7 +235,7 @@ function E.Render(tab,db)
   else row:Hide() end
  end
  if #matches==0 then
-  E.emptyBosses:SetText(#E.BossNames(E.dungeon)==0 and ('No bosses listed for '..E.dungeon..' yet.') or 'No matches. Clear search to see all bosses.');E.emptyBosses:Show()
+  E.emptyBosses:SetText(E.dungeon=='' and 'No dungeons match this search.' or #E.BossNames(E.dungeon)==0 and ('No bosses listed for '..E.dungeon..' yet.') or 'No matches. Clear search to see all bosses.');E.emptyBosses:Show()
  else E.emptyBosses:Hide() end
  if pages>1 then previous:Show();nextPage:Show();pageLabel:Show() else previous:Hide();nextPage:Hide();pageLabel:Hide() end
  previous:SetEnabled(E.page>1);nextPage:SetEnabled(E.page<pages);pageLabel:SetText(E.page.." / "..pages)
@@ -244,7 +259,7 @@ function E.Render(tab,db)
   else row:Hide() end
  end
  for _,p in ipairs(lootPanels) do p:SetShown(not E.questView) end
- journalTitle:SetText(E.dungeon~='' and E.dungeon or 'Dungeon Journal')
+ journalTitle:SetText(E.dungeon~='' and ForeverCompanionDungeonCatalog.DisplayName(E.dungeon) or (E.query~='' and 'No matching dungeons' or 'Dungeon Journal'))
  lootTab:SetEnabled(E.questView==true);questViewButton:SetEnabled(not E.questView)
  if E.questView then ForeverCompanionDungeonQuests.Render(E.dungeon) else ForeverCompanionDungeonQuests.Hide() end
  if E.routeDungeon~=E.dungeon then

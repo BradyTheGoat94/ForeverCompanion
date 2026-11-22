@@ -39,14 +39,26 @@ function H.Decode(packed)
  end
  return result,true
 end
-local taught,displays,npcs,abilities,families,trainers
+local taught,displays,npcs,abilities,families,trainers,byID
 function H.Index()
  if npcs then return end
- taught={};displays={};npcs={};abilities={};families={};trainers={}
- for family,f in pairs(D.TameableFamilies) do families[#families+1]={name=family,record=f} end
- if not D.TameableFamilies['Core Hound'] then families[#families+1]={name='Core Hound',record={foods={'Meat'},referenceOnly=true}} end
+ taught={};displays={};npcs={};abilities={};families={};trainers={};byID={}
+ local familyByName={}
+ for family,f in pairs(D.TameableFamilies) do
+  local entry={name=family,record=f}
+  families[#families+1]=entry;familyByName[family]=entry
+ end
  for key,a in pairs(D.TameableAbilities) do
-  abilities[#abilities+1]={key=key,name=a.name,record=a}
+  local ranks={}
+  for _,rank in ipairs(a.ranks) do
+   for _,id in ipairs(rank.npc_ids or {}) do
+    if D.TameableNPCs[id] and not D.TameableHidden[id] then ranks[#ranks+1]=rank;break end
+   end
+  end
+  table.sort(ranks,function(x,y) return x.rank<y.rank end)
+  if not a.passive and #ranks>0 then
+   abilities[#abilities+1]={key=key,name=a.name,record={name=a.name,unique=a.unique,learned_by=a.learned_by,ranks=ranks}}
+  end
   for _,rank in ipairs(a.ranks) do for _,id in ipairs(rank.npc_ids or {}) do
    taught[id]=taught[id] or {};taught[id][#taught[id]+1]={key=key,name=a.name,ability=a,rank=rank}
   end end
@@ -60,13 +72,26 @@ function H.Index()
   for id,npc in pairs(D.TameableNPCs) do if npc.speed==tier[1] and not D.TameableHidden[id] then
    rank.npc_ids[#rank.npc_ids+1]=id;taught[id]=taught[id] or {};taught[id][#taught[id]+1]={key=key,name=name,ability=a,rank=rank}
   end end
-  abilities[#abilities+1]={key=key,name=name,record=a}
  end
  for _,looks in pairs(D.TameableLooks) do for _,look in ipairs(looks) do for _,id in ipairs(look.npcs) do displays[id]=displays[id] or {};displays[id][#displays[id]+1]={display=look.display,name=look.name} end end end
- for id,npc in pairs(D.TameableNPCs) do if not D.TameableHidden[id] then npcs[#npcs+1]={id=id,name=npc.name,record=npc} end end
+ for id,npc in pairs(D.TameableNPCs) do
+  if not D.TameableHidden[id] then
+   local entry={id=id,name=npc.name,record=npc}
+   npcs[#npcs+1]=entry;byID[id]=entry
+   local family=familyByName[npc.family]
+   if family and finite(npc.min) then
+    family.min=math.min(family.min or math.huge,npc.min)
+    family.max=math.max(family.max or 0,npc.max or npc.min)
+   end
+  end
+ end
  for id,t in pairs(D.TameableTrainers) do trainers[#trainers+1]={id=id,name=t.name,record=t} end
  local function sort(list) table.sort(list,function(a,b) if a.name~=b.name then return a.name<b.name end;return (a.id or 0)<(b.id or 0) end) end
- sort(npcs);sort(abilities);sort(families);sort(trainers)
+ sort(npcs);sort(abilities);sort(trainers)
+ table.sort(families,function(a,b)
+  if a.min~=b.min then return (a.min or math.huge)<(b.min or math.huge) end
+  return a.name<b.name
+ end)
  for _,list in pairs(taught) do table.sort(list,function(a,b) if a.name~=b.name then return a.name<b.name end;return a.rank.rank<b.rank.rank end) end
 end
 function H.Abilities(id) H.Index();return taught[id] or {} end
@@ -116,16 +141,46 @@ function H.FamilyStats(family)
  local m=H.familyModifiers[family]
  return m and string.format('Damage %+d%%   Health %+d%%   Armor %+d%%',m[1],m[2],m[3]) or 'Family modifiers unavailable'
 end
+function H.Beast(id) H.Index();return byID[id] end
+function H.FamilyLevel(entry)
+ return entry.min and ('Lv '..entry.min..'-'..entry.max) or 'Level unknown'
+end
 function H.FamilyPreview(family)
  H.Index()
- local fallback
+ if family=='Bird of Prey' then return byID[1995] end
+ local best
  for _,beast in ipairs(npcs) do
-  if beast.record.family==family then
-   fallback=fallback or beast
-   if #H.Looks(beast.id)>0 then return beast end
-  end
+  if beast.record.family==family and #H.Looks(beast.id)>0 and finite(beast.record.min)
+   and (not best or beast.record.min<best.record.min) then best=beast end
  end
- return fallback
+ return best
+end
+function H.TameSources(rank)
+ local list={}
+ for _,id in ipairs(rank and rank.npc_ids or {}) do
+  local beast=H.Beast(id)
+  if beast then list[#list+1]=beast end
+ end
+ table.sort(list,function(a,b)
+  local x,y=a.record.min or math.huge,b.record.min or math.huge
+  if x~=y then return x<y end
+  if a.name~=b.name then return a.name<b.name end
+  return a.id<b.id
+ end)
+ return list
+end
+function H.Comparison(id)
+ local beast=H.Beast(id)
+ if not beast then return end
+ local record=beast.record
+ local known={}
+ for _,a in ipairs(H.Abilities(id)) do
+  if not a.ability.passive and not a.ability.interval then known[#known+1]=a.name..' '..a.rank.rank end
+ end
+ local family=D.TameableFamilies[record.family]
+ return {name=beast.name,family=record.family,level=H.Level(record),speed=H.Speed(record),
+  stats=H.FamilyStats(record.family),zone=H.Zones(record),skills=table.concat(known,', '),
+  diet=family and table.concat(family.foods or {},', ') or ''}
 end
 function H.Build(view,options)
  H.Index();options=options or {};local result={};local query=text(options.query):lower();local level=read(UnitLevel,'player');local zone=text(read(GetRealZoneText));local faction=text(read(UnitFactionGroup,'player')):lower()

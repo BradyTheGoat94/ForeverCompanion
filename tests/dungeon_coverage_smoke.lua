@@ -58,3 +58,12 @@ C_Map=originalMapAPI
 for name in pairs(D.entries) do assert(D.LevelRange(name),name..' needs a suggested level range') end
 assert(D.LevelRange('The Deadmines')=='18-23')
 assert(D.LevelRange('Stratholme: Service Gate')==D.LevelRange('Stratholme'))
+
+local temple="Temple of Atal'Hakkar"
+for _,term in ipairs({'Sunken Temple','ST','AtalHakkar','The Temple of Atal’Hakkar'}) do
+ assert(D.JournalDirectory(term)[1]==temple)
+end
+assert(D.DisplayName(temple)=='Sunken Temple' and D.LevelRange('ST')=='50-60')
+assert(D.Approach('Sunken Temple').map==1435 and D.Summary(temple):find('entry 45+',1,true))
+E.SelectDungeon('Sunken Temple')
+assert(E.dungeon==temple and #E.Results(E.dungeon,'Sunken Temple')>0)

@@ -3,6 +3,7 @@ local W={view='beasts',page=1,detailPage=1,rank=1,look=1,options={query='',famil
 local H=ForeverCompanionHunterGuide;local D=ForeverCompanionHunterData
 local root,summary,search,filter,familyButton,roleButton,listRows,detailTitle,info,body,model,modelHint,modelCaption,counter,detailCounter,notice,actions,tabs,selected
 local previous,nextPage,detailPrevious,detailNext
+local petTiles,compareButton
 local facing,zoom=.5,1
 local modelControls={}
 local function text(parent,x,y,w,size,value,height)
@@ -16,8 +17,10 @@ local function tell(msg) notice:SetText(msg or '') end
 local function modelFor(entry)
  if model and model.ClearModel then pcall(model.ClearModel,model) end
  for _,control in ipairs(modelControls) do control:Hide() end
- if not model then modelHint:SetText('3D models are unavailable on this client.');return end
+ if not model then modelHint:SetShown(W.view=='beasts' or W.view=='pet' or W.view=='families');modelHint:SetText('3D models are unavailable on this client.');return end
  local ok=false
+ local showPreview=W.view=='beasts' or W.view=='pet' or W.view=='families'
+ modelCaption:SetShown(showPreview)
  local preview=W.view=='families' and entry and H.FamilyPreview(entry.name)
  if W.view=='pet' then
   if not W.showSnapshot and H.Read(UnitExists,'pet')==true and model.SetUnit then ok=pcall(model.SetUnit,model,'pet') end
@@ -28,7 +31,7 @@ local function modelFor(entry)
   end
   if not ok and model.SetCreature then ok=pcall(model.SetCreature,model,beast.id) end
  end
- model:SetShown(ok);modelHint:SetShown(not ok)
+ model:SetShown(ok);modelHint:SetShown(showPreview and not ok)
  for _,control in ipairs(modelControls) do control:SetShown(ok) end
  modelHint:SetText('3D preview requires a creature model available in your installed client.')
  if ok then
@@ -51,7 +54,15 @@ local function hideSpellTip(row)
 end
 local function showSpellTip(row)
  local spell=row.spell
- if not GameTooltip or not spell then return end
+ if not GameTooltip then return end
+ if row.tamer then
+  local entry=row.tamer
+  GameTooltip:SetOwner(row,'ANCHOR_RIGHT');GameTooltip:SetText(entry.name,1,.83,.54,true)
+  GameTooltip:AddLine('Level '..H.Level(entry.record)..' / '..H.Zones(entry.record),.84,.94,.86,true)
+  GameTooltip:AddLine('Click for the beast and its recorded locations.',.84,.94,.86,true)
+  GameTooltip:Show();return
+ end
+ if not spell then return end
  local tip=GameTooltip;tip:SetOwner(row,'ANCHOR_RIGHT')
  if tip.ClearLines then tip:ClearLines() end
  local ok,value=false,nil
@@ -85,7 +96,7 @@ function W.Refresh()
    local rank=W.view=='abilities' and data.ranks[1]
    local icon=rank and C_Spell and H.Read(C_Spell.GetSpellTexture,rank.spell_id)
    row.icon:SetTexture(icon or ('Interface\\Icons\\'..icons[W.view]))
-   row.meta:SetText(isPet and (r.live and 'Active pet' or ('Snapshot '..r.snapshotIndex..' · '..(data.savedAt or 'Date unknown'))) or W.view=='beasts' and (data.family..' · Lv '..H.Level(data)..' · '..H.Speed(data)) or W.view=='families' and H.FamilyStats(r.name) or W.view=='abilities' and (#data.ranks..' ranks · '..(data.unique and 'Family skill' or data.passive and 'Passive' or 'Shared skill')) or ((data.zone or 'Zone unknown')..' · '..(data.side or 'Faction unknown')))
+   row.meta:SetText(isPet and (r.live and 'Active pet' or ('Snapshot '..r.snapshotIndex..' · '..(data.savedAt or 'Date unknown'))) or W.view=='beasts' and (data.family..' · Lv '..H.Level(data)..' · '..H.Speed(data)) or W.view=='families' and H.FamilyLevel(r) or W.view=='abilities' and (#data.ranks..' ranks · '..(data.unique and 'Family skill' or data.passive and 'Passive' or 'Shared skill')) or ((data.zone or 'Zone unknown')..' · '..(data.side or 'Faction unknown')))
    ForeverCompanionInterface.StyleButton(row,nil,r==selected)
   end
  end
@@ -94,7 +105,10 @@ function W.Refresh()
  search:SetShown(not isPet);familyButton:SetShown(not isPet);roleButton:SetShown(not isPet);filter:SetShown(not isPet)
  familyButton:SetEnabled(isBeasts);roleButton:SetEnabled(isBeasts)
  familyButton:SetText(isBeasts and (W.options.family~='' and W.options.family or 'All families') or 'Beast families only');roleButton:SetText(isBeasts and (W.options.role~='' and W.options.role or 'All purposes') or 'Beast purposes only')
- local lines,spells,points={},{},{};local r=selected and selected.record
+ local lines,spells,points,tamers={},{},{},{};local r=selected and selected.record
+ compareButton:SetShown(isBeasts);compareButton:SetEnabled(isBeasts and selected~=nil)
+ for _,tile in ipairs(petTiles) do tile:Hide() end
+ info:ClearAllPoints();info:SetPoint('TOPLEFT',280,-41);info:SetWidth(278);info:SetHeight(175)
  actions[1]:SetEnabled(selected~=nil or isPet);actions[2]:SetEnabled(selected~=nil or isPet);actions[3]:SetEnabled(selected~=nil or isPet)
  if isPet then
   local pet;if W.showSnapshot then pet=H.Settings().snapshots[W.snapshotIndex or 1] else pet=H.LivePet() end;modelFor(nil)
@@ -110,9 +124,14 @@ function W.Refresh()
   modelFor(selected)
   if W.view=='beasts' then
    local f=D.TameableFamilies[r.family] or {};local role=H.roles[r.family] or {'Reference family','Review family skills in game.'}
-   info:SetText(r.family..' · '..role[1]..'\nLevel '..H.Level(r)..' · '..(r.class or 'Normal')..'\nAttack interval '..H.Speed(r)..(r.speed_tamed and '' or ' (reference)')..'\n'..H.FamilyStats(r.family)..'\nDiet: '..table.concat(f.foods or {},', ')..'\n'..H.Zones(r))
+   local values={H.Level(r),H.Speed(r),(r.class or 'Normal')}
+   for i,tile in ipairs(petTiles) do tile.value:SetText(values[i]);tile:Show() end
+   info:ClearAllPoints();info:SetPoint('TOPLEFT',280,-112);info:SetHeight(108)
+   info:SetText(r.family..' / '..role[1]..'\n'..H.FamilyStats(r.family)..'\nDiet: '..table.concat(f.foods or {},', ')..'\n'..H.Zones(r))
    lines={role[2]}
-   spells=H.Abilities(selected.id)
+   for _,skill in ipairs(H.Abilities(selected.id)) do
+    if not skill.ability.passive and not skill.ability.interval then spells[#spells+1]=skill end
+   end
    if #spells==0 then lines[#lines+1]='No starting abilities are documented for this beast.' end
    local sighting=H.Settings().sightings[tostring(selected.id)]
    if type(sighting)=='table' then
@@ -123,7 +142,7 @@ function W.Refresh()
    actions[1]:SetText(#points>0 and ('Locations ('..#points..')') or 'No mapped locations');actions[1]:SetEnabled(#points>0);actions[2]:SetText(H.Settings().favorites[tostring(selected.id)] and 'Remove favorite' or 'Favorite beast');actions[3]:SetText('Next appearance')
   elseif W.view=='families' then
    local role=H.roles[selected.name] or {'Reference family','Check family skills against your activity.'}
-   info:SetText(role[1]..'\n\n'..H.FamilyStats(selected.name)..'\nRelative to base pet stats\n\nDiet: '..table.concat(r.foods or {},', ')..(r.id and ('\nFamily #'..r.id) or '\nTameability unconfirmed'))
+   info:SetText(H.FamilyLevel(selected)..' / '..role[1]..'\n\n'..H.FamilyStats(selected.name)..'\nRelative to base pet stats\n\nDiet: '..table.concat(r.foods or {},', ')..(r.id and ('\nFamily #'..r.id) or '\nTameability unconfirmed'))
    lines={role[2]}
    if r.referenceOnly then lines[#lines+1]='Tameability unconfirmed in Forever.' end
    for _,a in ipairs(H.Build('abilities',{})) do
@@ -136,11 +155,16 @@ function W.Refresh()
    actions[1]:SetText('Browse family');actions[1]:SetEnabled(not r.referenceOnly);actions[2]:SetText('Purpose advice');actions[3]:SetText('Reference notes')
   elseif W.view=='abilities' then
    W.rank=math.max(1,math.min(W.rank,#r.ranks));local rank=r.ranks[W.rank]
-   info:SetText(r.name..' · Rank '..rank.rank..'\nRequired pet level '..tostring(rank.pet_level or '?')..'\nTraining points '..tostring(rank.training_cost or '?')..'\nSpell #'..rank.spell_id..'\n'..(rank.trainer_cost and ('Trainer price reference: '..rank.trainer_cost..' copper') or 'See tame sources / trainer in game')..'\n'..#(rank.npc_ids or {})..' referenced tame sources')
+   tamers=H.TameSources(rank)
+   local nextRank=r.ranks[W.rank+1]
+   info:ClearAllPoints();info:SetPoint('TOPLEFT',14,-42);info:SetWidth(544);info:SetHeight(108)
+   info:SetText('Rank '..rank.rank..' / Pet level '..tostring(rank.pet_level or '?')..' / '..tostring(rank.training_cost or '?')..' training points\n'..
+    (#tamers..' known tame sources')..(nextRank and (' / Next rank: '..nextRank.rank..' at pet level '..tostring(nextRank.pet_level or '?')) or '')..
+    '\n\nTame a listed beast, then use the skill until your hunter learns it. Train it to a compatible pet.')
    spells={{name=r.name,rank=rank}}
    local desc=C_Spell and H.Read(C_Spell.GetSpellDescription,rank.spell_id)
    lines={r.interval and 'Native interval reference: not a promise of a transferable skill. Reported speed already includes the native passive.' or (type(desc)=='string' and desc~='' and desc or 'Current spell description unavailable. Hover or inspect this spell in the game.'),'CAN LEARN: '..(#(r.learned_by or {})>0 and table.concat(r.learned_by,', ') or 'Trainer/passive rules require in-game confirmation.'),'Training requirements and source ranks are community references. An ability found on a beast is not automatically transferable to every family.'}
-   actions[1]:SetText('Show tame sources');actions[2]:SetText('Previous rank');actions[3]:SetText('Next rank');actions[2]:SetEnabled(W.rank>1);actions[3]:SetEnabled(W.rank<#r.ranks)
+   actions[1]:SetText('Browse tame sources');actions[2]:SetText('Previous rank');actions[3]:SetText('Next rank');actions[2]:SetEnabled(W.rank>1);actions[3]:SetEnabled(W.rank<#r.ranks)
   else
    info:SetText((r.tag or 'Pet trainer')..'\n'..(r.zone or 'Zone unknown')..'\nFaction: '..(r.side or 'Unknown')..'\nNPC #'..selected.id..'\nService availability is a reference, not a guarantee.')
    lines={'Visit a trainer to inspect current training costs, requirements and available ranks. This addon never trains, purchases or resets abilities automatically.'};actions[1]:SetText('Trainer locations');actions[2]:SetText('Reference notes');actions[3]:SetText('Reference notes')
@@ -156,26 +180,39 @@ function W.Refresh()
  lines=wrapped
  showOnMap:SetShown(isBeasts and #points>0)
  W.detailLines=lines
+ local showingTamers=W.view=='abilities' and #tamers>0 and not W.sourceNotes
  local hasSpells=#spells>0
- local pageSize=hasSpells and #spellRows or 9
- local dpages=math.max(1,math.ceil((hasSpells and #spells or #lines)/pageSize))
+ local pageSize=(hasSpells or showingTamers) and #spellRows or 9
+ local dpages=math.max(1,math.ceil((showingTamers and #tamers or hasSpells and #spells or #lines)/pageSize))
  W.detailPage=math.max(1,math.min(W.detailPage,dpages))
  local visible={}
  for i=(W.detailPage-1)*9+1,math.min(#lines,W.detailPage*9) do visible[#visible+1]=lines[i] end
- body:SetShown(not hasSpells);body:SetText(table.concat(visible,'\n'))
- spellHeading:SetShown(hasSpells)
- spellHeading:SetText(W.view=='families' and 'Family abilities · Hover for rank 1' or 'Pet abilities · Hover for details')
+ body:SetShown(not hasSpells and not showingTamers);body:SetText(table.concat(visible,'\n'))
+ spellHeading:SetShown(hasSpells or showingTamers)
+ spellHeading:SetText(showingTamers and 'Beasts that teach this rank / select for locations' or W.view=='families' and 'Family tame skills' or 'Starting pet skills')
+ spellHeading:ClearAllPoints();spellHeading:SetPoint('TOPLEFT',14,showingTamers and -158 or -242)
  for i,row in ipairs(spellRows) do
-  local spell=spells[(W.detailPage-1)*pageSize+i]
+  local index=(W.detailPage-1)*pageSize+i
+  local spell=not showingTamers and spells[index] or nil
+  row.tamer=showingTamers and tamers[index] or nil
+  row:ClearAllPoints()
+  row:SetPoint('TOPLEFT',14+((i-1)%2)*274,(showingTamers and -180 or -263)-math.floor((i-1)/2)*42)
   if row.spell~=spell then hideSpellTip(row) end
-  row.spell=spell;row:SetShown(spell~=nil)
-  if spell then
+  row.spell=spell;row:SetShown(spell~=nil or row.tamer~=nil)
+  row.zone:SetShown(row.tamer~=nil)
+  row.caption:ClearAllPoints()
+  row.caption:SetPoint('TOPLEFT',40,row.tamer and -4 or -10)
+  if row.tamer then
+   row.zone:SetText(H.Zones(row.tamer.record))
+   row.icon:SetTexture('Interface\\Icons\\Ability_Hunter_BeastTaming')
+   row.caption:SetText(row.tamer.name..' / Lv '..H.Level(row.tamer.record))
+  elseif spell then
    local icon=C_Spell and H.Read(C_Spell.GetSpellTexture,spell.rank.spell_id)
    row.icon:SetTexture(icon or 'Interface\\Icons\\INV_Misc_QuestionMark')
    row.caption:SetText(spell.name..(spell.family and '' or (' · Rank '..spell.rank.rank)))
   end
  end
- detailCounter:SetText(dpages>1 and ((hasSpells and 'Abilities ' or 'Details ')..W.detailPage..' / '..dpages) or '')
+ detailCounter:SetText(dpages>1 and ((showingTamers and 'Tame sources ' or hasSpells and 'Abilities ' or 'Details ')..W.detailPage..' / '..dpages) or '')
  detailPrevious:SetShown(dpages>1);detailNext:SetShown(dpages>1)
  detailPrevious:SetEnabled(W.detailPage>1);detailNext:SetEnabled(W.detailPage<dpages)
 end
@@ -200,14 +237,73 @@ local function act(which,anchor)
  elseif which==1 then locations(anchor,entry);return else W.sourceNotes=true end
  W.Refresh()
 end
+local comparison,compareCards
+local function compare()
+ if not selected or W.view~='beasts' then return end
+ W.compareIDs=W.compareIDs or {}
+ local ids=W.compareIDs
+ if ids[1]~=selected.id and ids[2]~=selected.id then
+  if #ids==2 then ids[1],ids[2]=ids[2],selected.id else ids[#ids+1]=selected.id end
+ end
+ local left,right=H.Comparison(ids[1]),H.Comparison(ids[2])
+ if not left or not right then tell('Pick a second beast and click Compare.');return end
+ local U=ForeverCompanionInterface
+ if not comparison then
+  local name='ForeverCompanionPetComparison'
+  comparison=CreateFrame('Frame',name,UIParent,'BackdropTemplate')
+  comparison:SetSize(650,346);comparison:SetPoint('CENTER');comparison:SetFrameStrata('DIALOG')
+  U.Surface(comparison);U.PreparePanel(comparison,name,650,346);U.CloseButton(comparison,function() comparison:Hide() end)
+  text(comparison,18,-12,572,20,'Compare beasts')
+  compareCards={}
+  for i=1,2 do
+   local frame=CreateFrame('Frame',nil,comparison)
+   frame:SetPoint('TOPLEFT',18+(i-1)*311,-53);frame:SetSize(300,244)
+   U.Surface(frame,{background=U.palette.surface,flat=true})
+   local fields={}
+   fields.name=text(frame,12,-8,276,16,'',40)
+   fields.family=text(frame,12,-50,276,12,'')
+   fields.speed=text(frame,12,-75,276,12,'')
+   fields.stats=text(frame,12,-100,276,11,'',32)
+   fields.diet=text(frame,12,-135,276,11,'',32)
+   fields.skills=text(frame,12,-169,276,11,'',33)
+   fields.zone=text(frame,12,-204,276,11,'',36)
+   compareCards[i]=fields
+  end
+  button(comparison,18,-307,145,'Clear comparison',function() W.compareIDs={};comparison:Hide() end)
+ end
+ for i,data in ipairs({left,right}) do
+  local fields=compareCards[i]
+  fields.name:SetText(data.name)
+  fields.family:SetText(data.family..' / Level '..data.level)
+  fields.speed:SetText('Attack interval: '..data.speed)
+  fields.stats:SetText(data.stats)
+  fields.diet:SetText(data.diet~='' and ('Diet: '..data.diet) or 'Diet unknown')
+  fields.skills:SetText(data.skills~='' and ('Starting skills: '..data.skills) or 'Starting skills undocumented')
+  fields.zone:SetText(data.zone)
+ end
+ comparison:Show()
+end
+
+local function openTamer(beast)
+ W.view='beasts';W.options={query='',family='',role=''};W.page=1;W.detailPage=1;W.look=1
+ search:SetText('')
+ selected=beast
+ for i,candidate in ipairs(H.Build('beasts',W.options)) do
+  if candidate.id==beast.id then W.page=math.floor((i-1)/8)+1;break end
+ end
+ W.Refresh()
+end
 function W.Open()
  if not root then
   local U=ForeverCompanionInterface
   root=CreateFrame('Frame','ForeverCompanionHunterFieldGuide',UIParent,'BackdropTemplate');W.root=root;root:SetSize(920,680);root:SetPoint('CENTER');root:SetFrameStrata('DIALOG');ForeverCompanionDungeonChrome.Skin(root,920,680,40,true);U.PreparePanel(root,'ForeverCompanionHunterFieldGuide',920,680);U.CloseButton(root,function() root:Hide() end)
-  text(root,16,-16,850,18,'HUNTER’S FIELD GUIDE')
+  ForeverCompanionVisualTheme.EnvironmentArt(root,'TOPRIGHT',-4,-4,505,42,'Journey',.85,.09,'ARTWORK')
+  text(root,16,-13,510,18,'HUNTER’S FIELD GUIDE')
   tabs={}
+  compareButton=button(root,566,-8,144,'Compare',compare)
+  U.SetHoverHelp(compareButton,'Compare beasts','Pick two beasts to compare their level, speed, family traits and skills.')
   button(root,724,-8,146,'Toggle pet XP',function() tell(ForeverCompanionPetXPTracker.Toggle()) end)
-  for i,v in ipairs({{'beasts','Beasts & locations'},{'families','Families & roles'},{'abilities','Skills & ranks'},{'trainers','Pet trainers'},{'pet','My companion'}}) do local key=v[1];tabs[key]=button(root,16+(i-1)*179,-50,171,v[2],function() W.view=key;W.page=1;W.rank=1;W.detailPage=1;W.sourceNotes=false;selected=nil;W.Refresh() end) end
+  for i,v in ipairs({{'beasts','Beasts & locations'},{'families','Families & roles'},{'abilities','Tame skills'},{'trainers','Pet trainers'},{'pet','My companion'}}) do local key=v[1];tabs[key]=button(root,16+(i-1)*179,-50,171,v[2],function() W.view=key;W.page=1;W.rank=1;W.detailPage=1;W.sourceNotes=false;selected=nil;W.Refresh() end) end
   search=U.EditBox(root,'Search pet, family, skill, zone or NPC ID');search:SetPoint('TOPLEFT',16,-91);search:SetSize(288,26);search:SetMaxLetters(80);search:SetScript('OnTextChanged',function(self) W.options.query=self:GetText();W.page=1;W.Refresh() end)
   familyButton=button(root,316,-91,184,'All families',function(self) local menu={{label='All families',action=function() W.options.family='';W.page=1;W.Refresh() end}};for _,f in ipairs(H.Build('families',{})) do local name=f.name;menu[#menu+1]={label=name,action=function() W.options.family=name;W.page=1;W.Refresh() end} end;U.PagedMenu(self,'FAMILY',menu,nil,280) end)
   roleButton=button(root,512,-91,184,'All purposes',function(self) local menu={};for _,name in ipairs({'','Solo tank','Damage','Control','Group utility'}) do local role=name;menu[#menu+1]={label=role=='' and 'All purposes' or role,action=function() W.options.role=role;W.page=1;W.Refresh() end} end;U.Menu(self,'CHOOSE BY PURPOSE / NOT BIS',menu) end)
@@ -222,20 +318,34 @@ function W.Open()
    entries[#entries+1]={label='Clear all filters and search',action=function() W.options={query='',family='',role=''};search:SetText('');W.page=1;W.Refresh() end};U.Menu(self,'JOURNAL FILTERS',entries,nil,300)
   end)
   U.HoverNote(root,881,-126,'About this field guide','Spawn locations, tame reports and attack intervals come from reference data. Your own sightings and active pet readings are labeled separately.')
+  local function listWheel(_,delta)
+   if delta~=0 then W.page=W.page+(delta<0 and 1 or -1);W.Refresh() end
+  end
+  root:EnableMouseWheel(true);root:SetScript('OnMouseWheel',listWheel)
   summary=text(root,16,-130,850,11,'',32);listRows={}
   for i=1,8 do
    local b=button(root,16,-174-(i-1)*49,300,'',function(self) selected=self.record;if W.view=='pet' and selected then W.showSnapshot=not selected.live;W.snapshotIndex=selected.snapshotIndex or 1 end;W.rank=1;W.look=1;W.detailPage=1;W.sourceNotes=false;W.Refresh() end,44)
+   b:EnableMouseWheel(true);b:SetScript('OnMouseWheel',listWheel)
    b:GetFontString():SetText('')
    b.icon=b:CreateTexture(nil,'ARTWORK');b.icon:SetSize(25,25);b.icon:SetPoint('LEFT',8,0)
    b.title=text(b,40,-5,252,12,'');b.meta=text(b,40,-25,252,10,'');listRows[i]=b
   end
   local detail=CreateFrame('Frame',nil,root);detail:SetPoint('TOPLEFT',332,-174);detail:SetSize(572,408);U.Surface(detail);U.Bevel(detail,true)
   detailTitle=text(detail,14,-9,544,16,'');info=text(detail,280,-41,278,11,'',175);body=text(detail,14,-242,544,11,'',157)
+  local function detailWheel(_,delta)
+   if delta~=0 then W.detailPage=W.detailPage+(delta<0 and 1 or -1);W.Refresh() end
+  end
+  detail:EnableMouseWheel(true);detail:SetScript('OnMouseWheel',detailWheel)
+  petTiles={U.MetricTile(detail,280,-41,88,'Beast level'),U.MetricTile(detail,373,-41,88,'Attack'),U.MetricTile(detail,466,-41,92,'Rarity')}
   spellHeading=text(detail,14,-242,544,11,'')
   for i=1,6 do
    local row=button(detail,14+((i-1)%2)*274,-263-math.floor((i-1)/2)*42,264,'',nil,36)
    row.icon=row:CreateTexture(nil,'ARTWORK');row.icon:SetSize(24,24);row.icon:SetPoint('LEFT',8,0)
    row.caption=text(row,40,-10,214,11,'',20)
+   row.zone=text(row,40,-20,214,10,'')
+   row.zone:SetTextColor(.69,.81,.71)
+   row:SetScript('OnClick',function(self) if self.tamer then openTamer(self.tamer) end end)
+   row:EnableMouseWheel(true);row:SetScript('OnMouseWheel',detailWheel)
    row:SetScript('OnEnter',showSpellTip);row:SetScript('OnLeave',hideSpellTip);row:SetScript('OnHide',hideSpellTip)
    spellRows[i]=row
   end

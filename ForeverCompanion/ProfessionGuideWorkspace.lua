@@ -5,7 +5,7 @@ local P=ForeverCompanionProfessionLeveling
 local U=ForeverCompanionInterface
 local root,title,subtitle,hero,notice,current,target,professionButton,reserveButton,search,slider,rows
 local selectionTitle,selectionMeta,selectionIcon,detailBody,stats,materials,add,source,gather,import
-local tabs,scopeButton,stockButton,listHeading,listEmpty,pageLabel,previous,nextPage
+local tabs,scopeButton,knownButton,stockButton,listHeading,listEmpty,pageLabel,previous,nextPage
 local selected,selectedKey
 local pageSize,rowHeight=6,28
 local ink={.94,.95,.98,1}
@@ -227,6 +227,8 @@ function W.Refresh()
  reserveButton:SetText('Reserve '..P.Settings(W.profession).reserve..'%')
  scopeButton:SetText(all and 'All professions' or 'This profession')
  scopeButton:SetShown(recipes)
+ knownButton:SetShown(recipes)
+ knownButton:SetText(W.learnedOnly and "Learned only" or "All recipe access")
  for _,control in ipairs(W.routeControls) do control:SetShown(not recipes) end
  for key,b in pairs(tabs) do U.StyleButton(b,buttonPalette,W.view==key) end
  local list=W.view=='route' and plan.steps or W.view=='shopping' and plan.materials or (all and allRecipes() or P.Catalog(W.profession))
@@ -238,14 +240,14 @@ function W.Refresh()
     if m.name:lower():find(query,1,true) or tostring(m.id)==query then match=true;break end
    end
   end
-  if match then results[#results+1]=r end
+  if match and (not recipes or not W.learnedOnly or P.RecipeState(r)=="Learned") then results[#results+1]=r end
  end
  W.results=results
  local limit=math.max(0,#results-pageSize)
  W.offset=math.max(0,math.min(W.offset,limit))
  W.sync=true;slider:SetMinMaxValues(0,limit);slider:SetValue(W.offset);W.sync=false;slider:SetShown(limit>0)
  listHeading:SetText(views[W.view][2]..'  /  '..#results..(query~='' and (' of '..#list) or ''))
- listEmpty:SetText(query~='' and 'No matches' or 'No entries recorded')
+ listEmpty:SetText(recipes and W.learnedOnly and 'No learned recipes recorded. Open your in-game profession window.' or query~='' and 'No matches' or 'No entries recorded')
  listEmpty:SetShown(#results==0)
  pageLabel:SetText(#results>0 and (W.offset+1)..'-'..math.min(#results,W.offset+pageSize)..' of '..#results or '0 results')
  previous:SetEnabled(W.offset>0);nextPage:SetEnabled(W.offset<limit)
@@ -282,6 +284,9 @@ local function makeFilters()
  scopeButton=button(root,190,-129,174,'This profession',function()
   W.allProfessions=not W.allProfessions;selectedKey=nil;W.offset=0;W.Refresh()
  end,'Switch between the selected profession and the full recipe catalog.')
+ knownButton=button(root,381,-129,170,'All recipe access',function()
+  W.learnedOnly=not W.learnedOnly;W.offset=0;selectedKey=nil;W.Refresh()
+ end,'Show only recipes observed in your own profession window. Open that window to refresh recipe access.')
  local range=button(root,190,-129,124,'Skill ranges',function(self)
   local entries={}
   for _,pair in ipairs({{1,300},{1,75},{75,150},{150,225},{225,300}}) do
@@ -504,6 +509,7 @@ function W.Open(profession,view,all)
  W.view=(view=='recipes' or view=='shopping') and view or 'route'
  W.query='';search:SetText('')
  local cfg=P.Settings(W.profession);current:SetText(cfg.current);target:SetText(cfg.target)
+ if P.CaptureRecipeKnowledge then P.CaptureRecipeKnowledge() end
  root:Show();W.Rebuild()
 end
 SLASH_FCPROFGUIDE1='/fcprofguide'

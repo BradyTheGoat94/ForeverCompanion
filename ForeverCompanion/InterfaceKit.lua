@@ -5,6 +5,35 @@ ForeverCompanionInterface=U
 U.palette={background={.027,.037,.052,.99},surface={.072,.093,.120,1},rail={.17,.145,.102,1},border={.21,.26,.31,1},accent={.96,.77,.46,1},text={.94,.95,.97,1},muted={.70,.75,.82,1}}
 local controls=setmetatable({},{__mode='k'})
 local popup
+local managedWindows=setmetatable({},{__mode='k'})
+local mapHook
+local function restore(frame,entry)
+ if entry.previous then frame:SetFrameStrata(entry.previous);entry.previous=nil end
+end
+function U.FocusWorldMap(map)
+ if not map or not map:IsShown() then return end
+ U.CloseMenu()
+ for frame,entry in pairs(managedWindows) do
+  if frame:IsShown() and frame.SetFrameStrata and frame.GetFrameStrata and not entry.previous then
+   entry.previous=frame:GetFrameStrata()
+   frame:SetFrameStrata('BACKGROUND')
+  end
+ end
+end
+function U.ManageWorldMap(map)
+ if not map or map==mapHook or not map.HookScript then return end
+ mapHook=map
+ local function front() U.FocusWorldMap(map) end
+ map:HookScript('OnShow',front)
+ map:HookScript('OnMouseDown',front)
+ if map.ScrollContainer and map.ScrollContainer.HookScript then
+  map.ScrollContainer:HookScript('OnMouseDown',front)
+ end
+ map:HookScript('OnHide',function()
+  for frame,entry in pairs(managedWindows) do restore(frame,entry) end
+ end)
+ if map:IsShown() then front() end
+end
 local function finite(n) return not(issecretvalue and issecretvalue(n)) and type(n)=='number' and n==n and math.abs(n)<math.huge end
 function U.PanelScale(width,height,availableWidth,availableHeight)
  if not finite(width) or not finite(height) or not finite(availableWidth) or not finite(availableHeight) or width<=0 or height<=0 or availableWidth<=32 or availableHeight<=32 then return 1 end
@@ -21,10 +50,24 @@ end
 function U.WindowControls(frame,name,width,height)
  if frame.fcWindowControls or not name then return end
  frame.fcWindowControls=true;frame.fcWindowName=name;frame:SetMovable(true);frame:SetClampedToScreen(true);frame:EnableMouse(true)
+ local entry={};managedWindows[frame]=entry
+ local backing=frame:CreateTexture(nil,'BACKGROUND',nil,-8)
+ backing:SetAllPoints(frame)
+ backing:SetColorTexture(U.palette.background[1],U.palette.background[2],U.palette.background[3],1)
+ frame.fcOpaqueBacking=backing
+ local function focus()
+  restore(frame,entry)
+  if frame.Raise then frame:Raise() end
+ end
+ frame:HookScript('OnMouseDown',focus)
+ frame:HookScript('OnShow',focus)
+ frame:HookScript('OnHide',function() restore(frame,entry) end)
+ 
  local saved=windowSettings(name)
  if finite(saved.x) and finite(saved.y) then frame:ClearAllPoints();frame:SetPoint('CENTER',UIParent,'CENTER',saved.x,saved.y) end
  local drag=CreateFrame('Frame',nil,frame);drag:SetPoint('TOPLEFT',8,-2);drag:SetPoint('TOPRIGHT',-44,-2);drag:SetHeight(22);drag:EnableMouse(true);drag:RegisterForDrag('LeftButton')
- drag:SetScript('OnDragStart',function() frame:StartMoving() end)
+ drag:SetScript('OnMouseDown',focus)
+ drag:SetScript('OnDragStart',function() focus();frame:StartMoving() end)
  drag:SetScript('OnDragStop',function()
   frame:StopMovingOrSizing()
   if frame.GetCenter and UIParent and UIParent.GetCenter then
